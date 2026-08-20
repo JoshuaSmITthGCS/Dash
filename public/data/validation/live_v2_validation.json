@@ -3,8 +3,8 @@
   "model_version": "structural-timeliness-2.1.0",
   "config_version": "live-validation-v1.0.0",
   "universe_version": "representative-v1",
-  "data_cutoff": "2026-08-19T12:25:36.107089+00:00",
-  "run_id": "fa7ebf54c95f2215",
+  "data_cutoff": "2026-08-20T12:06:40.640704+00:00",
+  "run_id": "21a00acdd299b3bb",
   "production_outputs_replaced": false,
   "raw_response_publication": "not_published",
   "results": [
@@ -14,8 +14,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/HIG-2026-08-19.json",
-        "sha256": "2bcfbff6910498d4267200451d812b395f5f3f8f174ccd452328f9a2bcb6c9f6"
+        "path": "pipeline/data/staging/raw_provider/HIG-2026-08-20.json",
+        "sha256": "bb84d4f053e54705d9ef7f9f9209f28da8b0553490c367a61b89829379317bab"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -28,15 +28,15 @@
       "observations": {
         "price": [
           {
-            "value": 138.96,
+            "value": 137.53,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -46,15 +46,15 @@
         ],
         "market_cap": [
           {
-            "value": 38093221888,
+            "value": 37253025792,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -64,15 +64,15 @@
         ],
         "forward_pe": [
           {
-            "value": 10.151291,
+            "value": 10.046826,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -91,8 +91,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -104,15 +104,15 @@
         ],
         "price_to_book": [
           {
-            "value": 1.9557782,
+            "value": 1.9356518,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -124,15 +124,15 @@
         ],
         "price_to_sales": [
           {
-            "value": 1.2994447,
+            "value": 1.2707838,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToSalesTrailing12Months",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -151,8 +151,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -171,8 +171,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -191,8 +191,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -211,8 +211,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -232,8 +232,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -245,15 +245,15 @@
         ],
         "free_cash_flow_yield": [
           {
-            "value": 0.14457952777512248,
+            "value": 0.14784034088266523,
             "unit": "decimal",
             "source": "yahoo",
             "source_field": "freeCashflow/marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -415,7 +415,7 @@
           },
           "forward_pe": {
             "status": "applied",
-            "value": 10.15,
+            "value": 10.05,
             "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
@@ -431,7 +431,7 @@
           },
           "price_to_book": {
             "status": "applied",
-            "value": 1.96,
+            "value": 1.94,
             "score_contribution": 75.0,
             "replaced_by": null,
             "reason": null,
@@ -495,7 +495,7 @@
           },
           "free_cash_flow_yield": {
             "status": "suppressed",
-            "value": 0.1446,
+            "value": 0.1478,
             "score_contribution": null,
             "replaced_by": "total_capital_return_yield",
             "reason": "Industrial FCF is distorted by premiums, claims, reserves and investment flows.",
@@ -779,27 +779,27 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": 0.09130248413452846,
-          "momentum_12_7": 0.029319220105131105,
+          "momentum_12_1": 0.09130235607930604,
+          "momentum_12_7": 0.029319099323126485,
           "momentum_6_1": 0.01677909287899304,
-          "high_52w_proximity": 0.9538715932196005,
+          "high_52w_proximity": 0.9440555031148126,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
               "2026-08"
             ],
             "included_return_months": 11,
-            "return": 0.091302484135
+            "return": 0.091302356079
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-01-30",
             "skipped_months": [
@@ -812,11 +812,11 @@
               "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.029319220105
+            "return": 0.029319099323
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2026-02-27",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
@@ -866,8 +866,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/JPM-2026-08-19.json",
-        "sha256": "8e666099679c44a472f3d2b4eaac6738be7e7cf8f6b920352c9aa4d1560e66f7"
+        "path": "pipeline/data/staging/raw_provider/JPM-2026-08-20.json",
+        "sha256": "230257dd58bc64dc8f528dc068a7c578194d640069af05073afbbf7cdfaffc7d"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -880,15 +880,15 @@
       "observations": {
         "price": [
           {
-            "value": 363.25,
+            "value": 357.26,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -898,15 +898,15 @@
         ],
         "market_cap": [
           {
-            "value": 965586124800,
+            "value": 949663629312,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -916,15 +916,15 @@
         ],
         "forward_pe": [
           {
-            "value": 14.525938,
+            "value": 14.286406,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -936,15 +936,15 @@
         ],
         "provider_peg": [
           {
-            "value": 1.7654,
+            "value": 1.7766,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "trailingPegRatio",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -957,15 +957,15 @@
         ],
         "price_to_book": [
           {
-            "value": 2.731059,
+            "value": 2.686024,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -977,15 +977,15 @@
         ],
         "price_to_sales": [
           {
-            "value": 5.1821847,
+            "value": 5.0967307,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToSalesTrailing12Months",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -1004,8 +1004,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -1024,8 +1024,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -1044,8 +1044,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -1064,8 +1064,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -1228,7 +1228,7 @@
           },
           "forward_pe": {
             "status": "applied",
-            "value": 14.53,
+            "value": 14.29,
             "score_contribution": 80.0,
             "replaced_by": null,
             "reason": null,
@@ -1244,7 +1244,7 @@
           },
           "price_to_book": {
             "status": "applied",
-            "value": 2.73,
+            "value": 2.69,
             "score_contribution": 75.0,
             "replaced_by": null,
             "reason": null,
@@ -1580,27 +1580,27 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": 0.18943664696732454,
-          "momentum_12_7": 0.024363554755314487,
+          "momentum_12_1": 0.18943676969690215,
+          "momentum_12_7": 0.024363660452164204,
           "momentum_6_1": 0.18276150315081097,
-          "high_52w_proximity": 0.994714955050961,
+          "high_52w_proximity": 0.9783121116463029,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
               "2026-08"
             ],
             "included_return_months": 11,
-            "return": 0.189436646967
+            "return": 0.189436769697
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-01-30",
             "skipped_months": [
@@ -1613,11 +1613,11 @@
               "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.024363554755
+            "return": 0.024363660452
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2026-02-27",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
@@ -1667,8 +1667,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/O-2026-08-19.json",
-        "sha256": "14fba1e66c756594e67c8054c1ee9b26ab139e16d03aef2f9a0396f2b1ac44b7"
+        "path": "pipeline/data/staging/raw_provider/O-2026-08-20.json",
+        "sha256": "0ca4b1f733da3786b54f4118856aa28c5c3a492818e46e8481d9efcc7bf71a41"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -1681,15 +1681,15 @@
       "observations": {
         "price": [
           {
-            "value": 62.21,
+            "value": 62.95,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -1699,15 +1699,15 @@
         ],
         "market_cap": [
           {
-            "value": 58864222208,
+            "value": 59564425216,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -1717,15 +1717,15 @@
         ],
         "forward_pe": [
           {
-            "value": 39.243763,
+            "value": 39.71058,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -1737,15 +1737,15 @@
         ],
         "provider_peg": [
           {
-            "value": 2.9599,
+            "value": 2.9509,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "trailingPegRatio",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -1765,8 +1765,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -1778,15 +1778,15 @@
         ],
         "price_to_book": [
           {
-            "value": 1.4883487,
+            "value": 1.506053,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -1798,15 +1798,15 @@
         ],
         "price_to_sales": [
           {
-            "value": 9.704746,
+            "value": 9.820186,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToSalesTrailing12Months",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -1825,8 +1825,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -1845,8 +1845,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -1865,8 +1865,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -1885,8 +1885,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -1906,8 +1906,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -1919,15 +1919,15 @@
         ],
         "free_cash_flow_yield": [
           {
-            "value": 0.02687679987360787,
+            "value": 0.026560852627434173,
             "unit": "decimal",
             "source": "yahoo",
             "source_field": "freeCashflow/marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -2089,7 +2089,7 @@
           },
           "forward_pe": {
             "status": "suppressed",
-            "value": 39.24,
+            "value": 39.71,
             "score_contribution": null,
             "replaced_by": "price_to_ffo",
             "reason": "P/FFO is the standard earnings multiple for REITs.",
@@ -2105,7 +2105,7 @@
           },
           "price_to_book": {
             "status": "applied",
-            "value": 1.49,
+            "value": 1.51,
             "score_contribution": 75.0,
             "replaced_by": null,
             "reason": null,
@@ -2169,7 +2169,7 @@
           },
           "free_cash_flow_yield": {
             "status": "suppressed",
-            "value": 0.0269,
+            "value": 0.0266,
             "score_contribution": null,
             "replaced_by": "affo_yield",
             "reason": "AFFO better reflects recurring property cash generation.",
@@ -2430,27 +2430,27 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": 0.14654880198511622,
-          "momentum_12_7": 0.07002210630446704,
+          "momentum_12_1": 0.14654888049933046,
+          "momentum_12_7": 0.07002217957822987,
           "momentum_6_1": -0.025844665415900914,
-          "high_52w_proximity": 0.9409719882162545,
+          "high_52w_proximity": 0.9521650578339659,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
               "2026-08"
             ],
             "included_return_months": 11,
-            "return": 0.146548801985
+            "return": 0.146548880499
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-01-30",
             "skipped_months": [
@@ -2463,11 +2463,11 @@
               "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.070022106304
+            "return": 0.070022179578
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2026-02-27",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
@@ -2517,8 +2517,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/NEE-2026-08-19.json",
-        "sha256": "d5b69b7bf0960aa86ffab7276d1da4fc1af047c9e312ec12336c5f46f14c24ca"
+        "path": "pipeline/data/staging/raw_provider/NEE-2026-08-20.json",
+        "sha256": "baea2980cd9dfcf10ee59173260bfd5e6c9b82428d4d04a59e5c7e19d87f9a7d"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -2531,15 +2531,15 @@
       "observations": {
         "price": [
           {
-            "value": 86.22,
+            "value": 85.91,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -2549,15 +2549,15 @@
         ],
         "market_cap": [
           {
-            "value": 179853049856,
+            "value": 179174359040,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -2567,15 +2567,15 @@
         ],
         "forward_pe": [
           {
-            "value": 19.524942,
+            "value": 19.454742,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -2594,8 +2594,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -2615,8 +2615,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -2628,15 +2628,15 @@
         ],
         "price_to_book": [
           {
-            "value": 3.148094,
+            "value": 3.1367753,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -2648,15 +2648,15 @@
         ],
         "price_to_sales": [
           {
-            "value": 6.266657,
+            "value": 6.243009,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToSalesTrailing12Months",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -2675,8 +2675,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -2695,8 +2695,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -2715,8 +2715,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -2735,8 +2735,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -2756,8 +2756,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -2769,15 +2769,15 @@
         ],
         "free_cash_flow_yield": [
           {
-            "value": -0.09878550933790177,
+            "value": -0.09915969690748894,
             "unit": "decimal",
             "source": "yahoo",
             "source_field": "freeCashflow/marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -2937,7 +2937,7 @@
           },
           "forward_pe": {
             "status": "applied",
-            "value": 19.52,
+            "value": 19.45,
             "score_contribution": 80.0,
             "replaced_by": null,
             "reason": null,
@@ -2953,7 +2953,7 @@
           },
           "price_to_book": {
             "status": "applied",
-            "value": 3.15,
+            "value": 3.14,
             "score_contribution": 50.0,
             "replaced_by": null,
             "reason": null,
@@ -3017,7 +3017,7 @@
           },
           "free_cash_flow_yield": {
             "status": "replaced",
-            "value": -0.0988,
+            "value": -0.0992,
             "score_contribution": null,
             "replaced_by": "funds_from_operations_yield",
             "reason": "Regulated utilities commonly fund large mandated capital programs.",
@@ -3271,15 +3271,15 @@
       "momentum": {
         "factors": {
           "momentum_12_1": 0.23179163383861234,
-          "momentum_12_7": 0.22824712299743455,
+          "momentum_12_7": 0.22824723111782763,
           "momentum_6_1": -0.06626163722693068,
-          "high_52w_proximity": 0.8873265336279513,
+          "high_52w_proximity": 0.8841362175156143,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
@@ -3290,7 +3290,7 @@
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-01-30",
             "skipped_months": [
@@ -3303,11 +3303,11 @@
               "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.228247122997
+            "return": 0.228247231118
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2026-02-27",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
@@ -3357,8 +3357,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/BSX-2026-08-19.json",
-        "sha256": "460b10eb9e974cfde2f30fb9aa81a90e9f5b94242ac00ee6b0d7aa127ab615ae"
+        "path": "pipeline/data/staging/raw_provider/BSX-2026-08-20.json",
+        "sha256": "a39173600cd619eb9731f6b897def1ed7d57572a639aa091729bfd83ab7ba75f"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -3371,15 +3371,15 @@
       "observations": {
         "price": [
           {
-            "value": 50.47,
+            "value": 52.01,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -3389,15 +3389,15 @@
         ],
         "market_cap": [
           {
-            "value": 73142616064,
+            "value": 75374428160,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -3407,15 +3407,15 @@
         ],
         "forward_pe": [
           {
-            "value": 14.677956,
+            "value": 15.125826,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -3427,15 +3427,15 @@
         ],
         "provider_peg": [
           {
-            "value": 0.7391,
+            "value": 0.7253,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "trailingPegRatio",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -3455,8 +3455,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -3468,15 +3468,15 @@
         ],
         "price_to_book": [
           {
-            "value": 2.9288533,
+            "value": 3.0182219,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -3488,15 +3488,15 @@
         ],
         "price_to_sales": [
           {
-            "value": 3.4836452,
+            "value": 3.5899422,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToSalesTrailing12Months",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -3515,8 +3515,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -3535,8 +3535,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -3555,8 +3555,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -3575,8 +3575,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -3596,8 +3596,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -3609,15 +3609,15 @@
         ],
         "free_cash_flow_yield": [
           {
-            "value": 0.03351500446545472,
+            "value": 0.03252263617571172,
             "unit": "decimal",
             "source": "yahoo",
             "source_field": "freeCashflow/marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -3633,8 +3633,8 @@
         "config_version": "canonical-metrics-2.0.0",
         "applicability_profile": "general",
         "structural": {
-          "raw_score": 77.0,
-          "effective_score": 54.8,
+          "raw_score": 75.5,
+          "effective_score": 54.5,
           "weight_renormalization": {
             "weights_declared": {
               "valuation": 0.28,
@@ -3701,7 +3701,7 @@
           "provider_conflicts": [],
           "classification": "insufficient_evidence",
           "categories": {
-            "valuation": 89.5,
+            "valuation": 85.2,
             "profitability": 68.9,
             "financial_health": 83.9,
             "growth": 55.0,
@@ -3775,7 +3775,7 @@
           },
           "forward_pe": {
             "status": "applied",
-            "value": 14.68,
+            "value": 15.13,
             "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
@@ -3791,8 +3791,8 @@
           },
           "price_to_book": {
             "status": "applied",
-            "value": 2.93,
-            "score_contribution": 75.0,
+            "value": 3.02,
+            "score_contribution": 50.0,
             "replaced_by": null,
             "reason": null,
             "quality_flags": []
@@ -3855,7 +3855,7 @@
           },
           "free_cash_flow_yield": {
             "status": "applied",
-            "value": 0.0335,
+            "value": 0.0325,
             "score_contribution": 55.0,
             "replaced_by": null,
             "reason": null,
@@ -4087,13 +4087,13 @@
           "momentum_12_1": -0.5570616157133997,
           "momentum_12_7": -0.11345972721045616,
           "momentum_6_1": -0.3919323296021606,
-          "high_52w_proximity": 0.4667098345252469,
+          "high_52w_proximity": 0.4809506067605156,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
@@ -4104,7 +4104,7 @@
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-01-30",
             "skipped_months": [
@@ -4121,7 +4121,7 @@
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2026-02-27",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
@@ -4171,8 +4171,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/MSFT-2026-08-19.json",
-        "sha256": "d3e2f9e38507144b9e3fbc316d9cc770d6af745ddf1ecb344ab5afdf880505d4"
+        "path": "pipeline/data/staging/raw_provider/MSFT-2026-08-20.json",
+        "sha256": "aa01d955b05012a37471a6c5d9bd3ea9fdda8085d73e299f2876c156af169a5a"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -4185,15 +4185,15 @@
       "observations": {
         "price": [
           {
-            "value": 481.63,
+            "value": 484.31,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -4203,15 +4203,15 @@
         ],
         "market_cap": [
           {
-            "value": 3576365580288,
+            "value": 3596265979904,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -4221,15 +4221,15 @@
         ],
         "forward_pe": [
           {
-            "value": 20.431183,
+            "value": 20.54487,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -4241,15 +4241,15 @@
         ],
         "provider_peg": [
           {
-            "value": 1.56,
+            "value": 1.5641,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "trailingPegRatio",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -4269,8 +4269,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -4282,15 +4282,15 @@
         ],
         "price_to_book": [
           {
-            "value": 8.085789,
+            "value": 8.130781,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -4302,15 +4302,15 @@
         ],
         "price_to_sales": [
           {
-            "value": 10.777411,
+            "value": 10.837381,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToSalesTrailing12Months",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -4329,8 +4329,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -4349,8 +4349,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -4369,8 +4369,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -4389,8 +4389,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -4410,8 +4410,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -4423,15 +4423,15 @@
         ],
         "free_cash_flow_yield": [
           {
-            "value": 0.004626344759382125,
+            "value": 0.004600744286561828,
             "unit": "decimal",
             "source": "yahoo",
             "source_field": "freeCashflow/marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -4589,7 +4589,7 @@
           },
           "forward_pe": {
             "status": "applied",
-            "value": 20.43,
+            "value": 20.54,
             "score_contribution": 100.0,
             "replaced_by": null,
             "reason": null,
@@ -4605,7 +4605,7 @@
           },
           "price_to_book": {
             "status": "applied",
-            "value": 8.09,
+            "value": 8.13,
             "score_contribution": 25.0,
             "replaced_by": null,
             "reason": null,
@@ -4898,27 +4898,27 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": -0.07702303335281568,
-          "momentum_12_7": -0.14919302561949177,
+          "momentum_12_1": -0.07702308929512625,
+          "momentum_12_7": -0.14919313779825938,
           "momentum_6_1": 0.18583932348665733,
-          "high_52w_proximity": 0.8941285487699002,
+          "high_52w_proximity": 0.8991038574874153,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
               "2026-08"
             ],
             "included_return_months": 11,
-            "return": -0.077023033353
+            "return": -0.077023089295
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-01-30",
             "skipped_months": [
@@ -4931,11 +4931,11 @@
               "2026-08"
             ],
             "included_return_months": 5,
-            "return": -0.149193025619
+            "return": -0.149193137798
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2026-02-27",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
@@ -4985,8 +4985,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/XOM-2026-08-19.json",
-        "sha256": "3b77d6c7b269ab0d1a862f5d3adfae70f2395dc79cb82a4fe6a5e08d7991f20c"
+        "path": "pipeline/data/staging/raw_provider/XOM-2026-08-20.json",
+        "sha256": "e7ccdd5aeca8aee875bb07ee6cde19f030c07fba3466f1c0d49499f81e88206a"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -4999,15 +4999,15 @@
       "observations": {
         "price": [
           {
-            "value": 165.56,
+            "value": 164.77,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -5017,15 +5017,15 @@
         ],
         "market_cap": [
           {
-            "value": 680768110592,
+            "value": 677519753216,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -5035,15 +5035,15 @@
         ],
         "forward_pe": [
           {
-            "value": 15.559843,
+            "value": 15.432195,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -5055,15 +5055,15 @@
         ],
         "provider_peg": [
           {
-            "value": 1.2638,
+            "value": 1.2959,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "trailingPegRatio",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -5083,8 +5083,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -5096,15 +5096,15 @@
         ],
         "price_to_book": [
           {
-            "value": 2.6246035,
+            "value": 2.6120799,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -5116,15 +5116,15 @@
         ],
         "price_to_sales": [
           {
-            "value": 1.8854709,
+            "value": 1.8764741,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToSalesTrailing12Months",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -5143,8 +5143,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -5163,8 +5163,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -5183,8 +5183,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -5203,8 +5203,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -5224,8 +5224,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -5237,15 +5237,15 @@
         ],
         "free_cash_flow_yield": [
           {
-            "value": 0.03036423160013235,
+            "value": 0.030509812411934033,
             "unit": "decimal",
             "source": "yahoo",
             "source_field": "freeCashflow/marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -5404,7 +5404,7 @@
           },
           "forward_pe": {
             "status": "applied",
-            "value": 15.56,
+            "value": 15.43,
             "score_contribution": 80.0,
             "replaced_by": null,
             "reason": null,
@@ -5420,7 +5420,7 @@
           },
           "price_to_book": {
             "status": "applied",
-            "value": 2.62,
+            "value": 2.61,
             "score_contribution": 75.0,
             "replaced_by": null,
             "reason": null,
@@ -5484,7 +5484,7 @@
           },
           "free_cash_flow_yield": {
             "status": "applied",
-            "value": 0.0304,
+            "value": 0.0305,
             "score_contribution": 55.0,
             "replaced_by": null,
             "reason": null,
@@ -5743,13 +5743,13 @@
           "momentum_12_1": 0.3904635712460538,
           "momentum_12_7": 0.24802490404086197,
           "momentum_6_1": 0.02619710824204846,
-          "high_52w_proximity": 0.9783812102735013,
+          "high_52w_proximity": 0.9737127239314366,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
@@ -5760,7 +5760,7 @@
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-01-30",
             "skipped_months": [
@@ -5777,7 +5777,7 @@
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2026-02-27",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
@@ -5827,8 +5827,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/MRNA-2026-08-19.json",
-        "sha256": "9cd3ce600e3287ce9464d5a610fdea5746bc41881806a94cecfc7d409593e108"
+        "path": "pipeline/data/staging/raw_provider/MRNA-2026-08-20.json",
+        "sha256": "110692aec7607d76fd2ea71280c1e2025b4fe560f395521c2574ac8861a8171b"
       },
       "classification": {
         "company": "insufficient_evidence",
@@ -5841,15 +5841,15 @@
       "observations": {
         "price": [
           {
-            "value": 62.96,
+            "value": 174.38,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "currentPrice",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -5859,15 +5859,15 @@
         ],
         "market_cap": [
           {
-            "value": 25135892480,
+            "value": 69618761728,
             "unit": "usd",
             "source": "yahoo",
             "source_field": "marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -5877,15 +5877,15 @@
         ],
         "forward_pe": [
           {
-            "value": -12.86079,
+            "value": -35.62047,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -5904,8 +5904,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -5917,15 +5917,15 @@
         ],
         "price_to_book": [
           {
-            "value": 3.7155504,
+            "value": 10.290942,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -5937,15 +5937,15 @@
         ],
         "price_to_sales": [
           {
-            "value": 11.281819,
+            "value": 31.2472,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToSalesTrailing12Months",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -5964,8 +5964,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -5984,8 +5984,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -6004,8 +6004,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -6024,8 +6024,8 @@
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -6037,15 +6037,15 @@
         ],
         "free_cash_flow_yield": [
           {
-            "value": 0.011905285807460616,
+            "value": 0.004298410034484203,
             "unit": "decimal",
             "source": "yahoo",
             "source_field": "freeCashflow/marketCap",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": true,
             "is_forward": false,
@@ -6207,7 +6207,7 @@
           },
           "forward_pe": {
             "status": "suppressed",
-            "value": -12.86,
+            "value": -35.62,
             "score_contribution": null,
             "replaced_by": "cash_runway_months",
             "reason": "No positive consensus earnings.",
@@ -6226,7 +6226,7 @@
           },
           "price_to_book": {
             "status": "suppressed",
-            "value": 3.72,
+            "value": 10.29,
             "score_contribution": null,
             "replaced_by": "cash_runway_months",
             "reason": "Book value does not capture pipeline probability.",
@@ -6290,7 +6290,7 @@
           },
           "free_cash_flow_yield": {
             "status": "suppressed",
-            "value": 0.0119,
+            "value": 0.0043,
             "score_contribution": null,
             "replaced_by": "cash_runway_months",
             "reason": "Cash burn should be evaluated as runway.",
@@ -6545,13 +6545,13 @@
           "momentum_12_1": 1.275633015674146,
           "momentum_12_7": 0.8293897640382522,
           "momentum_6_1": 0.02333395570507668,
-          "high_52w_proximity": 0.7696821116820203,
+          "high_52w_proximity": 1.0,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
@@ -6562,7 +6562,7 @@
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-01-30",
             "skipped_months": [
@@ -6579,7 +6579,7 @@
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2026-02-27",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
@@ -6629,8 +6629,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/VTI-2026-08-19.json",
-        "sha256": "d06059531f73e9f3a4cea58e1dc7f6a950a9b180c99347b1bd850c1e4fa62187"
+        "path": "pipeline/data/staging/raw_provider/VTI-2026-08-20.json",
+        "sha256": "75ca24b1771aaeff343a18eec26fb0cdcd2e389454be49a9be54e707860ff6f4"
       },
       "classification": {
         "company": "unavailable",
@@ -6640,7 +6640,28 @@
         "valid_peer_count": 0,
         "percentile_status": "INSUFFICIENT_VALID_PEERS"
       },
-      "observations": {},
+      "observations": {
+        "price_to_book": [
+          {
+            "value": 2.7238255,
+            "unit": "multiple",
+            "source": "yahoo",
+            "source_field": "priceToBook",
+            "period_start": null,
+            "period_end": null,
+            "available_at": null,
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
+            "fiscal_period": null,
+            "is_ttm": false,
+            "is_forward": false,
+            "quality_flags": [
+              "provider_period_not_supplied"
+            ],
+            "transform_version": "identity.v1"
+          }
+        ]
+      },
       "analysis": {
         "model_version": "structural-timeliness-2.1.0",
         "config_version": "canonical-metrics-2.0.0",
@@ -6807,7 +6828,7 @@
           },
           "price_to_book": {
             "status": "suppressed",
-            "value": null,
+            "value": 2.72,
             "score_contribution": null,
             "replaced_by": null,
             "reason": "Corporate metric does not apply to ETFs.",
@@ -7128,27 +7149,27 @@
       },
       "momentum": {
         "factors": {
-          "momentum_12_1": 0.17067697711934127,
-          "momentum_12_7": 0.07632125718750049,
-          "momentum_6_1": 0.09344419508294233,
-          "high_52w_proximity": 0.9863128300413048,
+          "momentum_12_1": 0.17067686353234657,
+          "momentum_12_7": 0.07632115275553564,
+          "momentum_6_1": 0.09344409598886383,
+          "high_52w_proximity": 0.9887848095355245,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
               "2026-08"
             ],
             "included_return_months": 11,
-            "return": 0.170676977119
+            "return": 0.170676863532
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-01-30",
             "skipped_months": [
@@ -7161,18 +7182,18 @@
               "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.076321257188
+            "return": 0.076321152756
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2026-02-27",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
               "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.093444195083
+            "return": 0.093444095989
           }
         }
       },
@@ -7215,8 +7236,8 @@
       "provider_status": "success",
       "raw_response": {
         "retention": "private_staging",
-        "path": "pipeline/data/staging/raw_provider/TLT-2026-08-19.json",
-        "sha256": "d529f55e4338380d0203c5cd667084b3a77393a4c6c024c98b0902eebe7f1a67"
+        "path": "pipeline/data/staging/raw_provider/TLT-2026-08-20.json",
+        "sha256": "05a73f9b02b96e30d27665c77eaaa377bf1b040af9305fb1719052ccb9bb3486"
       },
       "classification": {
         "company": "unavailable",
@@ -7229,15 +7250,15 @@
       "observations": {
         "forward_pe": [
           {
-            "value": -4083.0002,
+            "value": -4151.0,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "forwardPE",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": true,
@@ -7249,15 +7270,15 @@
         ],
         "price_to_book": [
           {
-            "value": 0.5485507,
+            "value": 0.55768645,
             "unit": "multiple",
             "source": "yahoo",
             "source_field": "priceToBook",
             "period_start": null,
             "period_end": null,
             "available_at": null,
-            "observed_at": "2026-08-19T12:25:36.107089+00:00",
-            "fetched_at": "2026-08-19T12:25:36.107089+00:00",
+            "observed_at": "2026-08-20T12:06:40.640704+00:00",
+            "fetched_at": "2026-08-20T12:06:40.640704+00:00",
             "fiscal_period": null,
             "is_ttm": false,
             "is_forward": false,
@@ -7418,7 +7439,7 @@
           },
           "forward_pe": {
             "status": "suppressed",
-            "value": -4083.0,
+            "value": -4151.0,
             "score_contribution": null,
             "replaced_by": null,
             "reason": "Corporate metric does not apply to ETFs.",
@@ -7437,7 +7458,7 @@
           },
           "price_to_book": {
             "status": "suppressed",
-            "value": 0.55,
+            "value": 0.56,
             "score_contribution": null,
             "replaced_by": null,
             "reason": "Corporate metric does not apply to ETFs.",
@@ -7759,15 +7780,15 @@
       "momentum": {
         "factors": {
           "momentum_12_1": -0.010730990388608141,
-          "momentum_12_7": 0.024726524340441536,
-          "momentum_6_1": -0.0773550568503999,
-          "high_52w_proximity": 0.9197166884823559,
+          "momentum_12_7": 0.024726616473299767,
+          "momentum_6_1": -0.07735513613143552,
+          "high_52w_proximity": 0.9350338771143659,
           "industry_relative_momentum": null
         },
         "boundaries": {
           "momentum_12_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
@@ -7778,7 +7799,7 @@
           },
           "momentum_12_7": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2025-08-29",
             "ending_month_end": "2026-01-30",
             "skipped_months": [
@@ -7791,18 +7812,18 @@
               "2026-08"
             ],
             "included_return_months": 5,
-            "return": 0.02472652434
+            "return": 0.024726616473
           },
           "momentum_6_1": {
             "status": "success",
-            "formation_date": "2026-08-19",
+            "formation_date": "2026-08-20",
             "starting_month_end": "2026-02-27",
             "ending_month_end": "2026-07-31",
             "skipped_months": [
               "2026-08"
             ],
             "included_return_months": 5,
-            "return": -0.07735505685
+            "return": -0.077355136131
           }
         }
       },
