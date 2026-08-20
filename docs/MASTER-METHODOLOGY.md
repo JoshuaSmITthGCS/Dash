@@ -835,7 +835,7 @@ Live validation, Politics trade alert, Institutional accumulation, Theme exposur
 | `/screens/matrix` | `screens/structural-tactical.json` | §10.1 × §10.4 — 2×2 structural/tactical classification |
 | `/screens/early-session` | `screens/early-session.json` | Early-session reversal research, shadow-mode/capability-gated |
 | `/screens/shadow` | `screens/shadow-portfolios.json` | Immutable, net-of-cost prospective strategy performance — "no strategy is promoted from implementation alone" |
-| `/screens/validation` | `validation/live_v2_validation.json`, `validation/ic_validation.json`, `validation/research_evidence.json` | Champion-vs-challenger prospective evidence (the IC harness, §9) |
+| `/screens/validation` | `validation/live_v2_validation.json`, `validation/ic_validation.json`, `validation/research_evidence.json`, `validation/monte_carlo_projection.json` | Champion-vs-challenger prospective evidence (the IC harness, §9) and the strategy's own 10,000-path Monte Carlo projection (`pipeline/monte_carlo_projection.py` — unrelated to the `/planning` simulator in §16) |
 | `/screens/politics` | `screens/congress-trades.json` | §10.2 — STOCK Act disclosures, filterable by chamber/committee/trade size |
 | `/screens/institutional` | `screens/institutional-13f.json` | SEC Form 13F-HR accumulation/distribution — the same data source that feeds the `institutional_13f` modifier (§8), but shown here as a factual, disclaimed screen (descriptive flags, not points) rather than folded into any score |
 | `/screens/themes` | `advisor.json` (`theme_exposure_score` per name) | §14.1 below |
@@ -1084,16 +1084,53 @@ withdrawal assumption; gauge verdict bands are config-driven, not hardcoded. Liv
 (annual return target, monthly contribution, retirement age, real annual withdrawal, allocation
 aggressiveness) resimulate in a Web Worker within a 400ms interaction budget.
 
-**Engine**: 5,000-path block-bootstrap simulation with 12-month blocks, publishing the 10th /
+**Engine**: a 5,000-path block-bootstrap simulation with 12-month blocks publishes the 10th /
 25th / 50th / 75th / 90th percentile paths on a touch/pointer-scrubbable fan chart (dotted
-line = projected). The dotted median centers on an adjustable annual return target (default
-15%) — a supplied brokerage snapshot (e.g. Fidelity) sets an evidence-based slider range from
-its year-to-date and trailing one-year returns, but the *saved target*, not the brokerage
-return, controls the actual projection center. When portfolio history is under 36 months, the
-engine instead samples the selected benchmark's long history — preserving volatility and
-return ordering, never repeating or synthesizing observed months — before recentering on the
-selected target. Retirement can begin one configured year after the current age (not
+line = projected). What feeds the bootstrap depends on how much of the user's own history is
+available, checked in this order (`src/lib/projectionEngine.js::selectProjectionReturnSource`):
+
+1. **≥20 daily portfolio returns since the live-tracking start** (`performance_minimum_observations:
+   20`, `portfolio_analytics.performance_minimum_observations`) — the same gate and the same
+   since-live-tracking window (`LIVE_TRACKING_START`) the Portfolio Overview panel's own
+   Sharpe/Sortino/Calmar tile uses. Above this gate the engine switches to a **parametrically
+   calibrated** return source instead of resampling observed history.
+   `src/lib/monteCarloRiskProfile.js` derives a risk profile — annualized return, Sortino-implied
+   downside volatility, Sharpe-implied upside volatility, all computed with the same risk-free
+   rate (`portfolio_analytics.risk_free_series`) and formulas as the Overview tile — and
+   `parametricMonthlyReturns()` draws `parametric_calibration.synthetic_months` (600, i.e. 50
+   years) of synthetic monthly returns from a two-piece (asymmetric) normal distribution in
+   log-return space: a different standard deviation above versus below the mean, centered on the
+   risk profile's annualized return and bias-corrected for that asymmetry. Downside volatility is
+   floored at `minimum_annual_volatility_pct` (3.0% annualized) and upside volatility is floored
+   at `upside_volatility_floor_ratio` (30%) of that downside figure, so a short or lucky track
+   record can't collapse the fan chart into a falsely narrow, falsely confident band. These
+   synthetic months then feed the *same* 12-month block bootstrap used by every tier below — the
+   parametric mode changes only the input return series, never the resampling mechanic. The
+   calibration itself runs on the main thread (not inside the Web Worker, which only runs the
+   block-bootstrap path simulation once the return source is decided) and is cached in Firestore
+   at `portfolios/{uid}/planning/monteCarloRiskProfile`, refreshed weekly at Friday 4pm
+   America/New_York market close or immediately on new deposit-like activity, whichever comes
+   first (`parametric_calibration.refresh_weekday/refresh_hour/refresh_timezone`,
+   `src/lib/marketCalendar.js`, `src/lib/usePortfolioMonteCarloCalibration.js`). There is no
+   server-side job computing it — a signed-in user's own browser recalculates and re-caches it.
+2. **Fewer than 20 daily observations but at least 36 months (`portfolio_minimum_history_months`)
+   of monthly portfolio history** — the bootstrap draws directly from the user's own observed
+   monthly returns.
+3. **Under 36 months of history** — the engine instead samples the selected benchmark's long
+   history — preserving volatility and return ordering, never repeating or synthesizing observed
+   months — before recentering on the selected target.
+
+The dotted median centers on an adjustable annual return target (default 15%) — a supplied
+brokerage snapshot (e.g. Fidelity) sets an evidence-based slider range from its year-to-date and
+trailing one-year returns, but the *saved target*, not the brokerage return, controls the actual
+projection center. Retirement can begin one configured year after the current age (not
 artificially floored at 50).
+
+This retirement/goal simulation is unrelated to `pipeline/monte_carlo_projection.py`, a separate
+server-side block-bootstrap (10,000 paths, 21-day blocks) over the scoring strategy's own
+backtest-plus-live-shadow returns that publishes `public/data/validation/monte_carlo_projection.json`
+for `/screens/validation` (§9, §14). The two share no code, no config, and no Firestore document —
+"Monte Carlo" names two independent simulations in this app.
 
 Goals (from `/finances`) use the identical probability engine — retirement is the default
 goal, not a separately-implemented calculation path.
