@@ -392,16 +392,33 @@ All values below are read live from `settings.json::modifiers`.
 | Analyst expectations | ±3.0 | Only applied with ≥3 covering analysts; strong upside ≥20% adds, weak upside ≤−5% subtracts, bullish/bearish consensus rating also weighed |
 | Macro regime | ±3.0 | FRED rates/inflation/labor/yield-curve, requires ≥70% data coverage, weighted by **sector sensitivity** — e.g. Real Estate weights `rates` at 0.55, Financials weights `yield_curve` at 0.55, Technology weights `rates` at 0.50 (full table in §11) |
 | Insider activity | +5.0 / −3.0 | SEC Form 4 opportunistic-cluster buys/sells, Cohen-Malloy-Pomorski (JF 2012) routine-vs-opportunistic split; routine scheduled trades score exactly zero; minimum trade value $25,000; +1.0 cluster bonus |
-| Institutional 13F (shadow) | +3.0 / −2.0 | Breadth of active-only asset managers' QoQ position change; needs ≥2 net movers on one side; half-life 45 days, fully stale at 135 days |
-| Congressional buying (shadow) | +4.0 | Disclosed congressional purchases, reward-only, min trade value $15,000, +2.0 bonus for a member's first-ever trade in a sub-$2B company (Ziobrowski et al., JFQA 2004 / 2011 House study — untested post-STOCK-Act) |
-| Customer concentration risk (shadow) | −3.0 max | ASC 280 XBRL-tagged customer concentration; warning at ≥15% share, severe at ≥30% |
-| Geographic concentration (shadow) | −2.0 max | Single non-domestic country revenue concentration; warning at ≥30%, severe at ≥50% |
+| Institutional 13F | +3.0 / −2.0 | Breadth of active-only asset managers' QoQ position change; needs ≥2 net movers on one side; half-life 45 days, fully stale at 135 days |
+| Congressional buying | +4.0 | Disclosed congressional purchases, reward-only, min trade value $15,000, +2.0 bonus for a member's first-ever trade in a sub-$2B company (Ziobrowski et al., JFQA 2004 / 2011 House study — untested post-STOCK-Act) |
+| Customer concentration risk | −3.0 max | ASC 280 XBRL-tagged customer concentration; warning at ≥15% share, severe at ≥30% — a row whose filing could not be read is scored nothing (`measured: False`), never credited with safety it hasn't demonstrated |
+| 8-K materiality | −4.0 max | Fixed Item-code lookup on the freshest qualifying 8-K only (bankruptcy 1.03, restatement 4.02, delisting 3.01, impairment 2.06, ...) — never a read of the filing's own text, and penalty-only: no Item code reliably means "good news" the way bankruptcy reliably means bad. Half-life 30 days, stale at 90 days. `edgar_filing_signals.score_8k_activity` |
+| Proxy signal | −2.0 max | Only a contested proxy election (DEFC14A) scores; additional soliciting material (DEFA14A) is a flag only. Half-life 45 days, stale at 180 days. `edgar_filing_signals.score_proxy_activity` |
+| Filing integrity | −3.0 max | Only a fresh NT 10-K/NT 10-Q late-filing notice scores; an on-time 10-K/10-Q carries no signal by itself. Half-life 30 days, stale at 120 days. `edgar_filing_signals.score_filing_integrity` |
+| Geographic concentration (shadow only) | −2.0 max | Single non-domestic country revenue concentration; warning at ≥30%, severe at ≥50% |
 
-"Shadow" modifiers are computed via `apply_challenger_modifiers()`
-(`advisor_engine.py:399-487`) and are **not** part of the production ±15-point stack — they
-allocate as a fraction of one configurable combined cap (default 20 points,
-`challengers.signal_corrections.modifier_cap`) instead of stacking independent caps, so
-adjusting one modifier's share never silently changes another's implicit scale.
+Institutional 13F, congressional buying, customer concentration risk, and the three filing
+modifiers (8-K/proxy/filing integrity) are all in the **production champion path** —
+`apply_modifiers()` calls each one directly and its points count toward the same ±15-point
+stack as every row above it (`advisor_engine.py:373-421`, modifier functions at
+`advisor_engine.py:602-663`). The three filing modifiers read
+`pipeline/build_filings_screen.py`'s published DEF 14A/DEFC14A/DEFA14A, 8-K, and NT 10-K/NT 10-Q
+classifications (§1's SEC EDGAR row), refreshed every 3 days and covering only the currently
+scored shortlist, not the full universe. Institutional 13F and congressional buying are *also*
+recomputed inside the shadow/challenger stack below for comparability, but their champion-path
+values are what actually move the published score.
+
+**Geographic concentration is the one modifier that remains challenger-only**, computed via
+`apply_challenger_modifiers()` (`advisor_engine.py:654-793`) and **not** part of the production
+±15-point stack — it allocates as a fraction of one configurable combined cap (default 20
+points, `challengers.signal_corrections.modifier_cap`) instead of stacking an independent cap,
+so adjusting one shadow modifier's share never silently changes another's implicit scale. It
+stays shadow-only for a correctness reason, not a coverage one: revenue tagged by geography
+often reflects shipping destination or contracting entity rather than end demand
+(`geographic_concentration_modifier` docstring, `advisor_engine.py`).
 
 ---
 
@@ -465,6 +482,16 @@ keyed to today. Treat any turnover figure as cache-pinned. Round 4's decompositi
 2026-08-10 cache: fundamentals only 12.2pp, technical component +37.1pp, modifiers +1.3pp,
 news 0.0pp.
 
+**Portfolio construction methodology, as a variable:** `pipeline/backtest_monthly.py` supports an
+offline `--construction-method` flag (default `appeal`, the score-proportional weighting used for
+every historical result above — unchanged in behavior). A second method, `inverse_volatility`,
+weights each selected name inversely to its own trailing 60-day realized volatility, computed
+only from prices as of the rebalance date (no look-ahead) — explicitly **not** true risk parity,
+since it ignores cross-name correlation. This is a manually-run backtest/challenger-strategy
+experiment, not part of the live research pipeline or any published screen; its results are
+tagged with `construction_method` in whichever backtest manifest used it and have not themselves
+been through the validation battery above.
+
 Full detail: `docs/MODEL-CARD.md`, `docs/LIMITATIONS.md`, `docs/VALIDATION-METHODOLOGY.md`.
 
 ---
@@ -511,11 +538,17 @@ calls `scorer.run()` outside `seed_mock_data.py`/`demo-data.yml`, so treat this 
 describing the model this score *would* compute in production, not one presently published
 alongside real Congressional data. The score that actually reaches production is a much smaller
 one: `pipeline/congress_signal.py::score_congressional_buying`, called from
-`fetch_advisor.collect_congressional_signals()` and folded into the research score as a capped
-"shadow" modifier (§8's "Congressional buying (shadow)" row, `challengers.signal_corrections`),
-reading the real, live
+`fetch_advisor.collect_congressional_signals()` and folded into the research score as a capped,
+champion-path modifier (§8's "Congressional buying" row), reading the real, live
 `screens/congress-trades.json` this doc's §7 (data flow) and `docs/DATA-LINEAGE.md` describe. The
 two are not the same score and are never combined with each other.
+
+**"Since purchase" price performance** on `/screens/politics` normally comes from Financial
+Modeling Prep's `historical-price-eod` endpoint (`pipeline/build_congress_screen.py`,
+`compute_price_performance()` → `client.price_history()`); when FMP has no client, no
+entitlement, or simply misses a symbol, it falls back to `yahoo_history()` (imported from
+`fetch_advisor` to avoid a circular import) so the column doesn't silently disappear for the
+~4% of rows FMP doesn't cover. Each priced row is tagged `price_source: "fmp"` or `"yahoo"`.
 
 ### 10.3 Momentum screen score
 
@@ -773,6 +806,13 @@ to every stock. Full sector-weight table (`modifiers.macro_regime.sector_weights
 | Real Estate | 0.55 | 0.15 | 0.15 | 0.15 |
 | Default (all other sectors) | 0.30 | 0.25 | 0.25 | 0.20 |
 
+A 7th FRED series, VIX-derived volatility (`pipeline/fred.py::derive_regime`, published as
+`factors.volatility`), is collected and published in `advisor.json.market.macro` alongside the
+four above but is **not** part of the weighted composite regime score and has no sector-weight
+column here or in `settings.json` — folding it into either is an explicit, un-made
+recalibration decision (see §1). It is not currently surfaced on the `/market` page or the Home
+preview card.
+
 The modifier requires ≥70% coverage of the underlying FRED series before it fires at all
 (`min_coverage: 0.7`). This is deliberately a *context* modifier, never a primary ranking
 factor — it can move a score at most ±3 points out of the ±15-point combined modifier cap.
@@ -811,6 +851,8 @@ low confidence.
 | ETF composite | ETF comparison views inside `/research`, `/portfolio` | `Picks.jsx`, ETF comparison components |
 | Watchlist quality | `/watchlist` | `Watchlist.jsx` |
 | MarketPulse (macro backdrop) | Home report preview, `/market` | `MarketPulsePreview` (`Dashboard.jsx`), `/market` page |
+| Inside information (institutional 13F + Congress, merged) | `/screens/inside-information`, Home dashboard card | `InsideInformation.jsx`, `Dashboard.jsx` |
+| SEC filing modifiers (8-K / proxy / filing integrity) | Stock detail sheet panel (§8) | `StockDetailModal.jsx` |
 | Methodology (plain-language, research score only) | `/methodology` | `Methodology.jsx` (reads live weights from `advisor.json.methodology` — cannot drift from the config that produced them) |
 
 ---
@@ -821,8 +863,8 @@ These are cross-sectional screens over the configured screen universe (926 names
 from the per-stock research score (§3). Top-level navigation order (`SCREEN_NAV`,
 `src/pages/ResearchScreen.jsx`): Swing signals, Fast growth, Options, Momentum, Quality at
 valuation lows, Earnings timeliness, Structural vs tactical, Early session, Shadow portfolios,
-Live validation, Politics trade alert, Institutional accumulation, Theme exposure. The
-`Screens` entry in the primary nav lands on `/screens/swing`.
+Live validation, Politics trade alert, Institutional accumulation, Inside information, Theme
+exposure, Backtest comparison. The `Screens` entry in the primary nav lands on `/screens/swing`.
 
 | Route | Data file | What it ranks |
 |---|---|---|
@@ -838,7 +880,25 @@ Live validation, Politics trade alert, Institutional accumulation, Theme exposur
 | `/screens/validation` | `validation/live_v2_validation.json`, `validation/ic_validation.json`, `validation/research_evidence.json`, `validation/monte_carlo_projection.json` | Champion-vs-challenger prospective evidence (the IC harness, §9) and the strategy's own 10,000-path Monte Carlo projection (`pipeline/monte_carlo_projection.py` — unrelated to the `/planning` simulator in §16) |
 | `/screens/politics` | `screens/congress-trades.json` | §10.2 — STOCK Act disclosures, filterable by chamber/committee/trade size |
 | `/screens/institutional` | `screens/institutional-13f.json` | SEC Form 13F-HR accumulation/distribution — the same data source that feeds the `institutional_13f` modifier (§8), but shown here as a factual, disclaimed screen (descriptive flags, not points) rather than folded into any score |
+| `/screens/inside-information` | `screens/inside-information.json` | Below — institutional 13F + Congressional trading, merged and filtered to only the notable subset of each |
 | `/screens/themes` | `advisor.json` (`theme_exposure_score` per name) | §14.1 below |
+| `/screens/backtests` | `screens/backtest-comparison.json` | Below — a meta-comparison of every backtest result file in the repo, not a scored screen of its own |
+
+### Institutional 13F — resolving a manager name to the filer that actually files
+
+A manager's own ticker CIK is frequently the wrong filer: it's often the public holding
+company, while a separate operating/advisor subsidiary is the entity that actually files
+13F-HR (e.g. T. Rowe Price's ticker CIK belongs to the holding company; the 2022-spun-out
+"T Rowe Price Investment Management" adviser subsidiary is the real filer). `resolve_filer_ciks`
+(`pipeline/build_institutional_screen.py:327`) tries the ticker CIK first, then searches EDGAR
+by name, and keeps only entities whose EDGAR conformed name matches the manager's declared name
+or one of its `filer_aliases` **and** that actually file 13F-HR — every alias candidate is
+still verified against live EDGAR before being trusted, never assumed. Aliases are declared per
+manager in `pipeline/config/institutional_managers.json` (`filer_aliases`), covering T. Rowe
+Price, AllianceBernstein, Janus Henderson, and Artisan Partners; AMG and Virtus are documented
+there as **not fixable via aliases** — genuine multi-affiliate structures (e.g. AQR, Pzena,
+Kayne Anderson Rudnick) where the affiliates that actually file have no ticker of their own, so
+their 13F coverage stays incomplete by design rather than guessed at.
 
 ### Fast growth — the two sub-screens, exact formulas
 
@@ -992,6 +1052,64 @@ whose own signals all missed says so outright rather than implying confirmation.
 signals" tells a reader nothing they can check; the point of publishing evidence is that they
 can disagree with it.
 
+### Ranking within a theme group — the opportunity score
+
+Rows within a theme's leaders/sector-connected groups are ordered by an `opportunity_score`
+(`pipeline/themes.py`): `exposure_score·0.45 + fundamental_score·0.35 + cheapness·0.20`, where
+`cheapness` is a peer-group valuation **tier midpoint** (16.7 / 50 / 83.3), not a true
+percentile — the UI renders it as a tier for this reason rather than implying a precision the
+number doesn't have. The top 5 rows in each group also carry a `rank_reason`
+(`themes.explain_rank`): which of the three legs separated a row from the one directly below it,
+stated honestly even when the widest gap runs *against* the row (e.g. "ranks above EME despite
+losing to it on valuation"), and what the business-quality leg rests on when statement data is
+missing. Rows beyond the top 5 are not decomposed this way. A per-signal `DotPlot` chart on the
+Leaders group (gated on more than one resolved signal) shows each declared signal's **mean
+resolved score across the group's leaders only** — never averaged in unscreened sector-peer
+candidates, which would let noise drag the reading around — answering "which of this theme's
+declared signals is actually carrying the ranking," a question the signal-count alone can't
+answer.
+
+### Inside information — `/screens/inside-information`
+
+`pipeline/build_inside_information_screen.py`. Despite the name, this merges two
+**already-published** screens — institutional 13F and Congressional STOCK Act trading — into one
+ranked view, filtered to only the subset each upstream screen already flagged as statistically
+notable: institutional cluster accumulation/distribution, or an extraordinary, cluster, or
+buy-sell-flip Congressional trade. It performs no new fetch and no new scoring math; it reuses
+`political_institutional.rank_disclosed_trades` (previously a backtest-only function), whose
+combined score is `political_points + institutional_points` at native scale — political points
+from `congress_signal.score_congressional_buying` (capped at 4.0), institutional points from the
+13F `undecayed_magnitude` times its own lag-decay function (clamped to [-2.0, +3.0]). Point-in-time
+visibility gating applies here too: only rows visible as of their disclosure/filing date are
+used, never transaction date, to prevent lookahead. Runs every 3 days
+(`.github/workflows/inside-information.yml`); reachable from a Home dashboard card, not the
+primary screens nav. It carries the same evidentiary caveats as its two source screens (§10.2,
+§1's 13F-filing-lag note) plus one of its own: this is a filtered union, not an independently
+validated signal.
+
+This is unrelated to the SEC filing-tracking modifiers (DEF 14A/8-K/10-K/10-Q, §8) added in the
+same commit — those feed the champion research score directly and have no page of their own;
+"inside information" here refers only to the institutional-plus-Congressional merge.
+
+### Backtest comparison — `/screens/backtests`
+
+`pipeline/build_backtest_comparison.py`. A meta-comparison view that normalizes and lays every
+backtest result file in the repo side by side — 13 methods across three families (held
+portfolio, options trades, pure ranking quality) — rather than computing anything new itself; it
+only reads already-written result files. Because "success rate" means three different things
+depending on the method, every row is tagged with one of three bases and a comparable-group so
+sorting only ever happens within like-for-like methods: `rebalance_periods_positive` (share of
+held rebalance periods that were profitable — held-portfolio methods, including the champion
+research score rebalanced monthly, the swing screen traded as a weekly-rebalanced book, and the
+emerging-growth and political/institutional strategies), `trades_profitable` (share of individual
+option trades that closed green — the 9 options-strategy backtests), and
+`periods_with_positive_ic` (share of periods where the swing composite's rank correlated
+positively with forward returns — a ranking diagnostic, not a portfolio return, kept separate
+from the swing screen traded as a portfolio). A "feature rollup" averages success rates across
+methods sharing a declared input and is explicitly labeled co-occurrence, not causal attribution.
+A source file that's missing or unreadable is published as a `status: "unavailable"` row rather
+than silently omitted.
+
 ---
 
 ## 15. Options screens — ranking weights per strategy
@@ -1028,11 +1146,32 @@ role for sentiment than the 4%-of-research-score component in §6.
 Requires sign-in (Firebase Auth); Firestore holds portfolio, transaction, snapshot, pool, goal,
 preference, and alert-rule data.
 
-### `/portfolio` — Holdings, performance, risk, accounts
+### `/portfolio` — three views on one page (`src/pages/Portfolio.jsx`, `view` prop)
 
-Holdings table, performance vs. benchmark, uninvested cash by account, and (in an expandable
-"Data actions" panel) manual refresh/re-scoring controls. Position-level detail includes
-recent return sparkline and stop-loss distance where configured.
+- **`/portfolio` (Summary, default)** — Holdings table, performance vs. benchmark, uninvested
+  cash by account, and (in an expandable "Data actions" panel) manual refresh/re-scoring
+  controls. Position-level detail includes recent return sparkline and stop-loss distance where
+  configured.
+- **`/portfolio/performance`** — a single benchmark-comparison chart (time-weighted return vs.
+  the selected benchmark, indexed-to-100 growth) plus an expandable "opportunity cost"
+  comparison: actual holdings vs. the same cost basis held in the S&P 500 instead, vs. the same
+  cost basis held flat in cash, each dated from every position's own recorded purchase date.
+  Always reads full holdings history, unaffected by the Data overview scope selector below.
+- **`/portfolio/data-overview`** — the full quantitative-evidence panel: a move-attribution
+  explanation of the portfolio's recent move vs. the S&P 500 (`portfolioAttribution.js`), the
+  scenario sensitivity panel (below), and the complete performance-metrics suite (Sharpe,
+  Sortino, drawdown, factor exposure, capture ratios, Monte Carlo, and more), evaluated over a
+  selectable analytics scope. By far the most expensive derivation on the page — it's computed
+  only when this view is active, not on Summary or Performance.
+
+**Scenario sensitivity** (Data overview only): a book-level projection (`pipeline/stress_scenarios.py`
+— named historical windows: 2008 GFC, COVID 2020, the 2022 rate-hike drawdown; plus hypothetical
+parametric shocks, a −30% SPY move and a +200bp rate shock) is joined against each holding's own
+published equity beta to rank which holdings would take the largest hit under each scenario, then
+rolled up into a value-weighted whole-portfolio estimate (`src/lib/scenarioSensitivity.js`,
+`ScenarioSensitivityPanel.jsx`). The hypothetical rate shock is excluded from the per-holding
+view since no per-holding rate beta is published to project a basis-point shock through an
+equity beta — only the market-shock scenarios get a holdings breakdown.
 
 ### `/portfolio/diversification` — Concentration, correlation, factor and theme exposure
 
@@ -1145,11 +1284,18 @@ goal, not a separately-implemented calculation path.
 | `/research` | Stock and ETF research library — the research score (§3) and ETF composite (§10.6) in one browsable/filterable library |
 | `/search` | Cross-dataset ticker/company discovery across portfolio, published research, watchlist, and the covered universe |
 | `/market` | MarketPulse news feed — company news/sentiment plus filing labels; see §11. Explicitly framed as "supporting evidence – not a substitute for earnings, cash flow, or balance-sheet quality" |
+| `/markets` | Live market-data dashboard — index performance (SPY/QQQ/DIA/IWM), sector and stock daily leaders/laggards, and a ticker/company lookup. Descriptive only: no score, no ranking model, no weights. Distinct from `/market` (the news reader) |
 | `/watchlist` | §10.8 — watchlist quality score and setup-aware guidance |
 | `/methodology` | Plain-language explanation of the research score, reading live weights from `advisor.json.methodology` so it cannot drift from the config that actually produced them |
 | `/glossary` | Product and model terminology reference |
 | `/settings` | Theme, motion, privacy, benchmark, and planning preferences |
 | `/alerts` | Signed-in alert rules (capped per user) and delivery/event history |
+
+`/hud-demo` is not a real feature and is intentionally excluded from the table above — it's an
+unlinked, internal component showcase (`src/pages/HUDDemo.jsx`, header comment: "HUD Demo Page -
+Phase 2 Showcase") for HUD-styled visual widgets, driven by `Math.random()`-perturbed local state
+rather than any published data. It has a route (reachable only by typing the URL directly) but no
+nav entry anywhere in the app.
 
 ---
 
