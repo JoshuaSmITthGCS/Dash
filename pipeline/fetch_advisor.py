@@ -333,6 +333,15 @@ def _screen_row(row):
         "last_polled_at": row.get("last_polled_at"),
         "score_variants": variants or None,
         "components": row.get("components"), "fundamental_categories": row.get("fundamental_categories"),
+        # Just the one field enrichment_rotation()'s last_enriched() reads, not the ~2KB
+        # nested fundamental_detail every research row carries: publishing that for the
+        # ~850-name tail would bloat the payload for no reader-facing purpose. Without even
+        # this much, a name enriched via rotation that doesn't crack the top publish_limit
+        # loses its "already has statement coverage" signal the moment it lands here, so
+        # every subsequent run sees it as never-enriched and rotation keeps re-selecting it
+        # instead of a genuinely untouched name -- silently capping how much of the universe
+        # ever gets past the initial shortlist.
+        "fundamental_detail": {"raw_score": (row.get("fundamental_detail") or {}).get("raw_score")},
         "technical_detail": {key: detail.get(key) for key in SCREEN_TECHNICAL_FIELDS
                              if detail.get(key) is not None},
         # Needed by the client-side strategy-lens sorts (rankCatalyst, rankAnalystConviction,

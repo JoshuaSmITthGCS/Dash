@@ -67,7 +67,8 @@ actually scheduled.
   business-quality reading with no financial statements behind it -- faster than before, but it
   is a same-tier reprioritization of who gets enriched *sooner*, not a change to
   `select_enrichment_priority`'s preliminary-score-only gate itself; the underlying structural
-  risk this entry describes is unchanged.
+  risk this entry describes is unchanged. That reprioritization was silently defeated until
+  entry 11 below was fixed later the same session -- see that entry for why.
 - **Monitoring metric**: `docs/CONSOLIDATED-ASSESSMENT.md`-style coverage counts
   (`capital_allocation`/`accounting_quality` scored fraction of the published universe), and the
   rank-drift-vs-previous-run metric already proposed in the merged audit's §16 (not yet built).
@@ -206,3 +207,39 @@ actually scheduled.
 - **Monitoring metric**: the manifest's per-run `conflicts` count now means *newly
   discovered* conflicts, a more useful signal than before (a spike is meaningful; a constant
   re-report of already-known drift was noise).
+
+### 11. screen_universe silently dropped the one field rotation needs to know a name is done (fixed this session)
+
+- **Model**: `pipeline/fetch_advisor.py::_screen_row`, consumed by
+  `enrichment_rotation()`'s `last_enriched()` via `previous_rows_by_ticker`.
+- **Assumption**: `fundamental_categories` (carried into the lightweight `screen_universe`
+  projection for every row) was enough for downstream consumers to reason about a name's
+  statement coverage.
+- **Failure mode**: `fundamental_categories` is computed and populated for every row
+  regardless of enrichment status (it's the base category breakdown, not enrichment
+  evidence); the one field that actually signals real statement coverage,
+  `fundamental_detail.raw_score`, was never projected into `screen_universe` at all. A name
+  `enrichment_rotation()` sent to `enrich()` and that resolved real metrics, but that still
+  wasn't good enough to crack the `publish_limit` leaderboard, landed in `screen_universe`
+  and lost that fact the moment it did. Every subsequent run's `last_enriched()` check then
+  saw it as never-enriched, so rotation could burn a "next 20" slot re-selecting the same
+  handful of already-covered names indefinitely instead of ever treating them as done and
+  moving on to genuinely untouched ones. Confirmed against the live published data: of 879
+  total universe rows, all 40 `research` rows carried real statement coverage but all 839
+  `screen_universe` rows read as uncovered - not because rotation hadn't reached them, but
+  because the signal couldn't survive the projection. This directly undermined this same
+  session's earlier theme-priority rotation fix (entry 2's mitigation): the "next 20" batch
+  could never actually observe its own progress.
+- **Severity**: P1 - caps how much of the universe the rotation mechanism can ever durably
+  expand past the initial ~150-name shortlist, compounding entry 2's structural risk.
+- **Mitigation**: fixed this session. `_screen_row()` now projects a minimal
+  `{"raw_score": ...}` slice of `fundamental_detail` (not the full ~2KB nested structure,
+  which would bloat the ~850-row tail for no reader-facing purpose) so the exact field
+  `last_enriched()` already checks survives for every row, not just the published top 40.
+  Added regression tests in `pipeline/tests/test_fetch_advisor.py` covering the projection
+  and the end-to-end rotation behavior against a `screen_universe`-only row.
+- **Monitoring metric**: distinct-ticker statement coverage across the *whole* published
+  universe (`research` + `screen_universe` combined), not just `statement_enriched_count`
+  (which only ever reflected the current run's ~150-name priority queue and would read the
+  same near-ceiling number whether rotation was expanding coverage or silently recycling the
+  same names - not a useful signal on its own, which is what prompted this investigation).

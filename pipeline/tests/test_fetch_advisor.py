@@ -135,6 +135,19 @@ class EnrichmentPriorityTests(unittest.TestCase):
         rotated = enrichment_rotation(preliminary, set(), previous_payload, 1)
         self.assertEqual(rotated, ("PLAIN",))
 
+    def test_a_screen_only_row_still_counts_as_enriched_for_rotation_purposes(self):
+        # TAILCO was rotated in, successfully enriched, and still didn't crack the
+        # publish_limit leaderboard, so it lives in screen_universe, not research, in
+        # previous_payload. Its statement coverage must still be visible here, or rotation
+        # would burn a slot re-selecting it every run instead of ever treating it as done.
+        preliminary = ("TAILCO", "NEVER")
+        previous_payload = {"research": [], "screen_universe": [
+            {"ticker": "TAILCO", "fundamental_detail": {"raw_score": 63.5}},
+            {"ticker": "NEVER", "fundamental_detail": {"raw_score": None}},
+        ]}
+        rotated = enrichment_rotation(preliminary, set(), previous_payload, 1)
+        self.assertEqual(rotated, ("NEVER",))
+
     def test_an_already_enriched_name_is_skipped_even_after_moving_up_in_rank(self):
         # MOVER sits first in preliminary order -- ahead of both never-enriched names, i.e.
         # it "moved up" -- but it was already statement-enriched in a past run. The rotation
@@ -558,6 +571,26 @@ class ScreenRowProjectionTests(unittest.TestCase):
 
         self.assertEqual(projected["ticker"], "IBM")
         self.assertTrue(projected["stale_carryforward"])
+
+    def test_a_rotation_enriched_name_that_misses_the_leaderboard_still_carries_its_statement_flag(self):
+        # A name enrichment_rotation() sent to enrich() and that resolved real statement
+        # metrics, but that still isn't good enough to crack the publish_limit leaderboard,
+        # used to lose that fact the moment it projected into screen_universe -- the
+        # lightweight shape carried fundamental_categories (populated for every row
+        # regardless of enrichment) but not fundamental_detail.raw_score, the one field
+        # enrichment_rotation()'s last_enriched() actually checks. Every subsequent run then
+        # saw it as never-enriched and could burn a rotation slot re-selecting it forever,
+        # instead of it ever counting as done.
+        enriched_but_unranked = {
+            "ticker": "OBSCURECO", "name": "Obscure Co", "sector": "Industrials", "price": 12.0,
+            "score": 41, "stance": "hold", "components": {"fundamentals": 41},
+            "fundamental_categories": {"valuation": 38}, "technical_detail": {},
+            "fundamental_detail": {"raw_score": 63.5, "coverage": 0.9},
+        }
+
+        projected = _screen_row(enriched_but_unranked)
+
+        self.assertEqual(projected["fundamental_detail"], {"raw_score": 63.5})
 
 
 def _statement_frame(rows):
