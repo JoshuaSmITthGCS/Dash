@@ -95,6 +95,8 @@ or corporate action.
 6.  select_enrichment_priority():
        20 incumbents (previous published top)
      +  5 challengers (best non-incumbents by preliminary rank)
+     +  20 rotation slice (statement-starved names, theme-flagged ones first, then
+        oldest-unenriched -- see enrichment_rotation)
      +  portfolio symbols
      → priority queue, then fill to extended_limit = 150
 7.  enrich(): multi-request financial-statement fetch for the shortlist only

@@ -18,6 +18,7 @@ import {
   BENCHMARKS,
   benchmarkHistoryFromSnapshot,
   sectorLookThrough,
+  weightedExpenseRatio,
 } from '../../lib/portfolioAnalytics.js'
 import { dailyMoveForPosition } from '../../lib/marketPresentation.js'
 import { buildPeerIndex } from '../../lib/rankingModels.js'
@@ -177,6 +178,7 @@ export function buildHoldingsModel({ data, positions, priceData, etfData }) {
     }))
   const sectorAllocation = sectorLookThrough(portfolioPositions, etfData?.etfs || []).exposures
     .map((row) => ({ sector: row.label, pct: row.pct }))
+  const fundCost = weightedExpenseRatio(portfolioPositions, etfData?.etfs || [])
 
   const basis = data?.hypothetical_basis || 500
   return {
@@ -184,6 +186,7 @@ export function buildHoldingsModel({ data, positions, priceData, etfData }) {
     portfolioPositions,
     assetAllocation,
     sectorAllocation,
+    fundCost,
     basis,
     benchmarkHistory,
     versusIndex: portfolioVsBenchmark(portfolioPositions, benchmarkHistory),

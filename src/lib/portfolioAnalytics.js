@@ -52,6 +52,51 @@ export function enrichPortfolio(positions = [], priceData = {}) {
   }
 }
 
+/**
+ * Cost-basis dollar weights per ticker, normalized to sum to 1 -- the "before" and "after"
+ * snapshot `executionStatistics()` (src/lib/portfolioStatistics.js) needs to compute turnover.
+ * Deliberately uses invested dollars (shares * costBasis), not mark-to-market value: it's the
+ * one weight basis available synchronously at the moment a position is added, edited, removed,
+ * or sold, with no live-price race condition against the component that captures it.
+ */
+export function costWeights(positions = []) {
+  const invested = positions
+    .map((row) => ({ ticker: String(row.ticker || '').trim().toUpperCase(), dollars: Number(row.shares) * Number(row.costBasis) }))
+    .filter((row) => row.ticker && finite(row.dollars) && row.dollars > 0)
+  const total = invested.reduce((sum, row) => sum + row.dollars, 0)
+  if (!(total > 0)) return {}
+  return invested.reduce((weights, row) => ({ ...weights, [row.ticker]: (weights[row.ticker] || 0) + row.dollars / total }), {})
+}
+
+/**
+ * Dollar-weighted average expense ratio across the user's fund holdings -- per-fund
+ * `expense_ratio` is already published in etfs.json (see Picks.jsx), this just aggregates
+ * it against the user's actual position sizes rather than any published watchlist weight.
+ * Weighted by mark-to-market value, not cost basis: this is a statement about ongoing drag
+ * on the portfolio as it stands today, not what was originally paid in. Non-fund holdings
+ * (no expense_ratio entry) are excluded from both the numerator and the weight base, so a
+ * stock-heavy portfolio with one small ETF sleeve reports that sleeve's own average, not a
+ * number diluted by the stocks that don't carry a fund fee at all.
+ */
+export function weightedExpenseRatio(positions = [], etfs = []) {
+  const expenseRatioByTicker = new Map(
+    etfs
+      .filter((row) => finite(row?.expense_ratio))
+      .map((row) => [String(row.ticker || '').trim().toUpperCase(), Number(row.expense_ratio)])
+  )
+  const held = positions
+    .map((row) => ({
+      ticker: String(row.ticker || '').trim().toUpperCase(),
+      value: Number(row.currentValue),
+      expenseRatio: expenseRatioByTicker.get(String(row.ticker || '').trim().toUpperCase()),
+    }))
+    .filter((row) => row.ticker && finite(row.value) && row.value > 0 && row.expenseRatio != null)
+  const totalValue = held.reduce((sum, row) => sum + row.value, 0)
+  if (!(totalValue > 0)) return null
+  const weightedSum = held.reduce((sum, row) => sum + row.value * row.expenseRatio, 0)
+  return { expenseRatioPct: weightedSum / totalValue, fundValue: totalValue, fundCount: held.length }
+}
+
 /** Ascending dates and closes, plus an exact-date lookup, with unusable closes dropped. */
 function closeSeries(history) {
   const dates = []
@@ -565,6 +610,100 @@ export function trackedAllTimeEarnings(portfolio, activities = [], trackingState
   return { available: true, value: components.unrealized + components.realized + components.dividends - components.fees, components, reason: 'Current unrealized gain plus recorded realized gains and dividends, minus recorded fees.' }
 }
 
+const RECONCILIATION_TOLERANCE_DOLLARS = 0.01
+
+/**
+ * Groups recorded account-value snapshots by market day, keeping the unrealized-gain figure
+ * recorded alongside each one (see recordSnapshot in usePortfolioTracking.js). Unlike
+ * accountValueEndpoints (which only tracks value), this is what the reconciliation bridge
+ * needs -- an independent, position-based unrealized-gain figure at each end of the period,
+ * not just the account's total dollar value.
+ */
+function dailySnapshotsWithUnrealizedGain(snapshots = []) {
+  const byDay = new Map()
+  snapshots.filter((row) => finite(row.value) && (row.recordedAt || row.marketDate))
+    .sort((left, right) => String(left.recordedAt || '').localeCompare(String(right.recordedAt || '')))
+    .forEach((row) => {
+      const date = row.marketDate || String(row.recordedAt).slice(0, 10)
+      byDay.set(date, { date, value: Number(row.value), unrealizedGain: finite(row.unrealizedGain) ? Number(row.unrealizedGain) : null })
+    })
+  return [...byDay.values()].sort((left, right) => left.date.localeCompare(right.date))
+}
+
+/**
+ * Portfolio reconciliation bridge (Master Remediation Prompt v3, B2): beginning NAV + deposits
+ * - withdrawals + dividends - fees + realized gains + unrealized-gain change should equal
+ * ending NAV, to the cent. FX and taxes are not tracked by this app (USD-only, no lot-level tax
+ * engine yet -- see docs/MODEL-RISK-REGISTER.md) and are published as explicit zero-but-untracked
+ * lines rather than silently omitted. Trading costs are likewise untracked (no realized spread/
+ * commission data exists here).
+ *
+ * This is deliberately scoped to the most recent two consecutive recorded snapshots, not an
+ * arbitrary or all-time window: unrealized gain is only known at the instants a snapshot was
+ * taken (recordSnapshot persists it alongside value), so a period between two recorded snapshots
+ * is the only span where every line is independently sourced rather than assumed. A wider window
+ * would either need daily unrealized-gain history that predates this feature (which would be
+ * exactly the kind of backfilled history this codebase's own PIT discipline forbids) or would
+ * have to treat "price P&L" as a residual plug, which defeats the point of a reconciliation check.
+ */
+export function portfolioReconciliationBridge(snapshots = [], activities = []) {
+  const daily = dailySnapshotsWithUnrealizedGain(snapshots)
+  const withGain = daily.filter((row) => row.unrealizedGain != null)
+  if (withGain.length < 2) {
+    return {
+      available: false,
+      reason: withGain.length === 0
+        ? 'No recorded snapshot carries an unrealized-gain figure yet; the bridge starts accumulating from the next one.'
+        : 'A second recorded snapshot with an unrealized-gain figure is required to bridge a period.',
+    }
+  }
+  const beginning = withGain.at(-2)
+  const ending = withGain.at(-1)
+  const total = (type) => activities
+    .filter((row) => row.type === type && finite(row.amount))
+    .filter((row) => {
+      const date = row.effectiveDate || row.date
+      return date && date > beginning.date && date <= ending.date
+    })
+    .reduce((sum, row) => sum + Number(row.amount), 0)
+  const deposits = total('deposit') + total('external_contribution')
+  const withdrawals = total('withdrawal')
+  const dividends = total('dividend')
+  const fees = total('fee')
+  const realizedGains = total('realized_gain')
+  const unrealizedGainChange = ending.unrealizedGain - beginning.unrealizedGain
+  const fx = { value: 0, tracked: false, reason: 'This app does not track multi-currency exposure; every figure is assumed USD.' }
+  const taxes = { value: 0, tracked: false, reason: 'No tax-lot ledger exists yet -- see docs/MODEL-RISK-REGISTER.md.' }
+  const tradingCosts = { value: 0, tracked: false, reason: 'No realized spread, commission, or slippage data is recorded.' }
+  const reconstructedEndingNav = beginning.value + deposits - withdrawals + dividends - fees
+    + realizedGains + unrealizedGainChange + fx.value - taxes.value - tradingCosts.value
+  const residual = ending.value - reconstructedEndingNav
+  const reconciled = Math.abs(residual) <= RECONCILIATION_TOLERANCE_DOLLARS
+  return {
+    available: true,
+    startDate: beginning.date,
+    endDate: ending.date,
+    beginningNav: beginning.value,
+    endingNav: ending.value,
+    deposits,
+    withdrawals,
+    dividends,
+    fees,
+    realizedGains,
+    unrealizedGainChange,
+    fx,
+    taxes,
+    tradingCosts,
+    reconstructedEndingNav,
+    residual,
+    reconciled,
+    status: reconciled ? 'RECONCILED' : 'RECONCILIATION_FAILED',
+    reason: reconciled
+      ? 'Every line reconciles to the recorded ending NAV within a penny.'
+      : `Reconstructed ending NAV is off by ${residual >= 0 ? '+' : ''}${residual.toFixed(2)} from the recorded value -- check for an unrecorded cash flow or corporate action in this window.`,
+  }
+}
+
 function herfindahl(weights = []) {
   return weights.reduce((sum, weight) => sum + Number(weight) ** 2, 0)
 }
@@ -1046,7 +1185,7 @@ export function resilienceIndex(values = [], diversification = null) {
   return { available: true, score: Math.round(drawdownScore * .45 + volatilityScore * .35 + concentrationScore * .2), provisional: values.length < 60, coverage: values.length, components: { drawdown: drawdownScore, downsideVolatility: volatilityScore, concentration: concentrationScore }, maxDrawdown: drawdown, volatility }
 }
 
-function periodReturns(values = []) {
+export function periodReturns(values = []) {
   return values.slice(1).map((value, index) => finite(value) && finite(values[index]) && Number(values[index]) > 0
     ? Number(value) / Number(values[index]) - 1
     : null).filter(finite)

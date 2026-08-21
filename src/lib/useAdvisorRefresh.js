@@ -8,11 +8,23 @@ const REFRESH_TIMEOUT_MS = 55 * 60_000
 // Keep polling slightly beyond that limit so the UI does not report a false timeout while
 // GitHub still considers a full-universe run healthy.
 const FULL_REFRESH_TIMEOUT_MS = 95 * 60_000
-// A reanalysis never touches a data provider - it's a scoring pass over what's already
-// published (see pipeline/rescore.py) that GitHub Actions typically finishes in under a
-// minute - so 5 minutes is already a generous margin for a genuinely stuck run, not a
-// normal one still working.
+// A reanalysis touches no data provider, but it is no longer "under a minute": the rescore
+// path re-runs every disk-only screen build, the shadow-portfolio append, the validation
+// artifact suite, and the commit step, on top of a full-history checkout and cache restore.
+// This deadline is therefore a SOFT one: it only fires when the status endpoint has no
+// live run to report (dispatch never landed, polling unauthorized). While GitHub confirms
+// the run is queued or in progress the UI keeps waiting - the workflow's own 90-minute
+// kill switch is the backstop for a genuinely hung run, and the poll reports its
+// failure/cancellation the moment that happens.
 const REANALYZE_TIMEOUT_MS = 5 * 60_000
+// Absolute ceiling on polling regardless of what the status endpoint claims. GitHub
+// terminates the job at 90 minutes, so a run still reported active past this point is a
+// monitoring failure, not a working run.
+const POLL_HARD_CAP_MS = 95 * 60_000
+// How long a "the run is alive" observation stays fresh enough to suppress the soft
+// deadline - a couple of missed polls (transient API hiccups) shouldn't flip a working
+// run into a timeout error.
+const ACTIVE_SIGNAL_GRACE_MS = 2 * 60_000
 const ELAPSED_TICK_MS = 1_000
 
 // `symbols` are the caller's holdings/watchlist, dispatched as portfolio tickers.
@@ -49,6 +61,21 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = [], focusSymbol
   useEffect(() => {
     if (state.status !== 'pending') return undefined
     let checking = false
+    // When the status endpoint last confirmed the run was queued or in progress. The soft
+    // per-mode deadline below only fires while this is stale: a run GitHub says is still
+    // working is never a timeout, however long its mode "should" take - the rescore path
+    // outgrew its old 5-minute estimate exactly this way, and the fixed timer turned every
+    // healthy reanalysis into a spurious "taking longer than expected" error.
+    let lastSeenActiveAt = 0
+
+    const timedOutMessage = () => mode.current === 'rescore'
+      ? 'The reanalysis is taking longer than expected. Try again or check the GitHub workflow.'
+      : scope.current === 'full'
+        ? 'The full-universe refresh is taking longer than expected. Try again or check the GitHub workflow.'
+        : 'The refresh is taking longer than expected. Try again or check the GitHub workflow.'
+    const softTimeoutMs = mode.current === 'rescore'
+      ? REANALYZE_TIMEOUT_MS
+      : scope.current === 'full' ? FULL_REFRESH_TIMEOUT_MS : REFRESH_TIMEOUT_MS
 
     const checkForUpdatedData = async () => {
       if (checking) return
@@ -63,10 +90,15 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = [], focusSymbol
           if (progressResponse.ok) {
             const progress = await progressResponse.json()
             if (progress.run_id) runId.current = progress.run_id
-            if (progress.conclusion === 'failure') {
+            // Any completed-but-not-successful conclusion ends the wait: failure,
+            // cancelled, timed_out, ... A cancelled run used to fall through here and
+            // leave the UI polling until the timeout for a run that was already gone.
+            if (progress.status === 'completed' && progress.conclusion && progress.conclusion !== 'success') {
               setState({
                 status: 'error',
-                message: 'The data workflow failed before it could publish. Check GitHub Actions for the failed stage.',
+                message: progress.conclusion === 'cancelled'
+                  ? 'The data workflow was cancelled before it could publish.'
+                  : 'The data workflow failed before it could publish. Check GitHub Actions for the failed stage.',
                 progress: progress.percent,
                 stage: progress.stage,
               })
@@ -76,7 +108,7 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = [], focusSymbol
             // never moves generated_at - it re-scores the last-fetched data rather than
             // fetching anything new (see pipeline/rescore.py) - so waiting on that
             // timestamp alone left every rescore stuck "pending" until the timeout even
-            // though the workflow itself finished in under a minute.
+            // though the workflow itself had finished.
             if (progress.conclusion === 'success') {
               await reload()
               setState({
@@ -86,6 +118,9 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = [], focusSymbol
                   : refreshCompleteMessage(),
               })
               return
+            }
+            if (progress.active || ['queued', 'in_progress'].includes(progress.status)) {
+              lastSeenActiveAt = Date.now()
             }
             if (progress.percent != null) {
               setState((current) => current.status === 'pending'
@@ -100,6 +135,12 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = [], focusSymbol
             status: 'success',
             message: refreshCompleteMessage(),
           })
+          return
+        }
+        const elapsed = Date.now() - (startedAt.current || Date.now())
+        const recentlyActive = Date.now() - lastSeenActiveAt < ACTIVE_SIGNAL_GRACE_MS
+        if (elapsed > softTimeoutMs && !recentlyActive) {
+          setState({ status: 'error', message: timedOutMessage() })
         }
       } catch {
         // A deployment can briefly return an old or unavailable asset; the next poll retries.
@@ -109,21 +150,12 @@ export function useAdvisorRefresh(generatedAt, reload, symbols = [], focusSymbol
     }
 
     const interval = window.setInterval(checkForUpdatedData, POLL_INTERVAL_MS)
-    const timeout = window.setTimeout(() => {
-      setState({
-        status: 'error',
-        message: mode.current === 'rescore'
-          ? 'The reanalysis is taking longer than expected. Try again or check the GitHub workflow.'
-          : scope.current === 'full'
-            ? 'The full-universe refresh is taking longer than expected. Try again or check the GitHub workflow.'
-            : 'The refresh is taking longer than expected. Try again or check the GitHub workflow.',
-      })
-    }, mode.current === 'rescore'
-      ? REANALYZE_TIMEOUT_MS
-      : scope.current === 'full' ? FULL_REFRESH_TIMEOUT_MS : REFRESH_TIMEOUT_MS)
+    const hardCap = window.setTimeout(() => {
+      setState({ status: 'error', message: timedOutMessage() })
+    }, POLL_HARD_CAP_MS)
     return () => {
       window.clearInterval(interval)
-      window.clearTimeout(timeout)
+      window.clearTimeout(hardCap)
     }
   }, [currentUser, reload, state.status])
 

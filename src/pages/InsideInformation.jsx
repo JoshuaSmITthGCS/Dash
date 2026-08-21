@@ -44,7 +44,7 @@ export default function InsideInformation() {
     <div className="page-head">
       <div>
         <span className="eyebrow">Congress + institutional 13F, merged</span>
-        <h1 className="page-title">Inside <span className="accent">information</span></h1>
+        <h1 className="page-title">Disclosed <span className="accent">positioning</span></h1>
         <p className="page-sub">
           Congressional STOCK Act disclosures and curated active-manager Schedule 13F filings, combined into one
           view and shown only where the underlying screen already flagged the activity as rare or notable – a
@@ -75,7 +75,7 @@ export default function InsideInformation() {
     )}
 
     {loading ? <Loading /> : error ? (
-      <div className="card etf-state" role="alert"><strong>Inside Information screen unavailable</strong><span>{error.message}</span></div>
+      <div className="card etf-state" role="alert"><strong>Disclosed positioning screen unavailable</strong><span>{error.message}</span></div>
     ) : <>
       {data && data.status !== 'success' && (
         <div className="card etf-state" role="alert">
@@ -98,7 +98,7 @@ export default function InsideInformation() {
         </div>
       )}
 
-      <div className="screen-filters" aria-label="Inside information sort">
+      <div className="screen-filters" aria-label="Disclosed positioning sort">
         <label>Sort by
           <select value={sort} onChange={(event) => setSort(event.target.value)}>
             <option value="score">Combined score</option>

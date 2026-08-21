@@ -47,6 +47,23 @@ class RefreshSymbolTests(unittest.TestCase):
         self.assertNotIn("DECJ", symbols)
         self.assertEqual(portfolio, ("MU", "NTNX", "DECK"))
 
+    def test_ttm_and_amzm_are_retired_and_cannot_reseed_from_prior_coverage(self):
+        # Round 7 Task 1: the two missing_price_tickers breaching data_quality_counters.
+        # TTM (Tata Motors NYSE ADR) delisted January 2025; AMZM resolves to nothing at any
+        # provider. Both were hand-entered holdings carried forward run-to-run from
+        # portfolio_coverage, permanently breaching the counter.
+        symbols, portfolio = resolve_refresh_symbols(
+            ("AAPL",), ("MU",), "", ("TTM", "AMZM", "NTNX"),
+        )
+        self.assertNotIn("TTM", symbols)
+        self.assertNotIn("AMZM", symbols)
+        self.assertEqual(portfolio, ("MU", "NTNX"))
+        # Every retired symbol must carry a stated reason - it's what record_universe
+        # publishes into the universe store's churn note.
+        from fetch_advisor import RETIRED_SYMBOLS
+        for ticker in ("DECJ", "TTM", "AMZM"):
+            self.assertTrue(RETIRED_SYMBOLS[ticker].strip())
+
     def test_discovered_holdings_persist_into_scheduled_refreshes(self):
         symbols, portfolio = resolve_refresh_symbols(
             ("AAPL",),
@@ -100,6 +117,91 @@ class EnrichmentPriorityTests(unittest.TestCase):
         ]}
         rotated = enrichment_rotation(preliminary, set(), previous_payload, 2)
         self.assertEqual(rotated[0], "NEVER")
+
+    def test_a_theme_flagged_name_outranks_a_plain_unenriched_name(self):
+        # Both are statement-starved, but THEMED is already on a theme screen ranked on a
+        # business-quality reading alone (themes.explain_rank) -- it should close that gap
+        # before PLAIN, which nothing has surfaced yet, gets a turn.
+        preliminary = ("PLAIN", "THEMED")
+        previous_payload = {"research": [
+            {"ticker": "PLAIN", "fundamental_detail": {}, "theme_exposure": []},
+            {"ticker": "THEMED", "fundamental_detail": {},
+             "theme_exposure": [{"theme_id": "ai_infrastructure"}]},
+        ]}
+        rotated = enrichment_rotation(preliminary, set(), previous_payload, 2)
+        self.assertEqual(rotated[0], "THEMED")
+
+    def test_a_theme_flagged_name_still_outranks_an_enriched_incumbent(self):
+        preliminary = ("ENRICHED", "THEMED")
+        previous_payload = {"research": [
+            {"ticker": "ENRICHED", "last_polled_at": "2026-08-09T00:00:00+00:00",
+             "fundamental_detail": {"raw_score": 88.0}},
+            {"ticker": "THEMED", "fundamental_detail": {},
+             "theme_exposure": [{"theme_id": "ai_infrastructure"}]},
+        ]}
+        rotated = enrichment_rotation(preliminary, set(), previous_payload, 2)
+        self.assertEqual(rotated[0], "THEMED")
+
+    def test_once_the_theme_backlog_clears_plain_unenriched_names_resume(self):
+        # No theme-flagged name left in this preliminary set -- ordinary never-enriched-first
+        # behavior must still hold, unaffected by the new tier.
+        preliminary = ("PLAIN",)
+        previous_payload = {"research": [
+            {"ticker": "PLAIN", "fundamental_detail": {}, "theme_exposure": []},
+        ]}
+        rotated = enrichment_rotation(preliminary, set(), previous_payload, 1)
+        self.assertEqual(rotated, ("PLAIN",))
+
+    def test_a_screen_only_row_still_counts_as_enriched_for_rotation_purposes(self):
+        # TAILCO was rotated in, successfully enriched, and still didn't crack the
+        # publish_limit leaderboard, so it lives in screen_universe, not research, in
+        # previous_payload. Its statement coverage must still be visible here, or rotation
+        # would burn a slot re-selecting it every run instead of ever treating it as done.
+        preliminary = ("TAILCO", "NEVER")
+        previous_payload = {"research": [], "screen_universe": [
+            {"ticker": "TAILCO", "fundamental_detail": {"raw_score": 63.5}},
+            {"ticker": "NEVER", "fundamental_detail": {"raw_score": None}},
+        ]}
+        rotated = enrichment_rotation(preliminary, set(), previous_payload, 1)
+        self.assertEqual(rotated, ("NEVER",))
+
+    def test_an_already_enriched_name_is_skipped_even_after_moving_up_in_rank(self):
+        # MOVER sits first in preliminary order -- ahead of both never-enriched names, i.e.
+        # it "moved up" -- but it was already statement-enriched in a past run. The rotation
+        # batch must not spend one of its slots re-touching it while genuinely uncovered
+        # names are still waiting, no matter where MOVER now sits in the ranking.
+        preliminary = ("MOVER", "NEVER_A", "NEVER_B")
+        previous_payload = {"research": [
+            {"ticker": "MOVER", "last_polled_at": "2026-08-20T00:00:00+00:00",
+             "fundamental_detail": {"raw_score": 71.0}},
+            {"ticker": "NEVER_A", "fundamental_detail": {}},
+            {"ticker": "NEVER_B", "fundamental_detail": {}},
+        ]}
+        rotated = enrichment_rotation(preliminary, set(), previous_payload, 2)
+        self.assertEqual(set(rotated), {"NEVER_A", "NEVER_B"})
+        self.assertNotIn("MOVER", rotated)
+
+    def test_select_enrichment_priority_also_skips_a_mover_already_enriched(self):
+        # Same guarantee, exercised through the actual production entry point. FILLERS soak
+        # up the five challenger slots so MOVER and NEVER both land in the rotation pool.
+        # MOVER sits ahead of NEVER in preliminary order -- it "moved up" -- but it was
+        # already statement-enriched via a past rotation; the single rotation slot here must
+        # still go to NEVER, which has no statement coverage at all.
+        previous = tuple(f"P{i:02d}" for i in range(20))
+        fillers = tuple(f"F{i:02d}" for i in range(5))
+        preliminary = (*previous, *fillers, "MOVER", "NEVER")
+        previous_payload = {"research": [
+            {"ticker": "MOVER", "last_polled_at": "2026-08-20T00:00:00+00:00",
+             "fundamental_detail": {"raw_score": 71.0}},
+            {"ticker": "NEVER", "fundamental_detail": {}},
+        ]}
+        _, challengers, priority = select_enrichment_priority(
+            previous, preliminary, set(preliminary), (),
+            previous_payload=previous_payload, rotation_size=1,
+        )
+        self.assertEqual(set(challengers), set(fillers))
+        self.assertIn("NEVER", priority)
+        self.assertNotIn("MOVER", priority)
 
     def test_rotation_can_be_switched_off(self):
         preliminary = tuple(f"S{i:02d}" for i in range(30))
@@ -486,6 +588,26 @@ class ScreenRowProjectionTests(unittest.TestCase):
 
         self.assertEqual(projected["ticker"], "IBM")
         self.assertTrue(projected["stale_carryforward"])
+
+    def test_a_rotation_enriched_name_that_misses_the_leaderboard_still_carries_its_statement_flag(self):
+        # A name enrichment_rotation() sent to enrich() and that resolved real statement
+        # metrics, but that still isn't good enough to crack the publish_limit leaderboard,
+        # used to lose that fact the moment it projected into screen_universe -- the
+        # lightweight shape carried fundamental_categories (populated for every row
+        # regardless of enrichment) but not fundamental_detail.raw_score, the one field
+        # enrichment_rotation()'s last_enriched() actually checks. Every subsequent run then
+        # saw it as never-enriched and could burn a rotation slot re-selecting it forever,
+        # instead of it ever counting as done.
+        enriched_but_unranked = {
+            "ticker": "OBSCURECO", "name": "Obscure Co", "sector": "Industrials", "price": 12.0,
+            "score": 41, "stance": "hold", "components": {"fundamentals": 41},
+            "fundamental_categories": {"valuation": 38}, "technical_detail": {},
+            "fundamental_detail": {"raw_score": 63.5, "coverage": 0.9},
+        }
+
+        projected = _screen_row(enriched_but_unranked)
+
+        self.assertEqual(projected["fundamental_detail"], {"raw_score": 63.5})
 
 
 def _statement_frame(rows):

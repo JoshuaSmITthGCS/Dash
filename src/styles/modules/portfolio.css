@@ -194,3 +194,45 @@
 .bar-row { display: grid; grid-template-columns: 120px 1fr 34px; gap: var(--sp-2); align-items: center; }.bar-track { height: 6px; overflow: hidden; border-radius: 999px; background: var(--bg-elev); }.bar-fill { display: block; height: 100%; background: var(--accent); }.bar-lab, .bar-val { color: var(--text-faint); font: var(--fs-2xs) var(--font-mono); }.bar-val { text-align: right; }
 .factor-bar-list { display: grid; gap: var(--sp-1-5); }
 details { border-top: 1px solid var(--border); padding-top: var(--sp-3); } summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--text-dim); }
+.cash-flow-ledger { margin-top: var(--sp-5); padding: var(--sp-5); display: grid; gap: var(--sp-3); }
+.cash-flow-ledger-note { color: var(--text-faint); font-size: var(--fs-xs); }
+.cash-flow-form { display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: var(--sp-2-5); align-items: end; }
+.cash-flow-form label { display: block; }
+.cash-flow-form label > span { display: block; margin-bottom: var(--sp-1); color: var(--text-faint); font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: .06em; }
+.cash-flow-form select, .cash-flow-form input { width: 100%; }
+.cash-flow-ledger-message { color: var(--text-dim); font-size: var(--fs-xs); }
+.cash-flow-ledger-complete { display: flex; align-items: center; gap: var(--sp-2); color: var(--text-dim); font-size: var(--fs-xs); }
+.cash-flow-ledger-summary { color: var(--text-faint); font-size: var(--fs-2xs); font-family: var(--font-mono); }
+.cash-flow-ledger-list { display: grid; gap: var(--sp-1-5); margin: 0; padding: 0; list-style: none; }
+.cash-flow-ledger-list li { display: grid; grid-template-columns: 1fr auto auto; gap: var(--sp-2-5); padding: var(--sp-1-5) 0; border-top: 1px solid var(--border); color: var(--text-dim); font-size: var(--fs-xs); }
+@media (max-width: 680px) {
+  .cash-flow-form { grid-template-columns: 1fr; }
+}
+.reconciliation-status { padding: var(--sp-1) var(--sp-2); border-radius: 999px; font: var(--fw-semibold) var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .04em; background: var(--bg-elev); color: var(--up); }
+.reconciliation-status--reconciliation_failed { color: var(--neg); }
+.reconciliation-bridge-list li:last-child, .reconciliation-bridge-total { border-top: 1px solid var(--border); font-weight: var(--fw-semibold); }
+.reconciliation-bridge--reconciliation_failed { border: 1px solid var(--neg); }
+.holdings-data-quality { margin-top: var(--sp-5); padding: var(--sp-5); display: grid; gap: var(--sp-3); }
+.holdings-data-quality-summary { color: var(--text-faint); font: var(--fs-2xs) var(--font-mono); text-transform: uppercase; }
+.holdings-data-quality-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.holdings-data-quality-list li { display: grid; grid-template-columns: 80px 1fr 1fr 1fr; gap: var(--sp-2-5); align-items: center; padding: var(--sp-1-5) 0; border-top: 1px solid var(--border); font-size: var(--fs-xs); }
+.holdings-data-quality-list li.unresolved { color: var(--text-faint); }
+.holdings-data-quality-ticker { font: var(--fw-bold) var(--fs-xs) var(--font-mono); }
+.holdings-data-quality-coverage.tone-good { color: var(--up); }
+.holdings-data-quality-coverage.tone-warn { color: var(--warn); }
+.holdings-data-quality-coverage.tone-poor { color: var(--neg); }
+.holdings-data-quality-coverage.tone-unknown { color: var(--text-faint); }
+@media (max-width: 680px) {
+  .holdings-data-quality-list li { grid-template-columns: 1fr; gap: var(--sp-0-5); }
+}
+.fund-cost-overview { margin-top: var(--sp-5); padding: var(--sp-5); display: grid; gap: var(--sp-3); }
+.fund-cost-stat { display: flex; align-items: baseline; gap: var(--sp-2-5); flex-wrap: wrap; }
+.fund-cost-value { font: var(--fw-bold) var(--fs-xl) var(--font-mono); }
+.fund-cost-label { color: var(--text-faint); font-size: var(--fs-xs); }
+.lot-sell-preview { display: grid; gap: 0; margin: var(--sp-3) 0 0; padding: 0; list-style: none; }
+.lot-sell-preview li { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--sp-2); align-items: center; padding: var(--sp-1-5) 0; border-top: 1px solid var(--border); font: var(--fs-xs) var(--font-mono); }
+.lot-sell-preview li > span:last-child { color: var(--text-faint); }
+.lot-sell-error { margin: var(--sp-3) 0 0; color: var(--neg); font-size: var(--fs-xs); }
+@media (max-width: 680px) {
+  .lot-sell-preview li { grid-template-columns: 1fr; gap: var(--sp-0-5); }
+}

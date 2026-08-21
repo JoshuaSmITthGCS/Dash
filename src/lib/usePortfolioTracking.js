@@ -13,12 +13,13 @@ export function usePortfolioTracking() {
   const { currentUser } = useAuth()
   const [snapshots, setSnapshots] = useState([])
   const [activities, setActivities] = useState([])
+  const [rebalances, setRebalances] = useState([])
   const [trackingState, setTrackingState] = useState(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (!currentUser) {
-      setSnapshots([]); setActivities([]); setTrackingState(null); setError('')
+      setSnapshots([]); setActivities([]); setRebalances([]); setTrackingState(null); setError('')
       return undefined
     }
     const userId = currentUser.uid
@@ -31,7 +32,10 @@ export function usePortfolioTracking() {
     const stopActivities = onSnapshot(collection(db, 'portfolios', userId, 'activity'), (snapshot) => {
       setActivities(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })).sort((a, b) => String(b.effectiveDate || b.recordedAt).localeCompare(String(a.effectiveDate || a.recordedAt))))
     }, (reason) => setError(reason.message))
-    return () => { stopState(); stopSnapshots(); stopActivities() }
+    const stopRebalances = onSnapshot(collection(db, 'portfolios', userId, 'rebalances'), (snapshot) => {
+      setRebalances(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })).sort((a, b) => String(a.date || '').localeCompare(String(b.date || ''))))
+    }, (reason) => setError(reason.message))
+    return () => { stopState(); stopSnapshots(); stopActivities(); stopRebalances() }
   }, [currentUser])
 
   const derivedStartedAt = trackingState?.trackingStartedAt || activities.map((row) => row.recordedAt).filter(Boolean).sort()[0] || null
@@ -46,13 +50,17 @@ export function usePortfolioTracking() {
     setTrackingState((current) => ({ ...current, trackingStartedAt: startedAt }))
   }
 
-  const recordSnapshot = async ({ value, coveragePct, source, recordedAt = new Date().toISOString() }) => {
+  const recordSnapshot = async ({ value, coveragePct, source, unrealizedGain, recordedAt = new Date().toISOString() }) => {
     if (!currentUser || !Number.isFinite(Number(value))) return { success: false, error: 'A Firebase connection and portfolio value are required.' }
     try {
       await ensureTrackingStarted()
       const id = recordedAt.slice(0, 16).replace(/[:.]/g, '-')
       await setDoc(doc(db, 'portfolios', currentUser.uid, 'intradaySnapshots', id), {
         value: Number(value), coveragePct: Number(coveragePct) || 0, source,
+        // Recorded alongside value, not derived later, so the reconciliation bridge
+        // (portfolioReconciliationBridge, src/lib/portfolioAnalytics.js) has an unrealized-gain
+        // figure at the exact instant each snapshot was taken, not just today's live one.
+        ...(Number.isFinite(Number(unrealizedGain)) ? { unrealizedGain: Number(unrealizedGain) } : {}),
         recordedAt, marketDate: marketDate(recordedAt),
       }, { merge: true })
       return { success: true }
@@ -64,7 +72,7 @@ export function usePortfolioTracking() {
 
   const recordActivity = async ({ type, amount, effectiveDate, note = '' }) => {
     const numericAmount = Number(amount)
-    if (!currentUser || !['realized_gain', 'dividend', 'fee'].includes(type) || !Number.isFinite(numericAmount)) return { success: false, error: 'Choose a supported earnings activity and enter a valid amount.' }
+    if (!currentUser || !['realized_gain', 'dividend', 'fee', 'deposit', 'withdrawal'].includes(type) || !Number.isFinite(numericAmount)) return { success: false, error: 'Choose a supported activity type and enter a valid amount.' }
     try {
       await ensureTrackingStarted()
       const recordedAt = new Date().toISOString()
@@ -93,7 +101,27 @@ export function usePortfolioTracking() {
     }
   }
 
-  return { snapshots, activities, trackingState: effectiveTrackingState, error, recordSnapshot, recordActivity, setLedgerComplete }
+  // Captured once per add/edit/remove/sell -- see usePortfolioForms.js's four call sites --
+  // so executionStatistics() (src/lib/portfolioStatistics.js) has real turnover input instead
+  // of the empty list that silently made every turnover figure read "Insufficient" before this.
+  const recordRebalance = async ({ date, beforeWeights, afterWeights }) => {
+    if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
+    try {
+      await ensureTrackingStarted()
+      await setDoc(doc(db, 'portfolios', currentUser.uid, 'rebalances', `${date}-${Date.now()}`), {
+        date, beforeWeights, afterWeights, recordedAt: new Date().toISOString(),
+      })
+      return { success: true }
+    } catch (reason) {
+      setError(reason.message)
+      return { success: false, error: reason.message }
+    }
+  }
+
+  return {
+    snapshots, activities, rebalances, trackingState: effectiveTrackingState, error,
+    recordSnapshot, recordActivity, setLedgerComplete, recordRebalance,
+  }
 }
 
 export { marketDate }

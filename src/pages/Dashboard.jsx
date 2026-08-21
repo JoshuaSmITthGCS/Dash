@@ -151,7 +151,7 @@ function InsideInformationCard({ rows, loading, style }) {
     row.congress_flags?.length ? 'Congressional cluster' : null,
   ].filter(Boolean).join(' · ') || 'Notable disclosed activity'
   return <article className="report-screen-card" style={style}>
-    <header><div><span>Inside information</span><h3>Congress + institutional 13F</h3></div><small>Rare or flagged activity only</small></header>
+    <header><div><span>Disclosed positioning</span><h3>Congress + institutional 13F</h3></div><small>Rare or flagged activity only</small></header>
     <div className="report-screen-list">
       {loading ? <div className="report-inline-loading" role="status">Loading this screen on the Report…</div>
         : rows.length ? rows.map((row, index) => (
@@ -197,7 +197,7 @@ function MarketPulsePreview({ data, loading }) {
   // A series with no published value gets a muted tile rather than a full-size dash:
   // an empty reading should not carry the same visual weight as a real one.
   return <section className="report-section report-market-pulse" aria-labelledby="report-market-pulse-title">
-    <header className="section-heading"><div><span className="eyebrow">Market pulse</span><h2 id="report-market-pulse-title">The current backdrop</h2></div><Link to="/market">News and context →</Link></header>
+    <header className="section-heading"><div><span className="eyebrow">Market pulse</span><h2 id="report-market-pulse-title">The current backdrop</h2></div><Link to="/news">News and context →</Link></header>
     {loading && !data ? <div className="report-inline-loading" role="status">Loading Market Pulse here on the Report…</div> : <>
       <div className="report-market-grid">
         <article className={regime?.score == null ? 'is-unavailable' : undefined}><span>FRED regime</span><strong>{regime?.score ?? '–'}{regime?.score != null && <small>/100</small>}</strong><p>{regime?.label || 'Regime data pending'}</p></article>

@@ -100,7 +100,7 @@ Mobile navigation has five one-tap destinations in this order: Research, Search,
 ## Published data footprint
 
 - Published research names: ${advisor.research?.length || 0}
-- Configured screen universe: ${advisor.universe_count || advisor.screen_universe?.length || 0}
+- Screen universe, this run (${advisor.universe_mode || 'unknown'} mode; the ~910-stock/126-ETF static config plus any held portfolio symbols, deduped): ${advisor.universe_count || advisor.screen_universe?.length || 0}
 - Published ETFs: ${etfs.etfs?.length || 0}
 - Monthly factor observations: ${factors.count || factors.observations?.length || 0}
 - Point-in-time files: ${pitFiles.length}
@@ -127,11 +127,11 @@ Every scored row carries champion and challenger values, per-metric normalized s
 
 ### Attribution and explanation
 
-Each score starts at ${settings.explainability.attribution_base}. Category and component evidence moves it to raw evidence, confidence shrinkage pulls incomplete evidence toward neutral, and bounded modifiers produce the final score. A pipeline invariant rejects any row whose decomposition differs from the published score by more than ${settings.explainability.reconciliation_tolerance} points.
+Each score starts at ${settings.explainability.attribution_base}. Category and component evidence moves it to raw evidence, and bounded modifiers produce the final score; the champion score applies no data-coverage multiplier at this level (retired 2026-08-12 -- see docs/MASTER-METHODOLOGY.md Sec3). A pipeline invariant rejects any row whose decomposition differs from the published score by more than ${settings.explainability.reconciliation_tolerance} points.
 
-The detail sheet presents four concepts first: Research Score, Confidence, Guidance, and Theme Exposure. Below that fold it shows six factor bars, the waterfall, metric-level peer and own-history context, anomalies, and score history. History remains in an honest accumulating state until ${settings.explainability.score_history_minimum_months} distinct stored months exist.
+The detail sheet presents four concepts first: Research Score, Data coverage, Guidance, and Theme exposure. Below that fold it shows six factor bars, the waterfall, metric-level peer and own-history context, anomalies, and score history. History remains in an honest accumulating state until ${settings.explainability.score_history_minimum_months} distinct stored months exist.
 
-The score dial encodes uncertainty visually. Score controls arc length. Evidence confidence controls opacity and dash density. The number does not change when certainty changes.
+The score dial encodes completeness visually, not reliability. Score controls arc length. Data coverage controls opacity and dash density -- the dial's own component name is CoverageScoreDial and its code comment states outright "the quantity is completeness, not reliability." The number does not change when coverage changes.
 
 ## Portfolio concentration and risk
 
@@ -151,7 +151,7 @@ The covariance matrix also produces marginal and percent contribution to portfol
 
 The factor cache refreshes monthly from the Kenneth R. French Data Library and includes market excess return, size, value, profitability, investment, momentum, and the risk-free rate. Portfolio monthly excess returns are regressed with ordinary least squares. Results require ${p.factor_minimum_monthly_observations} observations and include loadings, standard errors, annualized alpha, alpha t-statistic, R-squared, and a plain-language summary.
 
-An alpha t-statistic under 2 in absolute value is labelled statistically meaningless. Theme exposure is aggregated separately by portfolio weight and never enters the research score.
+The dashboard's evidence hurdle is a Newey-West HAC alpha t-statistic above 3; below that, the UI does not call the result "meaningless" — it states that the sample does not distinguish alpha from packaged factor exposure. Theme exposure is aggregated separately by portfolio weight and never enters the research score.
 
 ## Planning and projection engine
 

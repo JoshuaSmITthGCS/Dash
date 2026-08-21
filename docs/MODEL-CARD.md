@@ -44,17 +44,29 @@ opt-in), FRED (macro regime, opt-in), SEC EDGAR (Form 4 insider, theme signals �
 datasets (congressional disclosures, weekly). Statement
 data typically lags 1-3 months after fiscal period end. See `docs/DATA-LINEAGE.md`.
 
-## Confidence
+## Data coverage
 
-Not a single number: `pipeline/confidence.py` publishes completeness, freshness,
-source_reliability, peer_sample, and model_agreement components alongside the scalar.
+**Correction: this section previously called the published quantity "confidence" and cited a
+`pipeline/confidence.py` that does not exist — see `docs/AUDIT-VERIFICATION-RESULTS.md` §6.**
+The real file is `pipeline/data_coverage.py`; the scalar and the UI both call it **data
+coverage**, not confidence — `advisor_engine.py::data_coverage_scalar()`'s own docstring states
+it "was previously published as `confidence`, which invited every consumer to read it as
+reliability," and was renamed for that reason. The dial component that renders it
+(`src/components/StockDetailModal.jsx`'s `CoverageScoreDial`) likewise states in its own code
+comment "the quantity is completeness, not reliability" and its visible label reads
+"`{X}%` data coverage" — never "Evidence confidence."
+
+Not a single number: `data_coverage.py::data_coverage_components()` publishes completeness,
+freshness, source_reliability, peer_sample, and model_agreement components alongside the scalar.
 `historical_calibration` is always `null` — the IC harness has not accumulated enough
 prospective periods to report one (see "Validation state"). `score_calibration.py` will
 populate it once at least one score band clears 30 closed observations, and refuses to before
 then.
 
-Confidence measures **how reliable the evidence behind a rank is**, never the probability of a
-price move. The UI labels it "Evidence confidence" for that reason.
+Data coverage measures **how much of the intended evidence actually resolved**, never how
+reliable the resulting rank is, and never the probability of a price move. A real,
+validated-against-realized-error confidence metric does not exist yet in this codebase — its
+absence is the correct state until one is built and validated, not an oversight.
 
 ## Validation state
 

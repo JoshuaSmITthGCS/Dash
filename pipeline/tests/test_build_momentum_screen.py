@@ -74,6 +74,11 @@ def test_run_publishes_scored_results(monkeypatch):
     assert len(result["results"]) == 6
     ranks = [row["rank"] for row in result["results"]]
     assert ranks == sorted(ranks)
+    # Model Risk Register #8 / docs/AUDIT-ROADMAP.md item 27: this screen's calendar
+    # month-end momentum_12_1 and the champion's fixed-trading-day-offset momentum_12_1
+    # can diverge, and that divergence must be disclosed, not silent.
+    assert "calendar month-end" in result["coverage_note"]
+    assert "risk_metrics.py" in result["coverage_note"]
 
 
 def test_run_reports_unavailable_with_no_universe(monkeypatch):

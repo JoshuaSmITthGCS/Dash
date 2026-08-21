@@ -9,6 +9,7 @@ import {
   concentrationLiquidityScore,
   diversificationScore,
   performanceMetrics,
+  periodReturns,
   portfolioRiskDecomposition,
   portfolioScore,
   resilienceIndex,
@@ -23,11 +24,13 @@ import { shortTermView } from '../../lib/portfolioShortTermView.js'
 import { factorRegression } from '../../lib/factorAnalytics.js'
 import {
   benchmarkFit,
+  constructedBenchmarkFit,
   executionStatistics,
   exposureStatistics,
   performanceStatistics,
   regimeConditionalPerformance,
   robustnessStatistics,
+  TRADING_DAYS,
 } from '../../lib/portfolioStatistics.js'
 import { buildPortfolioMetricModel } from '../../lib/portfolioMetricModel.js'
 import { compareEvidencePeriods } from '../../lib/metricAssessment.js'
@@ -49,6 +52,7 @@ export function buildAnalyticsModel({
   analyticsScope,
   benchmarks,
   holdingsSeriesFull,
+  rebalances,
 }) {
   const { analyticsBenchmarkSeries, selectedBenchmarkSymbol, candidateInputs } = benchmarks
   const sinceAlgorithmSeries = sliceSeriesFrom(holdingsSeriesFull, LIVE_TRACKING_START)
@@ -93,6 +97,7 @@ export function buildAnalyticsModel({
     : performanceStatistics(scoreComparable?.left || scorePortfolioPeriod, riskFree.annualPct, { trialCount: DEFLATION_TRIALS })
   const factor = factorRegression(scoreComparable?.left || scorePortfolioPeriod, factorData)
   const benchmark = benchmarkFit(scoreHoldingsSeries, candidateInputs)
+  const constructedBenchmark = constructedBenchmarkFit(scoreHoldingsSeries, candidateInputs)
 
   const comparisonFor = (candidate) => {
     if (!candidate || !scoreHoldingsSeries) return null
@@ -112,7 +117,12 @@ export function buildAnalyticsModel({
     best: comparisonFor(candidateInputs.find((row) => row.symbol === benchmark.bestFit?.symbol)),
   }
   const exposure = exposureStatistics(portfolioPositions)
-  const execution = executionStatistics()
+  const riskFreeDaily = (1 + Number(riskFree.annualPct) / 100) ** (1 / TRADING_DAYS) - 1
+  const execution = executionStatistics({
+    returns: periodReturns(scoreComparable?.left?.values || []),
+    rebalances: rebalances || [],
+    riskFreePerPeriod: riskFreeDaily,
+  })
   const publishedPbo = signalMetrics?.metrics?.find((row) => row.id === 'pbo')
   const robustness = robustnessStatistics({
     pbo: ['ready', 'provisional'].includes(publishedPbo?.status) ? publishedPbo.value : null,
@@ -129,6 +139,7 @@ export function buildAnalyticsModel({
     risk,
     factor,
     benchmark,
+    constructedBenchmark,
     benchmarkComparisons,
     exposure,
     execution,
@@ -169,6 +180,7 @@ export function buildAnalyticsModel({
     statistics,
     factor,
     benchmark,
+    constructedBenchmark,
     exposure,
     execution,
     robustness,

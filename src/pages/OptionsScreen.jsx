@@ -181,7 +181,9 @@ export default function OptionsScreen() {
       <p className="disclaimer">
         Schema {data?.schema_version || '–'} · model {data?.model_version || '–'} · config {data?.config_version || '–'}.
         Rankings are hypotheses for prospective validation, not claims of outperformance. Implied volatility, spreads,
-        and open interest are snapshots from the last pipeline run and move throughout the trading day.
+        and open interest are snapshots from the last pipeline run and move throughout the trading day. Delta and
+        probability figures use a Black-Scholes model with the risk-free rate held at 0%, a stated simplification,
+        not a quote-derived one.
       </p>
     </>}
     {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={report?.benchmark_history} onClose={() => setSelectedStock(null)} />}

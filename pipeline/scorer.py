@@ -562,11 +562,13 @@ def _categories_with_required_gate(metrics, cfg, profile):
     return categories, withheld
 
 
-def _band_valuation_score(snap):
+def _band_valuation_score(snap, *, apply_confidence_multiplier=True):
     """Score valuation, profitability, solvency, growth, capital allocation, and accounting quality.
 
     ETFs remain unscored because corporate accounting ratios are not comparable to fund holdings.
-    Missing values are reweighted, then the final score is confidence-adjusted for data coverage.
+    Missing values are reweighted, then the final score is confidence-adjusted for data coverage
+    unless ``apply_confidence_multiplier=False`` -- see valuation_score's docstring for why that
+    parameter exists (the isolated fundamentals-confidence-multiplier challenger).
     """
     if not snap or snap.get("is_etf"):
         return None, {}
@@ -639,7 +641,7 @@ def _band_valuation_score(snap):
         return None, {**metrics, "categories": categories, "coverage": round(coverage, 2),
                       "applicability_profile": profile, "suppressed_metrics": sorted(suppressed),
                       "categories_withheld": blocked}
-    confidence_multiplier = 0.65 + (0.35 * coverage)
+    confidence_multiplier = (0.65 + (0.35 * coverage)) if apply_confidence_multiplier else 1.0
     total = round(raw * confidence_multiplier, 1)
     return total, {**metrics, "categories": categories, "coverage": round(coverage, 2),
                    "category_coverage": category_coverage(metrics, cfg, tuple(suppressed)),
@@ -784,7 +786,7 @@ def _fixed_feature_valuation_score(snap, normalizer):
     }
 
 
-def valuation_score(snap, *, mode=None, normalizer=None):
+def valuation_score(snap, *, mode=None, normalizer=None, apply_confidence_multiplier=True):
     """Score fundamentals using the configured champion or an explicit challenger mode.
 
     ``bands`` preserves the production champion. ``cross_sectional`` requires a normalizer
@@ -792,10 +794,18 @@ def valuation_score(snap, *, mode=None, normalizer=None):
     ``fixed_feature`` additionally imputes applicable-but-missing metrics at the neutral
     percentile so every name is scored on the same intended weight vector, with no
     completeness multiplier (the Round 4 imputation challenger).
+
+    ``apply_confidence_multiplier`` (bands mode only) defaults to True, preserving today's
+    production behavior exactly: ``_band_valuation_score`` still multiplies its raw category
+    score by ``0.65 + 0.35 * coverage`` (docs/AUDIT-VERIFICATION-RESULTS.md Sec6,
+    docs/MODEL-RISK-REGISTER.md Sec1 -- the same directional shrinkage retired at the top level
+    on 2026-08-12, still live here). Pass False to get the isolated challenger used by
+    ``fundamentals_confidence_isolated_challenger`` (advisor_engine.py) to measure removing it,
+    holding everything else -- mode, blend, shrinkage -- identical to the champion.
     """
     selected = mode or SETTINGS.get("normalization_mode", "bands")
     if selected == "bands":
-        score, detail = _band_valuation_score(snap)
+        score, detail = _band_valuation_score(snap, apply_confidence_multiplier=apply_confidence_multiplier)
         if detail:
             detail.setdefault("normalization_mode", "bands")
         return score, detail

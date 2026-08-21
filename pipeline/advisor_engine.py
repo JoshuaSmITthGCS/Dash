@@ -45,14 +45,19 @@ def _weights(configured, defaults):
 RANKING_WEIGHTS = _weights(SETTINGS.get("ranking_weights"), DEFAULT_RANKING_WEIGHTS)
 MODIFIERS = SETTINGS.get("modifiers", {})
 
-# Market-behavior sub-weights, overridable from config. technical_extended (moving-average
-# slope, RSI, Bollinger %B, OBV slope -- see technical_indicators.py) is deliberately a small
-# slice: 0.06 against the other six summing to 0.94 means its effective share of
-# market_behavior is under 6%, and market_behavior itself is 18% of the total composite score
-# (ranking_weights.market_behavior), so technical_extended contributes roughly 1% of the
-# total score -- present, but nowhere near fundamentals' 78%. The literature behind adding
-# many technical indicators mostly shows data-snooping (see technical_indicators.py's module
-# docstring); this is four indicators from four distinct economic families, not the zoo.
+# Market-behavior sub-weights, overridable from config. The other six weights already sum to
+# 1.00 on their own; technical_extended (moving-average slope, RSI, Bollinger %B, OBV slope --
+# see technical_indicators.py) is layered on top at 0.06, so the full declared table sums to
+# 1.06, not 1.00. This is not a live bias: technical_score_from_parts() always divides by the
+# sum of whichever weights actually resolve for a given name (see its `answered` sum below),
+# so the score is renormalized regardless of what the declared table sums to. It does mean the
+# 1.06 is configuration debt worth cleaning up (or documenting as the effective, not declared,
+# weights) rather than a number anyone should read as technical_extended's true share -- its
+# effective share of market_behavior is 0.06/1.06 =~ 5.7%, and market_behavior itself is 18% of
+# the total composite score (ranking_weights.market_behavior), so technical_extended contributes
+# roughly 1% of the total score -- present, but nowhere near fundamentals' 78%. The literature
+# behind adding many technical indicators mostly shows data-snooping (see technical_indicators.py's
+# module docstring); this is four indicators from four distinct economic families, not the zoo.
 DEFAULT_TECHNICAL_WEIGHTS = {
     "momentum_12_1": 0.30, "risk_adjusted": 0.26, "relative_strength": 0.16,
     "drawdown_resilience": 0.14, "volume_confirmation": 0.08, "low_beta": 0.06,
@@ -1171,6 +1176,16 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
         "fixed_feature": fixed_feature_challenger(row, snapshot, normalizer, config),
         # multiplier_removal_variant was retired 2026-08-12: promoted to champion (see
         # blend_research_components' docstring), so it would now always equal it exactly.
+        # A "fundamentals confidence multiplier removed" variant is deliberately NOT added
+        # here: build_research() already uses fundamental_parts["raw_score"] (the
+        # pre-multiplier value) for the champion's components["fundamentals"], never the
+        # multiplied value scorer.py's valuation_score() returns as its first element -- so
+        # a variant computed against an already-published row would always equal the champion
+        # exactly, testing nothing. The multiplier's one remaining live consumer is
+        # fetch_advisor.py:enrich()'s shortlist-priority sort key, which runs before
+        # enrichment/publication and has no row to attach a score_variants entry to. See
+        # docs/MODEL-RISK-REGISTER.md Sec1 for where this actually still matters and
+        # pipeline/tests/test_round4_remediation.py for the isolated regression test.
     }
 
 

@@ -1,8 +1,8 @@
 # ValueSignal application: complete functional and calculation breakdown
 
-Generated from live config and source on 2026-08-20
+Generated from live config and source on 2026-08-21
 
-Source commit: `ba5969c3`
+Source commit: `e80dfa56`
 
 Application model: `3.2.0`
 
@@ -24,6 +24,7 @@ The Home route is eagerly bundled. Other routes and the stock detail sheet load 
 - `/hud-demo`: Unlinked internal component showcase for HUD-styled visual widgets. Not a real feature; reachable only by direct URL, driven by randomized local state rather than published data.
 - `/research`: Stock and ETF research library with mobile result cards and detail sheets.
 - `/search`: Cross-dataset ticker and company discovery.
+- `/news`: Application route.
 - `/market`: Market Pulse news feed with filing and commentary labels.
 - `/markets`: Live market-data dashboard: index performance, sector and stock daily leaders/laggards, and a ticker lookup. Descriptive only, distinct from the /market news reader.
 - `/portfolio`: Holdings, performance, risk, and account analysis for signed-in users.
@@ -67,11 +68,11 @@ Mobile navigation has five one-tap destinations in this order: Research, Search,
 ## Published data footprint
 
 - Published research names: 40
-- Configured screen universe: 926
+- Screen universe, this run (fast mode; the ~910-stock/126-ETF static config plus any held portfolio symbols, deduped): 926
 - Published ETFs: 125
 - Monthly factor observations: 756
 - Point-in-time files: 14
-- Point-in-time rows: 50858
+- Point-in-time rows: 52618
 - Mobile acceptance captures: 16
 
 Static research lives under `public/data`. Full-universe prospective snapshots live under `pipeline/pit_store/YYYY-MM-DD.jsonl`. Every scheduled refresh appends and never backfills.
@@ -94,11 +95,11 @@ Every scored row carries champion and challenger values, per-metric normalized s
 
 ### Attribution and explanation
 
-Each score starts at 50. Category and component evidence moves it to raw evidence, confidence shrinkage pulls incomplete evidence toward neutral, and bounded modifiers produce the final score. A pipeline invariant rejects any row whose decomposition differs from the published score by more than 0.01 points.
+Each score starts at 50. Category and component evidence moves it to raw evidence, and bounded modifiers produce the final score; the champion score applies no data-coverage multiplier at this level (retired 2026-08-12 -- see docs/MASTER-METHODOLOGY.md Sec3). A pipeline invariant rejects any row whose decomposition differs from the published score by more than 0.01 points.
 
-The detail sheet presents four concepts first: Research Score, Confidence, Guidance, and Theme Exposure. Below that fold it shows six factor bars, the waterfall, metric-level peer and own-history context, anomalies, and score history. History remains in an honest accumulating state until 6 distinct stored months exist.
+The detail sheet presents four concepts first: Research Score, Data coverage, Guidance, and Theme exposure. Below that fold it shows six factor bars, the waterfall, metric-level peer and own-history context, anomalies, and score history. History remains in an honest accumulating state until 6 distinct stored months exist.
 
-The score dial encodes uncertainty visually. Score controls arc length. Evidence confidence controls opacity and dash density. The number does not change when certainty changes.
+The score dial encodes completeness visually, not reliability. Score controls arc length. Data coverage controls opacity and dash density -- the dial's own component name is CoverageScoreDial and its code comment states outright "the quantity is completeness, not reliability." The number does not change when coverage changes.
 
 ## Portfolio concentration and risk
 
@@ -118,7 +119,7 @@ The covariance matrix also produces marginal and percent contribution to portfol
 
 The factor cache refreshes monthly from the Kenneth R. French Data Library and includes market excess return, size, value, profitability, investment, momentum, and the risk-free rate. Portfolio monthly excess returns are regressed with ordinary least squares. Results require 24 observations and include loadings, standard errors, annualized alpha, alpha t-statistic, R-squared, and a plain-language summary.
 
-An alpha t-statistic under 2 in absolute value is labelled statistically meaningless. Theme exposure is aggregated separately by portfolio weight and never enters the research score.
+The dashboard's evidence hurdle is a Newey-West HAC alpha t-statistic above 3; below that, the UI does not call the result "meaningless" — it states that the sample does not distinguish alpha from packaged factor exposure. Theme exposure is aggregated separately by portfolio weight and never enters the research score.
 
 ## Planning and projection engine
 

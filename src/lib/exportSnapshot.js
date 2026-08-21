@@ -9,6 +9,33 @@
 
 import { ANALYTICS_SCOPES } from '../pages/portfolio/format.js'
 
+// Round 7 Task 5: below this many observations, the performance block's headline ratios
+// (Sharpe/Sortino/annualized return) are annualized off a sample too short to mean anything
+// - the same export was shipping Sharpe 5.75 on 24 daily returns next to a deflated Sharpe
+// of 0.238 with nothing telling a reader which to believe. Display-layer only: no number
+// changes, the block just says so out loud. The floor is a reporting choice, not a
+// statistical law - adjust here if a different threshold is preferred.
+export const SAMPLE_SIZE_WARNING_FLOOR = 60
+
+function annotateSmallSample(analytics) {
+  const performance = analytics?.performance
+  const observations = Number(performance?.observations)
+  if (!performance || !Number.isFinite(observations) || observations >= SAMPLE_SIZE_WARNING_FLOOR) {
+    return analytics || null
+  }
+  return {
+    ...analytics,
+    performance: {
+      ...performance,
+      sample_size_warning: `Computed from only ${observations} observations (reporting floor: `
+        + `${SAMPLE_SIZE_WARNING_FLOOR}). Headline ratios in this block (Sharpe, Sortino, `
+        + 'annualized return) are not yet statistically meaningful at this sample size. For the '
+        + 'honest view, read deflated_sharpe and probabilistic_sharpe in signal_metrics_report, '
+        + 'which account for sample length and the number of configurations tried.',
+    },
+  }
+}
+
 export function buildExportSnapshot({ holdings, analytics, benchmarks, signalMetrics, monteCarlo, scope }) {
   const scopeLabel = ANALYTICS_SCOPES.find((row) => row.id === scope)?.label || scope || 'All portfolio history'
   return {
@@ -20,7 +47,7 @@ export function buildExportSnapshot({ holdings, analytics, benchmarks, signalMet
       positions: holdings?.portfolioPositions || [],
       actionable_tickers: (holdings?.actionable || []).map((position) => position.ticker),
     },
-    portfolio_analytics: analytics || null,
+    portfolio_analytics: annotateSmallSample(analytics),
     benchmark_comparisons: benchmarks || null,
     signal_metrics_report: signalMetrics || null,
     monte_carlo_projection: monteCarlo || null,

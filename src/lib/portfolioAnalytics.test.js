@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  alignSeries, annualizeReturnPct, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, currentHoldingsSeries, diversificationScore, enrichPortfolio,
-  contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, modifiedDietzReturn, netInvestedCapital, opportunityCost, performanceMetrics,
-  portfolioAnnualizedReturn, portfolioReturnSummary, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace, underwaterProfile,
+  alignSeries, annualizeReturnPct, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, costWeights, currentHoldingsSeries, diversificationScore, enrichPortfolio,
+  contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, modifiedDietzReturn, moneyWeightedAccountReturn, netInvestedCapital, opportunityCost, performanceMetrics,
+  portfolioAnnualizedReturn, portfolioReconciliationBridge, portfolioReturnSummary, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace, underwaterProfile, weightedExpenseRatio,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -12,6 +12,105 @@ describe('portfolio report analytics', () => {
     expect(result.totalValue).toBe(200)
     expect(result.gain).toBe(20)
     expect(result.positions[0].allocationPct).toBe(75)
+  })
+
+  describe('portfolioReconciliationBridge (B2)', () => {
+    const snapshots = [
+      { value: 10000, unrealizedGain: 1000, marketDate: '2026-01-01', recordedAt: '2026-01-01T20:00:00Z' },
+      { value: 10540, unrealizedGain: 1200, marketDate: '2026-01-02', recordedAt: '2026-01-02T20:00:00Z' },
+    ]
+    const activities = [
+      { type: 'deposit', amount: 200, effectiveDate: '2026-01-02' },
+      { type: 'dividend', amount: 50, effectiveDate: '2026-01-02' },
+      { type: 'fee', amount: 10, effectiveDate: '2026-01-02' },
+      { type: 'realized_gain', amount: 100, effectiveDate: '2026-01-02' },
+    ]
+
+    it('is unavailable with fewer than two unrealized-gain-tagged snapshots', () => {
+      expect(portfolioReconciliationBridge([], [])).toMatchObject({ available: false })
+      expect(portfolioReconciliationBridge([snapshots[0]], [])).toMatchObject({ available: false })
+      expect(portfolioReconciliationBridge([
+        { value: 10000, marketDate: '2026-01-01', recordedAt: '2026-01-01T20:00:00Z' },
+        { value: 10540, marketDate: '2026-01-02', recordedAt: '2026-01-02T20:00:00Z' },
+      ], [])).toMatchObject({ available: false })
+    })
+
+    it('reconciles every independently-sourced line to the recorded ending NAV within a penny', () => {
+      const bridge = portfolioReconciliationBridge(snapshots, activities)
+      expect(bridge.available).toBe(true)
+      expect(bridge.deposits).toBe(200)
+      expect(bridge.dividends).toBe(50)
+      expect(bridge.fees).toBe(10)
+      expect(bridge.realizedGains).toBe(100)
+      expect(bridge.unrealizedGainChange).toBe(200)
+      expect(bridge.reconstructedEndingNav).toBeCloseTo(10540, 6)
+      expect(bridge.residual).toBeCloseTo(0, 6)
+      expect(bridge.status).toBe('RECONCILED')
+      expect(bridge.fx.tracked).toBe(false)
+      expect(bridge.taxes.tracked).toBe(false)
+      expect(bridge.tradingCosts.tracked).toBe(false)
+    })
+
+    it('flags RECONCILIATION_FAILED when the recorded ending NAV does not match the reconstruction', () => {
+      const mismatched = [snapshots[0], { ...snapshots[1], value: 10600 }]
+      const bridge = portfolioReconciliationBridge(mismatched, activities)
+      expect(bridge.status).toBe('RECONCILIATION_FAILED')
+      expect(bridge.reconciled).toBe(false)
+      expect(bridge.residual).toBeCloseTo(60, 6)
+      expect(bridge.reason).toContain('unrecorded cash flow')
+    })
+
+    it('only counts activity dated within the bridged period, not before or after it', () => {
+      const stray = [...activities, { type: 'deposit', amount: 9999, effectiveDate: '2025-01-01' }, { type: 'fee', amount: 9999, effectiveDate: '2026-06-01' }]
+      const bridge = portfolioReconciliationBridge(snapshots, stray)
+      expect(bridge.deposits).toBe(200)
+      expect(bridge.fees).toBe(10)
+      expect(bridge.status).toBe('RECONCILED')
+    })
+  })
+
+  it('computes cost-basis dollar weights normalized to sum to 1, for the turnover rebalance ledger', () => {
+    const weights = costWeights([
+      { ticker: 'aaa', shares: 10, costBasis: 20 },
+      { ticker: 'bbb', shares: 5, costBasis: 40 },
+    ])
+    expect(weights).toMatchObject({ AAA: 0.5, BBB: 0.5 })
+    expect(costWeights([])).toEqual({})
+    expect(costWeights([{ ticker: 'AAA', shares: 0, costBasis: 20 }])).toEqual({})
+  })
+
+  describe('weightedExpenseRatio', () => {
+    const etfs = [
+      { ticker: 'voo', expense_ratio: 0.03 },
+      { ticker: 'QQQ', expense_ratio: 0.20 },
+    ]
+
+    it('dollar-weights expense ratio by current value across held funds only', () => {
+      const result = weightedExpenseRatio([
+        { ticker: 'VOO', currentValue: 7500 },
+        { ticker: 'qqq', currentValue: 2500 },
+      ], etfs)
+      // (7500*0.03 + 2500*0.20) / 10000 = 0.0725
+      expect(result.expenseRatioPct).toBeCloseTo(0.0725, 6)
+      expect(result.fundValue).toBe(10000)
+      expect(result.fundCount).toBe(2)
+    })
+
+    it('excludes non-fund holdings from both the numerator and the weight base', () => {
+      const result = weightedExpenseRatio([
+        { ticker: 'VOO', currentValue: 5000 },
+        { ticker: 'AAPL', currentValue: 5000 }, // no expense_ratio entry -- not a fund
+      ], etfs)
+      expect(result.expenseRatioPct).toBeCloseTo(0.03, 6)
+      expect(result.fundValue).toBe(5000)
+      expect(result.fundCount).toBe(1)
+    })
+
+    it('returns null when the portfolio holds no funds', () => {
+      expect(weightedExpenseRatio([{ ticker: 'AAPL', currentValue: 1000 }], etfs)).toBeNull()
+      expect(weightedExpenseRatio([], etfs)).toBeNull()
+      expect(weightedExpenseRatio([{ ticker: 'VOO', currentValue: 1000 }], [])).toBeNull()
+    })
   })
 
   it('builds an explicitly current-holdings daily-close backtest and changes data by period', () => {
@@ -146,6 +245,62 @@ describe('portfolio report analytics', () => {
     expect(result.strategy.returnPct).toBeCloseTo(26.5, 8)
     expect(result.strategy.gain).toBeCloseTo(26.5, 8)
     expect(result.strategy.methodology).toContain('removing settled external deposits')
+  })
+
+  // Master Remediation Prompt v3, B2: TWR must never be contaminated by deposits or
+  // withdrawals. These four cases are the isolation guarantee's own regression suite --
+  // confirmed passing against the current implementation, not just documentation of intent.
+  describe('TWR flow isolation (B2)', () => {
+    it('a pure deposit with no market move reports ~0% strategy return, not a gain', () => {
+      const result = portfolioReturnSummary([
+        { value: 1000, marketDate: '2026-01-01', recordedAt: '2026-01-01T20:00:00Z' },
+        { value: 1100, marketDate: '2026-01-02', recordedAt: '2026-01-02T20:00:00Z' },
+      ], [{ type: 'deposit', amount: 100, effectiveDate: '2026-01-02' }], true)
+      expect(result.strategy.returnPct).toBeCloseTo(0, 6)
+    })
+
+    it('a pure withdrawal with no market move reports ~0% strategy return, not a loss', () => {
+      const result = portfolioReturnSummary([
+        { value: 1000, marketDate: '2026-01-01', recordedAt: '2026-01-01T20:00:00Z' },
+        { value: 900, marketDate: '2026-01-02', recordedAt: '2026-01-02T20:00:00Z' },
+      ], [{ type: 'withdrawal', amount: 100, effectiveDate: '2026-01-02' }], true)
+      expect(result.strategy.returnPct).toBeCloseTo(0, 6)
+    })
+
+    it('a deposit immediately before a gain does not inflate the reported return', () => {
+      const result = portfolioReturnSummary([
+        { value: 1000, marketDate: '2026-01-01', recordedAt: '2026-01-01T20:00:00Z' },
+        { value: 1500, marketDate: '2026-01-02', recordedAt: '2026-01-02T20:00:00Z' },
+        { value: 1650, marketDate: '2026-01-03', recordedAt: '2026-01-03T20:00:00Z' },
+      ], [{ type: 'deposit', amount: 500, effectiveDate: '2026-01-02' }], true)
+      // Only day 2's genuine 10% market gain (1500 -> 1650) should show; the deposit itself
+      // (day 1 -> day 2) contributes 0%, not the 50% the raw dollar jump would imply.
+      expect(result.strategy.returnPct).toBeCloseTo(10, 6)
+    })
+
+    it('a withdrawal immediately before a loss does not distort the reported return', () => {
+      const result = portfolioReturnSummary([
+        { value: 1000, marketDate: '2026-01-01', recordedAt: '2026-01-01T20:00:00Z' },
+        { value: 700, marketDate: '2026-01-02', recordedAt: '2026-01-02T20:00:00Z' },
+        { value: 630, marketDate: '2026-01-03', recordedAt: '2026-01-03T20:00:00Z' },
+      ], [{ type: 'withdrawal', amount: 300, effectiveDate: '2026-01-02' }], true)
+      // Only day 2's genuine 10% market loss (700 -> 630) should show; the withdrawal itself
+      // (day 1 -> day 2) contributes 0%, not the 30% the raw dollar drop would imply.
+      expect(result.strategy.returnPct).toBeCloseTo(-10, 6)
+    })
+  })
+
+  it('computes a money-weighted (XIRR) return alongside the time-weighted one', () => {
+    const result = portfolioReturnSummary([
+      { value: 1000, marketDate: '2026-01-01', recordedAt: '2026-01-01T20:00:00Z' },
+      { value: 1650, marketDate: '2026-02-01', recordedAt: '2026-02-01T20:00:00Z' },
+    ], [{ type: 'deposit', amount: 500, effectiveDate: '2026-01-15' }], true)
+    expect(result.moneyWeighted.available).toBe(true)
+    // MWR reflects the size and timing of the deposit, unlike the TWR above -- a $500
+    // deposit landing mid-period means the account grew from less invested capital than
+    // ending value alone would suggest, so MWR > the simple (ending/beginning - 1) return.
+    expect(result.moneyWeighted.rate).toBeGreaterThan(0)
+    expect(moneyWeightedAccountReturn([], [], true)).toMatchObject({ available: false })
   })
 
   it('annualizes a realized return over an arbitrary span', () => {

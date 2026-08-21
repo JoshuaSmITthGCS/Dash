@@ -6,6 +6,8 @@ import PerformanceMetrics from '../../components/PerformanceMetrics.jsx'
 import ExportMetricsMenu from '../../components/ExportMetricsMenu.jsx'
 import ScenarioSensitivityPanel from '../../components/ScenarioSensitivityPanel.jsx'
 import AutoOverviewLine from '../../components/AutoOverviewLine.jsx'
+import HoldingsDataQuality from './HoldingsDataQuality.jsx'
+import FundCostOverview from './FundCostOverview.jsx'
 import { explainPortfolioMove } from '../../lib/portfolioAttribution.js'
 import { buildDataOverviewBrief } from '../../lib/portfolioPlainBrief.js'
 import { ANALYTICS_SCOPES } from './format.js'
@@ -55,6 +57,8 @@ export default function DataOverview({
       />
       <ScenarioSensitivityPanel holdings={holdings} signalMetrics={signalMetrics} />
       <AutoOverviewLine tone={brief.tone}>{brief.text}</AutoOverviewLine>
+      <HoldingsDataQuality portfolioPositions={holdings.portfolioPositions} />
+      <FundCostOverview fundCost={holdings.fundCost} />
       <PerformanceMetrics
         metrics={analytics.performance}
         benchmarkLabel={benchmarks.selectedBenchmarkLabel}
@@ -69,6 +73,7 @@ export default function DataOverview({
         statistics={analytics.statistics}
         factor={analytics.factor}
         benchmark={analytics.benchmark}
+        constructedBenchmark={analytics.constructedBenchmark}
         exposure={analytics.exposure}
         execution={analytics.execution}
         robustness={analytics.robustness}

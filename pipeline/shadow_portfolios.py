@@ -55,6 +55,13 @@ PUBLIC_DATA = REPO_ROOT / "public" / "data"
 DEFAULT_STORE = PIPELINE_DIR / "shadow_store"
 DEFAULT_OUTPUT = PUBLIC_DATA / "screens" / "shadow-portfolios.json"
 ACTIVATION_DATE = "2026-08-02"
+# Strategies registered after the shadow contract started collect only from their own
+# registration date forward. Without this, a later --bootstrap-git replay would fabricate
+# pre-registration history for them out of archived advisor.json snapshots - history the
+# strategy was never actually live to earn.
+STRATEGY_ACTIVATION_DATES = {
+    "reweighted_composite_a": "2026-08-21",
+}
 PERIODS_PER_YEAR = 252
 MINIMUM_ANNUALIZED_OBSERVATIONS = 20
 # Portfolio weight that may be carried at a stale price for one session before the period
@@ -69,6 +76,7 @@ STRATEGIES = OrderedDict([
     ("swing", "Swing signals only"),
     ("political_institutional", "Political + institutional trades only"),
     ("combined", "Combined model"),
+    ("reweighted_composite_a", "Reweighted composite A (Round 7 proposal)"),
     ("SPY", "SPY benchmark"),
     ("eligible_universe_equal_weight", "Equal-weight eligible universe"),
     ("external", "User-imported external rankings"),
@@ -124,6 +132,55 @@ def _equal_weight_rows(rows, price_by_ticker, signal_field=None, limit=20):
         return []
     weight = 1 / len(selected)
     return [{**row, "weight": weight} for row in selected]
+
+
+# Round 7 Task 4 proposal A (docs/AUDIT-ROUND-7-FINDINGS.md section 4.4): the champion's
+# flat leg weights with the two panel-dead legs (growth, news_sentiment - zero backtest-panel
+# coverage) and the two 5-period negative-IC legs (capital_allocation, accounting_quality)
+# zeroed, survivors renormalized to sum to 1. Registered as a SHADOW only: the champion is
+# untouched, and this strategy earns (or loses) its case prospectively the same way every
+# other challenger here does. Its history begins at its first live refresh - it is
+# deliberately not reconstructed by --bootstrap-git.
+REWEIGHTED_A_WEIGHTS = {
+    "valuation": 0.3041,
+    "profitability": 0.2824,
+    "financial_health": 0.1629,
+    "market_behavior": 0.2506,
+}
+
+
+def _reweighted_composite_rows(advisor, price_by_ticker, weights=REWEIGHTED_A_WEIGHTS, limit=20):
+    """Rank the published universe by the proposal-A reweighted composite.
+
+    Leg scores are read from what every row already publishes - `fundamental_categories`
+    for the fundamentals legs, `components.market_behavior` for the market leg - and the
+    blend renormalizes over whichever legs a row resolves, the same convention as
+    evaluation.composite_score. Rows come from research + screen_universe so the
+    reweighting can promote a name the champion's own blend left outside its top 40.
+    """
+    scored = []
+    for row in [*(advisor.get("research") or []), *(advisor.get("screen_universe") or [])]:
+        ticker = str(row.get("ticker") or "").upper()
+        if not ticker:
+            continue
+        categories = row.get("fundamental_categories") or {}
+        legs = {
+            "valuation": categories.get("valuation"),
+            "profitability": categories.get("profitability"),
+            "financial_health": categories.get("financial_health"),
+            "market_behavior": (row.get("components") or {}).get("market_behavior"),
+        }
+        usable = {leg: weights[leg] for leg, value in legs.items()
+                  if _finite(value) and weights.get(leg)}
+        total = sum(usable.values())
+        if not total:
+            continue
+        scored.append({
+            "ticker": ticker,
+            "score": sum(float(legs[leg]) * weight for leg, weight in usable.items()) / total,
+        })
+    scored.sort(key=lambda row: row["score"], reverse=True)
+    return _equal_weight_rows(scored, price_by_ticker, signal_field="score", limit=limit)
 
 
 def _political_institutional_rows(screens, price_by_ticker, as_of=None, limit=20):
@@ -182,6 +239,7 @@ def selections_from_payload(advisor, benchmark, screens=None, as_of=None):
         "quality_value": screen_rows("quality-value", "quality_value_score"),
         "swing": screen_rows("swing", "composite_z"),
         "political_institutional": _political_institutional_rows(screens, price_by_ticker, as_of),
+        "reweighted_composite_a": _reweighted_composite_rows(advisor, price_by_ticker),
         "eligible_universe_equal_weight": _equal_weight_rows(
             eligible, price_by_ticker, limit=None,
         ),
@@ -252,6 +310,10 @@ def append_payload(advisor, benchmark, screens, store_root=DEFAULT_STORE, source
     }
     for strategy, rows in selections.items():
         if not rows:
+            continue
+        # A strategy registered mid-contract collects nothing before its own registration
+        # date - see STRATEGY_ACTIVATION_DATES.
+        if as_of < STRATEGY_ACTIVATION_DATES.get(strategy, ACTIVATION_DATE):
             continue
         # A run whose tape has not moved past the last stored snapshot is a re-read of a
         # session already recorded, not a new observation. Storing it would manufacture a

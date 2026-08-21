@@ -110,7 +110,7 @@ export const SECTIONS = [
     title: 'Behaviour & tradability',
     note: 'Trend quality, drawdown depth, and whether you could exit without moving the price.',
     metrics: [
-      ['@technical.momentum_12_1_pct', '12-1 momentum', (value) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`, 'Twelve-month return excluding the most recent month, the standard construction – the skipped month is dominated by short-term reversal', { good: 15, bad: -10 }],
+      ['@technical.momentum_12_1_pct', '12-1 momentum', (value) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`, 'Twelve-month return excluding the most recent month, the standard construction – the skipped month is dominated by short-term reversal. Measured on a fixed trading-day offset (252/21 sessions); the standalone Momentum screen instead uses exact calendar month-end prices, so the two can disagree slightly around holidays or short months', { good: 15, bad: -10 }],
       ['@technical.relative_acceleration', 'Acceleration vs market', (value) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}σ`, 'Whether the gap against the S&P 500 is widening or narrowing – this quarter’s market-adjusted excess return against last quarter’s, in standard errors. Measured and shown, but it carries no weight in the score', { good: 1, bad: -1 }],
       ['@technical.sortino_ratio', 'Sortino ratio', num, 'Return per unit of downside deviation – upside volatility is not a risk worth penalising', { good: 1.5, bad: 0 }],
       ['@technical.sharpe_ratio', 'Sharpe ratio', num, 'Return per unit of total volatility, computed the same way as on the ETF screen', { good: 1.2, bad: 0 }],

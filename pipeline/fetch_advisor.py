@@ -18,7 +18,7 @@ from price_archive import archive_health
 from edgar_enrichment import merge_edgar_fallback
 from edgar_sue import sue_for
 from providers import YahooAdapter
-from common import LOG, load_json, save_json, update_pipeline_status
+from common import CONFIG_DIR, LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
 from fundamentals_extended import (derive_extended, earnings_surprise_rows, extended_inputs,
                                    extended_observations)
@@ -51,6 +51,7 @@ from explainability import attach_explainability, attribution_errors, build_scor
 from sec_edgar import SecEdgarClient
 from theme_signals import EdgarThemeSignals, recent_10k_filings
 from themes import build_theme_screen, empty_screen, expand_theme_candidates, load_themes
+from validation.experiment_manifest import sha256_of_file
 from validation.ic_harness import (append_refresh as append_ic_refresh,
                                    read_snapshots,
                                    rows_from_advisor as ic_rows_from_advisor,
@@ -73,7 +74,7 @@ CHALLENGER_ENRICH_LIMIT = 5
 # Statement-starved names admitted to enrichment each refresh regardless of rank. Without
 # this the enrichment queue is a closed loop over the previous run's leaders and the model
 # can only rediscover names it already liked - see enrichment_rotation.
-ENRICHMENT_ROTATION_SIZE = max(0, int(os.getenv("ADVISOR_ENRICHMENT_ROTATION_SIZE", "15")))
+ENRICHMENT_ROTATION_SIZE = max(0, int(os.getenv("ADVISOR_ENRICHMENT_ROTATION_SIZE", "20")))
 NEWS_DISCOVERY_LIMIT = 75
 # Research-mode override (A3): the production enrichment queue seeds itself with the prior
 # refresh's top 20 and admits only 5 new challengers, which means statement-derived metrics
@@ -126,13 +127,25 @@ REPORT_ROW_FIELDS = (
     "operating_margin", "operating_margin_trend", "short_percent_of_float",
     "days_to_cover", "is_etf",
 )
-# Symbols withdrawn from the product entirely. DECJ was a typo for DECK, which is a real
-# holding and already tracked; DECJ resolves to nothing at any provider. Retiring a symbol has
+# Symbols withdrawn from the product entirely, with the reason each was retired - the reason
+# is published into the point-in-time universe store's churn note (see record_universe below)
+# so the departure is explained in `universe_churn`, not just observable. Retiring a symbol has
 # to reach the refresh list, not just the published report: portfolio holdings are carried
 # forward from the previous run's own `portfolio_coverage`, so anything that ever entered that
 # list re-seeded itself on every subsequent run and could never be removed - not by deleting
-# it in the app, not by editing config.
-RETIRED_SYMBOLS = {"DECJ"}
+# it in the app, not by editing config. Membership checks below use `in`, which reads dict
+# keys, so this stays a drop-in for the former set.
+RETIRED_SYMBOLS = {
+    "DECJ": "typo for DECK (already tracked); resolves to nothing at any provider",
+    # Round 7 Task 1: the two `missing_price_tickers` breaching data_quality_counters as of
+    # refresh advisor-2026-08-21T18:56:08. Both are hand-entered holdings (neither is in the
+    # Aug 14 Fidelity reference export), both have price:null and last_polled_at:null - no
+    # provider has ever returned a row for either, so this is not a rate limit and not a
+    # join bug.
+    "TTM": "Tata Motors NYSE ADR delisted January 2025; no provider serves this line anymore",
+    "AMZM": "resolves to nothing at any provider (likely a typo for AMZN - re-add AMZN with "
+            "real cost basis if the position was intended)",
+}
 
 
 def _layer(*path):
@@ -333,6 +346,15 @@ def _screen_row(row):
         "last_polled_at": row.get("last_polled_at"),
         "score_variants": variants or None,
         "components": row.get("components"), "fundamental_categories": row.get("fundamental_categories"),
+        # Just the one field enrichment_rotation()'s last_enriched() reads, not the ~2KB
+        # nested fundamental_detail every research row carries: publishing that for the
+        # ~850-name tail would bloat the payload for no reader-facing purpose. Without even
+        # this much, a name enriched via rotation that doesn't crack the top publish_limit
+        # loses its "already has statement coverage" signal the moment it lands here, so
+        # every subsequent run sees it as never-enriched and rotation keeps re-selecting it
+        # instead of a genuinely untouched name -- silently capping how much of the universe
+        # ever gets past the initial shortlist.
+        "fundamental_detail": {"raw_score": (row.get("fundamental_detail") or {}).get("raw_score")},
         "technical_detail": {key: detail.get(key) for key in SCREEN_TECHNICAL_FIELDS
                              if detail.get(key) is not None},
         # Needed by the client-side strategy-lens sorts (rankCatalyst, rankAnalystConviction,
@@ -1358,7 +1380,8 @@ def rotation_slice(symbols, already_polling, previous_payload, size):
 
 
 def enrichment_rotation(preliminary_symbols, already_selected, previous_payload, size):
-    """The statement-starved names that have waited longest, oldest first.
+    """The statement-starved names that have waited longest, oldest first -- theme-flagged
+    names first among them.
 
     Statement-derived metrics -- ROIC, EV/EBITDA, Piotroski, Altman, accruals -- only ever
     existed for the previous run's top 20 plus five challengers, because that is who
@@ -1372,6 +1395,19 @@ def enrichment_rotation(preliminary_symbols, already_selected, previous_payload,
     so the whole universe passes through statement enrichment over a predictable number of
     runs instead of never. A symbol that has never been enriched sorts first because it has
     no timestamp to compare.
+
+    Within that never-enriched group, a name the theme screen already published as exposed
+    (``theme_exposure`` non-empty last run -- this is how ``themes.expand_theme_candidates``'s
+    sector-peer group surfaces) goes first. ``themes.explain_rank`` already discloses that
+    most of that group is "ranked on a business-quality reading with no financial statements
+    behind it"; this clears that backlog before the plain oldest-unenriched queue resumes, so
+    a name a reader is already looking at on a theme screen gets real statement metrics sooner
+    than one nothing has surfaced yet.
+
+    The already-enriched tier is ranked strictly last regardless of where a symbol now sits
+    in ``preliminary_symbols`` -- the sort key's first element is the tier, so a name that
+    moved up in preliminary order after a past rotation gave it real fundamentals still loses
+    a rotation slot to any name with none at all, exactly as if it hadn't moved.
     """
     if size <= 0:
         return ()
@@ -1379,11 +1415,13 @@ def enrichment_rotation(preliminary_symbols, already_selected, previous_payload,
     candidates = [symbol for symbol in preliminary_symbols if symbol not in already_selected]
     def last_enriched(symbol):
         row = previous_rows.get(symbol) or {}
-        # A row that never enriched has no statement coverage; sort it ahead of every row
-        # that did, regardless of when either was last polled.
-        if not (row.get("fundamental_detail") or {}).get("raw_score"):
-            return ("", symbol)
-        return (str(row.get("last_polled_at") or ""), symbol)
+        if (row.get("fundamental_detail") or {}).get("raw_score"):
+            # Already enriched: falls back to oldest-polled-first once the never-enriched
+            # tiers below are exhausted.
+            return (2, str(row.get("last_polled_at") or ""), symbol)
+        # Never enriched. A name the theme screen already flagged as exposed jumps the rest
+        # of this queue; everything else never-enriched follows in universe order.
+        return (0 if row.get("theme_exposure") else 1, "", symbol)
     candidates.sort(key=last_enriched)
     return tuple(candidates[:size])
 
@@ -1954,8 +1992,25 @@ def run():
     # backtest needs - the derived 0-100 scores can always be recomputed from them.
     # `research` only ever holds freshly polled rows now - carried-forward rows join
     # `screen_universe` directly and never pass through here, so there is nothing to filter.
-    pit_summary = pit_store.append_snapshot(research, source="advisor_refresh")
-    pit_store.record_universe(symbols, source="advisor_refresh")
+    # A SHA-256 of settings.json, not a bumped semantic version -- it changes on every
+    # config edit whether or not anyone remembers to bump model_version, which is exactly
+    # what "which formula version scored this row" needs from a PIT observation taken
+    # months ago (see docs/BUILD-PLAN.md's B9 section: model_version/config_hash were
+    # claimed as published per-row but were not, on either the row or the PIT store).
+    config_hash = sha256_of_file(os.path.join(CONFIG_DIR, "settings.json"))
+    pit_summary = pit_store.append_snapshot(research, source="advisor_refresh", config_hash=config_hash)
+    # When a retired symbol was actually filtered out of this run's inputs, its departure
+    # shows up in the universe store's added/removed diff - carry the documented reason
+    # alongside it so `universe_churn` explains the removal instead of just recording it.
+    retired_this_run = sorted(
+        symbol for symbol in {*previous_portfolio, *requested_symbols}
+        if str(symbol or "").strip().upper() in RETIRED_SYMBOLS
+    )
+    churn_note = "; ".join(
+        f"{symbol} retired: {RETIRED_SYMBOLS[str(symbol).strip().upper()]}"
+        for symbol in retired_this_run
+    ) or None
+    pit_store.record_universe(symbols, source="advisor_refresh", note=churn_note)
     pit_depth = pit_store.depth()
 
     grid = chart_grid(benchmark["dates"])
@@ -1995,6 +2050,7 @@ def run():
         # which the frontend migration in src/lib/schemaMigrations.js maps for v1 readers.
         "schema_version": SETTINGS["model"]["advisor_schema_version"],
         "model_version": SETTINGS["model"]["semantic_version"],
+        "config_hash": config_hash,
         "generated_at": generated_at, "data_mode": "live",
         "count": len(ranked), "universe_count": len(symbols), "universe": list(symbols),
         "publish_limit": publish_limit, "statement_enriched_count": enriched_count, "benchmark": "SPY",

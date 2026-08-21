@@ -247,12 +247,13 @@ export default function PerformanceMetrics({
   acceleration = null, capture = null, batting = null, underwater = null,
   shortTerm = null, risk = null,
   model: suppliedModel = null, statistics = null, factor = null, benchmark = null,
+  constructedBenchmark = null,
   exposure = null, execution = null, robustness = null, signalMetrics = null,
   monteCarlo = null, monteCarloError = null,
   prospective = null, scopes = [], scope = null, onScopeChange = null,
   baselineComparison = null,
 }) {
-  const model = suppliedModel || buildPortfolioMetricModel({ performance: metrics, statistics, acceleration, capture, batting, underwater, shortTerm, risk, factor, benchmark, exposure, execution, robustness })
+  const model = suppliedModel || buildPortfolioMetricModel({ performance: metrics, statistics, acceleration, capture, batting, underwater, shortTerm, risk, factor, benchmark, constructedBenchmark, exposure, execution, robustness })
   const [view, setView] = useState(() => sessionValue('valuesignal.analytics.view', 'overview'))
   const selectView = (next) => {
     setView(next)

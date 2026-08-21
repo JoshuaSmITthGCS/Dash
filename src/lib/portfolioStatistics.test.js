@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  constructedBenchmarkFit,
   deflatedSharpe,
   executionStatistics,
   minimumTrackRecordLength,
@@ -17,6 +18,16 @@ function weekdayDates(count, start = '2024-01-02') {
     value += 86_400_000
   }
   return dates
+}
+
+function deterministicReturns(count, seed) {
+  return Array.from({ length: count }, (_, index) => Math.sin((index + 1) * seed) * 0.01)
+}
+
+function seriesFromReturns(returns, dates) {
+  const values = [100]
+  for (const value of returns) values.push(values.at(-1) * (1 + value))
+  return { dates, values }
 }
 
 describe('portfolio statistical inference', () => {
@@ -83,5 +94,56 @@ describe('execution statistics', () => {
   it('does not infer turnover from returns', () => {
     expect(executionStatistics({ returns: [0.01, -0.01] })).toMatchObject({ available: false })
     expect(executionStatistics({ returns: [0.01, -0.01] }).reason).toContain('Position-level')
+  })
+})
+
+describe('constructedBenchmarkFit', () => {
+  const dates = weekdayDates(31)
+  const returnsA = deterministicReturns(30, 0.7)
+  const returnsB = deterministicReturns(30, 1.3)
+  const candidateA = { symbol: 'AAA', label: 'Asset A', ...seriesFromReturns(returnsA, dates) }
+  const candidateB = { symbol: 'BBB', label: 'Asset B', ...seriesFromReturns(returnsB, dates) }
+
+  it('concentrates weight on the single candidate that matches the portfolio exactly', () => {
+    const portfolio = seriesFromReturns(returnsA, dates)
+    const fit = constructedBenchmarkFit(portfolio, [candidateA, candidateB])
+    expect(fit.available).toBe(true)
+    expect(fit.weights.find((row) => row.symbol === 'AAA').weight).toBeCloseTo(1, 2)
+    expect(fit.weights.find((row) => row.symbol === 'BBB').weight).toBeCloseTo(0, 2)
+    expect(fit.correlation).toBeCloseTo(1, 3)
+    expect(fit.trackingErrorPct).toBeCloseTo(0, 2)
+  })
+
+  it('splits weight between two candidates that together explain the portfolio exactly', () => {
+    const blended = returnsA.map((value, index) => 0.5 * value + 0.5 * returnsB[index])
+    const portfolio = seriesFromReturns(blended, dates)
+    const fit = constructedBenchmarkFit(portfolio, [candidateA, candidateB])
+    expect(fit.weights.find((row) => row.symbol === 'AAA').weight).toBeCloseTo(0.5, 2)
+    expect(fit.weights.find((row) => row.symbol === 'BBB').weight).toBeCloseTo(0.5, 2)
+    expect(fit.correlation).toBeCloseTo(1, 3)
+  })
+
+  it('always returns non-negative weights summing to 1, even for an unrelated portfolio', () => {
+    const portfolio = seriesFromReturns(deterministicReturns(30, 2.1), dates)
+    const fit = constructedBenchmarkFit(portfolio, [candidateA, candidateB])
+    expect(fit.weights.reduce((sum, row) => sum + row.weight, 0)).toBeCloseTo(1, 6)
+    fit.weights.forEach((row) => expect(row.weight).toBeGreaterThanOrEqual(0))
+  })
+
+  it('is unavailable with fewer than two usable candidates', () => {
+    const portfolio = seriesFromReturns(returnsA, dates)
+    expect(constructedBenchmarkFit(portfolio, [candidateA]).available).toBe(false)
+    expect(constructedBenchmarkFit(portfolio, []).available).toBe(false)
+  })
+
+  it('is unavailable with too few overlapping observations', () => {
+    const shortDates = weekdayDates(10)
+    const shortReturns = deterministicReturns(9, 0.7)
+    const shortA = { symbol: 'AAA', ...seriesFromReturns(shortReturns, shortDates) }
+    const shortB = { symbol: 'BBB', ...seriesFromReturns(deterministicReturns(9, 1.3), shortDates) }
+    const portfolio = seriesFromReturns(shortReturns, shortDates)
+    const fit = constructedBenchmarkFit(portfolio, [shortA, shortB])
+    expect(fit.available).toBe(false)
+    expect(fit.reason).toContain('21 overlapping returns')
   })
 })

@@ -21,6 +21,43 @@ def test_append_only_first_write_wins(tmp_path, monkeypatch):
     assert "restated" in logged
 
 
+def test_a_repeated_conflict_is_logged_once_not_every_run(tmp_path, monkeypatch):
+    # Yahoo's adjusted close for an already-archived date keeps drifting slightly as later
+    # dividends change the adjustment factor, so the same (ticker, date) mismatch would
+    # otherwise get re-logged on every subsequent run forever -- this is what inflated
+    # conflicts.jsonl to 111MB (663,964 lines for only 108,033 distinct pairs) and broke
+    # every full-mode refresh's push past GitHub's 100MB limit.
+    monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
+    monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
+    price_archive.append_series("DEAD", ["2026-01-02"], [10.0], [100], "seed")
+    _, conflicts_first = price_archive.append_series(
+        "DEAD", ["2026-01-02"], [10.5], [100], "run_daily")
+    assert conflicts_first == 1
+    _, conflicts_second = price_archive.append_series(
+        "DEAD", ["2026-01-02"], [10.5], [100], "run_daily")
+    assert conflicts_second == 0
+    logged_lines = open(tmp_path / "conflicts.jsonl").read().strip().splitlines()
+    assert len(logged_lines) == 1
+
+
+def test_dedup_keys_on_ticker_and_date_not_the_whole_universe(tmp_path, monkeypatch):
+    # Dedup must be scoped per (ticker, date), not silence conflict-logging altogether: a
+    # third differing value for an already-logged pair still doesn't re-log, but a
+    # genuinely new date for the same ticker does.
+    monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
+    monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
+    price_archive.append_series("DEAD", ["2026-01-02"], [10.0], [100], "seed")
+    price_archive.append_series("DEAD", ["2026-01-02"], [10.5], [100], "run_daily")
+    _, conflicts = price_archive.append_series(
+        "DEAD", ["2026-01-02"], [11.0], [100], "run_daily")
+    assert conflicts == 0  # already logged for this pair, even at a third differing value
+
+    price_archive.append_series("DEAD", ["2026-01-03"], [20.0], [100], "seed")
+    _, conflicts = price_archive.append_series(
+        "DEAD", ["2026-01-03"], [20.5], [100], "run_daily")
+    assert conflicts == 1  # a different date for the same ticker is a fresh pair
+
+
 def test_health_goes_critical_when_stale(tmp_path, monkeypatch):
     monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
     monkeypatch.setattr(price_archive, "MANIFEST", str(tmp_path / "m.json"))

@@ -114,6 +114,15 @@ def run():
         "schema_version": "1.0.0", "model_version": "momentum-v2.0.0",
         "config_version": "screens-v2.0.0", "generated_at": generated_at,
         "status": "success", "results": results,
+        "coverage_note": (
+            "This screen's momentum_12_1 (and momentum_12_7/momentum_6_1) use exact "
+            "calendar month-end prices with the skip month(s) excluded. The main research "
+            "score's momentum_12_1 (pipeline/risk_metrics.py) instead uses a fixed "
+            "252/21-trading-day offset with no calendar anchoring. The two are both "
+            "standard constructions of 12-1 momentum and can disagree slightly for the "
+            "same ticker on the same day, particularly around holidays or short months -- "
+            "a difference in convention, not an error in either one."
+        ),
     }
     save_json("screens/momentum.json", result)
     LOG.info(f"Momentum screen: scored {len(results)} tickers "

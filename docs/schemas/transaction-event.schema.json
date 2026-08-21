@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://valuesignal.internal/schemas/transaction-event.schema.json",
+  "title": "Canonical transaction event",
+  "description": "The one event shape every portfolio-accounting feature (MWR/XIRR, the reconciliation bridge, turnover, and the tax-lot ledger) should eventually read from, instead of each maintaining its own narrower Firestore document shape. Written per Master Remediation Prompt v3 item 6 (B1's canonical timestamp model + B3's transaction/tax-lot ledger prerequisite). This is a schema-only deliverable -- see docs/BUILD-PLAN.md for what building the engine around it would take, and docs/MODEL-RISK-REGISTER.md for why that's T4, sign-off-gated work, not built from this schema alone.",
+  "type": "object",
+  "required": ["event_id", "event_type", "security_id", "quantity", "event_at", "observed_at", "ingested_at"],
+  "properties": {
+    "event_id": { "type": "string", "minLength": 1, "description": "Stable, unique identifier for this specific event. Never reused, even if the event is later corrected -- corrections are new events linked via supersedes_event_id, not overwrites." },
+    "event_type": {
+      "enum": ["buy", "sell", "deposit", "withdrawal", "dividend", "interest", "fee", "tax_withholding", "split", "spinoff", "merger", "transfer_in", "transfer_out"],
+      "description": "buy/sell/transfer are position-affecting and drive lot creation/depletion (B3); deposit/withdrawal/dividend/interest/fee/tax_withholding are cash-only and drive the reconciliation bridge (B2); split/spinoff/merger are corporate actions and belong to the independent ledger in B4, cross-referenced here by corporate_action_id when a buy/sell/transfer was itself triggered by one (e.g. cash-in-lieu of fractional shares)."
+    },
+    "security_id": {
+      "type": ["string", "null"],
+      "description": "A canonical, provider-independent security identifier (OpenFIGI FIGI preferred once wired -- see docs/API-DATA-SOURCE-PLAN.md; CUSIP/ISIN acceptable). NEVER a raw ticker string as the primary key: tickers are reused across delisted/relisted/renamed securities. Null only for pure cash events (deposit, withdrawal, interest, fee, tax_withholding) that touch no security.",
+      "examples": ["BBG000B9XRY4"]
+    },
+    "ticker_at_event_time": {
+      "type": ["string", "null"],
+      "description": "The ticker as displayed/traded at the time of the event, kept for human display and as a fallback join key -- never used as the primary key. A security's ticker can differ from its current one if it has since been renamed."
+    },
+    "account_id": { "type": "string", "description": "Which account this event belongs to. A single-account app can use a constant; multi-account support (a real future need once this schema is load-bearing) requires this from day one so it isn't a breaking migration later." },
+    "tax_treatment": {
+      "enum": ["taxable", "tax_deferred", "tax_exempt", "unknown"],
+      "default": "unknown",
+      "description": "Needed before any wash-sale or after-tax analytics (B3) can be computed -- a wash-sale rule only applies inside a taxable account, and a tax-deferred account's sales never realize a taxable gain/loss at all."
+    },
+    "quantity": {
+      "type": ["number", "null"],
+      "description": "Signed share/unit count for buy/sell/transfer/split events. Null for pure cash events."
+    },
+    "price_per_unit": { "type": ["number", "null"], "description": "Execution price for buy/sell. Null for events with no per-unit price (deposits, dividends paid as a flat cash amount, etc.)." },
+    "gross_amount": { "type": "number", "description": "Cash effect before fees/tax withholding: quantity * price_per_unit for a trade, the deposited/withdrawn amount for a cash event." },
+    "fees": { "type": "number", "default": 0, "description": "Commissions, contract fees, etc. charged on this specific event. Distinct from a standalone 'fee' event type, which represents an account-level fee not tied to a single trade." },
+    "tax_withheld": { "type": "number", "default": 0, "description": "Tax withheld at the source (e.g. dividend withholding). Distinct from a realized-gain tax liability, which is computed later from the lot ledger, not stored per-event." },
+    "net_amount": { "type": "number", "description": "gross_amount adjusted for fees and tax_withheld -- the actual cash-balance effect of this event." },
+    "currency": { "type": "string", "default": "USD", "description": "ISO 4217 code. This app is USD-only today (see the reconciliation bridge's explicit fx.tracked: false) -- present here so a future multi-currency account doesn't need a schema migration, not because it's used yet." },
+
+    "lot_selection_method": {
+      "enum": ["fifo", "lifo", "specific_identification", "average_cost", null],
+      "description": "For a sell/transfer_out event: which lot-depletion rule applied. IRS Pub 550 defaults to FIFO absent a specific identification made at the time of sale (B3). Null for events that don't deplete a lot."
+    },
+    "lots_affected": {
+      "type": "array",
+      "description": "For a sell/transfer_out: which specific lots (by lot_id) were depleted and by how much. Empty until B3's lot engine exists; this field is here so a sell event recorded today under this schema wouldn't need reshaping once it does.",
+      "items": {
+        "type": "object",
+        "required": ["lot_id", "quantity_depleted"],
+        "properties": {
+          "lot_id": { "type": "string" },
+          "quantity_depleted": { "type": "number" },
+          "realized_gain": { "type": "number", "description": "proceeds attributable to this lot minus its adjusted basis" },
+          "wash_sale_disallowed_loss": { "type": ["number", "null"], "description": "Null until B3's wash-sale engine exists. A non-null value here means part of this lot's loss was disallowed and must adjust a replacement lot's basis." }
+        }
+      }
+    },
+    "corporate_action_id": { "type": ["string", "null"], "description": "Links this event to an entry in the independent corporate-action ledger (B4) when this event was itself triggered by one -- e.g. cash-in-lieu from a split, or a forced sale from a merger. Null for an ordinary trade." },
+
+    "period_end": { "type": ["string", "null"], "format": "date", "description": "B1: the economic period this event's amount is attributed to, where that differs from event_at (e.g. a dividend's declared period). Usually null for a transaction event -- period_end matters far more for fundamentals observations than for transactions, but the field exists so a single timestamp model spans both (see pipeline/pit_store.py's TRACKED_FIELDS for the fundamentals side of this same B1 discipline)." },
+    "event_at": { "type": "string", "format": "date-time", "description": "B1: when the underlying event actually happened (the trade execution time, the date cash actually moved)." },
+    "published_at": { "type": ["string", "null"], "format": "date-time", "description": "B1: when the source (brokerage, custodian) made this event's record available, where distinct from event_at." },
+    "available_at": { "type": ["string", "null"], "format": "date-time", "description": "B1: earliest defensible time this event could have been known outside the source system. For a self-reported manual entry (what this app records today), this is the same instant as observed_at -- there is no separate publication lag to model." },
+    "source_effective_at": { "type": ["string", "null"], "format": "date-time", "description": "B1: the source's own stated as-of/effective date, only populated where it differs from available_at. Not used by this app's manual-entry model today; present for when a brokerage-feed integration replaces manual entry." },
+    "observed_at": { "type": "string", "format": "date-time", "description": "B1: when this pipeline/app first observed the event -- for manual entry, the moment the user submitted the form." },
+    "ingested_at": { "type": "string", "format": "date-time", "description": "B1: warehouse/Firestore write time. May differ from observed_at under retry/offline-queue conditions." },
+    "revised_at": { "type": ["string", "null"], "format": "date-time", "description": "B1: set only when this event corrects an earlier one." },
+    "supersedes_event_id": { "type": ["string", "null"], "description": "B1: links a revision to the exact prior event_id it replaces, mirroring pit_store.py's diff_revisions pattern on the fundamentals side -- an amendment is a new linked event, never a silent overwrite of the original." },
+
+    "source": { "type": "string", "description": "Where this event came from: 'manual_entry' for everything this app writes today; a brokerage-feed identifier once one exists." },
+    "status": { "enum": ["settled", "pending", "processing", "cancelled"], "default": "settled", "description": "netInvestedCapital/settledExternalFlows (src/lib/portfolioAnalytics.js) already filter out 'pending'/'processing' rows -- this field is what lets that filter exist without the caller having to know the source's own settlement semantics." },
+    "note": { "type": "string", "description": "Free-text, user-entered context." }
+  }
+}

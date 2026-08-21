@@ -39,9 +39,9 @@ const report = {
   },
   regression: {
     ...regression,
-    alpha_interpretation: regression.alphaTStatistic != null && Math.abs(regression.alphaTStatistic) >= 2
-      ? 'The alpha t-statistic clears 2 in absolute value, but it remains a historical estimate.'
-      : 'The alpha t-statistic is under 2 in absolute value and means nothing statistically.',
+    alpha_interpretation: regression.alphaTStatistic != null && Math.abs(regression.alphaTStatistic) >= 3
+      ? 'The alpha t-statistic clears the dashboard\'s evidence hurdle of 3 in absolute value, but it remains a historical estimate.'
+      : 'The alpha t-statistic is under the dashboard\'s evidence hurdle of 3 in absolute value; this sample does not distinguish alpha from packaged factor exposure.',
   },
 }
 
