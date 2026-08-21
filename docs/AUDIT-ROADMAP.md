@@ -136,10 +136,14 @@ page — those are called out as **wiring-only** below.
     "buried in settings" as the merged prompt feared — it's the very next section below the
     success-probability gauge, same page, same scroll. Still worth merging into (or overlaying
     directly on) the gauge card itself to remove residual ambiguity, at zero data-model cost.
-27. **T3 — reconcile or disclose the dual `momentum_12_1` implementations** (champion: daily
-    offset; standalone Momentum screen: calendar-month-end resample). Not a bug — arguably
-    intentional per the selection/timing separation principle — but the divergence should be
-    either reconciled or explicitly disclosed on both screens.
+27. ✅ **T3 — disclose the dual `momentum_12_1` implementations** (champion: daily offset;
+    standalone Momentum screen: calendar-month-end resample). Not a bug — arguably intentional
+    per the selection/timing separation principle — chose disclose over reconcile, since
+    reconciling would mean changing which construction feeds the champion's live technical
+    score, a scoring change requiring sign-off under this audit's own authorization tiers, not a
+    same-session T3 fix. Disclosed on both: a `coverage_note` on `screens/momentum.json`
+    (`build_momentum_screen.py`) and an extended tooltip on the champion's 12-1 momentum metric
+    (`src/components/MetricSections.jsx`).
 28. **T3 — ingest the `research/audit/round3-6/` ablation results into `pipeline/experiment_registry.json`**
     so they're not orphaned in a separate tree with hardcoded machine-specific paths, and run
     the ablations confirmed never-attempted (market-behavior-only, no-news, no-valuation,

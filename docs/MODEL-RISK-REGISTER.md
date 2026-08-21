@@ -148,7 +148,7 @@ actually scheduled.
 - **Mitigation**: none yet; proposed UI merge/overlay in `docs/AUDIT-ROADMAP.md` item 26.
 - **Monitoring metric**: none applicable (a UI/communication risk, not a data risk).
 
-### 8. Two structurally different `momentum_12_1` implementations
+### 8. Two structurally different `momentum_12_1` implementations (disclosed this session)
 
 - **Model**: `pipeline/risk_metrics.py:36` (champion) vs. `pipeline/research_screens_v2.py:39-54`
   (standalone Momentum screen).
@@ -159,8 +159,12 @@ actually scheduled.
   that this is possible.
 - **Severity**: P2 — no evidence either implementation is *wrong*, just that they can disagree
   without disclosure.
-- **Mitigation**: none yet; proposed reconciliation or disclosure in `docs/AUDIT-ROADMAP.md`
-  item 27.
+- **Mitigation**: disclosed, not reconciled, this session (`docs/AUDIT-ROADMAP.md` item 27) —
+  reconciling would change which construction feeds the champion's live technical score, a
+  scoring change out of scope for a same-session T3 fix. `build_momentum_screen.py` now
+  publishes a `coverage_note` on `screens/momentum.json` naming both constructions, and the
+  champion's 12-1 momentum tooltip (`src/components/MetricSections.jsx`) now names the
+  standalone screen's different construction.
 - **Monitoring metric**: pairwise rank correlation between the two implementations' outputs,
   not currently measured.
 
