@@ -22,6 +22,16 @@ Seeding: seed_from_disk() ingests every series already on disk (backtest_cache, 
 survivorship dead_prices captures, the OHLC sample) with zero network. run_daily()
 appends today's closes for the current universe plus every ticker in the delisting log
 young enough to still resolve.
+
+Conflict logging is deduplicated per (ticker, date): Yahoo's adjusted-close values for a
+given historical date keep drifting by small amounts as later dividends change the
+adjustment factor, so a rolling window of already-archived dates disagrees with the
+freshly fetched series on essentially every run. Without dedup that re-logs the same
+already-known mismatch every single day forever - which is exactly what inflated
+conflicts.jsonl to 111MB and broke every full-mode refresh's push past GitHub's 100MB
+limit (663,964 logged lines for only 108,033 distinct (ticker, date) pairs, some repeated
+9 times). Logging each pair once preserves the signal (a real, permanent record of every
+date the vendor's price disagreed with what was first archived) without the noise.
 """
 from __future__ import annotations
 
@@ -34,6 +44,29 @@ REPO = os.path.dirname(HERE)
 ARCHIVE_DIR = os.path.join(HERE, "data", "price_archive")
 MANIFEST = os.path.join(ARCHIVE_DIR, "archive_manifest.json")
 CONFLICTS = os.path.join(ARCHIVE_DIR, "conflicts.jsonl")
+
+# (ticker, date) pairs already logged in CONFLICTS, keyed by path so tests that monkeypatch
+# CONFLICTS to a fresh location never see another test's or another path's cached keys.
+_logged_conflict_keys = {}
+
+
+def _seen_conflict_keys():
+    keys = _logged_conflict_keys.get(CONFLICTS)
+    if keys is None:
+        keys = set()
+        if os.path.exists(CONFLICTS):
+            with open(CONFLICTS) as handle:
+                for line in handle:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        row = json.loads(line)
+                    except ValueError:
+                        continue
+                    keys.add((row.get("ticker"), row.get("date")))
+        _logged_conflict_keys[CONFLICTS] = keys
+    return keys
 
 ARCHIVE_START_DATE = "2026-08-11"
 MAX_STALENESS_DAYS = 4  # a daily schedule with weekend slack
@@ -61,12 +94,16 @@ def append_series(ticker, dates, closes, volumes, source):
             continue
         if d in rows:
             if abs(rows[d][0] - float(c)) > max(0.01, 0.001 * abs(float(c))):
-                conflicts += 1
-                with open(CONFLICTS, "a") as handle:
-                    handle.write(json.dumps({
-                        "ticker": ticker, "date": d, "archived": rows[d][0],
-                        "incoming": float(c), "source": source,
-                        "at": datetime.now(timezone.utc).isoformat()}) + "\n")
+                key = (ticker.upper(), d)
+                seen = _seen_conflict_keys()
+                if key not in seen:
+                    seen.add(key)
+                    conflicts += 1
+                    with open(CONFLICTS, "a") as handle:
+                        handle.write(json.dumps({
+                            "ticker": ticker, "date": d, "archived": rows[d][0],
+                            "incoming": float(c), "source": source,
+                            "at": datetime.now(timezone.utc).isoformat()}) + "\n")
             continue
         rows[d] = [round(float(c), 4), int(v or 0)]
         added += 1
