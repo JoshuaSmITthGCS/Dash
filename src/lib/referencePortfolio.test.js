@@ -55,10 +55,10 @@ describe('planReferencePortfolioSync', () => {
     expect(operations[1].id).toBe('AAA-manual')
   })
 
-  it('matches the invested-only Aug 14 Fidelity totals', () => {
-    expect(REFERENCE_PORTFOLIO).toHaveLength(39)
-    expect(REFERENCE_PORTFOLIO.reduce((sum, position) => sum + position.costBasisTotal, 0)).toBeCloseTo(4550, 8)
-    expect(REFERENCE_PORTFOLIO.reduce((sum, position) => sum + position.snapshotValue, 0)).toBeCloseTo(4660.51, 8)
+  it('matches the invested-only Aug 21 Fidelity totals', () => {
+    expect(REFERENCE_PORTFOLIO).toHaveLength(46)
+    expect(REFERENCE_PORTFOLIO.reduce((sum, position) => sum + position.costBasisTotal, 0)).toBeCloseTo(5549.26, 2)
+    expect(REFERENCE_PORTFOLIO.reduce((sum, position) => sum + position.snapshotValue, 0)).toBeCloseTo(5669.93, 2)
     expect(REFERENCE_PORTFOLIO.some((position) => ['FZFXX', 'Pending activity'].includes(position.ticker))).toBe(false)
   })
 })
