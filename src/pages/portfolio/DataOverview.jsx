@@ -5,9 +5,11 @@ import PortfolioMoveExplanation from '../../components/PortfolioMoveExplanation.
 import PerformanceMetrics from '../../components/PerformanceMetrics.jsx'
 import ExportMetricsMenu from '../../components/ExportMetricsMenu.jsx'
 import ScenarioSensitivityPanel from '../../components/ScenarioSensitivityPanel.jsx'
+import AutoOverviewLine from '../../components/AutoOverviewLine.jsx'
 import HoldingsDataQuality from './HoldingsDataQuality.jsx'
 import FundCostOverview from './FundCostOverview.jsx'
 import { explainPortfolioMove } from '../../lib/portfolioAttribution.js'
+import { buildDataOverviewBrief } from '../../lib/portfolioPlainBrief.js'
 import { ANALYTICS_SCOPES } from './format.js'
 
 export default function DataOverview({
@@ -26,6 +28,12 @@ export default function DataOverview({
   const moveExplanation = explainPortfolioMove(holdings.portfolioPositions, holdings.benchmarkHistory, {
     benchmarkQuote,
     period: attributionPeriod,
+  })
+  const brief = buildDataOverviewBrief({
+    performance: analytics.performance,
+    batting: analytics.batting,
+    metricModel: analytics.metricModel,
+    benchmarkLabel: benchmarks.selectedBenchmarkLabel,
   })
 
   return (
@@ -48,6 +56,7 @@ export default function DataOverview({
         onPeriodChange={onAttributionPeriodChange}
       />
       <ScenarioSensitivityPanel holdings={holdings} signalMetrics={signalMetrics} />
+      <AutoOverviewLine tone={brief.tone}>{brief.text}</AutoOverviewLine>
       <HoldingsDataQuality portfolioPositions={holdings.portfolioPositions} />
       <FundCostOverview fundCost={holdings.fundCost} />
       <PerformanceMetrics
