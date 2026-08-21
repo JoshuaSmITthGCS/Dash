@@ -62,6 +62,10 @@ export function groupPortfolioPositions(rows = []) {
   ]))
 }
 
+// One unpriceable position (a fund whose provider doesn't serve intraday quotes, a symbol
+// mid-outage) used to blank the whole snapshot for that user every five minutes. Every other
+// held position still has a real quote most cycles, so this prices what it can and records the
+// gap instead of throwing away a coverage's worth of otherwise-good data.
 export function buildPortfolioSnapshot(positions, quotes, recordedAt) {
   if (!positions?.length) return null
   const priced = positions.map((position) => {
@@ -76,19 +80,25 @@ export function buildPortfolioSnapshot(positions, quotes, recordedAt) {
       marketTime: quote.marketTime || null,
     }
   })
-  if (priced.some((position) => position == null)) return null
+  const pricedPositions = priced.filter(Boolean)
+  if (!pricedPositions.length) return null
 
-  const investedValue = priced.reduce((sum, position) => sum + position.value, 0)
+  const investedValue = pricedPositions.reduce((sum, position) => sum + position.value, 0)
+  const unpricedTickers = positions
+    .filter((_, index) => priced[index] == null)
+    .map((position) => position.ticker)
   return {
     value: investedValue,
     investedValue,
-    coveragePct: 100,
+    coveragePct: Math.round((pricedPositions.length / positions.length) * 100),
     source: 'scheduled_portfolio_price_refresh',
     samplingIntervalMinutes: 5,
     recordedAt: recordedAt.toISOString(),
     marketDate: marketDate(recordedAt),
-    positionCount: priced.length,
-    prices: priced,
+    positionCount: pricedPositions.length,
+    totalPositionCount: positions.length,
+    prices: pricedPositions,
+    ...(unpricedTickers.length ? { unpricedTickers } : {}),
   }
 }
 
