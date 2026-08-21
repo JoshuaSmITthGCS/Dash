@@ -7,6 +7,7 @@ import {
   performanceStatistics,
   probabilisticSharpe,
   sampleDeviation,
+  timeToValidMetric,
 } from './portfolioStatistics.js'
 
 function weekdayDates(count, start = '2024-01-02') {
@@ -145,5 +146,34 @@ describe('constructedBenchmarkFit', () => {
     const fit = constructedBenchmarkFit(portfolio, [shortA, shortB])
     expect(fit.available).toBe(false)
     expect(fit.reason).toContain('21 overlapping returns')
+  })
+})
+
+describe('timeToValidMetric', () => {
+  it('is unavailable when the observation count is missing', () => {
+    expect(timeToValidMetric(null, '2026-08-14').available).toBe(false)
+  })
+
+  it('reports the floor already met once observations reach it', () => {
+    expect(timeToValidMetric(60, '2026-08-14')).toMatchObject({
+      available: true, met: true, observations: 60, floor: 60, remainingSessions: 0,
+    })
+  })
+
+  it('projects the next-session estimate as a lower bound, skipping weekends', () => {
+    expect(timeToValidMetric(59, '2026-08-14')).toMatchObject({
+      available: true, met: false, observations: 59, floor: 60, remainingSessions: 1,
+      estimatedDate: '2026-08-17',
+    })
+    expect(timeToValidMetric(55, '2026-08-14')).toMatchObject({
+      remainingSessions: 5, estimatedDate: '2026-08-21',
+    })
+    expect(timeToValidMetric(34, '2026-08-14', 60)).toMatchObject({
+      remainingSessions: 26, estimatedDate: '2026-09-21',
+    })
+  })
+
+  it('has no estimated date without a last-observed date to project from', () => {
+    expect(timeToValidMetric(10, null)).toMatchObject({ available: true, met: false, estimatedDate: null })
   })
 })

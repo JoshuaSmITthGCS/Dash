@@ -56,10 +56,29 @@ describe('scheduled portfolio price snapshots', () => {
     })
   })
 
-  it('does not store a misleading partial portfolio value', () => {
+  it('records a partial snapshot when one position cannot be priced, instead of dropping the whole update', () => {
+    const snapshot = buildPortfolioSnapshot(
+      [{ ticker: 'AAPL', shares: 2 }, { ticker: 'FZFXX', shares: 5 }],
+      { AAPL: { price: 230, marketTime: '2026-08-13T15:34:00.000Z' } },
+      new Date('2026-08-13T15:35:00.000Z'),
+    )
+    expect(snapshot).toMatchObject({
+      value: 460,
+      investedValue: 460,
+      coveragePct: 50,
+      positionCount: 1,
+      totalPositionCount: 2,
+      unpricedTickers: ['FZFXX'],
+    })
+    expect(snapshot.prices).toEqual([
+      { ticker: 'AAPL', shares: 2, price: 230, value: 460, marketTime: '2026-08-13T15:34:00.000Z' },
+    ])
+  })
+
+  it('returns null only when nothing in the portfolio can be priced', () => {
     expect(buildPortfolioSnapshot(
       [{ ticker: 'AAPL', shares: 2 }, { ticker: 'MSFT', shares: 1 }],
-      { AAPL: { price: 230 } },
+      {},
       new Date('2026-08-13T15:35:00.000Z'),
     )).toBeNull()
   })

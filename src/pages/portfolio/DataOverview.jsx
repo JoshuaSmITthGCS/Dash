@@ -8,6 +8,7 @@ import ScenarioSensitivityPanel from '../../components/ScenarioSensitivityPanel.
 import AutoOverviewLine from '../../components/AutoOverviewLine.jsx'
 import HoldingsDataQuality from './HoldingsDataQuality.jsx'
 import FundCostOverview from './FundCostOverview.jsx'
+import TimeToValidMetric from './TimeToValidMetric.jsx'
 import { explainPortfolioMove } from '../../lib/portfolioAttribution.js'
 import { buildDataOverviewBrief } from '../../lib/portfolioPlainBrief.js'
 import { ANALYTICS_SCOPES } from './format.js'
@@ -59,6 +60,7 @@ export default function DataOverview({
       <AutoOverviewLine tone={brief.tone}>{brief.text}</AutoOverviewLine>
       <HoldingsDataQuality portfolioPositions={holdings.portfolioPositions} />
       <FundCostOverview fundCost={holdings.fundCost} />
+      <TimeToValidMetric timeToValidMetric={analytics.timeToValidMetric} />
       <PerformanceMetrics
         metrics={analytics.performance}
         benchmarkLabel={benchmarks.selectedBenchmarkLabel}

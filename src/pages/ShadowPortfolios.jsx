@@ -1,9 +1,16 @@
 import { ScreenNavigation } from './ResearchScreen'
 import { useData } from '../lib/useData'
+import { useAuth } from '../lib/FirebaseAuthContext'
+import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
+import { currentHoldingsSeries, returnOverWindow } from '../lib/portfolioAnalytics.js'
+import { buildPriceModel } from './portfolio/portfolioModels.js'
 import { Loading } from '../components/Bits'
 import DataTable from '../components/DataTable.jsx'
 import AutoOverviewLine from '../components/AutoOverviewLine.jsx'
 import ScatterChart from '../components/ScatterChart.jsx'
+import MyPortfolioVsShadow from './portfolio/MyPortfolioVsShadow.jsx'
+
+const NO_LIVE_QUOTES = { quotes: {}, fetchedAt: null }
 
 const metric = (value, suffix = '', row, minimum = 1) => {
   if (value != null) return `${Number(value).toFixed(2)}${suffix}`
@@ -60,6 +67,9 @@ function rankingOverview(strategies, alignedWindow, annualizedMinimum) {
 
 export default function ShadowPortfolios() {
   const { data, loading, error } = useData('screens/shadow-portfolios.json')
+  const { currentUser } = useAuth()
+  const { positions } = useFirebasePortfolio()
+  const { data: report } = useData('report.json')
   if (loading) return <><ScreenNavigation /><Loading /></>
   const strategies = data?.strategies || []
   const live = strategies.filter((row) => row.observations > 0)
@@ -67,10 +77,23 @@ export default function ShadowPortfolios() {
   const alignedWindow = data?.aligned_window || {}
   const annualizedMinimum = Math.max(...strategies.map((row) => row.annualized_metrics_minimum_observations || 0), 20)
   const overview = rankingOverview(strategies, alignedWindow, annualizedMinimum)
+
+  const { priceData } = buildPriceModel({ data: report, positions, quotes: NO_LIVE_QUOTES })
+  const myHoldingsSeries = currentHoldingsSeries(positions, priceData, [])
+  const myWindow = alignedWindow.window_start && alignedWindow.window_end
+    ? returnOverWindow(myHoldingsSeries, alignedWindow.window_start, alignedWindow.window_end)
+    : { available: false, reason: 'No comparable window has been established yet.' }
   return <><ScreenNavigation /><div className="page-head"><div><span className="eyebrow">Prospective validation</span>
     <h1 className="page-title">Shadow portfolio performance</h1><p className="page-sub">Immutable, net-of-cost observations. No strategy is promoted from implementation alone.</p></div></div>
     {error ? <div className="card etf-state" role="alert"><strong>Shadow results unavailable</strong><span>{error.message}</span></div> : <>
       <AutoOverviewLine tone={overview.tone}>{overview.text}</AutoOverviewLine>
+      <MyPortfolioVsShadow
+        signedIn={Boolean(currentUser)}
+        hasPositions={positions.length > 0}
+        myWindow={myWindow}
+        alignedWindow={alignedWindow}
+        strategies={strategies}
+      />
       <section className="shadow-validation-summary" aria-label="Shadow validation collection status">
         <article><span>Reporting now</span><strong>{live.length}</strong><small>strategies with matched returns</small></article>
         <article><span>Immutable snapshots</span><strong>{snapshots}</strong><small>one per market session, never rewritten</small></article>

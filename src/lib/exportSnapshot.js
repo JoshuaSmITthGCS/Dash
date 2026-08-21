@@ -8,14 +8,15 @@
 // section below is one of this app's own already-assembled models, unchanged, just labeled.
 
 import { ANALYTICS_SCOPES } from '../pages/portfolio/format.js'
+import { SAMPLE_SIZE_WARNING_FLOOR } from './portfolioStatistics.js'
 
 // Round 7 Task 5: below this many observations, the performance block's headline ratios
 // (Sharpe/Sortino/annualized return) are annualized off a sample too short to mean anything
 // - the same export was shipping Sharpe 5.75 on 24 daily returns next to a deflated Sharpe
 // of 0.238 with nothing telling a reader which to believe. Display-layer only: no number
-// changes, the block just says so out loud. The floor is a reporting choice, not a
-// statistical law - adjust here if a different threshold is preferred.
-export const SAMPLE_SIZE_WARNING_FLOOR = 60
+// changes, the block just says so out loud. The floor itself lives in portfolioStatistics.js,
+// which also drives the Data overview's time-to-valid-metric countdown against this same bar.
+export { SAMPLE_SIZE_WARNING_FLOOR }
 
 function annotateSmallSample(analytics) {
   const performance = analytics?.performance

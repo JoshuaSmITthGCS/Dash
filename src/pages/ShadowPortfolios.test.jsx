@@ -1,12 +1,23 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ShadowPortfolios from './ShadowPortfolios.jsx'
 import { useData } from '../lib/useData.js'
+import { useAuth } from '../lib/FirebaseAuthContext.jsx'
+import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 
 vi.mock('../lib/useData', () => ({ useData: vi.fn() }))
+vi.mock('../lib/FirebaseAuthContext.jsx', () => ({ useAuth: vi.fn() }))
+vi.mock('../lib/useFirebasePortfolio.js', () => ({ useFirebasePortfolio: vi.fn() }))
 
 describe('ShadowPortfolios', () => {
+  beforeEach(() => {
+    // Every existing test below is exercising the strategies table, not the "your portfolio"
+    // overlay, so default to signed-out -- the overlay's own states are covered separately.
+    useAuth.mockReturnValue({ currentUser: null })
+    useFirebasePortfolio.mockReturnValue({ positions: [] })
+  })
+
   it('shows realized prospective metrics and explicit collection gates', () => {
     useData.mockReturnValue({
       loading: false,
@@ -117,5 +128,30 @@ describe('ShadowPortfolios', () => {
     expect(screen.getAllByText('—').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Not started').length).toBeGreaterThan(0)
     expect(screen.getByLabelText('Automatic ranking overview')).toHaveTextContent('No comparable ranking yet')
+  })
+
+  it('prompts sign-in for the "your portfolio" overlay when signed out', () => {
+    useData.mockReturnValue({
+      loading: false,
+      error: null,
+      data: { aligned_window: { window_start: '2026-08-13', window_end: '2026-08-21' }, strategies: [] },
+    })
+
+    render(<MemoryRouter><ShadowPortfolios /></MemoryRouter>)
+    expect(screen.getByText('Your portfolio vs. these strategies')).toBeInTheDocument()
+    expect(screen.getByText(/Sign in and add your holdings/)).toBeInTheDocument()
+  })
+
+  it('prompts adding holdings for the "your portfolio" overlay when signed in with an empty portfolio', () => {
+    useAuth.mockReturnValue({ currentUser: { uid: 'u1' } })
+    useFirebasePortfolio.mockReturnValue({ positions: [] })
+    useData.mockReturnValue({
+      loading: false,
+      error: null,
+      data: { aligned_window: { window_start: '2026-08-13', window_end: '2026-08-21' }, strategies: [] },
+    })
+
+    render(<MemoryRouter><ShadowPortfolios /></MemoryRouter>)
+    expect(screen.getByText(/Add holdings to your portfolio/)).toBeInTheDocument()
   })
 })

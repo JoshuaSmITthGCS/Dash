@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   alignSeries, annualizeReturnPct, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, costWeights, currentHoldingsSeries, diversificationScore, enrichPortfolio,
   contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, modifiedDietzReturn, moneyWeightedAccountReturn, netInvestedCapital, opportunityCost, performanceMetrics,
-  portfolioAnnualizedReturn, portfolioReconciliationBridge, portfolioReturnSummary, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace, underwaterProfile, weightedExpenseRatio,
+  portfolioAnnualizedReturn, portfolioReconciliationBridge, portfolioReturnSummary, portfolioRiskDecomposition, portfolioScore, resilienceIndex, returnOverWindow, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace, underwaterProfile, weightedExpenseRatio,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -120,6 +120,24 @@ describe('portfolio report analytics', () => {
     expect(selectPeriod(series, '1W').dates).toEqual(['2026-06-25', '2026-06-30'])
     expect(selectPeriod(series, 'All').values).toHaveLength(3)
     expect(selectPeriod({ dates: ['2025-12-31', '2026-01-02', '2026-06-30'], values: [18, 19, 30] }, 'YTD').dates).toEqual(['2026-01-02', '2026-06-30'])
+  })
+
+  it('reads net return over an externally supplied window, not the series own trailing period', () => {
+    const series = { dates: ['2026-06-01', '2026-06-25', '2026-06-30'], values: [20, 24, 30] }
+    expect(returnOverWindow(series, '2026-06-25', '2026-06-30')).toMatchObject({
+      available: true, netReturnPct: 25, startDate: '2026-06-25', endDate: '2026-06-30', observations: 2,
+    })
+    // A window starting before the series exists still clamps to the series' own first date.
+    expect(returnOverWindow(series, '2026-01-01', '2026-06-30')).toMatchObject({
+      available: true, netReturnPct: 50, startDate: '2026-06-01', endDate: '2026-06-30',
+    })
+  })
+
+  it('is unavailable when a supplied window falls outside the series or the series is missing', () => {
+    const series = { dates: ['2026-06-01', '2026-06-25'], values: [20, 24] }
+    expect(returnOverWindow(null, '2026-06-01', '2026-06-30').available).toBe(false)
+    expect(returnOverWindow(series, '2026-07-01', '2026-07-30').available).toBe(false)
+    expect(returnOverWindow(series, '2026-06-01', '2026-06-01').available).toBe(false)
   })
 
   it('keeps a session one holding is missing by valuing it at that holding’s previous close', () => {
