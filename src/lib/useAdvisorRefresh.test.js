@@ -139,7 +139,11 @@ describe('useAdvisorRefresh', () => {
     expect(getCall[0]).toContain('run_id=777')
   })
 
-  it('times out a stuck reanalysis after 5 minutes, not 10', async () => {
+  it('keeps waiting past the 5-minute estimate while GitHub confirms the reanalysis is still running', async () => {
+    // The rescore path outgrew its old "under a minute" estimate - it now re-runs every
+    // disk-only screen build plus the validation suite - and the fixed 5-minute timer was
+    // erroring out every healthy reanalysis while the run went on to succeed. A run the
+    // status endpoint reports as in_progress is never a timeout.
     vi.useFakeTimers()
     const reload = vi.fn().mockResolvedValue({ generated_at: '2026-08-01T00:00:00Z' })
     vi.stubGlobal('fetch', vi.fn((url, init) => {
@@ -148,19 +152,60 @@ describe('useAdvisorRefresh', () => {
       }
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ run_id: 1, status: 'in_progress', conclusion: null, percent: 10, stage: 'still going' }),
+        json: () => Promise.resolve({ active: true, run_id: 1, status: 'in_progress', conclusion: null, percent: 10, stage: 'still going' }),
       })
     }))
 
     const { result } = renderHook(() => useAdvisorRefresh('2026-08-01T00:00:00Z', reload, []))
     await act(async () => { await result.current.requestReanalyze() })
 
-    await act(async () => { await vi.advanceTimersByTimeAsync(5 * 60_000 - 1_000) })
+    await act(async () => { await vi.advanceTimersByTimeAsync(12 * 60_000) })
+    expect(result.current.status).toBe('pending')
+  })
+
+  it('times out a reanalysis after 5 minutes when no live run can be found at all', async () => {
+    // The soft deadline still matters for the case it was always really about: the
+    // dispatch never produced a run the status endpoint can see, so there is nothing to
+    // wait on and generated_at is never going to move.
+    vi.useFakeTimers()
+    const reload = vi.fn().mockResolvedValue({ generated_at: '2026-08-01T00:00:00Z' })
+    vi.stubGlobal('fetch', vi.fn((url, init) => {
+      if (init?.method === 'POST') {
+        return Promise.resolve({ ok: true, status: 202, json: () => Promise.resolve({ ok: true }) })
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ active: false }) })
+    }))
+
+    const { result } = renderHook(() => useAdvisorRefresh('2026-08-01T00:00:00Z', reload, []))
+    await act(async () => { await result.current.requestReanalyze() })
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(4 * 60_000) })
     expect(result.current.status).toBe('pending')
 
-    await act(async () => { await vi.advanceTimersByTimeAsync(2_000) })
+    await act(async () => { await vi.advanceTimersByTimeAsync(2 * 60_000) })
     expect(result.current.status).toBe('error')
     expect(result.current.message).toMatch(/taking longer than expected/)
+  })
+
+  it('reports a cancelled workflow run instead of polling until the timeout', async () => {
+    vi.useFakeTimers()
+    const reload = vi.fn().mockResolvedValue({ generated_at: '2026-08-01T00:00:00Z' })
+    vi.stubGlobal('fetch', vi.fn((url, init) => {
+      if (init?.method === 'POST') {
+        return Promise.resolve({ ok: true, status: 202, json: () => Promise.resolve({ ok: true, run_id: 1 }) })
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ run_id: 1, status: 'completed', conclusion: 'cancelled', percent: 40, stage: 'Fetch and score stock research' }),
+      })
+    }))
+
+    const { result } = renderHook(() => useAdvisorRefresh('2026-08-01T00:00:00Z', reload, []))
+    await act(async () => { await result.current.requestRefresh() })
+    await act(async () => { await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS) })
+
+    expect(result.current.status).toBe('error')
+    expect(result.current.message).toMatch(/cancelled before it could publish/)
   })
 
   it('reports a failed workflow run instead of waiting for the timeout', async () => {
