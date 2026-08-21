@@ -58,7 +58,16 @@ actually scheduled.
 - **Mitigation**: EDGAR XBRL fallback (`pipeline/edgar_enrichment.py`) already reduces the
   practical exposure by filling gaps Yahoo leaves after outages; the underlying shortlist-gating
   design is unchanged and out of this pass's scope (multi-week, WO-6 in `docs/P0-VERDICT.md`,
-  explicitly deprioritized there since no validated edge exists yet to protect).
+  explicitly deprioritized there since no validated edge exists yet to protect). Added this
+  session: `enrichment_rotation()` (`pipeline/fetch_advisor.py`) now gives statement-starved
+  names the theme screen already flagged as exposed (`theme_exposure` non-empty) first claim on
+  the rotation slice, ahead of the plain oldest-unenriched queue, and the rotation slice itself
+  grew from 15 to 20 names/refresh (`ADVISOR_ENRICHMENT_ROTATION_SIZE`). This shrinks the
+  specific case `themes.explain_rank` already discloses -- a sector-peer name ranked on a
+  business-quality reading with no financial statements behind it -- faster than before, but it
+  is a same-tier reprioritization of who gets enriched *sooner*, not a change to
+  `select_enrichment_priority`'s preliminary-score-only gate itself; the underlying structural
+  risk this entry describes is unchanged.
 - **Monitoring metric**: `docs/CONSOLIDATED-ASSESSMENT.md`-style coverage counts
   (`capital_allocation`/`accounting_quality` scored fraction of the published universe), and the
   rank-drift-vs-previous-run metric already proposed in the merged audit's §16 (not yet built).

@@ -101,6 +101,40 @@ class EnrichmentPriorityTests(unittest.TestCase):
         rotated = enrichment_rotation(preliminary, set(), previous_payload, 2)
         self.assertEqual(rotated[0], "NEVER")
 
+    def test_a_theme_flagged_name_outranks_a_plain_unenriched_name(self):
+        # Both are statement-starved, but THEMED is already on a theme screen ranked on a
+        # business-quality reading alone (themes.explain_rank) -- it should close that gap
+        # before PLAIN, which nothing has surfaced yet, gets a turn.
+        preliminary = ("PLAIN", "THEMED")
+        previous_payload = {"research": [
+            {"ticker": "PLAIN", "fundamental_detail": {}, "theme_exposure": []},
+            {"ticker": "THEMED", "fundamental_detail": {},
+             "theme_exposure": [{"theme_id": "ai_infrastructure"}]},
+        ]}
+        rotated = enrichment_rotation(preliminary, set(), previous_payload, 2)
+        self.assertEqual(rotated[0], "THEMED")
+
+    def test_a_theme_flagged_name_still_outranks_an_enriched_incumbent(self):
+        preliminary = ("ENRICHED", "THEMED")
+        previous_payload = {"research": [
+            {"ticker": "ENRICHED", "last_polled_at": "2026-08-09T00:00:00+00:00",
+             "fundamental_detail": {"raw_score": 88.0}},
+            {"ticker": "THEMED", "fundamental_detail": {},
+             "theme_exposure": [{"theme_id": "ai_infrastructure"}]},
+        ]}
+        rotated = enrichment_rotation(preliminary, set(), previous_payload, 2)
+        self.assertEqual(rotated[0], "THEMED")
+
+    def test_once_the_theme_backlog_clears_plain_unenriched_names_resume(self):
+        # No theme-flagged name left in this preliminary set -- ordinary never-enriched-first
+        # behavior must still hold, unaffected by the new tier.
+        preliminary = ("PLAIN",)
+        previous_payload = {"research": [
+            {"ticker": "PLAIN", "fundamental_detail": {}, "theme_exposure": []},
+        ]}
+        rotated = enrichment_rotation(preliminary, set(), previous_payload, 1)
+        self.assertEqual(rotated, ("PLAIN",))
+
     def test_rotation_can_be_switched_off(self):
         preliminary = tuple(f"S{i:02d}" for i in range(30))
         _, _, priority = select_enrichment_priority(

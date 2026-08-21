@@ -73,7 +73,7 @@ CHALLENGER_ENRICH_LIMIT = 5
 # Statement-starved names admitted to enrichment each refresh regardless of rank. Without
 # this the enrichment queue is a closed loop over the previous run's leaders and the model
 # can only rediscover names it already liked - see enrichment_rotation.
-ENRICHMENT_ROTATION_SIZE = max(0, int(os.getenv("ADVISOR_ENRICHMENT_ROTATION_SIZE", "15")))
+ENRICHMENT_ROTATION_SIZE = max(0, int(os.getenv("ADVISOR_ENRICHMENT_ROTATION_SIZE", "20")))
 NEWS_DISCOVERY_LIMIT = 75
 # Research-mode override (A3): the production enrichment queue seeds itself with the prior
 # refresh's top 20 and admits only 5 new challengers, which means statement-derived metrics
@@ -1358,7 +1358,8 @@ def rotation_slice(symbols, already_polling, previous_payload, size):
 
 
 def enrichment_rotation(preliminary_symbols, already_selected, previous_payload, size):
-    """The statement-starved names that have waited longest, oldest first.
+    """The statement-starved names that have waited longest, oldest first -- theme-flagged
+    names first among them.
 
     Statement-derived metrics -- ROIC, EV/EBITDA, Piotroski, Altman, accruals -- only ever
     existed for the previous run's top 20 plus five challengers, because that is who
@@ -1372,6 +1373,14 @@ def enrichment_rotation(preliminary_symbols, already_selected, previous_payload,
     so the whole universe passes through statement enrichment over a predictable number of
     runs instead of never. A symbol that has never been enriched sorts first because it has
     no timestamp to compare.
+
+    Within that never-enriched group, a name the theme screen already published as exposed
+    (``theme_exposure`` non-empty last run -- this is how ``themes.expand_theme_candidates``'s
+    sector-peer group surfaces) goes first. ``themes.explain_rank`` already discloses that
+    most of that group is "ranked on a business-quality reading with no financial statements
+    behind it"; this clears that backlog before the plain oldest-unenriched queue resumes, so
+    a name a reader is already looking at on a theme screen gets real statement metrics sooner
+    than one nothing has surfaced yet.
     """
     if size <= 0:
         return ()
@@ -1379,11 +1388,13 @@ def enrichment_rotation(preliminary_symbols, already_selected, previous_payload,
     candidates = [symbol for symbol in preliminary_symbols if symbol not in already_selected]
     def last_enriched(symbol):
         row = previous_rows.get(symbol) or {}
-        # A row that never enriched has no statement coverage; sort it ahead of every row
-        # that did, regardless of when either was last polled.
-        if not (row.get("fundamental_detail") or {}).get("raw_score"):
-            return ("", symbol)
-        return (str(row.get("last_polled_at") or ""), symbol)
+        if (row.get("fundamental_detail") or {}).get("raw_score"):
+            # Already enriched: falls back to oldest-polled-first once the never-enriched
+            # tiers below are exhausted.
+            return (2, str(row.get("last_polled_at") or ""), symbol)
+        # Never enriched. A name the theme screen already flagged as exposed jumps the rest
+        # of this queue; everything else never-enriched follows in universe order.
+        return (0 if row.get("theme_exposure") else 1, "", symbol)
     candidates.sort(key=last_enriched)
     return tuple(candidates[:size])
 
