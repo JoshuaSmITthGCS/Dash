@@ -235,6 +235,33 @@ export function selectPeriod(series, period = '1M') {
   return { period, dates, values, startDate: dates[0], endDate: dates.at(-1), startValue: start, endValue: end, dollarReturn, returnPct: start ? dollarReturn / start * 100 : null, high: Math.max(...values), low: Math.min(...values), coveragePct: series.coverage?.slice(startIndex).reduce((sum, value) => sum + value, 0) / values.length || null, methodology: series.methodology, frequency: series.frequency, source: series.source }
 }
 
+/**
+ * Net return of a value series over an externally supplied calendar window (e.g. the shadow
+ * portfolio comparison's own aligned_window), not the series' own trailing period -- so a
+ * user's holdings replay can be compared against something else's return over that exact
+ * window, rather than each being read over whatever period is most convenient for itself.
+ */
+export function returnOverWindow(series, windowStart, windowEnd) {
+  if (!series?.dates?.length || !series?.values?.length) return { available: false, reason: 'A portfolio value series is required.' }
+  const startIndex = series.dates.findIndex((date) => date >= windowStart)
+  if (startIndex < 0) return { available: false, reason: `No portfolio value is available on or after ${windowStart}.` }
+  let endIndex = -1
+  for (let index = series.dates.length - 1; index >= 0; index -= 1) {
+    if (series.dates[index] <= windowEnd) { endIndex = index; break }
+  }
+  if (endIndex <= startIndex) return { available: false, reason: `No portfolio value is available on or before ${windowEnd} after the window start.` }
+  const startValue = Number(series.values[startIndex])
+  const endValue = Number(series.values[endIndex])
+  if (!(startValue > 0)) return { available: false, reason: 'Portfolio value at the window start must be positive.' }
+  return {
+    available: true,
+    netReturnPct: (endValue / startValue - 1) * 100,
+    startDate: series.dates[startIndex],
+    endDate: series.dates[endIndex],
+    observations: endIndex - startIndex + 1,
+  }
+}
+
 export function latestMarketDayReturn(series) {
   if (!series?.values || series.values.length < 2) return null
   const previous = series.values.at(-2)

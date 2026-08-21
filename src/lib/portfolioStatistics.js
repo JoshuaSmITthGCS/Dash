@@ -8,6 +8,14 @@ export const TRADING_DAYS = 252
 const DAY_MS = 86_400_000
 const EPSILON = 1e-12
 
+// Round 7 Task 5 / time-to-valid-metric tracker: below this many observations, annualized
+// ratios (Sharpe, Sortino, annualized return) are computed from a sample too short to be
+// statistically meaningful -- the export snapshot's sample_size_warning re-exports this same
+// constant from exportSnapshot.js so the in-app countdown and the export warning can never
+// quote two different bars for "valid." A reporting choice, not a statistical law -- adjust
+// here if a different threshold is preferred.
+export const SAMPLE_SIZE_WARNING_FLOOR = 60
+
 const finite = (value) => value !== null && value !== '' && Number.isFinite(Number(value))
 const average = (values) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null
 
@@ -35,6 +43,39 @@ function weekdaysBetween(first, last) {
     if (day !== 0 && day !== 6) count += 1
   }
   return count
+}
+
+function addTradingDays(isoDate, sessions) {
+  let date = new Date(`${isoDate}T00:00:00Z`)
+  let added = 0
+  while (added < sessions) {
+    date = new Date(date.getTime() + DAY_MS)
+    const day = date.getUTCDay()
+    if (day !== 0 && day !== 6) added += 1
+  }
+  return date.toISOString().slice(0, 10)
+}
+
+/**
+ * How much longer until a return series clears the reliability floor its annualized ratios
+ * need (Sharpe, Sortino, annualized return), given how many observations it has today and the
+ * date of the most recent one.
+ */
+export function timeToValidMetric(observations, lastObservedDate, floor = SAMPLE_SIZE_WARNING_FLOOR) {
+  if (!Number.isFinite(observations)) return { available: false, reason: 'Observation count is not available.' }
+  if (observations >= floor) return { available: true, met: true, observations, floor, remainingSessions: 0 }
+  const remainingSessions = floor - observations
+  const estimatedDate = lastObservedDate ? addTradingDays(lastObservedDate, remainingSessions) : null
+  return {
+    available: true,
+    met: false,
+    observations,
+    floor,
+    remainingSessions,
+    estimatedDate,
+    methodology: 'Assumes one new observation per subsequent regular market session and does not '
+      + 'model exchange holidays, so the estimated date is a lower bound.',
+  }
 }
 
 export function dailyCadence(series) {

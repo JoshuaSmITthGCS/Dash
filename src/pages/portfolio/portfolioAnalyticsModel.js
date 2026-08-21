@@ -30,6 +30,7 @@ import {
   performanceStatistics,
   regimeConditionalPerformance,
   robustnessStatistics,
+  timeToValidMetric,
   TRADING_DAYS,
 } from '../../lib/portfolioStatistics.js'
 import { buildPortfolioMetricModel } from '../../lib/portfolioMetricModel.js'
@@ -95,6 +96,9 @@ export function buildAnalyticsModel({
   const statistics = analyticsScope === 'backtest'
     ? { available: false, observations: 0, reason: BACKTEST_BLOCKER }
     : performanceStatistics(scoreComparable?.left || scorePortfolioPeriod, riskFree.annualPct, { trialCount: DEFLATION_TRIALS })
+  const timeToValid = analyticsScope === 'backtest'
+    ? { available: false, reason: BACKTEST_BLOCKER }
+    : timeToValidMetric(performance?.observations, scoreComparable?.left?.dates?.at(-1) || scorePortfolioPeriod?.dates?.at(-1) || null)
   const factor = factorRegression(scoreComparable?.left || scorePortfolioPeriod, factorData)
   const benchmark = benchmarkFit(scoreHoldingsSeries, candidateInputs)
   const constructedBenchmark = constructedBenchmarkFit(scoreHoldingsSeries, candidateInputs)
@@ -178,6 +182,7 @@ export function buildAnalyticsModel({
     shortTerm,
     risk,
     statistics,
+    timeToValidMetric: timeToValid,
     factor,
     benchmark,
     constructedBenchmark,
