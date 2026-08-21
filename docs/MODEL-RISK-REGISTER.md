@@ -160,3 +160,49 @@ actually scheduled.
   item 27.
 - **Monitoring metric**: pairwise rank correlation between the two implementations' outputs,
   not currently measured.
+
+### 9. Alpha Vantage client bypassed the shared rate limiter (fixed this session)
+
+- **Model**: `pipeline/alpha_vantage.py::AlphaVantageClient`.
+- **Assumption**: a hardcoded 1.1s `min_interval` between calls was an adequate stand-in for
+  Alpha Vantage's real free-tier limit.
+- **Failure mode**: `cache.py`'s `DEFAULT_RATE_LIMITS` declares `alpha_vantage: 5` (5
+  requests/minute) and every other provider (Yahoo, SEC EDGAR, Marketaux) paces itself
+  through the shared `limiter_for()` token bucket that setting configures - but
+  `AlphaVantageClient` never called it, self-pacing at 1.1s instead. 15-20 calls/refresh at
+  1.1s apart complete in ~17-22 seconds, all inside one 60-second window: 3-4x over the real
+  5/min cap. Caught, not catastrophic - `fetch_advisor.py` catches `AlphaVantageError` (which
+  Alpha Vantage raises via its own rate-limit "Note" response) and logs a warning, returning
+  `{}` for that field rather than failing the run - but it meant some Alpha Vantage-derived
+  fields could go silently missing on a full refresh from self-inflicted rate-limiting, not
+  real data unavailability.
+- **Severity**: P1 - silent data loss risk, not a wrong-published-score risk.
+- **Mitigation**: fixed this session. `AlphaVantageClient.query()` now calls
+  `limiter_for("alpha_vantage").acquire()` like every other provider, so a `settings.json`
+  change is the only place the real limit needs to stay in sync. Added
+  `pipeline/tests/test_alpha_vantage.py` (previously no test file existed for this module).
+- **Monitoring metric**: none needed beyond the fix itself - this was a pacing defect, not
+  something requiring ongoing measurement.
+
+### 10. conflicts.jsonl grew unbounded, breaking every full-mode refresh's push (fixed this session)
+
+- **Model**: `pipeline/price_archive.py::append_series`.
+- **Assumption**: logging every archived-vs-incoming price mismatch was a rare, meaningful
+  signal worth a permanent record.
+- **Failure mode**: Yahoo's adjusted-close values for a given historical date keep drifting
+  slightly as later dividends change the adjustment factor, so a rolling window of
+  already-archived dates disagrees with the freshly fetched series on essentially every run.
+  With no dedup, the same (ticker, date) mismatch was re-logged on every subsequent daily
+  run forever: 663,964 lines for only 108,033 distinct pairs (some repeated 9 times),
+  inflating the committed file to ~111MB and failing every full-mode refresh's push past
+  GitHub's 100MB hard limit (confirmed on GitHub Actions run #181).
+- **Severity**: P0 for pipeline availability - a scheduled refresh silently failing to
+  publish is a worse failure mode than a scoring defect, since nothing about it is visible
+  in the published data itself.
+- **Mitigation**: fixed this session. Conflict logging is now deduplicated per (ticker,
+  date) - a mismatch is recorded once, not on every run that rediscovers it. The existing
+  committed file was pruned to one entry per pair (~17MB, no information lost). Added two
+  regression tests in `pipeline/tests/test_price_archive.py`.
+- **Monitoring metric**: the manifest's per-run `conflicts` count now means *newly
+  discovered* conflicts, a more useful signal than before (a spike is meaningful; a constant
+  re-report of already-known drift was noise).

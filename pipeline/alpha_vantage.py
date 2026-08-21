@@ -33,14 +33,12 @@ def load_local_env():
 
 
 class AlphaVantageClient:
-    def __init__(self, api_key=None, cache_hours=20, min_interval=1.1):
+    def __init__(self, api_key=None, cache_hours=20):
         load_local_env()
         self.api_key = api_key or os.getenv("ALPHA_VANTAGE_API_KEY")
         if not self.api_key:
             raise AlphaVantageError("ALPHA_VANTAGE_API_KEY is not configured")
         self.cache_seconds = cache_hours * 3600
-        self.min_interval = min_interval
-        self._last_request_at = 0.0
         os.makedirs(CACHE_DIR, exist_ok=True)
 
     @staticmethod
@@ -57,16 +55,19 @@ class AlphaVantageClient:
             with open(cache_path, encoding="utf-8") as handle:
                 return json.load(handle)
 
-        remaining = self.min_interval - (time.monotonic() - self._last_request_at)
-        if remaining > 0:
-            time.sleep(remaining)
+        # Alpha Vantage's free tier is 5 requests/minute, not just 25/day -- the same
+        # shared, config-overridable token bucket every other provider paces through
+        # (cache.py's DEFAULT_RATE_LIMITS), so a settings.json change is the only place
+        # the real limit needs to be kept in sync, not a second hardcoded interval here.
+        # Local import keeps this module standalone-usable, same as yahoo_news/sec_edgar.
+        from cache import limiter_for
+        limiter_for("alpha_vantage").acquire()
         response = requests.get(
             BASE_URL,
             params={**request_params, "apikey": self.api_key},
             headers={"User-Agent": "ValueSignal/1.0 personal-research-dashboard"},
             timeout=30,
         )
-        self._last_request_at = time.monotonic()
         response.raise_for_status()
         payload = response.json()
         for key in ("Error Message", "Note", "Information"):
