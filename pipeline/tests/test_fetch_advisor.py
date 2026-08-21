@@ -135,6 +135,44 @@ class EnrichmentPriorityTests(unittest.TestCase):
         rotated = enrichment_rotation(preliminary, set(), previous_payload, 1)
         self.assertEqual(rotated, ("PLAIN",))
 
+    def test_an_already_enriched_name_is_skipped_even_after_moving_up_in_rank(self):
+        # MOVER sits first in preliminary order -- ahead of both never-enriched names, i.e.
+        # it "moved up" -- but it was already statement-enriched in a past run. The rotation
+        # batch must not spend one of its slots re-touching it while genuinely uncovered
+        # names are still waiting, no matter where MOVER now sits in the ranking.
+        preliminary = ("MOVER", "NEVER_A", "NEVER_B")
+        previous_payload = {"research": [
+            {"ticker": "MOVER", "last_polled_at": "2026-08-20T00:00:00+00:00",
+             "fundamental_detail": {"raw_score": 71.0}},
+            {"ticker": "NEVER_A", "fundamental_detail": {}},
+            {"ticker": "NEVER_B", "fundamental_detail": {}},
+        ]}
+        rotated = enrichment_rotation(preliminary, set(), previous_payload, 2)
+        self.assertEqual(set(rotated), {"NEVER_A", "NEVER_B"})
+        self.assertNotIn("MOVER", rotated)
+
+    def test_select_enrichment_priority_also_skips_a_mover_already_enriched(self):
+        # Same guarantee, exercised through the actual production entry point. FILLERS soak
+        # up the five challenger slots so MOVER and NEVER both land in the rotation pool.
+        # MOVER sits ahead of NEVER in preliminary order -- it "moved up" -- but it was
+        # already statement-enriched via a past rotation; the single rotation slot here must
+        # still go to NEVER, which has no statement coverage at all.
+        previous = tuple(f"P{i:02d}" for i in range(20))
+        fillers = tuple(f"F{i:02d}" for i in range(5))
+        preliminary = (*previous, *fillers, "MOVER", "NEVER")
+        previous_payload = {"research": [
+            {"ticker": "MOVER", "last_polled_at": "2026-08-20T00:00:00+00:00",
+             "fundamental_detail": {"raw_score": 71.0}},
+            {"ticker": "NEVER", "fundamental_detail": {}},
+        ]}
+        _, challengers, priority = select_enrichment_priority(
+            previous, preliminary, set(preliminary), (),
+            previous_payload=previous_payload, rotation_size=1,
+        )
+        self.assertEqual(set(challengers), set(fillers))
+        self.assertIn("NEVER", priority)
+        self.assertNotIn("MOVER", priority)
+
     def test_rotation_can_be_switched_off(self):
         preliminary = tuple(f"S{i:02d}" for i in range(30))
         _, _, priority = select_enrichment_priority(

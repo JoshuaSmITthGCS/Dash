@@ -1381,6 +1381,11 @@ def enrichment_rotation(preliminary_symbols, already_selected, previous_payload,
     behind it"; this clears that backlog before the plain oldest-unenriched queue resumes, so
     a name a reader is already looking at on a theme screen gets real statement metrics sooner
     than one nothing has surfaced yet.
+
+    The already-enriched tier is ranked strictly last regardless of where a symbol now sits
+    in ``preliminary_symbols`` -- the sort key's first element is the tier, so a name that
+    moved up in preliminary order after a past rotation gave it real fundamentals still loses
+    a rotation slot to any name with none at all, exactly as if it hadn't moved.
     """
     if size <= 0:
         return ()
