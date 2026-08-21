@@ -118,16 +118,18 @@ actually scheduled.
 - **Monitoring metric**: `periods_accumulated` in `public/data/validation/ic_validation.json`,
   already published.
 
-### 6. Options ranking math combines real chain data with an undisclosed r=0 simplification
+### 6. Options ranking math combines real chain data with an undisclosed r=0 simplification (fixed this session)
 
 - **Model**: `pipeline/options_common.py` (delta/probability/EV via zero-risk-free Black-Scholes).
 - **Assumption**: the risk-free rate's effect on these approximations is small enough to ignore
   for ranking purposes.
 - **Failure mode**: a user reading a probability-of-profit or EV figure could reasonably assume
   it reflects current rates; it does not, and unlike the (separately, prominently disclosed)
-  quote-staleness risk, this specific simplification is not disclosed in the UI.
+  quote-staleness risk, this specific simplification was not disclosed in the UI.
 - **Severity**: P1 (affects ranking precision, not a wrong-direction signal).
-- **Mitigation**: none yet; a one-line UI disclosure is proposed (`docs/AUDIT-ROADMAP.md` item 9).
+- **Mitigation**: fixed this session — one line next to the existing staleness notice in
+  `src/pages/OptionsScreen.jsx` and `src/pages/StrategyScreen.jsx` (`docs/AUDIT-ROADMAP.md`
+  item 9).
 - **Monitoring metric**: none needed beyond the disclosure itself — this is a communication gap,
   not a data-quality one.
 

@@ -61,11 +61,10 @@ architecture, multi-week, requires explicit sign-off per the audit's §21 author
    key is a small diff, not a new formula. **Do not change `enrich()`'s sort key without measuring
    its effect on shortlist composition first** — this changes upstream data availability for the
    whole pipeline, the same category of risk as the already-known shortlist-gating bias.
-9. **T1, small — options r=0 Black-Scholes disclosure.** Options screens already disclose IV/
-   spread/OI staleness prominently; they do not separately disclose that delta/probability/EV use
-   a zero-risk-free-rate Black-Scholes simplification. One line next to the existing staleness
-   notice. Not implemented this session (out of the audit's verification scope; flagged for a
-   follow-up pass).
+9. ✅ **T1, small — options r=0 Black-Scholes disclosure.** Options screens already disclosed IV/
+   spread/OI staleness prominently but not that delta/probability/EV use a zero-risk-free-rate
+   Black-Scholes simplification. Added one line next to the existing staleness notice in both
+   `src/pages/OptionsScreen.jsx` and `src/pages/StrategyScreen.jsx`.
 10. **T3 — effective-weight publishing for the 1.06 technical-weight sum.** The comment fix (item
     7) documents the issue; publishing the *effective* post-renormalization weights next to the
     declared config (so a reader doesn't have to know `short_horizon_treatment: "neutral"` drops
