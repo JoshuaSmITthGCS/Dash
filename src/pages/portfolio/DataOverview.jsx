@@ -64,6 +64,7 @@ export default function DataOverview({
         statistics={analytics.statistics}
         factor={analytics.factor}
         benchmark={analytics.benchmark}
+        constructedBenchmark={analytics.constructedBenchmark}
         exposure={analytics.exposure}
         execution={analytics.execution}
         robustness={analytics.robustness}

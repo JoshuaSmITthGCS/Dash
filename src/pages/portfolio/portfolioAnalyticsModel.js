@@ -24,6 +24,7 @@ import { shortTermView } from '../../lib/portfolioShortTermView.js'
 import { factorRegression } from '../../lib/factorAnalytics.js'
 import {
   benchmarkFit,
+  constructedBenchmarkFit,
   executionStatistics,
   exposureStatistics,
   performanceStatistics,
@@ -96,6 +97,7 @@ export function buildAnalyticsModel({
     : performanceStatistics(scoreComparable?.left || scorePortfolioPeriod, riskFree.annualPct, { trialCount: DEFLATION_TRIALS })
   const factor = factorRegression(scoreComparable?.left || scorePortfolioPeriod, factorData)
   const benchmark = benchmarkFit(scoreHoldingsSeries, candidateInputs)
+  const constructedBenchmark = constructedBenchmarkFit(scoreHoldingsSeries, candidateInputs)
 
   const comparisonFor = (candidate) => {
     if (!candidate || !scoreHoldingsSeries) return null
@@ -137,6 +139,7 @@ export function buildAnalyticsModel({
     risk,
     factor,
     benchmark,
+    constructedBenchmark,
     benchmarkComparisons,
     exposure,
     execution,
@@ -177,6 +180,7 @@ export function buildAnalyticsModel({
     statistics,
     factor,
     benchmark,
+    constructedBenchmark,
     exposure,
     execution,
     robustness,

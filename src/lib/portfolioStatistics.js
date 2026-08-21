@@ -467,6 +467,122 @@ export function benchmarkFit(portfolioSeries, candidates = []) {
   }
 }
 
+/** Euclidean projection of a vector onto the probability simplex {w : w_i >= 0, sum(w) = 1}. */
+function projectOntoSimplex(values) {
+  const n = values.length
+  const sorted = [...values].sort((left, right) => right - left)
+  let cumulative = 0
+  let rho = 0
+  const cumulativeSums = sorted.map((value) => (cumulative += value))
+  for (let index = 0; index < n; index += 1) {
+    const threshold = (cumulativeSums[index] - 1) / (index + 1)
+    if (sorted[index] - threshold > 0) rho = index
+  }
+  const theta = (cumulativeSums[rho] - 1) / (rho + 1)
+  return values.map((value) => Math.max(value - theta, 0))
+}
+
+/**
+ * Non-negative weights summing to 1 that minimise sum((portfolioReturns - blend)^2), by
+ * projected gradient descent on the simplex. Convex objective + a step size bounded by the
+ * gradient's Lipschitz constant guarantees monotonic convergence to the global optimum
+ * regardless of the (uniform) starting point -- no random seed, no local-minimum risk,
+ * deterministic across runs. The Lipschitz bound is estimated from the trace of the
+ * candidates' Gram matrix (trace >= largest eigenvalue for a PSD matrix), which is loose
+ * but safe, and matters here because daily returns are ~1e-2 in scale: a step size chosen
+ * without accounting for that (e.g. a bare constant) is either too large to converge or,
+ * as small as it would need to be to stay stable, too small to move off the starting point
+ * within any reasonable iteration budget.
+ */
+function fitSimplexWeights(portfolioReturns, candidateReturnsMatrix, iterations = 3000) {
+  const assetCount = candidateReturnsMatrix.length
+  const observationCount = portfolioReturns.length
+  let weights = new Array(assetCount).fill(1 / assetCount)
+  let energy = 0
+  for (const series of candidateReturnsMatrix) {
+    for (const value of series) energy += value * value
+  }
+  const lipschitzBound = (2 / observationCount) * energy
+  const learningRate = lipschitzBound > 0 ? 1 / lipschitzBound : 0
+  if (!(learningRate > 0)) return weights
+  for (let iteration = 0; iteration < iterations; iteration += 1) {
+    const predicted = new Array(observationCount).fill(0)
+    for (let asset = 0; asset < assetCount; asset += 1) {
+      const weight = weights[asset]
+      const series = candidateReturnsMatrix[asset]
+      for (let t = 0; t < observationCount; t += 1) predicted[t] += weight * series[t]
+    }
+    const residual = predicted.map((value, t) => value - portfolioReturns[t])
+    const gradient = candidateReturnsMatrix.map((series) => {
+      let sum = 0
+      for (let t = 0; t < observationCount; t += 1) sum += series[t] * residual[t]
+      return (2 / observationCount) * sum
+    })
+    weights = projectOntoSimplex(weights.map((weight, asset) => weight - learningRate * gradient[asset]))
+  }
+  return weights
+}
+
+/**
+ * A blended benchmark constructed from the same candidate indices `benchmarkFit` picks a
+ * single winner from (Master Remediation Prompt v3 roadmap item 17), instead of forcing
+ * the portfolio's comparison onto whichever one index fits best. Non-negative weights
+ * summing to 1 are fit by minimising tracking error against the portfolio's own daily
+ * returns -- classic returns-based style analysis (Sharpe 1992), not a claim about actual
+ * sector or factor exposure, and refit fresh every time this is computed rather than stored.
+ */
+export function constructedBenchmarkFit(portfolioSeries, candidates = []) {
+  const usable = candidates.filter((candidate) =>
+    Array.isArray(candidate?.dates) && Array.isArray(candidate?.values) && candidate.dates.length === candidate.values.length)
+  if (usable.length < 2) {
+    return { available: false, reason: 'At least two benchmark candidates with return histories are required to construct a blend.' }
+  }
+  const portfolioByDate = new Map((portfolioSeries?.dates || []).map((date, index) => [date, Number(portfolioSeries.values?.[index])]))
+  const candidateMaps = usable.map((candidate) => new Map(candidate.dates.map((date, index) => [date, Number(candidate.values[index])])))
+  const commonDates = (portfolioSeries?.dates || [])
+    .filter((date) => finite(portfolioByDate.get(date)) && candidateMaps.every((map) => finite(map.get(date))))
+  if (commonDates.length < 22) {
+    return {
+      available: false,
+      reason: `At least 21 overlapping returns are required across every candidate; ${Math.max(0, commonDates.length - 1)} available.`,
+    }
+  }
+  const portfolioValues = commonDates.map((date) => portfolioByDate.get(date))
+  const candidateValueSeries = candidateMaps.map((map) => commonDates.map((date) => map.get(date)))
+  const portfolioReturns = portfolioValues.slice(1).map((value, index) => value / portfolioValues[index] - 1)
+  const candidateReturns = candidateValueSeries.map((series) => series.slice(1).map((value, index) => value / series[index] - 1))
+
+  const weights = fitSimplexWeights(portfolioReturns, candidateReturns)
+  const blendedReturns = portfolioReturns.map((_, t) =>
+    candidateReturns.reduce((sum, series, asset) => sum + weights[asset] * series[t], 0))
+  const active = portfolioReturns.map((value, index) => value - blendedReturns[index])
+  const benchmarkVariance = covariance(blendedReturns, blendedReturns)
+  const portfolioVariance = covariance(portfolioReturns, portfolioReturns)
+  const cross = covariance(portfolioReturns, blendedReturns)
+  const beta = benchmarkVariance > 0 ? cross / benchmarkVariance : null
+  const correlation = portfolioVariance > 0 && benchmarkVariance > 0 ? cross / Math.sqrt(portfolioVariance * benchmarkVariance) : null
+  const trackingDeviation = sampleDeviation(active)
+  const informationRatio = trackingDeviation ? average(active) / trackingDeviation * Math.sqrt(TRADING_DAYS) : null
+
+  return {
+    available: true,
+    observations: portfolioReturns.length,
+    startDate: commonDates[1],
+    endDate: commonDates.at(-1),
+    weights: usable.map((candidate, index) => ({
+      symbol: candidate.symbol, label: candidate.label || candidate.symbol, weight: weights[index],
+    })).sort((left, right) => right.weight - left.weight),
+    beta,
+    correlation,
+    rSquared: correlation != null ? correlation ** 2 : null,
+    trackingErrorPct: trackingDeviation != null ? trackingDeviation * Math.sqrt(TRADING_DAYS) * 100 : null,
+    informationRatio,
+    methodology: 'Non-negative weights summing to 1, fit by minimising tracking error against the '
+      + "portfolio's own daily returns (returns-based style analysis). A diagnostic constructed fresh "
+      + 'each time, not a claim about actual sector/factor exposure and not a stored or silently reused benchmark.',
+  }
+}
+
 export function exposureStatistics(positions = []) {
   const measured = positions.filter((row) => finite(row.currentValue) && Number(row.currentValue) !== 0)
   const totalAbsolute = measured.reduce((sum, row) => sum + Math.abs(Number(row.currentValue)), 0)

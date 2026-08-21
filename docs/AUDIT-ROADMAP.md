@@ -100,8 +100,11 @@ page — those are called out as **wiring-only** below.
 16. **T3 — rolling metric stability beyond Sharpe.** Only rolling Sharpe (60/120d) exists; no
     rolling vol/beta/tracking-error/correlation/drawdown, and not at the requested 63/126/252d
     windows.
-17. **T3/T4 — benchmark policy (constructed multi-asset benchmark).** Currently single-index
-    best-fit among 4 fixed candidates only.
+17. ✅ **T3 — benchmark policy (constructed multi-asset benchmark).** Was single-index best-fit
+    among 4 fixed candidates only. Added `constructedBenchmarkFit()` — non-negative weights across
+    the same 4 candidates summing to 1, fit to minimize tracking error against the portfolio's own
+    returns — surfaced as new rows in the existing Benchmark Fit metric group, alongside (not
+    replacing) the single best-fit index.
 18. **T4 — full performance attribution (Brinson-style).** Existing `portfolioAttribution.js` is
     explicitly self-documented as single-factor CAPM-style, not sector/style decomposition —
     needs daily sector-index returns this codebase doesn't fetch anywhere.

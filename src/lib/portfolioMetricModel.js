@@ -66,6 +66,7 @@ export function buildPortfolioMetricModel({
   risk = null,
   factor = null,
   benchmark = null,
+  constructedBenchmark = null,
   benchmarkComparisons = null,
   exposure = null,
   execution = null,
@@ -173,6 +174,29 @@ export function buildPortfolioMetricModel({
     })
     comparison.push(missing('Sector-neutral benchmark fit', 'sector_neutral_fit', 'relative_return', 'Benchmark', benchmark.sectorNeutral.reason, 'Benchmark Fit', 32))
   } else comparison.push(missing('Best-fit benchmark', 'best_fit_benchmark', 'relative_return', 'Benchmark', 'daily candidate benchmark histories are required', 'Benchmark Fit', 80))
+
+  if (constructedBenchmark?.available) {
+    const weightSummary = constructedBenchmark.weights
+      .filter((row) => row.weight > 0.005)
+      .map((row) => `${row.label} ${(row.weight * 100).toFixed(0)}%`)
+      .join(' · ')
+    const support = `${constructedBenchmark.observations} daily returns · ${weightSummary}`
+    ;[
+      ['beta', 'Beta', constructedBenchmark.beta, ratio, 71, { measures: 'Beta of the portfolio against a blend of the candidate indices, weighted to minimize tracking error against this portfolio.' }],
+      ['correlation', 'Correlation', constructedBenchmark.correlation, ratio, 41, { measures: 'Correlation against the constructed blend.' }],
+      ['tracking_error', 'Tracking error (naive √252)', constructedBenchmark.trackingErrorPct, percent, 41, TOOLTIP.tracking],
+      ['r_squared', 'R²', constructedBenchmark.rSquared * 100, percent, 36, { measures: 'Share of return variance the constructed blend explains.' }],
+      ['information_ratio', 'Information ratio', constructedBenchmark.informationRatio, ratio, 41, TOOLTIP.information],
+    ].forEach(([suffix, label, value, formatter, priority, tooltip]) => comparison.push(base({
+      id: `constructed_benchmark_${suffix}`, name: `Constructed benchmark ${label}`, family: 'relative_return', category: 'Benchmark',
+      value, formattedValue: formatter(value), supportingValue: support, minObservations: 20, descriptive: true,
+      group: 'Benchmark Fit', priority, tooltip,
+    }, sample, { observations: constructedBenchmark.observations, startDate: constructedBenchmark.startDate, endDate: constructedBenchmark.endDate })))
+  } else {
+    comparison.push(missing('Constructed benchmark fit', 'constructed_benchmark_fit', 'relative_return', 'Benchmark',
+      constructedBenchmark?.reason || 'at least two benchmark candidates with return histories are required', 'Benchmark Fit', 38,
+      { measures: 'Fit of a blended, multi-index benchmark constructed to minimize tracking error against this portfolio, rather than picking a single best-fit index.' }))
+  }
 
   const addBenchmarkComparison = (key, row, suffix) => {
     if (!row) return
