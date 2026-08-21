@@ -24,7 +24,14 @@ const hiddenStorageKey = (userId) => `valuesignal.hiddenPositions.${userId}`
 // from every portfolio measure that needs full coverage. The retirement used to apply only to
 // the reference-import document, which left a hand-entered copy in place and unpriceable;
 // matching on the ticker alone is what actually clears it.
-const RETIRED_TICKERS = new Set(['DECJ'])
+//
+// TTM and AMZM (Round 7 Task 1): the two missing_price_tickers breaching
+// data_quality_counters. TTM is the Tata Motors NYSE ADR, delisted January 2025 - no
+// provider serves that line anymore. AMZM resolves to nothing at any provider and is most
+// likely a typo for AMZN; if the position was real, re-add AMZN with its actual cost basis.
+// The matching pipeline-side list is RETIRED_SYMBOLS in pipeline/fetch_advisor.py, which
+// stops the refresh from re-seeding either symbol out of the previous run's coverage.
+const RETIRED_TICKERS = new Set(['DECJ', 'TTM', 'AMZM'])
 const isRetiredReferencePosition = (documentId, stored = {}) =>
   RETIRED_TICKERS.has(String(stored.ticker || '').trim().toUpperCase())
 

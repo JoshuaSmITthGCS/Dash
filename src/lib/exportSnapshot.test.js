@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildExportSnapshot, snapshotFilename, snapshotToJson } from './exportSnapshot'
+import { buildExportSnapshot, SAMPLE_SIZE_WARNING_FLOOR, snapshotFilename, snapshotToJson } from './exportSnapshot'
 
 describe('buildExportSnapshot', () => {
   const baseArgs = {
@@ -19,6 +19,38 @@ describe('buildExportSnapshot', () => {
     expect(snapshot.benchmark_comparisons).toBe(baseArgs.benchmarks)
     expect(snapshot.signal_metrics_report).toBe(baseArgs.signalMetrics)
     expect(snapshot.monte_carlo_projection).toBe(baseArgs.monteCarlo)
+  })
+
+  it('stamps a sample_size_warning on a performance block with too few observations (Round 7 Task 5)', () => {
+    // The real defect case: Sharpe 5.75 / Sortino 12.46 / 89.8% annualized on 24
+    // observations shipping in the same file as deflated Sharpe 0.238, unannotated.
+    const analytics = {
+      performance: { available: true, observations: 24, sharpe: 5.75, sortino: 12.46, annualizedReturn: 89.8 },
+      statistics: { available: true },
+    }
+    const snapshot = buildExportSnapshot({ ...baseArgs, analytics })
+    const performance = snapshot.portfolio_analytics.performance
+    expect(performance.sample_size_warning).toContain('only 24 observations')
+    expect(performance.sample_size_warning).toContain('not yet statistically meaningful')
+    expect(performance.sample_size_warning).toContain('deflated_sharpe')
+    // Display-only: every number is untouched, and sibling blocks keep their identity.
+    expect(performance.sharpe).toBe(5.75)
+    expect(performance.sortino).toBe(12.46)
+    expect(performance.annualizedReturn).toBe(89.8)
+    expect(snapshot.portfolio_analytics.statistics).toBe(analytics.statistics)
+  })
+
+  it('leaves a performance block at or above the floor unannotated', () => {
+    const analytics = { performance: { available: true, observations: SAMPLE_SIZE_WARNING_FLOOR, sharpe: 1.1 } }
+    const snapshot = buildExportSnapshot({ ...baseArgs, analytics })
+    expect(snapshot.portfolio_analytics).toBe(analytics)
+    expect(snapshot.portfolio_analytics.performance.sample_size_warning).toBeUndefined()
+  })
+
+  it('does not invent a warning when there is no performance block or no observation count', () => {
+    expect(buildExportSnapshot({ ...baseArgs, analytics: null }).portfolio_analytics).toBeNull()
+    const noCount = { performance: { available: false, reason: 'daily portfolio returns are required' } }
+    expect(buildExportSnapshot({ ...baseArgs, analytics: noCount }).portfolio_analytics).toBe(noCount)
   })
 
   it('labels the currently selected scope in plain language', () => {

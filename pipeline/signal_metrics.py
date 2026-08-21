@@ -724,7 +724,13 @@ def construction_metrics(backtest, factors, sector_history=None):
                        kill_threshold=f"A swing wider than {MAXIMUM_BETA_SWING} makes excess-return figures unstable",
                        breached=swing_breached,
                        detail={"window": 60, "observations": len(betas), "swing": swing,
-                               "series": [round(value, 3) for value in betas[-60:]]},
+                               "series": [round(value, 3) for value in betas[-60:]],
+                               # Round 7 Task 3: the series is a display tail, not the full
+                               # history - swing/beta_range span every observation, so their
+                               # extremes can legitimately fall outside the series' own range
+                               # (the 1.31 peak was 2025-10-29, months before this tail).
+                               "series_note": f"most recent 60 of {len(betas)} observations; "
+                                              "swing and beta_range span the full history"},
                        cadence="Weekly", source="backtest equity curve"))
     # The point beta above and the swing its own kill_threshold describes are different
     # quantities on different scales (~1.0 vs ~0.3) -- plotting them on one bullet would
@@ -1660,7 +1666,12 @@ def data_quality_from_pit(root=PIT_ROOT, universe_path=UNIVERSE_HISTORY_PATH):
         "quality_flags": dict(sorted(flags.items())),
         "universe_churn": {"added": latest_universe.get("added") or [],
                            "removed": latest_universe.get("removed") or [],
-                           "observed_at": latest_universe.get("observed_at")},
+                           "observed_at": latest_universe.get("observed_at"),
+                           # The refresh's own explanation for deliberate removals (symbol
+                           # retirements), recorded by record_universe - churn with a stated
+                           # reason is maintenance; churn without one is the signal this
+                           # counter exists to catch.
+                           **({"note": latest_universe["note"]} if latest_universe.get("note") else {})},
         "corporate_action_monitoring": {
             "status": "not_available",
             "reason": "No prospective corporate-action event log exists; no miss count is inferred."},

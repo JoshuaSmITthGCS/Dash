@@ -127,13 +127,25 @@ REPORT_ROW_FIELDS = (
     "operating_margin", "operating_margin_trend", "short_percent_of_float",
     "days_to_cover", "is_etf",
 )
-# Symbols withdrawn from the product entirely. DECJ was a typo for DECK, which is a real
-# holding and already tracked; DECJ resolves to nothing at any provider. Retiring a symbol has
+# Symbols withdrawn from the product entirely, with the reason each was retired - the reason
+# is published into the point-in-time universe store's churn note (see record_universe below)
+# so the departure is explained in `universe_churn`, not just observable. Retiring a symbol has
 # to reach the refresh list, not just the published report: portfolio holdings are carried
 # forward from the previous run's own `portfolio_coverage`, so anything that ever entered that
 # list re-seeded itself on every subsequent run and could never be removed - not by deleting
-# it in the app, not by editing config.
-RETIRED_SYMBOLS = {"DECJ"}
+# it in the app, not by editing config. Membership checks below use `in`, which reads dict
+# keys, so this stays a drop-in for the former set.
+RETIRED_SYMBOLS = {
+    "DECJ": "typo for DECK (already tracked); resolves to nothing at any provider",
+    # Round 7 Task 1: the two `missing_price_tickers` breaching data_quality_counters as of
+    # refresh advisor-2026-08-21T18:56:08. Both are hand-entered holdings (neither is in the
+    # Aug 14 Fidelity reference export), both have price:null and last_polled_at:null - no
+    # provider has ever returned a row for either, so this is not a rate limit and not a
+    # join bug.
+    "TTM": "Tata Motors NYSE ADR delisted January 2025; no provider serves this line anymore",
+    "AMZM": "resolves to nothing at any provider (likely a typo for AMZN - re-add AMZN with "
+            "real cost basis if the position was intended)",
+}
 
 
 def _layer(*path):
@@ -1987,7 +1999,18 @@ def run():
     # claimed as published per-row but were not, on either the row or the PIT store).
     config_hash = sha256_of_file(os.path.join(CONFIG_DIR, "settings.json"))
     pit_summary = pit_store.append_snapshot(research, source="advisor_refresh", config_hash=config_hash)
-    pit_store.record_universe(symbols, source="advisor_refresh")
+    # When a retired symbol was actually filtered out of this run's inputs, its departure
+    # shows up in the universe store's added/removed diff - carry the documented reason
+    # alongside it so `universe_churn` explains the removal instead of just recording it.
+    retired_this_run = sorted(
+        symbol for symbol in {*previous_portfolio, *requested_symbols}
+        if str(symbol or "").strip().upper() in RETIRED_SYMBOLS
+    )
+    churn_note = "; ".join(
+        f"{symbol} retired: {RETIRED_SYMBOLS[str(symbol).strip().upper()]}"
+        for symbol in retired_this_run
+    ) or None
+    pit_store.record_universe(symbols, source="advisor_refresh", note=churn_note)
     pit_depth = pit_store.depth()
 
     grid = chart_grid(benchmark["dates"])

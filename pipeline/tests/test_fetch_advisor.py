@@ -47,6 +47,23 @@ class RefreshSymbolTests(unittest.TestCase):
         self.assertNotIn("DECJ", symbols)
         self.assertEqual(portfolio, ("MU", "NTNX", "DECK"))
 
+    def test_ttm_and_amzm_are_retired_and_cannot_reseed_from_prior_coverage(self):
+        # Round 7 Task 1: the two missing_price_tickers breaching data_quality_counters.
+        # TTM (Tata Motors NYSE ADR) delisted January 2025; AMZM resolves to nothing at any
+        # provider. Both were hand-entered holdings carried forward run-to-run from
+        # portfolio_coverage, permanently breaching the counter.
+        symbols, portfolio = resolve_refresh_symbols(
+            ("AAPL",), ("MU",), "", ("TTM", "AMZM", "NTNX"),
+        )
+        self.assertNotIn("TTM", symbols)
+        self.assertNotIn("AMZM", symbols)
+        self.assertEqual(portfolio, ("MU", "NTNX"))
+        # Every retired symbol must carry a stated reason - it's what record_universe
+        # publishes into the universe store's churn note.
+        from fetch_advisor import RETIRED_SYMBOLS
+        for ticker in ("DECJ", "TTM", "AMZM"):
+            self.assertTrue(RETIRED_SYMBOLS[ticker].strip())
+
     def test_discovered_holdings_persist_into_scheduled_refreshes(self):
         symbols, portfolio = resolve_refresh_symbols(
             ("AAPL",),
