@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { REFERENCE_PORTFOLIO_VERSION } from '../../lib/referencePortfolio.js'
 import { costWeights } from '../../lib/portfolioAnalytics.js'
+import { planFifoSale, realizedGainForPlan } from '../../lib/taxLots.js'
 import { perShareCost } from './format.js'
 
 const today = () => new Date().toISOString().split('T')[0]
@@ -36,6 +37,12 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
   const [sellingId, setSellingId] = useState(null)
   const [sellForm, setSellForm] = useState({ shares: '', price: '', saleDate: today() })
   const [sellSaving, setSellSaving] = useState(false)
+  // A ticker (not a single position id): FIFO-across-lots sale (B3), additive to the
+  // existing single-row Sell above -- clicking Sell on one specific position row already
+  // constitutes specific identification of that one lot and is untouched by this.
+  const [lotSellTicker, setLotSellTicker] = useState(null)
+  const [lotSellForm, setLotSellForm] = useState({ shares: '', price: '', saleDate: today() })
+  const [lotSellSaving, setLotSellSaving] = useState(false)
   const referencePortfolioSyncStarted = useRef(false)
 
   // Apply the user's authoritative Fidelity position export once on the signed-in account.
@@ -143,6 +150,76 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
     setSyncMessage(`Sold ${sharesSold} ${pos.ticker} share${sharesSold === 1 ? '' : 's'} at $${price.toFixed(2)} · ${realizedGain >= 0 ? '+' : '−'}$${Math.abs(realizedGain).toFixed(2)} realized.`)
   }
 
+  const startLotSell = (ticker) => {
+    setLotSellTicker(ticker)
+    setLotSellForm({ shares: '', price: '', saleDate: today() })
+  }
+
+  const cancelLotSell = () => {
+    setLotSellTicker(null)
+    setLotSellForm({ shares: '', price: '', saleDate: today() })
+  }
+
+  // Recomputed on every render, not cached in state: it's a pure function of the current
+  // form input and the live positions list, and needs to update as the user types a share
+  // count so the sheet can show which lots that quantity would actually draw from before
+  // they confirm.
+  const lotSellPlan = lotSellTicker
+    ? planFifoSale(positions, lotSellTicker, parseFloat(lotSellForm.shares))
+    : null
+
+  // Sells a quantity of a ticker across as many of its lots as it takes, oldest first (FIFO,
+  // the IRS default absent specific identification -- see src/lib/taxLots.js). Each affected
+  // lot is updated or removed exactly the way the single-lot saveSell above already does;
+  // this just applies that per-position update across more than one document when the sale
+  // is larger than any single lot.
+  const saveLotSell = async () => {
+    const price = parseFloat(lotSellForm.price)
+    if (!Number.isFinite(price) || price <= 0 || !lotSellForm.saleDate) {
+      setSyncMessage('Enter a valid sale price and date')
+      return
+    }
+    const plan = planFifoSale(positions, lotSellTicker, parseFloat(lotSellForm.shares))
+    if (!plan.available) {
+      setSyncMessage(plan.reason)
+      return
+    }
+    setLotSellSaving(true)
+    for (const depletion of plan.depletions) {
+      const result = depletion.remainingAfter > 0.0000001
+        ? await updatePosition(depletion.positionId, { shares: depletion.remainingAfter })
+        : await removePosition(depletion.positionId)
+      if (result?.success === false) {
+        setLotSellSaving(false)
+        setSyncMessage(`Could not save sale: ${result.error || 'Unknown error'}`)
+        return
+      }
+    }
+    const afterSell = positions
+      .map((row) => {
+        const depletion = plan.depletions.find((item) => item.positionId === row.id)
+        if (!depletion) return row
+        return depletion.remainingAfter > 0.0000001 ? { ...row, shares: depletion.remainingAfter } : null
+      })
+      .filter(Boolean)
+    captureRebalance(tracking, lotSellForm.saleDate, positions, afterSell)
+    const gain = realizedGainForPlan(plan, price)
+    const lotSummary = gain.perLot
+      .map((row) => `${row.quantity} @ $${row.costBasisPerUnit.toFixed(2)} (${row.purchaseDate || 'undated lot'})`)
+      .join('; ')
+    await tracking.recordActivity({
+      type: 'realized_gain', amount: gain.totalRealizedGain, effectiveDate: lotSellForm.saleDate,
+      note: `${lotSellTicker} FIFO sale across ${plan.depletions.length} lot${plan.depletions.length === 1 ? '' : 's'}: ${lotSummary}`,
+    })
+    setLotSellSaving(false)
+    const closedTicker = lotSellTicker
+    const soldQuantity = plan.totalQuantity
+    cancelLotSell()
+    setSyncMessage(`Sold ${soldQuantity} ${closedTicker} share${soldQuantity === 1 ? '' : 's'} at $${price.toFixed(2)} `
+      + `across ${plan.depletions.length} lot${plan.depletions.length === 1 ? '' : 's'} · `
+      + `${gain.totalRealizedGain >= 0 ? '+' : '−'}$${Math.abs(gain.totalRealizedGain).toFixed(2)} realized.`)
+  }
+
   const startEdit = (pos) => {
     const costMode = pos.costBasisInputMode === 'total' ? 'total' : 'share'
     setEditingId(pos.id)
@@ -192,5 +269,7 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
     removingId, handleRemove,
     editingId, editForm, setEditForm, editSaving, startEdit, cancelEdit, saveEdit,
     sellingId, sellForm, setSellForm, sellSaving, startSell, cancelSell, saveSell,
+    lotSellTicker, lotSellForm, setLotSellForm, lotSellSaving, lotSellPlan,
+    startLotSell, cancelLotSell, saveLotSell,
   }
 }

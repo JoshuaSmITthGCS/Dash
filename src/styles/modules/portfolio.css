@@ -229,3 +229,10 @@ details { border-top: 1px solid var(--border); padding-top: var(--sp-3); } summa
 .fund-cost-stat { display: flex; align-items: baseline; gap: var(--sp-2-5); flex-wrap: wrap; }
 .fund-cost-value { font: var(--fw-bold) var(--fs-xl) var(--font-mono); }
 .fund-cost-label { color: var(--text-faint); font-size: var(--fs-xs); }
+.lot-sell-preview { display: grid; gap: 0; margin: var(--sp-3) 0 0; padding: 0; list-style: none; }
+.lot-sell-preview li { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--sp-2); align-items: center; padding: var(--sp-1-5) 0; border-top: 1px solid var(--border); font: var(--fs-xs) var(--font-mono); }
+.lot-sell-preview li > span:last-child { color: var(--text-faint); }
+.lot-sell-error { margin: var(--sp-3) 0 0; color: var(--neg); font-size: var(--fs-xs); }
+@media (max-width: 680px) {
+  .lot-sell-preview li { grid-template-columns: 1fr; gap: var(--sp-0-5); }
+}

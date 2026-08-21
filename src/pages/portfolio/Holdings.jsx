@@ -5,6 +5,7 @@ import { MobileSheet } from '../../components/MobileSheet.jsx'
 import { PortfolioSortToolbar } from './PortfolioBits.jsx'
 import HoldingCard from './HoldingCard.jsx'
 import { BenchmarkTable, FixedBasisTable } from './ComparisonTables.jsx'
+import { lotCountsByTicker } from '../../lib/taxLots.js'
 
 function AddPositionForm({ formData, setFormData, onSubmit }) {
   return (
@@ -74,6 +75,52 @@ function SellSheet({ position, forms }) {
   )
 }
 
+// FIFO-across-lots sale (B3): sells a total share count for a ticker that may span more than
+// one purchase (each a separate position document / lot), depleting the oldest first -- IRS
+// Publication 550's default absent specific identification. The existing per-row Sell above
+// already covers specific identification of one lot and is untouched by this.
+function LotSellSheet({ ticker, forms }) {
+  const { lotSellForm, setLotSellForm, lotSellSaving, lotSellPlan, cancelLotSell, saveLotSell } = forms
+  return (
+    <MobileSheet open title={`Sell ${ticker} across lots`} onClose={cancelLotSell} className="holding-edit-sheet">
+      <div className="holding-edit-form">
+        <label><span>Total shares to sell</span>
+          <input className="inline-edit-input" type="number" step="0.001" min="0" value={lotSellForm.shares}
+            onChange={(e) => setLotSellForm({ ...lotSellForm, shares: e.target.value })} />
+        </label>
+        <label><span>Sale price/share</span>
+          <input className="inline-edit-input" type="number" step="0.01" min="0" value={lotSellForm.price}
+            onChange={(e) => setLotSellForm({ ...lotSellForm, price: e.target.value })} />
+        </label>
+        <label><span>Sale date</span>
+          <input className="inline-edit-input" type="date" value={lotSellForm.saleDate}
+            onChange={(e) => setLotSellForm({ ...lotSellForm, saleDate: e.target.value })} />
+        </label>
+      </div>
+      {lotSellPlan?.available && (
+        <ul className="lot-sell-preview">
+          {lotSellPlan.depletions.map((row) => (
+            <li key={row.positionId}>
+              <span>{row.quantity} sh @ ${row.costBasisPerUnit.toFixed(2)}</span>
+              <span>{row.purchaseDate || 'undated lot'}</span>
+              <span>{row.remainingAfter > 0.0000001 ? `${row.remainingAfter} sh remain` : 'fully sold'}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {lotSellPlan && !lotSellPlan.available && lotSellForm.shares && (
+        <p className="lot-sell-error">{lotSellPlan.reason}</p>
+      )}
+      <div className="holding-edit-sheet-actions">
+        <button className="secondary-button" onClick={cancelLotSell} disabled={lotSellSaving}>Cancel</button>
+        <button className="primary-button" onClick={saveLotSell} disabled={lotSellSaving || !lotSellPlan?.available}>
+          {lotSellSaving ? 'Selling…' : 'Confirm sale'}
+        </button>
+      </div>
+    </MobileSheet>
+  )
+}
+
 export default function Holdings({
   holdings,
   sortedPositions,
@@ -90,6 +137,7 @@ export default function Holdings({
   // Rendered once, outside both the mobile card list and the desktop table, so triggering a
   // sale from either (only one is visible at a given viewport width) still shows the sheet.
   const sellingPosition = sortedPositions.find((pos) => (pos.id || pos.ticker) === forms.sellingId)
+  const lotCounts = lotCountsByTicker(sortedPositions)
   const sortToolbar = <PortfolioSortToolbar {...sort} />
 
   return (
@@ -132,11 +180,13 @@ export default function Holdings({
         {sortToolbar}
         <div className={`portfolio-mobile-list portfolio-stock-grid ${essentialOnly ? 'essential' : 'expanded'}`}>
           {sortedPositions.map((pos) => (
-            <HoldingCard key={pos.id || pos.ticker} pos={pos} essentialOnly={essentialOnly} forms={forms} onSelectStock={onSelectStock} />
+            <HoldingCard key={pos.id || pos.ticker} pos={pos} essentialOnly={essentialOnly} forms={forms} onSelectStock={onSelectStock}
+              lotCount={lotCounts[String(pos.ticker || '').toUpperCase()] || 1} />
           ))}
           {sortedPositions.length === 0 && <div className="portfolio-holdings-empty">No positions yet. Add a position to start tracking.</div>}
         </div>
         {sellingPosition && <SellSheet position={sellingPosition} forms={forms} />}
+        {forms.lotSellTicker && <LotSellSheet ticker={forms.lotSellTicker} forms={forms} />}
         </>
       )}
 

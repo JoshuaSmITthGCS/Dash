@@ -108,9 +108,16 @@ page — those are called out as **wiring-only** below.
 18. **T4 — full performance attribution (Brinson-style).** Existing `portfolioAttribution.js` is
     explicitly self-documented as single-factor CAPM-style, not sector/style decomposition —
     needs daily sector-index returns this codebase doesn't fetch anywhere.
-19. **T4, requires sign-off — tax-lot ledger.** Does not exist; positions carry one aggregate
-    cost basis only. Multi-week architectural commitment per §21.
-20. **T4, blocked on #19 — wash-sale warning engine.** Does not exist anywhere in the codebase.
+19. 🟡 **T4, sign-off given — tax-lot ledger, first slice built.** Each position document was
+    already lot-shaped (one purchase, one cost basis, no merging across buys); the actual gap was
+    a FIFO cross-lot depletion engine, not a new per-position data model as originally scoped.
+    Built: `src/lib/taxLots.js` + wiring into the sell flow and holdings UI. Not built: specific-
+    identification lot-picker UI, retroactive lot backfill for already-recorded sales. See
+    `docs/BUILD-PLAN.md` B3 for the full account.
+20. **T4, blocked on #19 — wash-sale warning engine.** Lots now exist, but this still needs its
+    own build (61-day window detection, basis-carryforward) once there's real depletion history to
+    reason about — the original estimate's own sequencing note ("depends on lot data, can't be
+    built first") still applies now that lots exist but have no meaningful history yet.
 
 ## P1 — data integrity (proposals, not built)
 

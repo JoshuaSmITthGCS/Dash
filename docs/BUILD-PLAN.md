@@ -33,11 +33,52 @@ after. That is the discipline the Execution Contract's tiers are for.
 
 ### B3 — Transaction / tax-lot ledger
 
-**Current architecture**: three narrow Firestore collections built this session
-(`intradaySnapshots`, `activity`, `rebalances`) plus the pre-existing position store
-(`portfolios/{uid}/positions`, one row per held ticker with `shares`/`costBasis`/`purchaseDate`,
-average-cost only). None of these have lot identity — a sell computes `realizedGain` once, as
-`proceeds − sharesSold × averageCostBasis`, and the position's share count is simply reduced.
+**Status: first real slice built in a follow-up session, with explicit user sign-off** (this
+document's own T4 tier requires it; the user said "proceed" after being asked which of B3/B4 to
+prioritize). What follows records both what was proposed and what was actually implemented.
+
+**Current architecture (superseded by the discovery below)**: three narrow Firestore collections
+built this session (`intradaySnapshots`, `activity`, `rebalances`) plus the pre-existing position
+store (`portfolios/{uid}/positions`, one row per held ticker with `shares`/`costBasis`/
+`purchaseDate`, average-cost only). None of these have lot identity — a sell computes
+`realizedGain` once, as `proceeds − sharesSold × averageCostBasis`, and the position's share count
+is simply reduced.
+
+**What the follow-up session found before writing any code**: `addPosition()`
+(`useFirebasePortfolio.js`) creates a fresh Firestore document with its own id on every buy
+(`${ticker}-${Date.now()}`), never merging into one running-average position per ticker. That
+means every stored position document already IS a lot — one purchase date, one cost basis, one
+share count — contrary to this proposal's original "average-cost only" framing above. The actual
+gap was narrower than originally scoped: not "lots don't exist," but "there is no engine that can
+sell a quantity of a ticker spanning more than one of its existing lots." Clicking the existing
+per-row Sell button already constitutes specific identification of that one lot (IRS Publication
+550's alternative to FIFO) and needed no change.
+
+**What was built**: `src/lib/taxLots.js` — `lotsForTicker` (a ticker's open lots, oldest
+acquisition date first), `planFifoSale` (depletes across as many lots as a sale needs, oldest
+first, unavailable with a clear reason if the requested quantity exceeds total holdings),
+`realizedGainForPlan` (proceeds/cost basis/realized gain, total and per lot), `lotCountsByTicker`.
+Wired into `usePortfolioForms.js` as a new, additive `saveLotSell` flow (`startLotSell`/
+`cancelLotSell`/`lotSellPlan` live preview) that depletes the affected position documents via the
+same `updatePosition`/`removePosition` calls the existing single-lot sell already uses, records one
+`realized_gain` activity entry with a per-lot breakdown in its note, and captures one rebalance
+event spanning every depleted lot. UI: `Holdings.jsx`/`HoldingCard.jsx` show a "Sell across N lots"
+action next to the existing per-row Sell, only for tickers actually held across more than one lot
+(`lotCountsByTicker`), with a `LotSellSheet` that previews exactly which lots a quantity would draw
+from before the user confirms. 12 tests in `taxLots.test.js`, 8 in `usePortfolioForms.test.js`, 2 in
+`HoldingCard.test.jsx`. Full JS suite, lint, and build all pass. Not manually verified in a running
+browser — the dev-mode preview portfolio (`mobile_preview_positions` in `settings.json`) holds no
+ticker across multiple lots, so the new button never renders against it; verification rests on the
+automated test coverage above, not a live click-through.
+
+**Explicitly not built this slice, per the original estimate's own sequencing** (unchanged from the
+original proposal below): specific-identification lot-picker UI (FIFO already covers the IRS
+default case; picking a specific lot manually is additional UI, not additional engine), the
+wash-sale detector (the original estimate is explicit that this "depends on lot data, can't be
+built first" — lots need to exist and be exercised before that detector has anything to reason
+about), LIFO or other non-default depletion methods, and any retroactive backfill of lots for sales
+already recorded before this session (impossible to reconstruct the original per-purchase history
+for a sale that already collapsed it into one `realizedGain` figure).
 
 **Proposed schema**: `docs/schemas/transaction-event.schema.json` (item 6) already specifies the
 event shape. B3 additionally needs a `Lot` entity, not yet schematized:

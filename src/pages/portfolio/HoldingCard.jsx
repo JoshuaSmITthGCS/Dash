@@ -8,10 +8,10 @@ import { money, signedPct } from './format.js'
 import { Move, StopLossNote } from './PortfolioBits.jsx'
 
 /** One holding. Collapsed to identity + today's move under "Essential only". */
-export default function HoldingCard({ pos, essentialOnly, forms, onSelectStock }) {
+export default function HoldingCard({ pos, essentialOnly, forms, onSelectStock, lotCount = 1 }) {
   const {
     editingId, editForm, setEditForm, editSaving, startEdit, cancelEdit, saveEdit,
-    sellingId, startSell, removingId, handleRemove,
+    sellingId, startSell, removingId, handleRemove, startLotSell,
   } = forms
   const editing = editingId === pos.id
   const selling = sellingId === pos.id
@@ -86,6 +86,12 @@ export default function HoldingCard({ pos, essentialOnly, forms, onSelectStock }
               {pos.priceInfo && <button className="secondary-button" onClick={() => onSelectStock(pos)}>Research</button>}
               <button className="text-button" onClick={() => startEdit(pos)}>Edit</button>
               <button className="text-button" onClick={() => startSell(pos)}>Sell</button>
+              {lotCount > 1 && (
+                <button className="text-button" onClick={() => startLotSell(pos.ticker)}
+                  title={`You hold ${pos.ticker} across ${lotCount} separate lots; this sells oldest-first across as many as it takes`}>
+                  Sell across {lotCount} lots
+                </button>
+              )}
               <button className="text-button danger" onClick={() => handleRemove(pos.id)} disabled={removingId === pos.id}>
                 {removingId === pos.id ? 'Removing…' : 'Remove'}
               </button>
