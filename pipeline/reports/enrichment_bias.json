@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-21T17:18:14.340302+00:00",
+  "generated_at": "2026-08-21T18:14:21.024222+00:00",
   "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
   "coverage_by_collection": {
     "research": {
@@ -37,11 +37,11 @@
       "total_rows": 839,
       "categories": {
         "accounting_quality": {
-          "scored": 195,
+          "scored": 211,
           "total": 839
         },
         "capital_allocation": {
-          "scored": 195,
+          "scored": 211,
           "total": 839
         },
         "financial_health": {
@@ -57,37 +57,37 @@
           "total": 839
         },
         "valuation": {
-          "scored": 819,
+          "scored": 821,
           "total": 839
         }
       }
     }
   },
   "enriched_vs_non_enriched": {
-    "enriched_count": 235,
-    "non_enriched_count": 644,
+    "enriched_count": 251,
+    "non_enriched_count": 628,
     "score": {
       "enriched": {
-        "n": 235,
-        "mean": 69.65,
-        "median": 71.5,
-        "stdev": 10.73
+        "n": 251,
+        "mean": 69.61,
+        "median": 71.4,
+        "stdev": 10.54
       },
       "non_enriched": {
-        "n": 644,
-        "mean": 61.16,
-        "median": 62.2,
-        "stdev": 8.57
+        "n": 628,
+        "mean": 60.94,
+        "median": 62.0,
+        "stdev": 8.42
       }
     },
     "sector_distribution": {
       "enriched": {
-        "Technology": 62,
-        "Financial Services": 61,
-        "Industrials": 24,
-        "Energy": 21,
+        "Technology": 69,
+        "Financial Services": 64,
+        "Industrials": 25,
+        "Healthcare": 23,
+        "Energy": 22,
         "Consumer Cyclical": 20,
-        "Healthcare": 19,
         "Consumer Defensive": 7,
         "Basic Materials": 6,
         "Communication Services": 6,
@@ -96,17 +96,17 @@
         "Unknown": 1
       },
       "non_enriched": {
-        "Industrials": 114,
+        "Industrials": 113,
         "Consumer Cyclical": 93,
-        "Technology": 90,
-        "Healthcare": 81,
-        "Financial Services": 64,
+        "Technology": 83,
+        "Healthcare": 77,
+        "Financial Services": 61,
         "Real Estate": 50,
         "Consumer Defensive": 49,
         "Basic Materials": 32,
         "Utilities": 29,
         "Communication Services": 21,
-        "Energy": 18,
+        "Energy": 17,
         "ETF": 2,
         "Unknown": 1
       }
