@@ -263,3 +263,72 @@ def test_the_report_covers_every_declared_strategy_including_the_new_ones():
     labels = {row["strategy"] for row in build_report("/nonexistent")["strategies"]}
     assert "Swing signals only" in labels
     assert "Political + institutional trades only" in labels
+    assert "Reweighted composite A (Round 7 proposal)" in labels
+
+
+def test_reweighted_composite_ranks_by_published_legs_not_the_champion_score():
+    # AAA wins on champion score; BBB wins on the reweighted blend (stronger valuation/
+    # market_behavior, the legs proposal A keeps). The shadow must rank BBB first - and it
+    # must reach into screen_universe, where CCC's even stronger legs live outside the
+    # champion's published top ranks.
+    advisor = {
+        "generated_at": "2026-08-21T12:00:00Z",
+        "research": [
+            {"ticker": "AAA", "score": 90, "price": 100,
+             "fundamental_categories": {"valuation": 40, "profitability": 50, "financial_health": 50,
+                                        "growth": 99, "capital_allocation": 99, "accounting_quality": 99},
+             "components": {"market_behavior": 40}},
+            {"ticker": "BBB", "score": 80, "price": 100,
+             "fundamental_categories": {"valuation": 90, "profitability": 60, "financial_health": 70},
+             "components": {"market_behavior": 80}},
+        ],
+        "screen_universe": [
+            {"ticker": "CCC", "score": 40, "price": 100,
+             "fundamental_categories": {"valuation": 95, "profitability": 95, "financial_health": 95},
+             "components": {"market_behavior": 95}},
+        ],
+    }
+    benchmark = {"histories": {"SPY": {"dates": ["2026-08-21"], "closes": [500]}}}
+    selected = selections_from_payload(advisor, benchmark, {})
+    tickers = [row["ticker"] for row in selected["reweighted_composite_a"]]
+    assert tickers == ["CCC", "BBB", "AAA"]
+    # AAA's high growth/capital_allocation/accounting_quality scores buy it nothing here -
+    # those legs are zero-weighted by construction in proposal A.
+
+
+def test_reweighted_composite_renormalizes_over_available_legs():
+    # A row resolving only market_behavior is still scored (on that leg alone), matching
+    # evaluation.composite_score's renormalization convention; a row resolving nothing is
+    # skipped rather than invented.
+    advisor = {
+        "generated_at": "2026-08-21T12:00:00Z",
+        "research": [
+            {"ticker": "ONLY", "score": 10, "price": 100,
+             "fundamental_categories": {}, "components": {"market_behavior": 70}},
+            {"ticker": "NONE", "score": 99, "price": 100,
+             "fundamental_categories": {}, "components": {}},
+        ],
+        "screen_universe": [],
+    }
+    benchmark = {"histories": {"SPY": {"dates": ["2026-08-21"], "closes": [500]}}}
+    selected = selections_from_payload(advisor, benchmark, {})
+    rows = selected["reweighted_composite_a"]
+    assert [row["ticker"] for row in rows] == ["ONLY"]
+    assert rows[0]["signal"] == 70.0
+
+
+def test_a_mid_contract_strategy_collects_nothing_before_its_registration_date(tmp_path):
+    # Guards the --bootstrap-git replay: archived advisor snapshots from before
+    # 2026-08-21 must not fabricate pre-registration history for the Round 7 shadow.
+    advisor, benchmark = fixture_payload(day="2026-08-20")
+    advisor["research"][0]["fundamental_categories"] = {"valuation": 80}
+    advisor["research"][0]["components"] = {"market_behavior": 60}
+    result = append_payload(advisor, benchmark, {}, store_root=str(tmp_path))
+    assert "production" in result["appended"]
+    assert "reweighted_composite_a" not in result["appended"]
+
+    later_advisor, later_benchmark = fixture_payload(day="2026-08-21", spy=501)
+    later_advisor["research"][0]["fundamental_categories"] = {"valuation": 80}
+    later_advisor["research"][0]["components"] = {"market_behavior": 60}
+    later = append_payload(later_advisor, later_benchmark, {}, store_root=str(tmp_path))
+    assert "reweighted_composite_a" in later["appended"]

@@ -1,0 +1,141 @@
+{
+ "purpose": "Round 7 Task 4 reweighting backtest - proposal only, champion untouched",
+ "panel": {
+  "path": "pipeline/backtest_signal_panel.json",
+  "generated_at": "2026-08-14T04:28:10.537840Z",
+  "periods": 60,
+  "first_date": "2021-09-01",
+  "last_date": "2026-08-03",
+  "primary_horizon": "21d"
+ },
+ "construction": {
+  "selection": "top 20 by composite, equal weight",
+  "renormalization": "composite_score over available legs",
+  "cost_model": "net = gross - turnover x 20 bps (shadow contract spread+slippage)"
+ },
+ "results": {
+  "champion": {
+   "weights": {
+    "valuation": 0.2184,
+    "profitability": 0.2028,
+    "financial_health": 0.117,
+    "growth": 0.0858,
+    "capital_allocation": 0.078,
+    "accounting_quality": 0.078,
+    "market_behavior": 0.18,
+    "news_sentiment": 0.04
+   },
+   "gross": {
+    "periods": 59,
+    "cumulative_growth": 2.0771,
+    "annualized_return_pct": 16.03,
+    "annualized_volatility_pct": 16.97,
+    "sharpe_rf0": 0.964,
+    "max_drawdown_pct": -11.84,
+    "hit_rate": 0.627
+   },
+   "net_of_20bps_turnover_cost": {
+    "periods": 59,
+    "cumulative_growth": 1.957,
+    "annualized_return_pct": 14.63,
+    "annualized_volatility_pct": 16.96,
+    "sharpe_rf0": 0.893,
+    "max_drawdown_pct": -12.35,
+    "hit_rate": 0.627
+   },
+   "mean_turnover": 0.503,
+   "mean_names_held": 20.0,
+   "ic": {
+    "periods": 59,
+    "mean_ic": 0.0351,
+    "ic_std": 0.1769,
+    "icir": 0.687,
+    "t_stat": 1.523,
+    "hit_rate": 0.678
+   }
+  },
+  "proposal_a": {
+   "weights": {
+    "valuation": 0.3041,
+    "profitability": 0.2824,
+    "financial_health": 0.1629,
+    "market_behavior": 0.2506
+   },
+   "gross": {
+    "periods": 59,
+    "cumulative_growth": 2.052,
+    "annualized_return_pct": 15.74,
+    "annualized_volatility_pct": 17.07,
+    "sharpe_rf0": 0.945,
+    "max_drawdown_pct": -11.84,
+    "hit_rate": 0.61
+   },
+   "net_of_20bps_turnover_cost": {
+    "periods": 59,
+    "cumulative_growth": 1.934,
+    "annualized_return_pct": 14.36,
+    "annualized_volatility_pct": 17.05,
+    "sharpe_rf0": 0.875,
+    "max_drawdown_pct": -12.35,
+    "hit_rate": 0.61
+   },
+   "mean_turnover": 0.5,
+   "mean_names_held": 20.0,
+   "ic": {
+    "periods": 59,
+    "mean_ic": 0.0354,
+    "ic_std": 0.1771,
+    "icir": 0.693,
+    "t_stat": 1.536,
+    "hit_rate": 0.678
+   }
+  },
+  "proposal_b": {
+   "weights": {
+    "valuation": 0.3477,
+    "profitability": 0.3228,
+    "financial_health": 0.1862,
+    "market_behavior": 0.1433
+   },
+   "gross": {
+    "periods": 59,
+    "cumulative_growth": 2.3086,
+    "annualized_return_pct": 18.55,
+    "annualized_volatility_pct": 17.28,
+    "sharpe_rf0": 1.076,
+    "max_drawdown_pct": -11.84,
+    "hit_rate": 0.644
+   },
+   "net_of_20bps_turnover_cost": {
+    "periods": 59,
+    "cumulative_growth": 2.1779,
+    "annualized_return_pct": 17.15,
+    "annualized_volatility_pct": 17.27,
+    "sharpe_rf0": 1.007,
+    "max_drawdown_pct": -12.35,
+    "hit_rate": 0.644
+   },
+   "mean_turnover": 0.492,
+   "mean_names_held": 20.0,
+   "ic": {
+    "periods": 59,
+    "mean_ic": 0.0361,
+    "ic_std": 0.176,
+    "icir": 0.71,
+    "t_stat": 1.573,
+    "hit_rate": 0.661
+   }
+  },
+  "universe_mean": {
+   "gross": {
+    "periods": 59,
+    "cumulative_growth": 1.6713,
+    "annualized_return_pct": 11.01,
+    "annualized_volatility_pct": 17.19,
+    "sharpe_rf0": 0.694,
+    "max_drawdown_pct": -15.62,
+    "hit_rate": 0.559
+   }
+  }
+ }
+}

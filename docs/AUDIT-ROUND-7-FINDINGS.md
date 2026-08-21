@@ -164,8 +164,8 @@ same 59-period composite sample as the published numbers:**
 | B — A + market_behavior halved (0.18 → 0.09) | 59 | 0.0361 | 0.710 | 1.574 | 0.661 |
 | C — zero all four hurting legs incl. market_behavior + profitability | **14** | 0.0815 | 2.511 | 2.712 | 0.714 |
 
-Recommendation, for Josh's review only: **none of these clears the bar for a production
-change.** A is cosmetically tidier (+0.0003 IC) but its real content is bookkeeping — the
+Recommendation, at the time of the monitoring pass: **none of these clears the bar for a
+production change.** A is cosmetically tidier (+0.0003 IC) but its real content is bookkeeping — the
 zeroed legs were already renormalized away (growth/news) or nearly unmeasurable
 (5 periods). B's gain leans on the 4.3 artifact and costs hit rate. C's headline numbers
 are an illusion of sample selection (14 fundamentally-covered periods only, a different
@@ -173,6 +173,44 @@ and easier regime — not comparable to the 59-period baseline). Given the prosp
 clock starts in 10 days and will grade the *current* champion, changing weights now on
 n=5 subsamples and a mismeasured drop-one would be exactly the overfitting the deflated-
 Sharpe machinery exists to punish. Revisit when the clock has real periods.
+
+### 4.5 — Follow-up (same day, on Josh's instruction): shadow + backtest for the reweighting
+
+Josh directed that the reweighting be run as a shadow portfolio and backtested. Both done;
+the champion remains untouched.
+
+**Shadow registration.** `reweighted_composite_a` is now a declared shadow strategy
+(`pipeline/shadow_portfolios.py::REWEIGHTED_A_WEIGHTS`, registered in
+`validation_framework.py::STRATEGIES`). It recomposes proposal A's blend from the leg
+scores every published row already carries (`fundamental_categories` +
+`components.market_behavior`, renormalized over available legs), ranks research +
+screen_universe, and holds the top 20 equal-weight — collected per refresh alongside the
+other shadows, net of the same declared costs. A new `STRATEGY_ACTIVATION_DATES` gate
+means it collects only from **2026-08-21** forward: a future `--bootstrap-git` replay
+cannot fabricate pre-registration history for it. Proposal B is deliberately *not*
+registered — carrying both would spend a second prospective trial on one idea, and B is
+the variant resting on the §4.3 artifact.
+
+**Backtest** (`research/audit/round7/reweighting_backtest.py`, results committed in
+`reweighting_backtest_results.json`): top-20 equal-weight portfolios per weight vector on
+the same locked panel, 59 monthly periods, identical construction across variants, gross
+and net of 20 bps × turnover:
+
+| Variant | Ann. return (gross) | Sharpe (rf 0) | Max DD | Hit | Net Sharpe | Mean turnover |
+|---|---|---|---|---|---|---|
+| Champion | 16.03% | 0.964 | −11.84% | 0.627 | 0.893 | 0.50 |
+| Proposal A | 15.74% | 0.945 | −11.84% | 0.610 | 0.875 | 0.50 |
+| Proposal B | 18.55% | 1.076 | −11.84% | 0.644 | 1.007 | 0.49 |
+| Universe mean | 11.01% | 0.694 | −15.62% | 0.559 | — | — |
+
+The portfolio backtest *reverses* the IC ordering for proposal A: its marginally better
+IC (0.0354 vs 0.0351) does not survive top-20 construction — it is slightly **worse** than
+the champion where it counts. Proposal B backtests best, but its extra lever is the §4.3
+mismeasured diagnostic and its weights were tuned on the same 59 periods being scored —
+textbook in-sample selection. Conclusion unchanged: no promotion; the shadow decides
+prospectively. Both tried configurations are logged in
+`pipeline/experiment_registry.py` (`R7-leg-reweighting`, `number_of_variants_tested: 2`,
+decision `KEEP_AS_CHALLENGER`) so the deflated-Sharpe trial count stays honest.
 
 ## Task 5 — `sample_size_warning` on the performance export: **done**
 

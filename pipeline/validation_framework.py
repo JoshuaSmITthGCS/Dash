@@ -12,8 +12,8 @@ from datetime import datetime, timezone
 
 REQUIRED_EXTERNAL = {"date", "ticker", "rank"}
 STRATEGIES = ("production", "structural_tactical", "momentum", "quality_value", "swing",
-              "political_institutional", "combined", "SPY", "eligible_universe_equal_weight",
-              "external")
+              "political_institutional", "combined", "reweighted_composite_a", "SPY",
+              "eligible_universe_equal_weight", "external")
 
 
 def append_immutable_snapshot(root, strategy, as_of, rows, metadata=None):
