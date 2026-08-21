@@ -68,6 +68,35 @@ export function costWeights(positions = []) {
   return invested.reduce((weights, row) => ({ ...weights, [row.ticker]: (weights[row.ticker] || 0) + row.dollars / total }), {})
 }
 
+/**
+ * Dollar-weighted average expense ratio across the user's fund holdings -- per-fund
+ * `expense_ratio` is already published in etfs.json (see Picks.jsx), this just aggregates
+ * it against the user's actual position sizes rather than any published watchlist weight.
+ * Weighted by mark-to-market value, not cost basis: this is a statement about ongoing drag
+ * on the portfolio as it stands today, not what was originally paid in. Non-fund holdings
+ * (no expense_ratio entry) are excluded from both the numerator and the weight base, so a
+ * stock-heavy portfolio with one small ETF sleeve reports that sleeve's own average, not a
+ * number diluted by the stocks that don't carry a fund fee at all.
+ */
+export function weightedExpenseRatio(positions = [], etfs = []) {
+  const expenseRatioByTicker = new Map(
+    etfs
+      .filter((row) => finite(row?.expense_ratio))
+      .map((row) => [String(row.ticker || '').trim().toUpperCase(), Number(row.expense_ratio)])
+  )
+  const held = positions
+    .map((row) => ({
+      ticker: String(row.ticker || '').trim().toUpperCase(),
+      value: Number(row.currentValue),
+      expenseRatio: expenseRatioByTicker.get(String(row.ticker || '').trim().toUpperCase()),
+    }))
+    .filter((row) => row.ticker && finite(row.value) && row.value > 0 && row.expenseRatio != null)
+  const totalValue = held.reduce((sum, row) => sum + row.value, 0)
+  if (!(totalValue > 0)) return null
+  const weightedSum = held.reduce((sum, row) => sum + row.value * row.expenseRatio, 0)
+  return { expenseRatioPct: weightedSum / totalValue, fundValue: totalValue, fundCount: held.length }
+}
+
 /** Ascending dates and closes, plus an exact-date lookup, with unusable closes dropped. */
 function closeSeries(history) {
   const dates = []

@@ -225,3 +225,7 @@ details { border-top: 1px solid var(--border); padding-top: var(--sp-3); } summa
 @media (max-width: 680px) {
   .holdings-data-quality-list li { grid-template-columns: 1fr; gap: var(--sp-0-5); }
 }
+.fund-cost-overview { margin-top: var(--sp-5); padding: var(--sp-5); display: grid; gap: var(--sp-3); }
+.fund-cost-stat { display: flex; align-items: baseline; gap: var(--sp-2-5); flex-wrap: wrap; }
+.fund-cost-value { font: var(--fw-bold) var(--fs-xl) var(--font-mono); }
+.fund-cost-label { color: var(--text-faint); font-size: var(--fs-xs); }

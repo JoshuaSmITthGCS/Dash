@@ -93,9 +93,10 @@ page — those are called out as **wiring-only** below.
     is called with no arguments (`portfolioAnalyticsModel.js:115`), so it always evaluates an
     empty rebalance list. This is a wiring bug, not a missing metric — needs a real rebalance
     ledger to pass in, which is the actual gap.
-15. **T3, wiring-only — days-to-liquidate, transaction-cost drag, current-drawdown duration,
-    weighted ETF expense ratio.** All either fully computed and buried in a composite score, or a
-    thin addition given all inputs already exist. See gap matrix for specifics.
+15. **T3, wiring-only — days-to-liquidate, transaction-cost drag, current-drawdown duration.**
+    All either fully computed and buried in a composite score, or a thin addition given all
+    inputs already exist. See gap matrix for specifics. (Weighted ETF expense ratio, the fourth
+    item originally grouped here, is ✅ done — see gap matrix.)
 16. **T3 — rolling metric stability beyond Sharpe.** Only rolling Sharpe (60/120d) exists; no
     rolling vol/beta/tracking-error/correlation/drawdown, and not at the requested 63/126/252d
     windows.

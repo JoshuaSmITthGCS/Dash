@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   alignSeries, annualizeReturnPct, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, costWeights, currentHoldingsSeries, diversificationScore, enrichPortfolio,
   contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, modifiedDietzReturn, moneyWeightedAccountReturn, netInvestedCapital, opportunityCost, performanceMetrics,
-  portfolioAnnualizedReturn, portfolioReconciliationBridge, portfolioReturnSummary, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace, underwaterProfile,
+  portfolioAnnualizedReturn, portfolioReconciliationBridge, portfolioReturnSummary, portfolioRiskDecomposition, portfolioScore, resilienceIndex, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace, underwaterProfile, weightedExpenseRatio,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -77,6 +77,40 @@ describe('portfolio report analytics', () => {
     expect(weights).toMatchObject({ AAA: 0.5, BBB: 0.5 })
     expect(costWeights([])).toEqual({})
     expect(costWeights([{ ticker: 'AAA', shares: 0, costBasis: 20 }])).toEqual({})
+  })
+
+  describe('weightedExpenseRatio', () => {
+    const etfs = [
+      { ticker: 'voo', expense_ratio: 0.03 },
+      { ticker: 'QQQ', expense_ratio: 0.20 },
+    ]
+
+    it('dollar-weights expense ratio by current value across held funds only', () => {
+      const result = weightedExpenseRatio([
+        { ticker: 'VOO', currentValue: 7500 },
+        { ticker: 'qqq', currentValue: 2500 },
+      ], etfs)
+      // (7500*0.03 + 2500*0.20) / 10000 = 0.0725
+      expect(result.expenseRatioPct).toBeCloseTo(0.0725, 6)
+      expect(result.fundValue).toBe(10000)
+      expect(result.fundCount).toBe(2)
+    })
+
+    it('excludes non-fund holdings from both the numerator and the weight base', () => {
+      const result = weightedExpenseRatio([
+        { ticker: 'VOO', currentValue: 5000 },
+        { ticker: 'AAPL', currentValue: 5000 }, // no expense_ratio entry -- not a fund
+      ], etfs)
+      expect(result.expenseRatioPct).toBeCloseTo(0.03, 6)
+      expect(result.fundValue).toBe(5000)
+      expect(result.fundCount).toBe(1)
+    })
+
+    it('returns null when the portfolio holds no funds', () => {
+      expect(weightedExpenseRatio([{ ticker: 'AAPL', currentValue: 1000 }], etfs)).toBeNull()
+      expect(weightedExpenseRatio([], etfs)).toBeNull()
+      expect(weightedExpenseRatio([{ ticker: 'VOO', currentValue: 1000 }], [])).toBeNull()
+    })
   })
 
   it('builds an explicitly current-holdings daily-close backtest and changes data by period', () => {
