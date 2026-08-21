@@ -9,27 +9,39 @@ actually scheduled.
 
 ---
 
-### 1. Fundamentals-category confidence multiplier is directional, not neutral-shrinking
+### 1. Fundamentals-category confidence multiplier still drives enrichment-priority selection
 
-- **Model**: `pipeline/scorer.py` `_band_valuation_score`/`_cross_sectional_valuation_score`
-  (production `normalization_mode: "bands"`).
+- **Model**: `pipeline/scorer.py::_band_valuation_score`'s multiplied return value, consumed by
+  `fetch_advisor.py::enrich()`'s shortlist-priority sort key
+  (`valuation_score(context["snapshot"])[0]`).
 - **Assumption**: `confidence_multiplier = 0.65 + 0.35 × coverage` was inherited from an earlier
   design that treated missing evidence as a reason to score lower, not a reason to defer judgment.
-- **Failure mode**: a company with genuinely strong fundamentals but thin statement coverage
-  (e.g. recently added to the enrichment shortlist) scores lower than its actual evidence
-  supports, and the effect compounds with the shortlist-gating bias already described in
-  `docs/CONSOLIDATED-ASSESSMENT.md` §2.2 — thin coverage both keeps a name off the shortlist *and*
-  penalizes it further once it's scored.
-- **Severity**: P0 by the same standard the top-level version of this formula was judged against
-  (already retired for that reason on 2026-08-12) — but currently undiscovered/unaddressed at
-  this layer.
-- **Mitigation**: documented with a passing regression test
-  (`pipeline/tests/test_round4_remediation.py::TestFundamentalsCategoryMultiplierStillDirectional`)
-  that will need to start failing before this is fixed. Per audit tier-2 authorization, no
-  production change without registering `_fixed_feature_valuation_score`'s already-existing
-  no-multiplier pattern as a challenger and measuring its rank effect by coverage decile first.
-- **Monitoring metric**: rank correlation between bands-mode and fixed-feature-mode scores,
-  segmented by coverage decile, once the challenger comparison runs.
+- **Corrected finding (this session)**: an earlier pass of this audit claimed this multiplier was
+  still live for the *champion's published score*. It is not — `build_research()` reads
+  `fundamental_parts["raw_score"]` (pre-multiplier) for `components["fundamentals"]`, never the
+  multiplied value, confirmed by `test_champion_carries_no_completeness_multiplier` (pre-existing)
+  and `TestFundamentalsCategoryMultiplierScope::test_champion_published_score_bypasses_the_multiplier`
+  (added this session). The multiplier's one real remaining live consumer is `enrich()`'s sort
+  key, which runs *before* enrichment/publication and has nothing to do with the score a user
+  ever sees for an already-published name.
+- **Failure mode**: a company with genuinely strong fundamentals but thin *pre-enrichment*
+  statement coverage has its raw evidence pushed down in the enrichment-priority ranking by this
+  multiplier, making it less likely to be selected for the scarce statement-enrichment budget in
+  the first place — compounding the shortlist-gating bias already described in
+  `docs/CONSOLIDATED-ASSESSMENT.md` §2.2. This is a selection-mechanism risk, not a published-score
+  correctness risk.
+- **Severity**: P1 — real and live, but narrower in consequence than a defect in the published
+  score itself would be (it affects who gets a chance to be scored well, not the scoring of
+  already-published names).
+- **Mitigation**: documented and tested this session
+  (`pipeline/tests/test_round4_remediation.py::TestFundamentalsCategoryMultiplierScope::test_enrichment_priority_sort_key_is_still_directional`).
+  An additive, default-preserving `apply_confidence_multiplier` parameter was added to
+  `scorer.py::valuation_score`/`_band_valuation_score` (no existing caller's behavior changes) so
+  a future challenger measuring `enrich()`'s sort key with the multiplier off is a small,
+  reviewable diff rather than a new formula variant. No production change to `enrich()` itself
+  without measuring its effect on shortlist composition first, per audit tier-2 authorization.
+- **Monitoring metric**: overlap between the current enrichment shortlist and a shortlist built
+  from `raw_score` instead of the multiplied sort key, once that comparison is run.
 
 ### 2. Enrichment-shortlist selection bias (pre-existing, largest structural risk in the system)
 

@@ -114,15 +114,27 @@ carry `recorded_at`, `data_as_of`, `model_version`, `config_hash`, `universe_mem
 
 ## 3. The research score — full weight tree
 
-Entry point: `build_research()`, `pipeline/advisor_engine.py:818-861`. This is "the score" shown
+Entry point: `build_research()`, `pipeline/advisor_engine.py:1241-`. This is "the score" shown
 everywhere in the app (Dashboard, `/research`, stock detail sheets).
 
 ```
 raw   = Σ(component_i · weight_i) / Σ(weight_i)      — only over components that resolved
-base  = raw · (0.8 + 0.2 · confidence)                — confidence pulls toward 80% of raw, never below it
+base  = raw                                           — no coverage multiplier applied at this level
 score = clamp(base + modifier_points, 0, 100)         — modifier_points capped to ±15 total
 ```
-(`blend_research_components`, `advisor_engine.py:570-596`)
+(`blend_research_components`, `advisor_engine.py:945-974`, called by the champion with
+`apply_coverage_multiplier=False`)
+
+**Retired 2026-08-12.** An earlier form multiplied `base` by `(0.8 + 0.2 · data_coverage)` —
+i.e. shrinking a thin-evidence name's score further from raw rather than toward a neutral prior.
+Round 5 Task 2 found no published construction multiplies a positively-oriented composite by
+completeness this way (Jensen-Kelly-Pedersen *JF* 78(5) 2023; Freyberger et al. *RFS* 38(3) 2025;
+Bryzgalova et al. *RFS* 38(3) 2025; Chen-McCoy *JFE* 153 2024), and the no-multiplier variant was
+promoted to champion. The old multiplier still exists in code (`advisor_engine.py:967`,
+`multiplier = (0.8 + data_coverage * 0.2) if apply_coverage_multiplier else 1.0`) but only runs
+for the other, deliberately-isolated challenger variants built on the same function — never for
+the published `row["score"]`. **The structurally identical multiplier one level down, inside the
+fundamentals sub-score, was not retired** — see §7 below.
 
 ### Top-level component weights (`ranking_weights`, `settings.json`)
 
@@ -358,23 +370,46 @@ market behavior).
 
 ---
 
-## 7. Confidence — the reliability multiplier
+## 7. Data coverage — a completeness measure, not a reliability score
 
-Confidence is **not a score** — it never adds evidence, only shrinks the blended score toward
-(never past) 80% of its raw value when data is thin, and gates the `INSUFFICIENT DATA` stance
-below 0.45.
+**Correction (this section previously described a retired formula and a UI label that was never
+shipped — see `docs/AUDIT-VERIFICATION-RESULTS.md` §6 for the verification that found this.)**
+
+The published quantity is **data coverage**, not "confidence" — the UI never uses that word for
+it. `src/components/StockDetailModal.jsx`'s dial component is literally named
+`CoverageScoreDial`, and its own code comment states plainly: "The quantity is completeness, not
+reliability." It renders as "`{X}%` data coverage" and an aria-label reading "...with `{X}` percent
+data coverage" — never "confidence" or "Evidence confidence." `advisor_engine.py`'s own docstring
+for `data_coverage_scalar()` documents the rename explicitly: the field "was previously published
+as `confidence`, which invited every consumer to read it as reliability," and was renamed for
+that reason. There is no `pipeline/confidence.py` in this codebase.
 
 ```
-confidence = 0.65 · fundamentals_coverage + 0.25 · market_behavior_coverage + 0.10 · news_sentiment_coverage
-base       = raw · (0.8 + 0.2 · confidence)
+data_coverage = 0.65 · fundamentals_coverage + 0.25 · market_behavior_coverage + 0.10 · news_sentiment_coverage
 ```
+
+**At the top-level blend** (§3 above), this scalar no longer multiplies anything for the
+champion score — that multiplier was retired 2026-08-12.
+
+**Inside the fundamentals sub-score, `_band_valuation_score` (`pipeline/scorer.py`) still
+computes the same-shaped multiplier**, `confidence_multiplier = 0.65 + (0.35 * coverage)`, and
+returns a multiplied `total` from `valuation_score()`. Unlike the top-level formula, though, this
+was never live for the champion's *published* score to begin with: `build_research()` reads
+`fundamental_parts["raw_score"]` (the pre-multiplier value) for `components["fundamentals"]`,
+never `valuation_score()`'s multiplied first return value — confirmed by
+`pipeline/tests/test_advisor_engine.py::test_champion_carries_no_completeness_multiplier` and
+`pipeline/tests/test_round4_remediation.py::TestFundamentalsCategoryMultiplierScope`. The
+multiplier's one remaining live consumer is `fetch_advisor.py::enrich()`'s shortlist-priority
+sort key, which ranks statement-enrichment candidates by the multiplied value directly — a real
+effect on which of ~910 names get enrichment, compounding the shortlist-gating bias documented
+later in this file (the 0.820 rank-correlation / 114-rank-shift enrichment incident), but not a
+defect in the published score itself. See `docs/AUDIT-ROADMAP.md` and
+`docs/MODEL-RISK-REGISTER.md` §1 for the corrected finding and what measuring a fix to `enrich()`'s
+sort key would take (no production change without that measurement).
 
 Each component reports its own *coverage* — the fraction of that component's underlying data
-that actually resolved — not its score. `pipeline/confidence.py` further decomposes the scalar
-into named sub-components for the UI's "why is this confidence low" surface: `completeness`,
-`freshness`, `source_reliability`, `peer_sample`, `model_agreement`. The UI labels this
-"Evidence confidence" specifically because it measures reliability of the evidence, never the
-probability of a price move.
+that actually resolved — not its score. Data coverage also gates the `INSUFFICIENT DATA` stance
+below 0.45.
 
 ---
 
@@ -859,7 +894,9 @@ low confidence.
 
 ## 14. Research report screens (`/screens/*`)
 
-These are cross-sectional screens over the configured screen universe (926 names) — distinct
+These are cross-sectional screens over the screen universe for a given run (typically ~910
+stocks + 126 ETFs from static config, plus any held portfolio symbols merged in and deduped —
+926 in a recent run, not a fixed configured count) — distinct
 from the per-stock research score (§3). Top-level navigation order (`SCREEN_NAV`,
 `src/pages/ResearchScreen.jsx`): Swing signals, Fast growth, Options, Momentum, Quality at
 valuation lows, Earnings timeliness, Structural vs tactical, Early session, Shadow portfolios,

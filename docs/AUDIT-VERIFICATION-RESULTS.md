@@ -53,39 +53,56 @@ test only, no production change), **T3/T4** new pipeline/ledger/IA work (proposa
 
 ## §6 — Confidence system
 
-This is the prompt's flagged highest-priority formula check. **Verdict: the specific "P0 semantics
-bug" the prompt describes for the champion score is already fixed — but a structurally identical,
-still-live issue exists one level down, inside the fundamentals sub-score, that the prompt's frame
-would have caught if it had checked both formulas' actual call sites.**
+This is the prompt's flagged highest-priority formula check. **Verdict, corrected from an earlier
+pass of this audit: the specific "P0 semantics bug" the prompt describes is fixed for the
+champion's published score — and, on closer inspection than the first pass gave it, the
+`0.65 + 0.35 × coverage` fundamentals-category formula is ALSO not consumed by the champion's
+published score. It has exactly one remaining live consumer: the enrichment-priority sort key
+that decides which candidates get financial-statement enrichment — a real, live effect, but a
+narrower and different one than "still live in the champion score," which the first pass of this
+audit incorrectly claimed. See the correction note at the end of this section for how that error
+was caught and fixed within this same session.**
 
 | Claimed formula | Status | Evidence |
 |---|---|---|
-| Production: `raw × (0.8 + 0.2 × confidence)` | **CONFIRMED EXACT COEFFICIENTS, RETIRED FROM CHAMPION** | `pipeline/advisor_engine.py:962`: `multiplier = (0.8 + data_coverage * 0.2) if apply_coverage_multiplier else 1.0`. The champion call, `build_research()` (`advisor_engine.py:1236-1288`), passes `apply_coverage_multiplier=False` — retired 2026-08-12 per the docstring at `:945-953`, which cites four published papers finding "no published construction multiplies a positively-oriented composite by completeness." **The published `row["score"]` today is `raw`, unmultiplied.** The directional multiplier still runs, but only inside `score_variants` challenger/diagnostic branches, never the headline score. The repo's own test proves the prompt's directional concern was real *for that formula*: `pipeline/tests/test_round4_remediation.py:119-124`, `test_production_form_is_directional`. |
-| Production: `raw × (0.65 + 0.35 × coverage)` | **CONFIRMED EXACT — AND STILL LIVE, ONE LEVEL DOWN** | `pipeline/scorer.py:642,680`: `confidence_multiplier = 0.65 + (0.35 * coverage); total = round(raw * confidence_multiplier, 1)`. This is **not** part of the top-level blend the first formula belonged to — it multiplies the **fundamentals category sub-score** directly, unconditionally, with no equivalent `apply_coverage_multiplier=False` escape hatch. It is directional in exactly the same way the retired top-level formula was: a low-coverage fundamentals bucket is pushed further from neutral, not shrunk toward it. |
-| Shadow/v2: `50 + confidence × (raw - 50)` | **CONFIRMED EXACT, real and live as a challenger** | Two independent implementations: `pipeline/scoring_v2.py:165` (the actual "structural-timeliness-2.1.0" model, published per-row as `row["analysis_v2"]`, called from the champion path at `advisor_engine.py:1265` — published as a side-channel field, not folded into `row["score"]`) and `pipeline/advisor_engine.py:989` (`shrink_research_components`, algebraically identical via `settings.json`'s `shrinkage_target: 50.0` / `shrinkage_max_pull: 1.0`). |
+| Production: `raw × (0.8 + 0.2 × confidence)` | **CONFIRMED EXACT COEFFICIENTS, RETIRED FROM CHAMPION** | `pipeline/advisor_engine.py:967`: `multiplier = (0.8 + data_coverage * 0.2) if apply_coverage_multiplier else 1.0`. The champion call, `build_research()` (`advisor_engine.py:1284-1330`), passes `apply_coverage_multiplier=False` — retired 2026-08-12 per the docstring at `:950-958`, which cites four published papers finding "no published construction multiplies a positively-oriented composite by completeness." **The published `row["score"]` today is `raw`, unmultiplied.** The directional multiplier still runs, but only inside `score_variants` challenger/diagnostic branches, never the headline score. The repo's own test proves the prompt's directional concern was real *for that formula*: `pipeline/tests/test_round4_remediation.py`, `test_production_form_is_directional`. |
+| Production: `raw × (0.65 + 0.35 × coverage)` | **CONFIRMED EXACT COEFFICIENTS — BYPASSED BY THE CHAMPION'S PUBLISHED SCORE, LIVE FOR ENRICHMENT PRIORITY ONLY** | `pipeline/scorer.py`'s `_band_valuation_score`: `confidence_multiplier = 0.65 + (0.35 * coverage); total = round(raw * confidence_multiplier, 1)`. `build_research()` (the champion) never uses this `total` value — it reads `fundamental_parts["raw_score"]` (the pre-multiplier value) for `components["fundamentals"]` instead, confirmed by the pre-existing `test_champion_carries_no_completeness_multiplier` and the new `test_champion_published_score_bypasses_the_multiplier`. The multiplier's one remaining live consumer: `fetch_advisor.py::enrich()`'s shortlist-priority sort key calls `valuation_score(context["snapshot"])[0]` directly — the multiplied value — to rank which candidates get scarce statement-enrichment budget, before any row is published. A thin-pre-enrichment-coverage name's raw evidence is pushed down in that specific ranking, compounding the already-known shortlist-gating bias (§7.3, the 0.820/114-rank incident). |
+| Shadow/v2: `50 + confidence × (raw - 50)` | **CONFIRMED EXACT, real and live as a challenger** | Two independent implementations: `pipeline/scoring_v2.py` (the actual "structural-timeliness-2.1.0" model, published per-row as `row["analysis_v2"]`, called from the champion path — published as a side-channel field, not folded into `row["score"]`) and `pipeline/advisor_engine.py::shrink_research_components` (algebraically identical via `settings.json`'s `shrinkage_target: 50.0` / `shrinkage_max_pull: 1.0`). |
 
 **Direct arithmetic answer** (raw=20, confidence/coverage=0.5): the now-retired top-level formula
-would have gone to 18 (down); the **still-live** fundamentals-category formula does the same
-(20 × (0.65+0.175) = 16.5, down); the shadow/v2 form goes to 35 (up, toward neutral); the actual
-published champion score today passes raw through unmultiplied at the top level.
+would have gone to 18 (down); the fundamentals-category formula would also go to 16.5 (down) *if
+its multiplied value were used anywhere the champion reads from* — it is not, for the published
+score; it is exactly this arithmetic, though, for `enrich()`'s enrichment-priority sort key; the
+shadow/v2 form goes to 35 (up, toward neutral); the actual published champion score today passes
+raw through unmultiplied at both the top level and the fundamentals-category level.
 
 **UI labeling**: the completeness metric is labeled **"Data coverage"** throughout the live UI
 (`src/pages/Picks.jsx:346,405`, `src/components/AnalysisLayers.jsx:47`: "Not a reliability
 score"), and `AnalysisLayers.test.jsx:36` explicitly asserts the phrase "evidence confidence"
-does **not** appear there — while `docs/MODEL-CARD.md:57` still claims "The UI labels it 'Evidence
-confidence.'" `src/pages/Glossary.jsx:120` separately defines a "Confidence" concept in the glossary.
-`docs/MODEL-CARD.md:49` also cites a `pipeline/confidence.py` file that **does not exist** in this
-repo (only `pipeline/score_calibration.py` and `pipeline/experiment_registry.py` do). This is
-independent doc/code drift from the two-formula question above.
+does **not** appear there — `docs/MODEL-CARD.md`'s "Confidence" section, which used to claim "The
+UI labels it 'Evidence confidence'" and cited a nonexistent `pipeline/confidence.py`, has been
+corrected (renamed to "Data coverage," pointing at the real file, `pipeline/data_coverage.py`).
+`src/pages/Glossary.jsx:120` separately defines a "Confidence" concept in the glossary.
+
+**Correction note (this session)**: the prior pass of this audit tested `valuation_score()` in
+isolation and found its multiplied return value directional — true, but it never checked whether
+`build_research()` actually consumes that multiplied value, and it does not. A production-code
+change was drafted on the strength of the uncorrected finding (a new `score_variants` challenger
+comparing the multiplied vs. unmultiplied fundamentals component) and then reverted within this
+same session once the check surfaced the real behavior: since the champion already discards the
+multiplier for its own component, that comparison would have always equaled the champion exactly
+— it tested nothing. What shipped instead: an additive, default-preserving
+`apply_confidence_multiplier` parameter on `scorer.py::valuation_score`/`_band_valuation_score`
+(harmless either way — no existing caller's behavior changes) and two corrected tests in
+`pipeline/tests/test_round4_remediation.py` (`TestFundamentalsCategoryMultiplierScope`) that
+prove the champion bypasses the multiplier and that `enrich()`'s sort key does not.
 
 **Action**:
-- **T2 — documented + failing test, no production change.** The still-live fundamentals-category
-  formula (`scorer.py:642,680`) has exactly the directional defect the prompt worried about for
-  the (already-retired) top-level one. A failing test was added this session
-  (`pipeline/tests/test_fundamentals_confidence_multiplier.py`) documenting the current behavior
-  and marking it `xfail` with the exact reasoning `advisor_engine.py:945-953` already used to
-  retire the top-level version. Per §21, no production formula change was made — this is
-  registered as a finding for a future challenger, not promoted.
+- **T2 — documented + test, no production change.** `enrich()`'s sort key
+  (`fetch_advisor.py::enrich`) is the one place this multiplier still has a live effect, and
+  changing it is a real scoring-selection change (altering which of ~910 names get statement
+  enrichment) requiring the same registered-challenger-then-promotion discipline as any other
+  production scoring change. Not changed this session — documented and tested only.
 - **T1 — doc drift fix**: `docs/MODEL-CARD.md`'s "Evidence confidence" label claim and its
   reference to a nonexistent `pipeline/confidence.py` should be corrected to match what the code
   actually does (see Feature docs below); left as a flagged item rather than edited this session

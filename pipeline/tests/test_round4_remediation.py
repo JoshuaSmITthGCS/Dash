@@ -10,7 +10,7 @@ import copy
 import pytest
 
 import data_health
-from advisor_engine import shrink_research_components
+from advisor_engine import build_research, shrink_research_components
 from portfolio_construction import rank_buffer_selection
 from scorer import CrossSectionalNormalizer, valuation_score
 from validation.experiment_manifest import build_manifest, sha256_of_json
@@ -124,47 +124,70 @@ class TestNeutralShrinkage:
         assert production < raw
 
 
-class TestFundamentalsCategoryMultiplierStillDirectional:
-    """docs/AUDIT-VERIFICATION-RESULTS.md Sec6: the top-level 0.8 + 0.2*coverage multiplier
-    (TestNeutralShrinkage.test_production_form_is_directional, above) was retired from the
-    champion score on 2026-08-12 -- advisor_engine.py's build_research() now calls
-    blend_research_components with apply_coverage_multiplier=False, so a below-neutral name
-    is no longer pushed further down by thin evidence at that layer.
+class TestFundamentalsCategoryMultiplierScope:
+    """Corrects an over-broad finding from an earlier pass of this audit
+    (docs/AUDIT-VERIFICATION-RESULTS.md Sec6, since corrected there): the earlier finding
+    treated _band_valuation_score's confidence_multiplier as still live for the *champion's
+    published score*. It is not -- build_research() (advisor_engine.py) reads
+    fundamental_parts["raw_score"] (the pre-multiplier value) for the champion's
+    components["fundamentals"], never valuation_score()'s multiplied first return value.
+    test_champion_published_score_bypasses_the_multiplier below proves that directly, and
+    test_advisor_engine.py::TestChampionMultiplier (pre-existing) already covered this from a
+    different angle.
 
-    The same directional multiplier still lives one layer down, unconditionally, inside the
-    fundamentals *category* score: _band_valuation_score (scorer.py, "bands" mode -- the
-    production default per settings.json's normalization_mode) and
-    _cross_sectional_valuation_score both compute
-    confidence_multiplier = 0.65 + 0.35 * coverage and multiply the category's raw score by
-    it, with no equivalent opt-out. valuation_score(snap) with no explicit mode -- exactly
-    what advisor_engine.py's champion path calls -- resolves to bands mode and inherits this.
+    The multiplier is not fully dead, though: valuation_score(snapshot)[0] (the multiplied
+    value) is exactly the sort key fetch_advisor.py::enrich() uses to rank which of ~910
+    candidate names get financial-statement enrichment -- a name with thin *pre-enrichment*
+    fundamentals coverage has its already-computed raw evidence pushed further down in that
+    ranking by this multiplier, on top of whatever structural shortlist-gating bias already
+    exists (docs/CONSOLIDATED-ASSESSMENT.md Sec2.2, the 0.820/114-rank incident in
+    docs/AUDIT-VERIFICATION-RESULTS.md Sec7.3). test_enrichment_priority_sort_key_is_still_directional
+    below documents that live effect precisely, at the layer it actually happens (enrich()'s
+    sort key), not at the champion's published score.
 
-    _fixed_feature_valuation_score (mode="fixed_feature", a *challenger*, not yet promoted --
-    see TestFixedFeatureImputation.test_no_completeness_multiplier above) already has no such
-    multiplier, proving the fix pattern exists and works; it just was never applied to the
-    production "bands" path.
-
-    Per this audit's Sec21 authorization (anything touching scoring weights or confidence
-    formulas: document + failing test only, no production change without sign-off), this test
-    documents the current, still-live behavior. It is not "failing" in the sense of a bug the
-    next commit should silently patch -- flipping this assertion IS the production change, and
-    needs the same registered-challenger-then-promotion path advisor_engine.py's own docstring
-    used for the top-level fix, not a one-line edit here.
+    Changing enrich()'s sort key to use raw_score instead is a real, live scoring-selection
+    change (it would alter which names get enriched, one further mechanism upstream of the
+    already-known shortlist bias) and needs the same registered-challenger-then-promotion
+    discipline as any other production scoring change -- not a one-line edit here. See
+    docs/AUDIT-ROADMAP.md and docs/MODEL-RISK-REGISTER.md Sec1 for the corrected finding and
+    what measuring this properly would take.
     """
 
-    def test_partial_coverage_still_penalizes_below_raw_in_production_bands_mode(self):
+    def test_champion_published_score_bypasses_the_multiplier(self):
+        partial = _snapshot(earnings_surprise=None, net_buyback_yield=None,
+                             stock_comp_to_revenue=None, capex_to_depreciation=None,
+                             accruals_ratio=None)
+        multiplied_score, detail = valuation_score(partial)
+        assert detail["coverage"] < 1.0
+        assert multiplied_score < detail["raw_score"], (
+            "valuation_score()'s own multiplied return value is directional in isolation -- "
+            "the point of this test is that the champion never uses it, not that it's absent."
+        )
+        row = build_research("TEST", partial, [100 + i * 0.2 for i in range(300)],
+                             [100 + i * 0.2 for i in range(300)], [])
+        assert row["components"]["fundamentals"] == row["fundamental_detail"]["raw_score"], (
+            "the champion's fundamentals component must be the pre-multiplier raw score, "
+            "exactly as advisor_engine.py's build_research() computes it, regardless of "
+            "what valuation_score()'s own multiplied return value says."
+        )
+
+    def test_enrichment_priority_sort_key_is_still_directional(self):
+        """fetch_advisor.py::enrich() ranks candidates by valuation_score(snapshot)[0] --
+        the multiplied value -- to decide who gets scarce statement-enrichment budget. A name
+        with strong raw evidence but thin pre-enrichment coverage is pushed down that specific
+        ranking by this multiplier, which is the one place in the live pipeline it still
+        matters."""
         full = _snapshot()
         partial = _snapshot(earnings_surprise=None, net_buyback_yield=None,
                              stock_comp_to_revenue=None, capex_to_depreciation=None,
                              accruals_ratio=None)
-        full_score, full_detail = valuation_score(full)
-        score, detail = valuation_score(partial)
-        assert detail["coverage"] < full_detail["coverage"]
-        assert detail["coverage"] < 1.0
-        assert score < detail["raw_score"], (
-            "bands mode (production's normalization_mode default) still multiplies a "
-            "category's raw score by 0.65 + 0.35*coverage -- the same directional penalty "
-            "already retired at the top level for exactly this reason."
+        full_sort_key = valuation_score(full)[0]
+        partial_sort_key, partial_detail = valuation_score(partial)
+        assert partial_detail["coverage"] < 1.0
+        assert partial_sort_key < partial_detail["raw_score"], (
+            "enrich()'s sort key for a partial-coverage name is worse than its own raw "
+            "evidence, purely from the multiplier -- this can keep a name off the "
+            "enrichment shortlist for a reason unrelated to its actual fundamentals."
         )
 
 

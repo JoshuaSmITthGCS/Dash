@@ -5,6 +5,7 @@ import PortfolioMoveExplanation from '../../components/PortfolioMoveExplanation.
 import PerformanceMetrics from '../../components/PerformanceMetrics.jsx'
 import ExportMetricsMenu from '../../components/ExportMetricsMenu.jsx'
 import ScenarioSensitivityPanel from '../../components/ScenarioSensitivityPanel.jsx'
+import HoldingsDataQuality from './HoldingsDataQuality.jsx'
 import { explainPortfolioMove } from '../../lib/portfolioAttribution.js'
 import { ANALYTICS_SCOPES } from './format.js'
 
@@ -46,6 +47,7 @@ export default function DataOverview({
         onPeriodChange={onAttributionPeriodChange}
       />
       <ScenarioSensitivityPanel holdings={holdings} signalMetrics={signalMetrics} />
+      <HoldingsDataQuality portfolioPositions={holdings.portfolioPositions} />
       <PerformanceMetrics
         metrics={analytics.performance}
         benchmarkLabel={benchmarks.selectedBenchmarkLabel}

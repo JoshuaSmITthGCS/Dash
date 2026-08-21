@@ -44,18 +44,23 @@ architecture, multi-week, requires explicit sign-off per the audit's §21 author
 
 ## P0 — this audit's new open findings
 
-8. **T2 — the fundamentals-category confidence multiplier is still directional in production.**
-   The top-level `0.8+0.2×coverage` multiplier was retired from the champion score on
-   2026-08-12; the structurally identical `0.65+0.35×coverage` multiplier inside
-   `_band_valuation_score`/`_cross_sectional_valuation_score` (`pipeline/scorer.py:642,680`) was
-   not, and "bands" is still the production `normalization_mode`. Documented with a passing test
-   this session (`pipeline/tests/test_round4_remediation.py::TestFundamentalsCategoryMultiplierStillDirectional`)
-   that will need to start failing before this is fixed — not by editing the assertion, but by
-   retiring the multiplier the same way the top-level one was retired (register as a challenger,
-   measure by coverage decile/sector/market-cap before promoting, per §21). **Do not fix this
-   without running that comparison first** — `_fixed_feature_valuation_score` already shows the
-   no-multiplier pattern works; the question is whether promoting it changes rankings in ways
-   worth measuring first.
+8. **T2 — the fundamentals-category confidence multiplier still drives enrichment-priority
+   selection, corrected from an earlier overstatement.** A prior pass of this audit claimed the
+   `0.65+0.35×coverage` multiplier inside `_band_valuation_score` (`pipeline/scorer.py`) was
+   "still live in the champion score," the same way the retired top-level `0.8+0.2×coverage`
+   multiplier once was. That was wrong: `build_research()` reads `fundamental_parts["raw_score"]`
+   (pre-multiplier) for the champion's `components["fundamentals"]`, never the multiplied value —
+   confirmed this session by `test_champion_carries_no_completeness_multiplier` (pre-existing)
+   and a new regression test. The multiplier's one real live consumer is
+   `fetch_advisor.py::enrich()`'s shortlist-priority sort key, which ranks statement-enrichment
+   candidates by the multiplied value before any row is published — a real effect on *which
+   names get enriched*, not on the score of an already-published name. Documented and tested
+   this session (`pipeline/tests/test_round4_remediation.py::TestFundamentalsCategoryMultiplierScope`);
+   an additive `apply_confidence_multiplier` parameter was added to `scorer.py::valuation_score`
+   (default preserves all existing behavior) so a future measured comparison of `enrich()`'s sort
+   key is a small diff, not a new formula. **Do not change `enrich()`'s sort key without measuring
+   its effect on shortlist composition first** — this changes upstream data availability for the
+   whole pipeline, the same category of risk as the already-known shortlist-gating bias.
 9. **T1, small — options r=0 Black-Scholes disclosure.** Options screens already disclose IV/
    spread/OI staleness prominently; they do not separately disclose that delta/probability/EV use
    a zero-risk-free-rate Black-Scholes simplification. One line next to the existing staleness

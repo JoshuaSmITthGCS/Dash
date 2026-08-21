@@ -4,11 +4,20 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { REFERENCE_PORTFOLIO_VERSION } from '../../lib/referencePortfolio.js'
+import { costWeights } from '../../lib/portfolioAnalytics.js'
 import { perShareCost } from './format.js'
 
 const today = () => new Date().toISOString().split('T')[0]
 
-export function usePortfolioForms({ portfolio, tracking, previewPortfolio }) {
+// Records one turnover-relevant rebalance event: the portfolio's cost-basis weight vector
+// immediately before and after this specific add/edit/remove/sell. Fire-and-forget -- a
+// rebalance-ledger write failing should never block the position mutation it's describing.
+function captureRebalance(tracking, date, before, after) {
+  if (!tracking?.recordRebalance) return
+  tracking.recordRebalance({ date, beforeWeights: costWeights(before), afterWeights: costWeights(after) })
+}
+
+export function usePortfolioForms({ portfolio, tracking, previewPortfolio, positions = [] }) {
   const {
     addPosition,
     removePosition,
@@ -61,6 +70,7 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio }) {
       setSyncMessage(`Could not sync position: ${result.error}`)
       return
     }
+    captureRebalance(tracking, today(), positions, [...positions, { ticker: formData.ticker, shares, costBasis }])
     setSyncMessage(`${formData.ticker} saved to your cloud portfolio.`)
     setFormData({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: today() })
     setShowAddForm(false)
@@ -86,7 +96,10 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio }) {
     setRemovingId(null)
     if (result?.success === false) {
       setSyncMessage(`Could not remove position: ${result.error || 'Unknown error'}`)
-    } else setSyncMessage('Position removed from the cloud portfolio on every connected device.')
+    } else {
+      captureRebalance(tracking, today(), positions, positions.filter((row) => row.id !== positionId))
+      setSyncMessage('Position removed from the cloud portfolio on every connected device.')
+    }
   }
 
   const startSell = (pos) => {
@@ -120,6 +133,10 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio }) {
       setSyncMessage(`Could not save sale: ${positionResult.error || 'Unknown error'}`)
       return
     }
+    const afterSell = remainingShares > 0.0000001
+      ? positions.map((row) => (row.id === pos.id ? { ...row, shares: remainingShares } : row))
+      : positions.filter((row) => row.id !== pos.id)
+    captureRebalance(tracking, sellForm.saleDate, positions, afterSell)
     await tracking.recordActivity({ type: 'realized_gain', amount: realizedGain, effectiveDate: sellForm.saleDate, note: `${pos.ticker} sale` })
     setSellSaving(false)
     cancelSell()
@@ -162,6 +179,8 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio }) {
       setSyncMessage(`Could not save changes: ${result.error || 'Unknown error'}`)
       return
     }
+    captureRebalance(tracking, today(), positions,
+      positions.map((row) => (row.id === positionId ? { ...row, shares, costBasis } : row)))
     setSyncMessage('Position updated')
     cancelEdit()
   }

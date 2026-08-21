@@ -92,7 +92,7 @@ export default function Portfolio({ view = 'summary' }) {
     enabled: positions.length > 0,
     refreshing: portfolioQuotes.refreshing,
   })
-  const forms = usePortfolioForms({ portfolio, tracking, previewPortfolio })
+  const forms = usePortfolioForms({ portfolio, tracking, previewPortfolio, positions })
 
   const { priceData, pricesUpdatedAt, benchmarkQuote } = buildPriceModel({ data, positions, quotes: portfolioQuotes })
   const holdings = buildHoldingsModel({ data, positions, priceData, etfData })
@@ -114,6 +114,7 @@ export default function Portfolio({ view = 'summary' }) {
       analyticsScope,
       benchmarks,
       holdingsSeriesFull,
+      rebalances: tracking.rebalances,
     })
     : null
 
@@ -214,6 +215,7 @@ export default function Portfolio({ view = 'summary' }) {
           benchmarks={benchmarks}
           performancePeriod={performancePeriod}
           onPerformancePeriodChange={setPerformancePeriod}
+          tracking={tracking}
         />
       )}
 

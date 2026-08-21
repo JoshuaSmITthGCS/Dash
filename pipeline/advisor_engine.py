@@ -1176,6 +1176,16 @@ def signal_correction_variants(row, snapshot, normalizer, config, short_interest
         "fixed_feature": fixed_feature_challenger(row, snapshot, normalizer, config),
         # multiplier_removal_variant was retired 2026-08-12: promoted to champion (see
         # blend_research_components' docstring), so it would now always equal it exactly.
+        # A "fundamentals confidence multiplier removed" variant is deliberately NOT added
+        # here: build_research() already uses fundamental_parts["raw_score"] (the
+        # pre-multiplier value) for the champion's components["fundamentals"], never the
+        # multiplied value scorer.py's valuation_score() returns as its first element -- so
+        # a variant computed against an already-published row would always equal the champion
+        # exactly, testing nothing. The multiplier's one remaining live consumer is
+        # fetch_advisor.py:enrich()'s shortlist-priority sort key, which runs before
+        # enrichment/publication and has no row to attach a score_variants entry to. See
+        # docs/MODEL-RISK-REGISTER.md Sec1 for where this actually still matters and
+        # pipeline/tests/test_round4_remediation.py for the isolated regression test.
     }
 
 
