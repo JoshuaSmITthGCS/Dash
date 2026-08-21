@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 67,
+  "refreshes_observed": 68,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -14471,6 +14471,169 @@
           ],
           "score_delta": 3.5,
           "confidence_delta": 0.45
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-21T18:10:12.362412+00:00",
+      "current_refresh": "advisor-2026-08-21T18:56:08.284865+00:00",
+      "shared_tickers": 881,
+      "rank_turnover": {
+        "top_40": 0.025,
+        "top_100": 0.025
+      },
+      "tickers_with_availability_driven_change": 21,
+      "tickers_with_availability_driven_change_pct": 0.024,
+      "mean_abs_score_delta": 0.3,
+      "mean_abs_confidence_delta": 0.004,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "ETN",
+          "metrics_with_value_change": [
+            "peg"
+          ],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital"
+          ],
+          "score_delta": 13.4,
+          "confidence_delta": 0.42
+        },
+        {
+          "ticker": "SPB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -11.3,
+          "confidence_delta": 0.44
+        },
+        {
+          "ticker": "KR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "sales_multiple"
+          ],
+          "score_delta": -10.8,
+          "confidence_delta": -0.05
+        },
+        {
+          "ticker": "KBH",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "sales_multiple"
+          ],
+          "score_delta": -10.1,
+          "confidence_delta": -0.05
+        },
+        {
+          "ticker": "KSS",
+          "metrics_with_value_change": [
+            "peg"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "sales_multiple"
+          ],
+          "score_delta": -7.5,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "GS",
+          "metrics_with_value_change": [
+            "sales_multiple"
+          ],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "net_buyback_yield",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -5.7,
+          "confidence_delta": 0.16
+        },
+        {
+          "ticker": "ITT",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "sales_multiple"
+          ],
+          "score_delta": 3.8,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 2.5,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "KMX",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "sales_multiple"
+          ],
+          "score_delta": -2.4,
+          "confidence_delta": -0.05
+        },
+        {
+          "ticker": "LOW",
+          "metrics_with_value_change": [
+            "earnings_growth",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "sales_multiple"
+          ],
+          "score_delta": -2.2,
+          "confidence_delta": -0.04
         }
       ]
     }
