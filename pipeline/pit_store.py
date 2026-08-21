@@ -175,11 +175,17 @@ def diff_revisions(ticker, previous, current, observed_at):
     return revisions
 
 
-def append_snapshot(rows, *, observed_at=None, source="pipeline", fields=TRACKED_FIELDS):
+def append_snapshot(rows, *, observed_at=None, source="pipeline", fields=TRACKED_FIELDS, config_hash=None):
     """Append one point-in-time observation per row and log any restatements.
 
     ``rows`` is an iterable of snapshot dicts that each carry a ``ticker``. Returns counts
     so the caller can report how much history the run actually added.
+
+    ``config_hash`` (a SHA-256 of settings.json, not a per-ticker metric) records which
+    scoring configuration was live when this observation was taken -- a PIT row is read
+    back months later, by which point settings.json has likely changed underneath it, and
+    without this there is no way to tell which formula version actually produced it short
+    of cross-referencing git history by timestamp.
     """
     observed_at = (observed_at or _now()).isoformat() if not isinstance(observed_at, str) else observed_at
     existing = _read(OBSERVATIONS)
@@ -193,13 +199,16 @@ def append_snapshot(rows, *, observed_at=None, source="pipeline", fields=TRACKED
             continue
         previous = latest_values(ticker, existing)
         revisions.extend(diff_revisions(ticker, previous, values, observed_at))
-        observations.append({
+        observation = {
             "ticker": ticker,
             "observed_at": observed_at,
             "observation_date": observed_at[:10],
             "source": source,
             "values": values,
-        })
+        }
+        if config_hash is not None:
+            observation["config_hash"] = config_hash
+        observations.append(observation)
     written = _append(OBSERVATIONS, observations)
     revised = _append(REVISIONS, revisions)
     LOG.info(f"Point-in-time store: +{written} observations, +{revised} revisions")

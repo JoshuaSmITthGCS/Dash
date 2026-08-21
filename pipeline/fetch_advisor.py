@@ -18,7 +18,7 @@ from price_archive import archive_health
 from edgar_enrichment import merge_edgar_fallback
 from edgar_sue import sue_for
 from providers import YahooAdapter
-from common import LOG, load_json, save_json, update_pipeline_status
+from common import CONFIG_DIR, LOG, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
 from fundamentals_extended import (derive_extended, earnings_surprise_rows, extended_inputs,
                                    extended_observations)
@@ -51,6 +51,7 @@ from explainability import attach_explainability, attribution_errors, build_scor
 from sec_edgar import SecEdgarClient
 from theme_signals import EdgarThemeSignals, recent_10k_filings
 from themes import build_theme_screen, empty_screen, expand_theme_candidates, load_themes
+from validation.experiment_manifest import sha256_of_file
 from validation.ic_harness import (append_refresh as append_ic_refresh,
                                    read_snapshots,
                                    rows_from_advisor as ic_rows_from_advisor,
@@ -1979,7 +1980,13 @@ def run():
     # backtest needs - the derived 0-100 scores can always be recomputed from them.
     # `research` only ever holds freshly polled rows now - carried-forward rows join
     # `screen_universe` directly and never pass through here, so there is nothing to filter.
-    pit_summary = pit_store.append_snapshot(research, source="advisor_refresh")
+    # A SHA-256 of settings.json, not a bumped semantic version -- it changes on every
+    # config edit whether or not anyone remembers to bump model_version, which is exactly
+    # what "which formula version scored this row" needs from a PIT observation taken
+    # months ago (see docs/BUILD-PLAN.md's B9 section: model_version/config_hash were
+    # claimed as published per-row but were not, on either the row or the PIT store).
+    config_hash = sha256_of_file(os.path.join(CONFIG_DIR, "settings.json"))
+    pit_summary = pit_store.append_snapshot(research, source="advisor_refresh", config_hash=config_hash)
     pit_store.record_universe(symbols, source="advisor_refresh")
     pit_depth = pit_store.depth()
 
@@ -2020,6 +2027,7 @@ def run():
         # which the frontend migration in src/lib/schemaMigrations.js maps for v1 readers.
         "schema_version": SETTINGS["model"]["advisor_schema_version"],
         "model_version": SETTINGS["model"]["semantic_version"],
+        "config_hash": config_hash,
         "generated_at": generated_at, "data_mode": "live",
         "count": len(ranked), "universe_count": len(symbols), "universe": list(symbols),
         "publish_limit": publish_limit, "statement_enriched_count": enriched_count, "benchmark": "SPY",

@@ -207,13 +207,19 @@ through category weights through the final score — for any row, already wired 
    references for EDGAR-sourced facts, but Yahoo-sourced facts' raw provider responses are not
    independently confirmed retained.
 
-**Effort estimate**: publishing `config_hash` (already computable — `experiment_registry.py`/
-`validation/experiment_manifest.py` already hash configs for reproducibility purposes) onto every
-published row and into `pit_store.py::TRACKED_FIELDS` is a half-day change with a clear, low-risk
-diff (additive field, no scoring change). Verifying and, if needed, extending raw-provider-
-response retention for Yahoo-sourced facts is a separate, larger investigation (1–2 days) not
-completed this session. Treat this as a P1, not P0: it's a reproducibility/audit-trail gap, not a
-correctness bug in any currently-published score.
+**Effort estimate, and status update**: publishing `config_hash` was a half-day change with a
+clear, low-risk diff (additive field, no scoring change) — done in a follow-up session.
+`fetch_advisor.py` now computes a SHA-256 of `settings.json` (reusing
+`validation/experiment_manifest.py::sha256_of_file`, the same hashing this file's Part B/C
+proposals already treat as prior art) once per run and publishes it as a top-level `config_hash`
+field on `advisor.json`, alongside the existing `model_version`. It is also passed into
+`pit_store.py::append_snapshot()` as a new `config_hash` key on each observation row (deliberately
+*not* folded into `TRACKED_FIELDS`, which is per-ticker fundamentals metrics, not run-level
+metadata) — this is the part that actually answers "what formula version produced this PIT
+observation taken months ago" without cross-referencing git history by timestamp. Verifying and,
+if needed, extending raw-provider-response retention for Yahoo-sourced facts remains a separate,
+larger investigation (1–2 days) not completed. Still a P1, not P0: a reproducibility/audit-trail
+gap, not a correctness bug in any currently-published score.
 
 ---
 
