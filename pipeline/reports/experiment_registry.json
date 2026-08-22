@@ -13,14 +13,14 @@
     "decision",
     "reason"
   ],
-  "total_experiments": 14,
+  "total_experiments": 15,
   "by_decision": {
     "ABANDON": 5,
     "INCONCLUSIVE": 2,
-    "KEEP_AS_CHALLENGER": 2,
+    "KEEP_AS_CHALLENGER": 3,
     "PROMOTE": 5
   },
-  "total_variants_tested": 51,
+  "total_variants_tested": 53,
   "experiments": [
     {
       "id": "WO-1",
@@ -416,6 +416,36 @@
       "result": "Rejected on every gate. The variant chosen on the first half finished last of seven on the second half, PBO is 0.80-0.84 (selection is generating winners at random), and no variant's deflated Sharpe probability reached even half the 0.95 bar. The in-sample ordering also disagrees with the earlier 360-name-cache matrix (smooth07/hold6 led there; hold3/margin5 here), which is noise behavior, not a real effect.",
       "decision": "ABANDON",
       "reason": "The C4 challengers' in-sample edge does not survive its own selection process. Promoting smooth07 or hold6 on the earlier evidence would have shipped overfit. Turnover remains a cost problem worth attacking, but not through any of these seven selection rules."
+    },
+    {
+      "id": "R7-leg-reweighting",
+      "declared_at": "2026-08-21T20:15:00+00:00",
+      "hypothesis": "Zeroing the panel-dead legs (growth, news_sentiment) and the 5-period negative-IC legs (capital_allocation, accounting_quality) - proposal A - or additionally halving market_behavior (proposal B) improves the composite over the frozen champion weights.",
+      "category": "signal_evidence",
+      "configuration": {
+        "file": "research/audit/round7/reweighting_backtest.py",
+        "runs": "top-20 equal-weight portfolios per weight vector over backtest_signal_panel.json, 59 usable monthly periods 2021-11..2026-08, composite_score renormalization, net = gross - turnover x 20 bps",
+        "provenance": "docs/AUDIT-ROUND-7-FINDINGS.md section 4.4"
+      },
+      "train_period": "the full 59-period panel (no holdout - weights were chosen on the same sample, which is exactly why neither variant is promotable on this evidence)",
+      "validation_period": null,
+      "test_period": "prospective: proposal A registered as shadow strategy reweighted_composite_a (pipeline/shadow_portfolios.py), collecting from 2026-08-21",
+      "metrics": {
+        "champion_gross_sharpe_rf0": 0.964,
+        "champion_annualized_return_pct": 16.03,
+        "proposal_a_gross_sharpe_rf0": 0.945,
+        "proposal_a_annualized_return_pct": 15.74,
+        "proposal_b_gross_sharpe_rf0": 1.076,
+        "proposal_b_annualized_return_pct": 18.55,
+        "universe_mean_gross_sharpe_rf0": 0.694,
+        "proposal_a_mean_ic": 0.0354,
+        "proposal_b_mean_ic": 0.0361,
+        "champion_mean_ic": 0.0351
+      },
+      "number_of_variants_tested": 2,
+      "result": "Proposal A's marginally better IC (0.0354 vs 0.0351) does not survive portfolio construction: its top-20 backtest is slightly WORSE than the champion's (Sharpe 0.945 vs 0.964, 15.74% vs 16.03% annualized). Proposal B backtests better (1.076, 18.55%) but its extra lever - shrinking market_behavior - rests on the drop_one_leg sample-composition artifact documented in Round 7 section 4.3, and its weights were tuned on the same 59 periods they are scored on. All variants beat the equal-weight universe (0.694).",
+      "decision": "KEEP_AS_CHALLENGER",
+      "reason": "No promotion case: the differences between champion, A, and B are within noise on 59 monthly periods, and B's apparent edge is in-sample selection on a mismeasured diagnostic. Proposal A runs prospectively as shadow reweighted_composite_a from 2026-08-21; the prospective clock, not this panel, decides. B is deliberately NOT registered as a shadow - carrying both would spend a second trial on the same idea."
     }
   ]
 }

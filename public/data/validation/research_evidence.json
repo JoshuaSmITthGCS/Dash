@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-21T19:45:09.806204+00:00",
+  "generated_at": "2026-08-22T04:43:09.603147+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "8327a69b8d0b7342929ffbd8b5a76bfc997f88ac",
+  "code_commit_hash": "1cc97d9af67f764ae471132b075bbbed592ad343",
   "config_hash": "3e3e79f4053481444e7c97d1750f0a9b98f19fc300874da5ff154033af9fade5",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -506,12 +506,12 @@
   "experiments": {
     "status": "measured",
     "summary": {
-      "experiments": 14,
-      "total_variants_tested": 51,
+      "experiments": 15,
+      "total_variants_tested": 53,
       "by_decision": {
         "ABANDON": 5,
         "INCONCLUSIVE": 2,
-        "KEEP_AS_CHALLENGER": 2,
+        "KEEP_AS_CHALLENGER": 3,
         "PROMOTE": 5
       },
       "promoted_to_champion": [
@@ -648,6 +648,15 @@
         "decision": "ABANDON",
         "reason": "The C4 challengers' in-sample edge does not survive its own selection process. Promoting smooth07 or hold6 on the earlier evidence would have shipped overfit. Turnover remains a cost problem worth attacking, but not through any of these seven selection rules.",
         "number_of_variants_tested": 7
+      },
+      {
+        "id": "R7-leg-reweighting",
+        "hypothesis": "Zeroing the panel-dead legs (growth, news_sentiment) and the 5-period negative-IC legs (capital_allocation, accounting_quality) - proposal A - or additionally halving market_behavior (proposal B) improves the composite over the frozen champion weights.",
+        "category": "signal_evidence",
+        "result": "Proposal A's marginally better IC (0.0354 vs 0.0351) does not survive portfolio construction: its top-20 backtest is slightly WORSE than the champion's (Sharpe 0.945 vs 0.964, 15.74% vs 16.03% annualized). Proposal B backtests better (1.076, 18.55%) but its extra lever - shrinking market_behavior - rests on the drop_one_leg sample-composition artifact documented in Round 7 section 4.3, and its weights were tuned on the same 59 periods they are scored on. All variants beat the equal-weight universe (0.694).",
+        "decision": "KEEP_AS_CHALLENGER",
+        "reason": "No promotion case: the differences between champion, A, and B are within noise on 59 monthly periods, and B's apparent edge is in-sample selection on a mismeasured diagnostic. Proposal A runs prospectively as shadow reweighted_composite_a from 2026-08-21; the prospective clock, not this panel, decides. B is deliberately NOT registered as a shadow - carrying both would spend a second trial on the same idea.",
+        "number_of_variants_tested": 2
       }
     ]
   },
@@ -667,7 +676,7 @@
             "total": 40
           },
           "financial_health": {
-            "scored": 29,
+            "scored": 37,
             "total": 40
           },
           "growth": {
@@ -679,7 +688,7 @@
             "total": 40
           },
           "valuation": {
-            "scored": 39,
+            "scored": 40,
             "total": 40
           }
         }
@@ -689,15 +698,15 @@
         "total_rows": 839,
         "categories": {
           "accounting_quality": {
-            "scored": 227,
+            "scored": 242,
             "total": 839
           },
           "capital_allocation": {
-            "scored": 227,
+            "scored": 242,
             "total": 839
           },
           "financial_health": {
-            "scored": 800,
+            "scored": 792,
             "total": 839
           },
           "growth": {
@@ -709,63 +718,63 @@
             "total": 839
           },
           "valuation": {
-            "scored": 821,
+            "scored": 820,
             "total": 839
           }
         }
       }
     },
     "enriched_vs_non_enriched": {
-      "enriched_count": 267,
-      "non_enriched_count": 612,
+      "enriched_count": 282,
+      "non_enriched_count": 597,
       "score": {
         "enriched": {
-          "n": 267,
-          "mean": 69.51,
-          "median": 70.8,
-          "stdev": 10.21
+          "n": 282,
+          "mean": 69.14,
+          "median": 70.45,
+          "stdev": 10.13
         },
         "non_enriched": {
-          "n": 612,
-          "mean": 60.73,
-          "median": 61.75,
-          "stdev": 8.16
+          "n": 597,
+          "mean": 60.63,
+          "median": 61.6,
+          "stdev": 8.2
         }
       },
       "sector_distribution": {
         "enriched": {
-          "Technology": 73,
+          "Technology": 78,
           "Financial Services": 68,
-          "Industrials": 29,
+          "Industrials": 33,
+          "Energy": 25,
           "Healthcare": 23,
-          "Energy": 22,
           "Consumer Cyclical": 20,
           "Consumer Defensive": 9,
           "Communication Services": 8,
+          "Utilities": 8,
           "Basic Materials": 6,
-          "Utilities": 5,
           "Real Estate": 3,
           "Unknown": 1
         },
         "non_enriched": {
-          "Industrials": 109,
+          "Industrials": 105,
           "Consumer Cyclical": 93,
-          "Technology": 79,
           "Healthcare": 77,
+          "Technology": 74,
           "Financial Services": 57,
           "Real Estate": 50,
           "Consumer Defensive": 47,
           "Basic Materials": 32,
-          "Utilities": 29,
+          "Utilities": 26,
           "Communication Services": 19,
-          "Energy": 17,
+          "Energy": 14,
           "ETF": 2,
           "Unknown": 1
         }
       },
       "market_cap_comparison": {
         "status": "not_measurable",
-        "rows_with_market_cap": 39,
+        "rows_with_market_cap": 40,
         "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
       },
       "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
@@ -775,8 +784,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "8327a69b8d0b7342929ffbd8b5a76bfc997f88ac",
+    "git_commit_sha": "1cc97d9af67f764ae471132b075bbbed592ad343",
     "config_hash": "3e3e79f4053481444e7c97d1750f0a9b98f19fc300874da5ff154033af9fade5",
-    "generated_at": "2026-08-21T19:45:09.806204+00:00"
+    "generated_at": "2026-08-22T04:43:09.603147+00:00"
   }
 }

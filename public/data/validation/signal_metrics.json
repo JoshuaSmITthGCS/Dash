@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-21T19:49:23.058318+00:00",
+  "generated_at": "2026-08-22T04:47:15.085674+00:00",
   "groups": [
     {
       "id": "signal",
@@ -82,10 +82,10 @@
     }
   ],
   "live_sample": {
-    "days": 15,
-    "refreshes": 71,
+    "days": 16,
+    "refreshes": 72,
     "first_date": "2026-08-05",
-    "last_date": "2026-08-21"
+    "last_date": "2026-08-22"
   },
   "metrics": [
     {
@@ -1108,7 +1108,8 @@
           0.22,
           0.21,
           0.21
-        ]
+        ],
+        "series_note": "most recent 60 of 1182 observations; swing and beta_range span the full history"
       },
       "source": "backtest equity curve"
     },
@@ -1167,8 +1168,8 @@
       "id": "sector_active_weights",
       "group": "construction",
       "label": "Sector active weights",
-      "value": 52.76,
-      "display": "Financial Services +52.8pp largest",
+      "value": 32.76,
+      "display": "Financial Services +32.8pp largest",
       "reads": "Current production-sector weights minus SPY, retained prospectively by date.",
       "kill_threshold": "Strategy sector classification coverage below 80%",
       "kill_threshold_value": null,
@@ -1178,20 +1179,20 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 26,
+      "observations": 27,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-08-21T19:45:09.806204+00:00",
+        "as_of": "2026-08-22T04:43:09.603147+00:00",
         "strategy": "production_shadow_equal_weight_top20",
         "benchmark": "SPY",
         "active_sector_weights": {
           "basic_materials": 0.0338,
           "communication_services": -0.0991,
-          "consumer_cyclical": -0.0957,
+          "consumer_cyclical": -0.0457,
           "consumer_defensive": -0.0461,
-          "energy": 0.1164,
-          "financial_services": 0.5276,
+          "energy": 0.2664,
+          "financial_services": 0.3276,
           "healthcare": -0.041,
           "industrials": -0.0316,
           "real_estate": -0.0188,
@@ -1200,8 +1201,9 @@
         },
         "strategy_sector_weights": {
           "basic_materials": 0.05,
-          "energy": 0.15,
-          "financial_services": 0.65,
+          "consumer_cyclical": 0.05,
+          "energy": 0.3,
+          "financial_services": 0.45,
           "healthcare": 0.05,
           "industrials": 0.05,
           "technology": 0.05
@@ -1689,6 +1691,24 @@
             },
             "strategy_classified_weight": 1.0,
             "benchmark_classified_weight": 1.0
+          },
+          {
+            "as_of": "2026-08-22T04:43:09.603147+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0457,
+              "consumer_defensive": -0.0461,
+              "energy": 0.2664,
+              "financial_services": 0.3276,
+              "healthcare": -0.041,
+              "industrials": -0.0316,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1.0,
+            "benchmark_classified_weight": 1.0
           }
         ]
       },
@@ -1709,11 +1729,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 26,
+      "observations": 27,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-08-21T19:45:09.806204+00:00",
+        "as_of": "2026-08-22T04:43:09.603147+00:00",
         "strategy_classified_weight": 1.0,
         "benchmark_classified_weight": 1.0
       },
@@ -1723,8 +1743,8 @@
       "id": "sector_allocation_effect",
       "group": "construction",
       "label": "Sector allocation effect",
-      "value": 1.046,
-      "display": "+1.05pp vs SPY (2026-08-14 to 2026-08-21)",
+      "value": 1.668,
+      "display": "+1.67pp vs SPY (2026-08-14 to 2026-08-22)",
       "reads": "Sum across sectors of (active weight) times (that sector's real index return minus SPY's), using real sector SPDR ETFs. Positive means the sector tilt itself added return; says nothing about which stocks were picked within each sector.",
       "kill_threshold": null,
       "kill_threshold_value": null,
@@ -1734,16 +1754,16 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 26,
+      "observations": 27,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
         "start": "2026-08-14",
-        "end": "2026-08-21",
-        "snapshots": 26,
-        "as_of": "2026-08-21T19:45:09.806204+00:00",
+        "end": "2026-08-22",
+        "snapshots": 27,
+        "as_of": "2026-08-22T04:43:09.603147+00:00",
         "benchmark_return_pct": -1.34,
-        "total_allocation_effect_pct": 1.046,
+        "total_allocation_effect_pct": 1.668,
         "sectors": {
           "basic_materials": {
             "ticker": "XLB",
@@ -1763,11 +1783,11 @@
           },
           "consumer_cyclical": {
             "ticker": "XLY",
-            "strategy_weight": 0.0,
+            "strategy_weight": 0.05,
             "benchmark_weight": 0.0957,
-            "active_weight": -0.0957,
+            "active_weight": -0.0457,
             "sector_return_pct": -0.08,
-            "allocation_effect_pct": -0.121
+            "allocation_effect_pct": -0.058
           },
           "consumer_defensive": {
             "ticker": "XLP",
@@ -1779,19 +1799,19 @@
           },
           "energy": {
             "ticker": "XLE",
-            "strategy_weight": 0.15,
+            "strategy_weight": 0.3,
             "benchmark_weight": 0.0336,
-            "active_weight": 0.1164,
+            "active_weight": 0.2664,
             "sector_return_pct": 2.59,
-            "allocation_effect_pct": 0.457
+            "allocation_effect_pct": 1.047
           },
           "financial_services": {
             "ticker": "XLF",
-            "strategy_weight": 0.65,
+            "strategy_weight": 0.45,
             "benchmark_weight": 0.1224,
-            "active_weight": 0.5276,
+            "active_weight": 0.3276,
             "sector_return_pct": -1.19,
-            "allocation_effect_pct": 0.079
+            "allocation_effect_pct": 0.049
           },
           "healthcare": {
             "ticker": "XLV",
@@ -4065,16 +4085,16 @@
       "cadence": "Monthly",
       "requires_live_sample": true,
       "status": "accumulating",
-      "status_message": "Needs 60 point-in-time days for separated baseline and current windows; 15 recorded.",
-      "observations": 15,
+      "status_message": "Needs 60 point-in-time days for separated baseline and current windows; 16 recorded.",
+      "observations": 16,
       "required_observations": 60,
       "backtest_reference": null,
       "detail": {
         "status": "accumulating",
         "value": null,
-        "days": 15,
+        "days": 16,
         "required_days": 60,
-        "reason": "Needs 60 point-in-time days for separated baseline and current windows; 15 recorded."
+        "reason": "Needs 60 point-in-time days for separated baseline and current windows; 16 recorded."
       },
       "source": "point-in-time normalized feature store"
     },
@@ -4249,50 +4269,48 @@
       "id": "data_quality_counters",
       "group": "monitoring",
       "label": "Data quality counters",
-      "value": 2,
-      "display": "2 critical refresh issues",
+      "value": 0,
+      "display": "0 critical refresh issues",
       "reads": "Missing/stale price observations, duplicate rows, quality flags, and universe churn.",
       "kill_threshold": "Any missing, unstamped, stale, or duplicate current price row",
       "kill_threshold_value": 0,
       "comparison": "gt",
-      "breached": true,
+      "breached": false,
       "cadence": "Daily",
       "requires_live_sample": true,
       "status": "ready",
       "status_message": null,
-      "observations": 881,
+      "observations": 879,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
         "status": "ready",
-        "value": 2,
-        "date": "2026-08-21",
-        "refresh_id": "advisor-2026-08-21T19:45:09.806204+00:00",
-        "rows": 881,
-        "missing_prices": 2,
-        "missing_price_tickers": [
-          "AMZM",
-          "TTM"
-        ],
+        "value": 0,
+        "date": "2026-08-22",
+        "refresh_id": "advisor-2026-08-22T04:43:09.603147+00:00",
+        "rows": 879,
+        "missing_prices": 0,
+        "missing_price_tickers": [],
         "missing_price_timestamps": 0,
         "missing_price_timestamp_tickers": [],
         "stale_prices": 0,
         "stale_price_tickers": [],
         "duplicate_tickers": 0,
-        "quality_flags": {
-          "challenger_metric_scores_not_available_in_source_snapshot": 2,
-          "challenger_score_not_available_in_source_snapshot": 2
-        },
+        "quality_flags": {},
         "universe_churn": {
           "added": [],
-          "removed": [],
-          "observed_at": "2026-08-21T19:45:08.487228+00:00"
+          "removed": [
+            "AMZM",
+            "TTM"
+          ],
+          "observed_at": "2026-08-22T04:43:08.444329+00:00",
+          "note": "AMZM retired: resolves to nothing at any provider (likely a typo for AMZN - re-add AMZN with real cost basis if the position was intended); TTM retired: Tata Motors NYSE ADR delisted January 2025; no provider serves this line anymore"
         },
         "corporate_action_monitoring": {
           "status": "not_available",
           "reason": "No prospective corporate-action event log exists; no miss count is inferred."
         },
-        "breached": true
+        "breached": false
       },
       "source": "point-in-time refresh and universe stores"
     },
@@ -4325,7 +4343,7 @@
   "summary": {
     "total": 63,
     "ready": 43,
-    "breached": 10,
+    "breached": 9,
     "sample_free_total": 45,
     "sample_free_ready": 41,
     "needs_sample_total": 18
@@ -4342,8 +4360,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "8327a69b8d0b7342929ffbd8b5a76bfc997f88ac",
+    "git_commit_sha": "1cc97d9af67f764ae471132b075bbbed592ad343",
     "config_hash": "3e3e79f4053481444e7c97d1750f0a9b98f19fc300874da5ff154033af9fade5",
-    "generated_at": "2026-08-21T19:49:23.058318+00:00"
+    "generated_at": "2026-08-22T04:47:15.085674+00:00"
   }
 }

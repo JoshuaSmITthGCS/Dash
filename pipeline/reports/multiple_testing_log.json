@@ -110,5 +110,13 @@
     "holdout_start": "months 32-60 (one purged)",
     "number_of_variants_tested": 7,
     "decision": "ABANDON"
+  },
+  {
+    "test_id": "R7-leg-reweighting",
+    "declared_at": "2026-08-21T20:15:00+00:00",
+    "hypothesis": "Zeroing the panel-dead legs (growth, news_sentiment) and the 5-period negative-IC legs (capital_allocation, accounting_quality) - proposal A - or additionally halving market_behavior (proposal B) improves the composite over the frozen champion weights.",
+    "holdout_start": "prospective: proposal A registered as shadow strategy reweighted_composite_a (pipeline/shadow_portfolios.py), collecting from 2026-08-21",
+    "number_of_variants_tested": 2,
+    "decision": "KEEP_AS_CHALLENGER"
   }
 ]
