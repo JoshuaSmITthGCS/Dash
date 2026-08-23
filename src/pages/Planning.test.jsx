@@ -55,6 +55,7 @@ describe('Planning hub', () => {
         currentSavings: 100000,
         allocationAggressiveness: 'growth',
         planningAnnualReturnTargetPct: 15,
+        coastFireEnabled: false,
       },
       pools: [{ id: 'pool-1', name: 'Home fund', percent: 25, balance: 20000 }],
       goals: [{ id: 'goal-1', name: 'Home', targetAmount: 50000, targetDate: '2031-08-05', poolId: 'pool-1' }],
@@ -138,6 +139,16 @@ describe('Planning hub', () => {
     fireEvent.click(toggle)
     expect(toggle).not.toBeChecked()
     expect(screen.getByRole('slider', { name: /Annual return target/ })).not.toBeDisabled()
+  })
+
+  it('reveals Coast FIRE status only once the setting is switched on', async () => {
+    render(<MemoryRouter><Planning /></MemoryRouter>)
+    const toggle = await screen.findByRole('checkbox', { name: 'Track Coast FIRE status' })
+    expect(toggle).not.toBeChecked()
+    expect(screen.queryByText('Needed today to coast')).not.toBeInTheDocument()
+
+    fireEvent.click(toggle)
+    await waitFor(() => expect(updateSettings).toHaveBeenCalledWith({ coastFireEnabled: true }))
   })
 
   it('creates a goal tied to the selected Finances pool', async () => {

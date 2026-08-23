@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS = {
   monthlyWithdrawal: modelSettings.projection.default_monthly_withdrawal,
   allocationAggressiveness: modelSettings.projection.allocation_default,
   planningAnnualReturnTargetPct: modelSettings.projection.annual_return_target.default_pct,
+  coastFireEnabled: modelSettings.projection.coast_fire.default_enabled,
 }
 
 /** Additive read migration for the singleton Finances settings document. */
