@@ -173,3 +173,40 @@ def test_run_backtest_end_to_end_on_a_synthetic_universe(tmp_path, monkeypatch):
     assert result["variants"]["A"]["graded_periods"] > 0
     assert result["variants"]["B"]["graded_periods"] == 0
     assert result["variants"]["C"]["graded_periods"] == 0
+
+
+def test_signal_panel_is_none_by_default_and_populated_only_when_requested(tmp_path, monkeypatch):
+    dates = sessions_from("2023-01-01", 420)
+    sessions = [date.fromisoformat(d) for d in dates]
+
+    def trending(seed):
+        return lambda index: 50.0 + seed + index * 0.05 + (seed * (index % 7))
+
+    for ticker, seed in (("AAA", 1.0), ("BBB", 2.0), ("CCC", 3.0), ("DDD", -1.0), ("EEE", 0.5)):
+        payload = cache_payload(dates, price_path(len(dates), trending(seed)),
+                                sector="Technology" if seed > 0 else "Energy")
+        (tmp_path / f"{ticker}.json").write_text(__import__("json").dumps(payload))
+
+    monkeypatch.setattr(module, "BACKTEST_CACHE", str(tmp_path))
+    monkeypatch.setattr(module, "default_calendar", lambda: TradingCalendar(sessions))
+    monkeypatch.setattr(module, "resolve_sue", lambda *args, **kwargs: None)
+    monkeypatch.setattr(module, "MINIMUM_ROWS_PER_PERIOD", 3)
+
+    without_panel = module.run_backtest(years=0.4, cadence_sessions=5, vertical_sessions=10)
+    assert without_panel["signal_panel"] is None
+
+    with_panel = module.run_backtest(years=0.4, cadence_sessions=5, vertical_sessions=10,
+                                     collect_signal_panel=True)
+    panel = with_panel["signal_panel"]
+    assert panel is not None
+    assert panel["model"] == "swing-v1.1.0"
+    assert panel["leg_weights"] == module.swing_signals.SWING_WEIGHTS
+    assert panel["periods"], "variant A graded periods, so the panel must not be empty"
+    # Shape optimization_harness.Panel/score_with_weights expect: leg_scores keyed by
+    # ticker, each a {leg: value} dict, alongside forward_returns for the same tickers.
+    first = panel["periods"][0]
+    assert set(first) >= {"date", "leg_scores", "forward_returns"}
+    for ticker, legs in first["leg_scores"].items():
+        assert ticker in first["forward_returns"]
+        assert isinstance(legs, dict)
+        assert set(legs) <= set(module.swing_signals.SWING_WEIGHTS)

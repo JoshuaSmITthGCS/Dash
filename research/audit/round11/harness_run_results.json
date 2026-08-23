@@ -1,5 +1,6 @@
 {
-  "generated_at": "2026-08-23T22:25:57.557826+00:00",
+  "generated_at": "2026-08-23T22:52:33.801866+00:00",
+  "domain": "fundamentals",
   "panel_path": "/home/user/Dash/pipeline/backtest_signal_panel.json",
   "panel_periods": 60,
   "split": {
@@ -7,7 +8,7 @@
     "validation": 15,
     "holdout": 15
   },
-  "trial_count": 62,
+  "trial_count": 63,
   "search_overfitting": {
     "names": [
       "champion",
@@ -16,26 +17,43 @@
     "splits": 8,
     "pbo": 0.0
   },
+  "auto_search": null,
   "candidates": [
     {
       "name": "champion",
+      "weights": {
+        "valuation": 0.2184,
+        "profitability": 0.2028,
+        "financial_health": 0.117,
+        "growth": 0.0858,
+        "capital_allocation": 0.078,
+        "accounting_quality": 0.078,
+        "market_behavior": 0.18,
+        "news_sentiment": 0.04
+      },
       "train_mean_ic": 0.0263,
       "validation_mean_ic": 0.0518,
       "walk_forward_efficiency": 1.9696,
-      "deflated_sharpe_probability": 0.1958,
+      "deflated_sharpe_probability": 0.1943,
       "ship": false,
       "suggested_decision": "KEEP_AS_CHALLENGER",
-      "reason": "some validation-period signal but does not clear every gate: t-statistic below 3, the bar appropriate after multiple testing; deflated Sharpe probability 0.1958 does not survive 62 trials of selection"
+      "reason": "some validation-period signal but does not clear every gate: t-statistic below 3, the bar appropriate after multiple testing; deflated Sharpe probability 0.1943 does not survive 63 trials of selection"
     },
     {
       "name": "reweighted_composite_a",
+      "weights": {
+        "valuation": 0.3041,
+        "profitability": 0.2824,
+        "financial_health": 0.1629,
+        "market_behavior": 0.2506
+      },
       "train_mean_ic": 0.0263,
       "validation_mean_ic": 0.0518,
       "walk_forward_efficiency": 1.9696,
-      "deflated_sharpe_probability": 0.1958,
+      "deflated_sharpe_probability": 0.1943,
       "ship": false,
       "suggested_decision": "KEEP_AS_CHALLENGER",
-      "reason": "some validation-period signal but does not clear every gate: t-statistic below 3, the bar appropriate after multiple testing; deflated Sharpe probability 0.1958 does not survive 62 trials of selection"
+      "reason": "some validation-period signal but does not clear every gate: t-statistic below 3, the bar appropriate after multiple testing; deflated Sharpe probability 0.1943 does not survive 63 trials of selection"
     }
   ]
 }

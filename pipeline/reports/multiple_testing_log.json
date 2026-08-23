@@ -182,5 +182,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P5-swing-domain-and-auto-search",
+    "declared_at": "2026-08-23T22:30:00+00:00",
+    "hypothesis": "optimization_harness.py only ever tested the 8 fundamental/behavioral legs, and every candidate had to be hand-picked one at a time. User request: extend the same harness to technical/momentum (swing) leg weighting, and add a bounded automatic candidate-generation mode so a human-in-the-loop round-trip (run locally, hand results back, get the next round's candidates) doesn't require hand-authoring every weight vector.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

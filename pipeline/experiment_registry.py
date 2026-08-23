@@ -832,6 +832,69 @@ REGISTRY = [
                    "test_harness_freeze_evaluator.py. Full pipeline suite green (2285 tests) after the "
                    "change."),
     },
+    {
+        "id": "R11-P5-swing-domain-and-auto-search",
+        "declared_at": "2026-08-23T22:30:00+00:00",
+        "hypothesis": ("optimization_harness.py only ever tested the 8 fundamental/behavioral legs, "
+                       "and every candidate had to be hand-picked one at a time. User request: extend "
+                       "the same harness to technical/momentum (swing) leg weighting, and add a bounded "
+                       "automatic candidate-generation mode so a human-in-the-loop round-trip (run "
+                       "locally, hand results back, get the next round's candidates) doesn't require "
+                       "hand-authoring every weight vector."),
+        "category": "infrastructure",
+        "configuration": {
+            "files": ["pipeline/backtest_swing.py", "pipeline/run_backtest_suite.py",
+                     "pipeline/tests/test_backtest_swing.py", "pipeline/tests/test_run_backtest_suite.py"],
+            "change": ("backtest_swing.py: new build_swing_signal_panel() + "
+                       "run_backtest(..., collect_signal_panel=True) capture variant A's (the frozen "
+                       "baseline's) per-ticker leg_scores for the 5 swing legs (pead_drift, "
+                       "analyst_revision, high_volume_premium, high_52w_proximity, short_term_reversal) "
+                       "into the same {date, leg_scores, forward_returns} shape "
+                       "backtest_signal_panel.json already uses -- optimization_harness.py needed zero "
+                       "changes to read it, since it was already leg-name-agnostic. New --panel-out CLI "
+                       "flag, written to a separate file (never embedded in the committed "
+                       "backtest_swing_results.json). Explicitly never touches "
+                       "swing_signals.SWING_WEIGHTS or the swing-v1.1.0 prospective clock (harness_freeze."
+                       "json's changes_that_reset_this_clock) -- this is a research/backtest panel only. "
+                       "run_backtest_suite.py: added --domain {fundamentals,swing} (selects panel path, "
+                       "build command, and default candidates -- swing-reversal-B's exact registered "
+                       "weights for swing, transcribed from harness_freeze.json rather than re-derived); "
+                       "diagnosis stage auto-skips for --domain swing since leg_diagnosis.py's leg names "
+                       "are fundamentals-specific. Added --auto-search N: N randomly perturbed neighbors "
+                       "of the champion/baseline weights (random_neighbor(): each leg scaled by a factor "
+                       "in [1-perturbation, 1+perturbation], each leg independently droppable at "
+                       "drop_probability to explore leg-removal hypotheses, renormalized to the champion's "
+                       "total weight mass), generated from --search-seed for exact reproducibility. Every "
+                       "candidate in one invocation still shares one Panel split and one shared "
+                       "classify() call (one PBO across the whole batch), so nothing about the split-then-"
+                       "search or search-wide-PBO discipline built in R11-P1 was loosened. Report output "
+                       "now includes each candidate's actual weights (needed for a human to read the "
+                       "result and propose the next round) and is sorted PROMOTE > KEEP_AS_CHALLENGER > "
+                       "ABANDON, then by validation IC within a tier."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 10},
+        "number_of_variants_tested": 1,
+        "result": ("Verified end-to-end with a synthetic scratch swing panel (deleted, not committed) "
+                   "and against the real committed fundamentals panel: --domain swing --auto-search 5 "
+                   "and --domain fundamentals --auto-search 4 both ran the full split/PBO/deflated-Sharpe "
+                   "gate sequence, correctly ranked results, and correctly reported a degenerate all-"
+                   "zero-coverage-leg candidate (a real edge case a random drop can produce) as "
+                   "ABANDON with mean_ic=None rather than crashing. Locked with 10 new tests (1 in "
+                   "test_backtest_swing.py covering the new panel's shape, 9 in "
+                   "test_run_backtest_suite.py covering the swing default candidate, random-neighbor "
+                   "generation, and rank-key ordering)."),
+        "decision": "PROMOTE",
+        "reason": ("Pure tooling: no production weight, panel, or promotion decision changed. "
+                   "optimization_harness.py itself needed no changes at all -- it was already generic "
+                   "over leg names, which is what made this extension small. Auto-search stays within "
+                   "this round's own stated discipline: bounded (N is a required, explicit argument, "
+                   "never inferred), reproducible (seeded), and gated by the same PBO-across-the-batch "
+                   "and registry-floored deflated-Sharpe machinery every other candidate in this "
+                   "repository goes through -- it is a faster way to generate honestly-gated candidates "
+                   "for a human to review, not a shortcut around the gates themselves. Full pipeline "
+                   "suite green (2295 tests) after the change."),
+    },
 ]
 
 

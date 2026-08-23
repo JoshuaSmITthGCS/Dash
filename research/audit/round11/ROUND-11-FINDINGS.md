@@ -167,11 +167,51 @@ coverage — that number only changes after a real `python3 pipeline/run_backtes
 methodological question: R11-P4's pilot already proved the method works at 98% coverage on
 real data.
 
+## Priority 5 — Swing/technical leg weighting and automatic candidate search
+
+Follow-up user request: extend the harness to technical/momentum (swing) legs, and add a
+bounded automatic candidate-generation mode for a human-in-the-loop round-trip (run locally,
+hand results back, get the next round of candidates).
+
+`optimization_harness.py` needed **zero changes** — it was already generic over leg names, so
+extending it to a new domain was purely a matter of feeding it a differently-shaped panel.
+`backtest_swing.py` gained a `--panel-out` mode (`build_swing_signal_panel()`) that captures
+variant A's (the frozen baseline's) per-ticker leg scores for the 5 swing legs (`pead_drift`,
+`analyst_revision`, `high_volume_premium`, `high_52w_proximity`, `short_term_reversal`) into
+the exact same `{date, leg_scores, forward_returns}` shape `backtest_signal_panel.json` already
+uses — written to a separate file, never embedded in the committed
+`backtest_swing_results.json`, and never touching `swing_signals.SWING_WEIGHTS` or resetting
+the swing-v1.1.0 prospective clock (`harness_freeze.json`'s `changes_that_reset_this_clock`).
+
+`run_backtest_suite.py` gained `--domain {fundamentals,swing}` (selects panel path, build
+command, and default candidate — `swing-reversal-B`'s exact registered weights for swing,
+transcribed from `harness_freeze.json` rather than re-derived) and `--auto-search N`: N
+randomly perturbed neighbors of the champion weights (`random_neighbor()`: each leg scaled by
+a factor in `[1-perturbation, 1+perturbation]`, each leg independently droppable to explore
+leg-removal hypotheses, renormalized to the champion's total weight mass), generated from
+`--search-seed` for exact reproducibility. `N` is a required, explicit argument — no default
+count — matching the master protocol's own "state up front how many candidates, and why"
+discipline; this is bounded local search a human reviews each round, not open-ended tuning.
+Every candidate in one invocation still shares one `Panel` split and one shared `classify()`
+call (one PBO computation across the whole batch), so none of R11-P1's split-then-search or
+search-wide-PBO discipline was loosened to build this. The report is now sorted PROMOTE >
+KEEP_AS_CHALLENGER > ABANDON, then by validation IC within a tier, and includes each
+candidate's actual weights, so a human (or a follow-up conversation) can read the ranked
+results and propose the next round directly from the printed output.
+
+Verified end-to-end with a synthetic scratch swing panel (not committed) and the real
+committed fundamentals panel — both domains correctly run the full gate sequence and correctly
+report a degenerate all-zero-coverage-leg candidate (a real edge case a random leg-drop can
+produce) as `ABANDON` rather than crashing. 10 new tests.
+
 ## What NOT done, per the brief and this session's standing constraints
 
 No production leg weights, composite construction, or ranking logic changed. No shadow variant
 promoted — `reweighted_composite_a` keeps its existing `KEEP_AS_CHALLENGER` status and
-prospective clock, untouched. EDGAR PIT growth reconstruction was piloted and found feasible,
-not shipped into production. The three-way trial-registry fragmentation
-(`experiment_registry.py` / `hypothesis_log.jsonl` / `harness_freeze.json`) was found and
-reported, not reconciled — that needs its own careful audit pass.
+prospective clock, untouched. `swing_signals.SWING_WEIGHTS` and the swing-v1.1.0 prospective
+clock are untouched — the new swing domain is a research/backtest panel only. EDGAR PIT growth
+reconstruction was piloted and found feasible, not shipped into production. The originally-
+reported "three-way trial-registry fragmentation" was investigated in full and turned out to
+be a misdiagnosis (see Priority 3's follow-up above) — corrected rather than left standing;
+one real gap (six pre-freeze category labels with no traceable source) remains genuinely open
+and was not guessed at.
