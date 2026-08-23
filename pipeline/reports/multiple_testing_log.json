@@ -118,5 +118,13 @@
     "holdout_start": "prospective: proposal A registered as shadow strategy reweighted_composite_a (pipeline/shadow_portfolios.py), collecting from 2026-08-21",
     "number_of_variants_tested": 2,
     "decision": "KEEP_AS_CHALLENGER"
+  },
+  {
+    "test_id": "R8-evidence-confidence-gate",
+    "declared_at": "2026-08-23T00:00:00+00:00",
+    "hypothesis": "Every ticker on the live v2 validation dashboard (HIG, JPM, O, NEE, BSX, MSFT, XOM, MRNA, VTI, TLT) reporting company evidence confidence below 0.40, a 0-of-0 peer sample, and 0% profile confidence -- including for large, liquid, well-covered names like MSFT and JPM -- is a wiring/data-join defect in pipeline/live_v2_validation.py, not a genuine data-coverage gap.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

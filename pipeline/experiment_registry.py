@@ -367,6 +367,72 @@ REGISTRY = [
                    "prospective clock, not this panel, decides. B is deliberately NOT registered as a shadow - "
                    "carrying both would spend a second trial on the same idea."),
     },
+    {
+        "id": "R8-evidence-confidence-gate",
+        "declared_at": "2026-08-23T00:00:00+00:00",
+        "hypothesis": ("Every ticker on the live v2 validation dashboard (HIG, JPM, O, NEE, BSX, MSFT, XOM, "
+                       "MRNA, VTI, TLT) reporting company evidence confidence below 0.40, a 0-of-0 peer sample, "
+                       "and 0% profile confidence -- including for large, liquid, well-covered names like MSFT "
+                       "and JPM -- is a wiring/data-join defect in pipeline/live_v2_validation.py, not a "
+                       "genuine data-coverage gap."),
+        "category": "data_integrity",
+        "configuration": {
+            "files": ["pipeline/live_v2_validation.py", "pipeline/tests/test_live_v2_validation.py"],
+            "change": (
+                "Two independent stub defects, confirmed by direct source read. (1) "
+                "`classification` was a hardcoded literal (total_peer_count: 0, valid_peer_count: 0, "
+                "percentile_status: INSUFFICIENT_VALID_PEERS) for every ticker on every run -- never a "
+                "call into peer_groups.canonical_percentiles(), the module fetch_advisor.py and "
+                "migrate_advisor_v2.py already use for the real peer computation. Now calls it for real "
+                "against the validated batch. (2) validate_live() built canonical observations from "
+                "canonical_metrics.yahoo_observations(info) alone -- ~11 quote-level Yahoo .info fields -- "
+                "and never called the statement-enrichment step (fetch_advisor.yahoo_extended / "
+                "fundamentals_extended.extended_observations) fetch_advisor.py's enrich() runs for its "
+                "shortlist, so every statement-derived metric (ROIC, EV/EBITDA, Piotroski F, interest "
+                "coverage, accruals ratio, ...) reported missing for every ticker regardless of real "
+                "coverage. Now wired in, mirroring enrich() exactly. Both stages instrumented with "
+                "LOG.info non-null/null observation counts per ticker, matching the WO-1/WO-2 direct-read "
+                "diagnostic pattern."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {
+            "before_structural_confidence": 0.21, "after_structural_confidence": 0.41,
+            "before_structural_coverage": 0.30, "after_structural_coverage": 0.56,
+            "before_company_action": "insufficient_evidence", "after_company_action": "watch",
+            "before_peer_sample": "0 / 0 (hardcoded, every ticker, every run)",
+            "after_peer_sample": "3 / 3 (real batch count; still INSUFFICIENT_VALID_PEERS, correctly, "
+                                 "since peer_groups.MINIMUM_VALID_PEERS=30)",
+            "production_reference_hig_data_coverage": 0.82,
+            "pre_fix_committed_validation_hig_coverage": 0.35,
+        },
+        "number_of_variants_tested": 1,
+        "result": (
+            "Confirmed a split root cause. (a) Peer sample was a pure stub -- a hardcoded literal, not a "
+            "computation -- category (a)/broken-join, not data scarcity. (b) Structural/profile confidence "
+            "was genuinely low GIVEN the inputs validate_live() gathered, but the reason those inputs were "
+            "incomplete is itself a wiring gap: the script never invoked the enrichment stage production "
+            "uses. Confirmed against production: public/data/advisor.json shows HIG at data_coverage 0.82 "
+            "the same week this view published structural.coverage 0.35 for the identical company -- the "
+            "gap is the validation harness's scope, not HIG's real-world coverage. Regression test "
+            "(test_live_v2_validation.py) shows wiring the same yahoo_extended() call production already "
+            "uses raises a synthetic company's structural confidence from 0.21 to 0.41, crossing the "
+            "action gate from insufficient_evidence to watch, with identical quote data on both sides -- "
+            "isolating the enrichment step as the swing factor. (c) The timeliness layer's effective_score: "
+            "None is a separate, correctly-reported, already-documented gap (scoring_v2.py's own "
+            "unavailable_reason string: no free provider supplies broad forward-estimate revisions, "
+            "earnings-surprise collection is opt-in) and is deliberately left untouched."),
+        "decision": "PROMOTE",
+        "reason": ("Two wiring defects fixed at the source (pipeline/live_v2_validation.py), not a display-"
+                   "only patch: peer sample now calls peer_groups.canonical_percentiles() over the real "
+                   "validated batch, and statement enrichment now runs identically to fetch_advisor.enrich(). "
+                   "Locked by pipeline/tests/test_live_v2_validation.py (3 tests: peer sample computed not "
+                   "hardcoded, enrichment wired in and raises confidence, a genuinely statement-starved "
+                   "company still correctly gates low). A live re-run of pipeline/live_v2_validation.py to "
+                   "refresh the committed public/data/validation/live_v2_validation.json artifact with real "
+                   "Yahoo data is blocked_network_policy in this environment, same as A3-FULL-UNIVERSE-"
+                   "ENRICHMENT -- the fix is verified against a controlled fixture and against the committed "
+                   "production advisor.json, not yet against a fresh live pull for this exact artifact."),
+    },
 ]
 
 

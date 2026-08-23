@@ -9,8 +9,12 @@ import math
 import os
 from datetime import datetime, timezone
 
-from canonical_metrics import BUSINESS_PROFILES, yahoo_observations
+from canonical_metrics import yahoo_observations
+from common import LOG
+from fetch_advisor import yahoo_extended
 from fetch_prices import fetch_snapshot
+from fundamentals_extended import EXTENDED_METRIC_UNITS, extended_observations
+from peer_groups import MINIMUM_VALID_PEERS, canonical_percentiles
 from recommendation_policy_v2 import build_recommendation_v2
 from research_screens_v2 import momentum_boundary_diagnostics, momentum_factors
 from scorer import valuation_score
@@ -46,7 +50,24 @@ def _history_rows(frame):
     return rows
 
 
-def _invariants(ticker, analysis, recommendation, observations):
+def _closes_volumes(frame):
+    """``derive_extended``'s market-structure inputs, from the same price frame already
+    fetched for momentum -- no second history request."""
+    if frame is None or frame.empty: return [], []
+    closes, volumes = [], []
+    for _, row in frame.iterrows():
+        price = row.get("Close")
+        if price is not None and math.isfinite(float(price)):
+            closes.append(float(price))
+            volumes.append(float(row.get("Volume") or 0))
+    return closes, volumes
+
+
+def _observation_count(observations):
+    return sum(len(rows) for rows in (observations or {}).values())
+
+
+def _invariants(ticker, analysis, recommendation, observations, peer):
     statuses = analysis.get("metric_status") or {}
     checks = {
         "legacy_values_never_contribute": all("legacy_value_missing_lineage" not in detail.get("quality_flags", [])
@@ -58,7 +79,11 @@ def _invariants(ticker, analysis, recommendation, observations):
                                        if detail.get("status") in {"suppressed", "replaced"}),
         "critical_gaps_reduce_profile_confidence": (not analysis["applicability"]["critical_data_gaps"]
                                                     or analysis["applicability"]["profile_confidence"] < 1),
-        "invalid_peer_sample_no_percentile": True,
+        # A peer sample below peer_groups.MINIMUM_VALID_PEERS must never carry a tier/ordinal
+        # -- canonical_percentiles() already guarantees this, but the gate used to be a bare
+        # `True` literal that could not fail regardless of what "classification" published.
+        "invalid_peer_sample_no_percentile": (
+            peer is None or peer.get("tier") is not None or peer.get("ordinal") is None),
         # Minimum over the layers that actually produced a score. A layer that resolved
         # nothing has no opinion to be confident or unconfident about; folding its zero in
         # here forced every company below the gate regardless of the evidence behind it.
@@ -84,7 +109,7 @@ def _invariants(ticker, analysis, recommendation, observations):
 def validate_live(output_path, raw_root, tickers=REPRESENTATIVE_UNIVERSE):
     import yfinance as yf
     fetched_at = datetime.now(timezone.utc).isoformat()
-    results = []
+    prepared, errors = [], []
     for ticker in tickers:
         try:
             instrument = yf.Ticker(ticker)
@@ -94,33 +119,96 @@ def validate_live(output_path, raw_root, tickers=REPRESENTATIVE_UNIVERSE):
             raw_path = os.path.join(raw_root, f"{ticker}-{fetched_at[:10]}.json")
             _atomic_json(raw_path, raw)
             observations = yahoo_observations(info, fetched_at)
+            LOG.info(f"{ticker}: quote observations -- {_observation_count(observations)} non-null "
+                     f"of {len(info)} raw Yahoo .info field(s)")
             snapshot = fetch_snapshot(ticker, yf, ETF_TICKERS, ticker_obj=instrument) or {"ticker": ticker}
             snapshot.update({"ticker": ticker, "is_etf": ticker in ETF_TICKERS,
                              "observations": observations, "data_fetched_at": fetched_at})
+            price_frame = instrument.history(period="15mo", auto_adjust=True, actions=True)
+            history = _history_rows(price_frame)
+
+            # Statement enrichment: the same call fetch_advisor.enrich() makes for the
+            # production shortlist. Without it, `observations` covers only the ~11 quote-level
+            # Yahoo .info fields yahoo_observations() maps, and every statement-derived metric
+            # (ROIC, EV/EBITDA, Piotroski F, interest coverage, accruals ratio, ...) -- the
+            # metrics carrying most of the structural score's declared weight -- reports
+            # missing for every ticker regardless of real coverage. That is what made this
+            # view's confidence gate read "insufficient evidence" for MSFT and JPM: not a
+            # miscalculation, but company evidence computed from a fraction of what production
+            # actually gathers. See fundamentals_extended.py's EXTENDED_METRIC_UNITS docstring.
+            closes, volumes = _closes_volumes(price_frame)
+            enrichment_diagnostics = {"attempted": 1, "info_fetch_failed": 0, "statement_fetch_failed": 0,
+                                      "derivation_failed": 0, "no_statement_data": 0}
+            extended = yahoo_extended(ticker, instrument, snapshot, {"closes": closes, "volumes": volumes},
+                                      enrichment_diagnostics)
+            extended_observation_count = 0
+            if extended and extended.get("extended_coverage"):
+                extended_rows = extended_observations(extended, fetched_at)
+                extended_observation_count = _observation_count(extended_rows)
+                for metric_id, rows in extended_rows.items():
+                    observations.setdefault(metric_id, []).extend(rows)
+                snapshot = {**snapshot, **extended, "observations": observations}
+            LOG.info(f"{ticker}: statement observations -- {extended_observation_count} non-null of "
+                     f"{len(EXTENDED_METRIC_UNITS)} extended metric(s) (diagnostics={enrichment_diagnostics})")
+
             _, legacy_parts = valuation_score(snapshot)
             # Scores derived without canonical lineage are diagnostic-only and cannot enter v2.
             analysis = build_v2_analysis(snapshot, legacy_parts or {}, observations=observations)
             recommendation = build_recommendation_v2(ticker, analysis, generated_at=fetched_at)
-            history = _history_rows(instrument.history(period="15mo", auto_adjust=True, actions=True))
             factors = momentum_factors(history, as_of=fetched_at[:10])
             boundaries = momentum_boundary_diagnostics(history, as_of=fetched_at[:10])
-            invariants = _invariants(ticker, analysis, recommendation, observations)
-            peer_override = (BUSINESS_PROFILES.get("ticker_overrides") or {}).get(ticker, {})
-            results.append({
-                "ticker": ticker, "status": ("pass" if all(row["status"] == "pass" for row in invariants.values()) else "fail"),
-                "provider_status": "success", "raw_response": {"retention": "private_staging",
+            prepared.append({
+                "ticker": ticker, "provider_status": "success", "raw_response": {"retention": "private_staging",
                     "path": os.path.relpath(raw_path), "sha256": hashlib.sha256(raw_json.encode()).hexdigest()},
-                "classification": {"company": analysis["company_classification"],
-                    "profile_id": analysis["applicability_profile"], "peer_group": peer_override.get("peer_group_id"),
-                    "total_peer_count": 0, "valid_peer_count": 0, "percentile_status": "INSUFFICIENT_VALID_PEERS"},
-                "observations": observations, "analysis": analysis,
+                "observations": observations, "analysis": analysis, "snapshot": snapshot,
                 "company_action": recommendation["company_action"], "portfolio_fit_state": recommendation["portfolio_fit_state"],
                 "position_action": recommendation["position_action"],
-                "momentum": {"factors": factors, "boundaries": boundaries}, "invariants": invariants,
+                "momentum": {"factors": factors, "boundaries": boundaries},
             })
         except Exception as error:  # provider failures are explicit, not imputed
-            results.append({"ticker": ticker, "status": "fail", "provider_status": "error",
-                            "reason_code": type(error).__name__, "message": str(error)[:500], "invariants": {}})
+            errors.append({"ticker": ticker, "status": "fail", "provider_status": "error",
+                           "reason_code": type(error).__name__, "message": str(error)[:500], "invariants": {}})
+
+    # Peer percentiles are a cross-sectional computation (peer_groups.canonical_percentiles
+    # ranks each company against the others in its peer group), so they can only be resolved
+    # once every ticker's structural valuation category score is known -- after the loop
+    # above, not hardcoded per-ticker inside it. This ten-name representative universe spans
+    # roughly ten different peer groups (bank, insurer, REIT, utility, ...), so real peer
+    # counts here will usually still read INSUFFICIENT_VALID_PEERS (MINIMUM_VALID_PEERS=30) --
+    # that is an honest small-sample result, not the same as the unconditional "0 of 0"
+    # this used to publish for every ticker including single-name peer groups of one.
+    peer_rows = [{"ticker": row["ticker"], **{k: row["snapshot"].get(k) for k in ("sector", "industry", "is_etf")},
+                 "categories": (row["analysis"]["structural"].get("categories") or {})}
+                for row in prepared]
+    peer_context = canonical_percentiles(peer_rows, key="valuation", constructed_at=fetched_at[:10])
+    resolved = sum(1 for meta in peer_context.values() if meta.get("tier") is not None)
+    LOG.info(f"peer batch: {resolved} of {len(peer_context)} ticker(s) resolved a valid tier "
+             f"(minimum {MINIMUM_VALID_PEERS} peers with valid data required)")
+
+    results = []
+    for row in prepared:
+        peer = peer_context.get(row["ticker"])
+        invariants = _invariants(row["ticker"], row["analysis"], {
+            "company_action": row["company_action"], "position_action": row["position_action"],
+        }, row["observations"], peer)
+        classification = {
+            "company": row["analysis"]["company_classification"],
+            "profile_id": row["analysis"]["applicability_profile"],
+            "peer_group": peer.get("peer_group_id") if peer else None,
+            "total_peer_count": peer.get("peer_count_total", 0) if peer else 0,
+            "valid_peer_count": peer.get("peer_count_with_valid_data", 0) if peer else 0,
+            "percentile_status": "VALID" if peer and peer.get("tier") is not None else "INSUFFICIENT_VALID_PEERS",
+        }
+        results.append({
+            "ticker": row["ticker"], "status": ("pass" if all(check["status"] == "pass" for check in invariants.values()) else "fail"),
+            "provider_status": row["provider_status"], "raw_response": row["raw_response"],
+            "classification": classification, "observations": row["observations"], "analysis": row["analysis"],
+            "company_action": row["company_action"], "portfolio_fit_state": row["portfolio_fit_state"],
+            "position_action": row["position_action"], "momentum": row["momentum"], "invariants": invariants,
+        })
+    results.extend(errors)
+    results.sort(key=lambda row: tickers.index(row["ticker"]))
+
     payload = {"schema_version": "1.0.0", "model_version": MODEL_VERSION,
                "config_version": "live-validation-v1.0.0", "universe_version": "representative-v1",
                "data_cutoff": fetched_at, "run_id": hashlib.sha256(fetched_at.encode()).hexdigest()[:16],
