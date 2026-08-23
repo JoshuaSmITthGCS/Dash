@@ -11,7 +11,7 @@ from advisor_engine import (RANKING_WEIGHTS, build_research, cross_sectional_cha
                             normalized_metric_scores, signal_correction_variants)
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
-from canonical_metrics import Observation
+from canonical_metrics import Observation, classify_profile
 from data_coverage import data_coverage_components, run_source_reliability
 from data_health import publication_gate, statement_health
 from price_archive import archive_health
@@ -75,6 +75,15 @@ CHALLENGER_ENRICH_LIMIT = 5
 # this the enrichment queue is a closed loop over the previous run's leaders and the model
 # can only rediscover names it already liked - see enrichment_rotation.
 ENRICHMENT_ROTATION_SIZE = max(0, int(os.getenv("ADVISOR_ENRICHMENT_ROTATION_SIZE", "20")))
+# A dedicated, sector-filtered top-up on top of the plain rotation above: bank, insurer, and
+# REIT profiles carry structurally different metric sets (Round 8 found JPM's financial_health
+# null even fully enriched - not a defect, just a bank balance sheet not mapping to standard
+# ratios), so a sector-agnostic rotation slot spent there doesn't grow "usable, comparable
+# fundamentals coverage" at the same rate as one spent on a general/industrial/tech/healthcare
+# name. This queue only ever draws from profiles outside EXCLUDED_EXPANSION_PROFILES.
+ENRICHMENT_EXPANSION_SIZE = max(0, int(os.getenv("ADVISOR_ENRICHMENT_EXPANSION_SIZE", "140")))
+EXCLUDED_EXPANSION_PROFILES = {"bank", "life_insurer", "property_casualty_insurer",
+                               "diversified_insurer", "reit"}
 NEWS_DISCOVERY_LIMIT = 75
 # Research-mode override (A3): the production enrichment queue seeds itself with the prior
 # refresh's top 20 and admits only 5 new challengers, which means statement-derived metrics
@@ -1447,9 +1456,46 @@ def enrichment_rotation(preliminary_symbols, already_selected, previous_payload,
     return tuple(candidates[:size])
 
 
+def enrichment_expansion(preliminary_symbols, already_selected, previous_payload, size,
+                         excluded_profiles=EXCLUDED_EXPANSION_PROFILES):
+    """Never-enriched, non-financial/non-real-estate names, theme-flagged first.
+
+    Unlike ``enrichment_rotation``, this queue never falls back to already-enriched names
+    once never-enriched candidates run out -- it exists to grow *new* usable coverage, not
+    to re-touch names already covered, so it returns fewer than ``size`` rather than
+    admitting a mover a rotation-priority test elsewhere already relies on excluding (see
+    ``test_select_enrichment_priority_also_skips_a_mover_already_enriched``).
+
+    A candidate is only eligible if its previous row's sector/industry classifies to a
+    profile outside ``excluded_profiles`` (bank, the three insurer variants, and REIT by
+    default). A symbol with no previous row at all -- never polled, so its profile is
+    unknown -- is left out of this targeted queue rather than guessed at; it can still be
+    picked up by the untargeted ``enrichment_rotation`` slot. That is what keeps this
+    expansion's yield "usable": every name it admits is a name we already know isn't in a
+    profile whose metric set is structurally different (Round 8: JPM's financial_health
+    stayed null even fully enriched, a bank balance sheet not mapping to standard ratios,
+    not a fetch failure).
+    """
+    if size <= 0:
+        return ()
+    previous_rows = previous_rows_by_ticker(previous_payload)
+    def never_enriched_and_eligible(symbol):
+        row = previous_rows.get(symbol)
+        if row is None or (row.get("fundamental_detail") or {}).get("raw_score"):
+            return None
+        if classify_profile(row) in excluded_profiles:
+            return None
+        return (0 if row.get("theme_exposure") else 1, "", symbol)
+    candidates = [(symbol, key) for symbol in preliminary_symbols if symbol not in already_selected
+                 for key in [never_enriched_and_eligible(symbol)] if key is not None]
+    candidates.sort(key=lambda item: item[1])
+    return tuple(symbol for symbol, _ in candidates[:size])
+
+
 def select_enrichment_priority(previous_top, preliminary_symbols, available, portfolio_symbols=(),
                                full_universe_research=False, previous_payload=None,
-                               rotation_size=ENRICHMENT_ROTATION_SIZE, focus_symbols=()):
+                               rotation_size=ENRICHMENT_ROTATION_SIZE,
+                               expansion_size=ENRICHMENT_EXPANSION_SIZE, focus_symbols=()):
     """Prior leaders, the best outsiders, a rotation of statement-starved names, then holdings.
 
     ``focus_symbols`` (a re-ranking request for one named set) goes to the front of the queue.
@@ -1483,8 +1529,10 @@ def select_enrichment_priority(previous_top, preliminary_symbols, available, por
     selected = incumbent_set | set(challengers) | set(portfolio_symbols) | set(focused)
     rotation = enrichment_rotation(preliminary_symbols, selected, previous_payload or {},
                                    rotation_size)
+    expansion = enrichment_expansion(preliminary_symbols, selected | set(rotation),
+                                     previous_payload or {}, expansion_size)
     priority = tuple(dict.fromkeys(
-        (*focused, *incumbents, *challengers, *rotation, *portfolio_symbols)))
+        (*focused, *incumbents, *challengers, *rotation, *expansion, *portfolio_symbols)))
     return incumbents, challengers, priority
 
 
@@ -2085,11 +2133,15 @@ def run():
             "previous_top": list(incumbents),
             "challengers": list(challengers),
             "rotation_size": ENRICHMENT_ROTATION_SIZE,
+            "expansion_size": ENRICHMENT_EXPANSION_SIZE,
+            "expansion_excluded_profiles": sorted(EXCLUDED_EXPANSION_PROFILES),
             "priority_count": len(statement_priority),
             "note": "Statement enrichment previously covered only the prior run's top 20 "
                     "plus five challengers, so a name outside that set could never acquire "
                     "the metrics that would let it out-rank an incumbent. A rotation of "
-                    "statement-starved names now joins every refresh.",
+                    "statement-starved names now joins every refresh, plus a dedicated "
+                    "sector-filtered expansion queue (non-financial, non-real-estate) "
+                    "targeting broader usable coverage faster than the general rotation alone.",
         },
         "enrichment_diagnostics": enrichment_diagnostics,
         "normalization_distributions": {

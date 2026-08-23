@@ -9,6 +9,7 @@
 
 /* Research and table */
 .research-toolbar { display: grid; grid-template-columns: minmax(260px, 1fr) repeat(4, auto); gap: var(--sp-2-5); margin-bottom: var(--sp-4); }
+.research-sector-checkboxes { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: calc(-1 * var(--sp-2)) 0 var(--sp-4); }
 .sort-with-info { display: inline-flex; align-items: center; gap: var(--sp-1); min-width: 0; }
 .sort-with-info label { flex: 1; min-width: 0; }
 .sort-with-info select { min-width: 0; }

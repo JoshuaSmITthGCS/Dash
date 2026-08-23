@@ -49,7 +49,13 @@ on:
     # "Select the Eastern-time refresh window" step below for how that's enforced.
     # Avoid minute zero, when GitHub documents that scheduled events are most likely to
     # be delayed or dropped under Actions load. The local-time gate below is unchanged.
-    - cron: '7 11,12,16,17,19,20 * * 1-5'
+    # Runs every day, weekends included: equity quotes don't move over the weekend, but
+    # Alpha Vantage, statement enrichment (10-Ks/10-Qs/8-Ks file on any day), SEC filings,
+    # and news don't stop either, and the 07:00 ET slot's full-alpha sweep is exactly what
+    # feeds enrichment expansion. Themes need no separate schedule entry -- build_theme_layer
+    # already runs unconditionally inside fetch_advisor.py's run() on every non-rescore
+    # refresh, so it starts firing on weekends the moment this workflow does.
+    - cron: '7 11,12,16,17,19,20 * * *'
 
 permissions:
   contents: write

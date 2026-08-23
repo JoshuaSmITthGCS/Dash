@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from fetch_advisor import (_evidence_summary, _screen_row, _sentiment_summary, build_portfolio_coverage,
                            carry_forward_missing_sessions, carry_forward_rows,
                            collect_insider_signals, compact_news,
-                           curate_candidate_news, enrich, enrichment_rotation,
+                           curate_candidate_news, enrich, enrichment_expansion, enrichment_rotation,
                            latest_unique_news,
                            previous_rows_by_ticker, previous_top_symbols, rank_publishable,
                            resolve_refresh_symbols, rotation_slice,
@@ -251,6 +251,75 @@ class EnrichmentPriorityTests(unittest.TestCase):
         self.assertEqual(set(rotated), {"NEVER_A", "NEVER_B"})
         self.assertNotIn("MOVER", rotated)
 
+    def test_expansion_excludes_bank_insurer_and_reit_profiles(self):
+        preliminary = ("TECHCO", "BANKCO", "INSURECO", "REITCO")
+        previous_payload = {"research": [
+            {"ticker": "TECHCO", "sector": "Technology", "industry": "Software",
+             "fundamental_detail": {}},
+            {"ticker": "BANKCO", "sector": "Financial Services", "industry": "Banks-Regional",
+             "fundamental_detail": {}},
+            {"ticker": "INSURECO", "sector": "Financial Services", "industry": "Insurance-Life",
+             "fundamental_detail": {}},
+            {"ticker": "REITCO", "sector": "Real Estate", "industry": "REIT-Residential",
+             "fundamental_detail": {}},
+        ]}
+
+        expanded = enrichment_expansion(preliminary, set(), previous_payload, size=10)
+
+        self.assertEqual(expanded, ("TECHCO",))
+
+    def test_expansion_excludes_names_with_no_previous_row_rather_than_guessing_profile(self):
+        # NEVERPOLLED has no prior row at all -- its profile can't be classified, so this
+        # targeted queue leaves it out rather than risking an unusable bank/REIT admission.
+        # It remains eligible for the untargeted enrichment_rotation slot elsewhere.
+        preliminary = ("NEVERPOLLED", "TECHCO")
+        previous_payload = {"research": [
+            {"ticker": "TECHCO", "sector": "Technology", "industry": "Software",
+             "fundamental_detail": {}},
+        ]}
+
+        expanded = enrichment_expansion(preliminary, set(), previous_payload, size=10)
+
+        self.assertEqual(expanded, ("TECHCO",))
+
+    def test_expansion_never_backfills_with_already_enriched_names(self):
+        # Unlike enrichment_rotation, this queue exists to grow new coverage -- it must
+        # return fewer than `size` rather than re-touching an already-enriched name.
+        preliminary = ("ALREADY_ENRICHED",)
+        previous_payload = {"research": [
+            {"ticker": "ALREADY_ENRICHED", "sector": "Technology", "industry": "Software",
+             "last_polled_at": "2026-08-20T00:00:00+00:00",
+             "fundamental_detail": {"raw_score": 71.0}},
+        ]}
+
+        expanded = enrichment_expansion(preliminary, set(), previous_payload, size=10)
+
+        self.assertEqual(expanded, ())
+
+    def test_expansion_respects_the_size_cap_and_already_selected_set(self):
+        preliminary = tuple(f"T{i:02d}" for i in range(5))
+        previous_payload = {"research": [
+            {"ticker": t, "sector": "Technology", "industry": "Software", "fundamental_detail": {}}
+            for t in preliminary
+        ]}
+
+        expanded = enrichment_expansion(preliminary, {"T00", "T01"}, previous_payload, size=2)
+
+        self.assertEqual(set(expanded), {"T02", "T03"})
+
+    def test_expansion_puts_theme_flagged_names_first(self):
+        preliminary = ("PLAIN", "THEMED")
+        previous_payload = {"research": [
+            {"ticker": "PLAIN", "sector": "Technology", "industry": "Software",
+             "fundamental_detail": {}, "theme_exposure": []},
+            {"ticker": "THEMED", "sector": "Technology", "industry": "Software",
+             "fundamental_detail": {}, "theme_exposure": [{"theme_id": "ai_infrastructure"}]},
+        ]}
+
+        expanded = enrichment_expansion(preliminary, set(), previous_payload, size=1)
+
+        self.assertEqual(expanded, ("THEMED",))
+
     def test_select_enrichment_priority_also_skips_a_mover_already_enriched(self):
         # Same guarantee, exercised through the actual production entry point. FILLERS soak
         # up the five challenger slots so MOVER and NEVER both land in the rotation pool.
@@ -272,6 +341,34 @@ class EnrichmentPriorityTests(unittest.TestCase):
         self.assertEqual(set(challengers), set(fillers))
         self.assertIn("NEVER", priority)
         self.assertNotIn("MOVER", priority)
+
+    def test_select_enrichment_priority_wires_in_the_expansion_queue(self):
+        # Exercised through the production entry point with the default expansion_size
+        # (140): a never-enriched, non-financial name outside every other slot (incumbent,
+        # challenger, rotation, portfolio) must still reach the priority list via expansion.
+        previous = tuple(f"P{i:02d}" for i in range(20))
+        fillers = tuple(f"F{i:02d}" for i in range(5))
+        preliminary = (*previous, *fillers, "EXPANSION_TARGET", "EXCLUDED_BANK")
+        previous_payload = {"research": [
+            {"ticker": "EXPANSION_TARGET", "sector": "Technology", "industry": "Software",
+             "fundamental_detail": {}},
+            {"ticker": "EXCLUDED_BANK", "sector": "Financial Services", "industry": "Banks-Regional",
+             "fundamental_detail": {}},
+        ]}
+
+        _, _, priority = select_enrichment_priority(
+            previous, preliminary, set(preliminary), (),
+            previous_payload=previous_payload, rotation_size=0,
+        )
+
+        self.assertIn("EXPANSION_TARGET", priority)
+        self.assertNotIn("EXCLUDED_BANK", priority)
+
+    def test_expansion_can_be_switched_off(self):
+        preliminary = tuple(f"S{i:02d}" for i in range(30))
+        _, _, priority = select_enrichment_priority(
+            (), preliminary, set(preliminary), (), rotation_size=0, expansion_size=0)
+        self.assertEqual(len(priority), 25)
 
     def test_rotation_can_be_switched_off(self):
         preliminary = tuple(f"S{i:02d}" for i in range(30))
