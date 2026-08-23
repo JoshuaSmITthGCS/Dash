@@ -11,6 +11,7 @@ import { derivePortfolioRiskProfile } from '../lib/monteCarloRiskProfile.js'
 import { usePortfolioMonteCarloCalibration } from '../lib/usePortfolioMonteCarloCalibration.js'
 import { formatPreferenceMoney, usePreferences } from '../lib/PreferencesContext.jsx'
 import { annualReturnTargetRange, applyAllocationAssumption, formatAnnualReturnTarget, normalizeAnnualReturnTarget, projectionConfig, selectProjectionReturnSource, sequenceRiskPaths } from '../lib/projectionEngine.js'
+import { coastFireStatus } from '../lib/coastFire.js'
 import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
 import { fidelityProjectionBaseline } from '../lib/referenceCashFlows.js'
 import ProjectionPanel from '../components/ProjectionPanel.jsx'
@@ -159,6 +160,17 @@ export default function Planning() {
   } : null)
   const probability = projection.result?.successProbability
 
+  // Coast FIRE is a closed-form compounding check, not a simulation -- memoized on its own
+  // small set of inputs so it doesn't recompute on every unrelated Planning render (a lever
+  // drag, a goal-form keystroke) the way the wider projection state does.
+  const coastFire = useMemo(() => committed ? coastFireStatus({
+    currentSavings: finances.settings.currentSavings,
+    currentAge: finances.settings.currentAge,
+    retirementAge: committed.retirementAge,
+    annualReturnPct: effectiveAnnualReturnTargetPct,
+    annualWithdrawal: committed.annualWithdrawal,
+  }) : { available: false }, [committed, finances.settings.currentSavings, finances.settings.currentAge, effectiveAnnualReturnTargetPct])
+
   useEffect(() => {
     if (probability == null) return
     if (changedLever && priorProbability.current != null) {
@@ -240,6 +252,26 @@ export default function Planning() {
         <p>The simulated distribution's mean and volatility are solved algebraically from these ratios, not resampled from your literal daily path. {calibration.calibratedAt ? `Last calibrated ${calibration.calibratedAt.slice(0, 10)} from ${calibration.riskProfile.observations} daily returns through ${calibration.riskProfile.endDate}.` : 'Calibrating now.'} {calibration.stale ? 'A new calibration is due' + (calibration.staleReason ? ` (${calibration.staleReason})` : '') + ' and will run automatically the next time you open this page.' : `Holds steady until your next ${calibration.refreshLabel} or a new deposit, so day-to-day price moves don't reshuffle the plan.`}</p>
         <button type="button" className="secondary-button compact" onClick={calibration.recalibrate} disabled={calibration.loading}>Recalibrate now</button>
       </> : <p>{riskProfile.reason || 'At least 20 daily portfolio observations are required before the simulation can calibrate to your own Sharpe, Sortino, and Calmar ratios. Until then, the model falls back to benchmark-derived history.'}</p>}
+    </section>
+
+    <section className="planning-coast-fire planning-calibration" aria-labelledby="planning-coast-fire-title">
+      <div><span className="eyebrow">Coast FIRE</span><h2 id="planning-coast-fire-title">Can you stop contributing today?</h2></div>
+      <label className="planning-inline-note">
+        <input type="checkbox" checked={Boolean(finances.settings.coastFireEnabled)} onChange={(event) => finances.updateSettings({ coastFireEnabled: event.target.checked })} />
+        Track Coast FIRE status
+      </label>
+      {finances.settings.coastFireEnabled && (coastFire.available ? <>
+        <span className={`planning-band band-${coastFire.isCoasting ? 'on-track' : 'off-track'}`}>{coastFire.isCoasting ? 'Coasting' : 'Not coasting'}</span>
+        <div className="planning-calibration-ratios">
+          <span>Target at retirement <strong>{money(coastFire.targetAmount)}</strong></span>
+          <span>Needed today to coast <strong>{money(coastFire.requiredTodayAmount)}</strong></span>
+          <span>Current savings, grown to age {committed.retirementAge} <strong>{money(coastFire.projectedBalance)}</strong></span>
+        </div>
+        <p>{coastFire.isCoasting
+          ? `Your current ${money(finances.settings.currentSavings)} balance, compounding at ${formatAnnualReturnTarget(effectiveAnnualReturnTargetPct)} with no further contributions, clears ${money(coastFire.targetAmount)} by age ${committed.retirementAge}. You could stop contributing today and still coast to this plan's retirement target.`
+          : `At ${formatAnnualReturnTarget(effectiveAnnualReturnTargetPct)} with no further contributions, your current ${money(finances.settings.currentSavings)} balance reaches ${money(coastFire.projectedBalance)} by age ${committed.retirementAge} -- short of the ${money(coastFire.targetAmount)} target. Coasting from here needs ${money(coastFire.requiredTodayAmount)} saved today, ${money(Math.max(0, coastFire.requiredTodayAmount - finances.settings.currentSavings))} more than you have now.`}
+          {' '}This is a planning assumption, not a forecast.</p>
+      </> : <p>Set a retirement age and an annual retirement withdrawal above to see this.</p>)}
     </section>
 
     <section className="planning-levers"><header><span className="eyebrow">Live levers</span><h2>Change the plan, then release to resimulate</h2></header>
