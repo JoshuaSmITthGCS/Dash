@@ -185,6 +185,16 @@ REWEIGHTED_A_WEIGHTS = {
     "market_behavior": 0.2506,
 }
 
+# Round 11: an explicit strategy_id -> leg-weight-vector map for the research candidates
+# that are a simple linear blend (pipeline/optimization_harness.py and
+# pipeline/run_backtest_suite.py's default candidate set read this rather than guessing an
+# attribute name from the strategy id). A candidate whose selection logic isn't a weight
+# vector (none exist today) has no entry here and must be tested with an explicit
+# --candidates argument instead.
+RESEARCH_CANDIDATE_WEIGHTS = {
+    "reweighted_composite_a": REWEIGHTED_A_WEIGHTS,
+}
+
 
 def _reweighted_composite_rows(advisor, price_by_ticker, weights=REWEIGHTED_A_WEIGHTS, limit=20):
     """Rank the published universe by the proposal-A reweighted composite.

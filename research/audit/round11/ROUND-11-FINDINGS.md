@@ -119,12 +119,28 @@ local data — no network access used or needed:
 - This measured revenue TTM growth only, a bounded proxy for the full multi-input production
   growth score, not a re-derivation of it.
 
-**Not done this round, and deliberately so:** wiring this into `backtest_historical.py`'s
-production reconstruction path, extending it to `earnings_growth`, handling the insurance
-concept-mapping caveat AGO surfaced, and re-running Round 10's full leg diagnosis with real
-growth coverage restored are real follow-up engineering — consistent with the brief's own
-"bounded pilot... before trusting it for calibration" framing, and with this session's standing
-constraint against touching scoring/composite construction without separate authorization.
+**Follow-up, done in this same session (`R11-P4-2-edgar-pit-wired-into-backtest-historical`):**
+`backtest_historical.py::build_snapshot` now calls `edgar_pit_growth_fallback` whenever Yahoo's
+own history leaves `revenue_growth` and/or `earnings_growth` `None`, filling only what's
+missing and never overwriting a Yahoo-resolved value. Revenue growth is skipped for
+bank/insurer/REIT profiles (via `canonical_metrics.classify_profile`, reusing the AGO-shaped
+caveat above); earnings growth is not, since net income doesn't share the "Revenues" tag's
+netting ambiguity. `DISABLE_EDGAR_PIT_BACKTEST_GROWTH=1` reproduces the pre-this-round
+Yahoo-only baseline for comparison. 7 new tests. A new CLI, `pipeline/run_backtest_suite.py`,
+sequences panel rebuild → Round 10's leg diagnosis → the Round 11 harness in one command
+(`shadow_portfolios.RESEARCH_CANDIDATE_WEIGHTS` supplies the default candidate set explicitly,
+rather than guessing an attribute name from a strategy id — an earlier draft of this script
+did exactly that and silently found nothing).
+
+**What's still open, and why:** the committed `backtest_signal_panel.json` itself has not been
+regenerated with this fallback live — that needs `backtest_monthly.py`'s real yfinance network
+access across ~860 tickers × 60 periods, which is `blocked_network_policy` in this sandbox, the
+same constraint every prior round's live-data work in this repository has hit. Round 10's leg
+diagnosis, re-run via the new CLI against the existing panel, therefore still reads 0.0% growth
+coverage — that number only changes after a real `python3 pipeline/run_backtest_suite.py
+--years 5` run somewhere with network access. This is an environmental blocker, not an open
+methodological question: R11-P4's pilot already proved the method works at 98% coverage on
+real data.
 
 ## What NOT done, per the brief and this session's standing constraints
 

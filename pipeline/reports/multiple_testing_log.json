@@ -166,5 +166,13 @@
     "holdout_start": "2024-09-03 through 2026-08-03, 19 symbols x 24 months = 456 ticker-periods",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P4-2-edgar-pit-wired-into-backtest-historical",
+    "declared_at": "2026-08-23T22:00:00+00:00",
+    "hypothesis": "R11-P4-edgar-pit-growth-reconstruction-feasibility's follow-up: wire the same filed<=as_of EDGAR PIT reconstruction into pipeline/backtest_historical.py's production build_snapshot() path (not just the standalone pilot script), covering both revenue_growth and earnings_growth, gated for the insurance profile ambiguity AGO surfaced, so the next live re-run of the backtest panel picks up real growth-leg coverage instead of the 0% Round 10 diagnosed.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

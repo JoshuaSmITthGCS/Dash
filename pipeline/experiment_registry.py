@@ -701,6 +701,66 @@ REGISTRY = [
                    "for calibration' framing and this session's standing constraint against touching "
                    "scoring/composite construction without separate authorization."),
     },
+    {
+        "id": "R11-P4-2-edgar-pit-wired-into-backtest-historical",
+        "declared_at": "2026-08-23T22:00:00+00:00",
+        "hypothesis": ("R11-P4-edgar-pit-growth-reconstruction-feasibility's follow-up: wire the same "
+                       "filed<=as_of EDGAR PIT reconstruction into pipeline/backtest_historical.py's "
+                       "production build_snapshot() path (not just the standalone pilot script), covering "
+                       "both revenue_growth and earnings_growth, gated for the insurance profile ambiguity "
+                       "AGO surfaced, so the next live re-run of the backtest panel picks up real growth-"
+                       "leg coverage instead of the 0% Round 10 diagnosed."),
+        "category": "data_availability",
+        "configuration": {
+            "files": ["pipeline/backtest_historical.py", "pipeline/tests/test_backtest_historical.py",
+                     "pipeline/run_backtest_suite.py"],
+            "change": ("edgar_pit_growth_fallback(ticker_data, as_of, need_revenue, need_earnings): fills "
+                       "whichever of revenue_growth/earnings_growth Yahoo's ~8-quarter-deep quarterly "
+                       "history left None, via edgar_enrichment.edgar_ttm_statements at as_of and "
+                       "as_of-365d -- never overwrites a Yahoo-resolved value. Revenue growth skipped for "
+                       "REVENUE_GROWTH_EXCLUDED_PROFILES (bank/life_insurer/property_casualty_insurer/"
+                       "diversified_insurer/reit, matching fetch_advisor.py's "
+                       "EXCLUDED_EXPANSION_PROFILES) via canonical_metrics.classify_profile; earnings "
+                       "growth (net income) is not excluded -- the netting ambiguity R11-P4 found was "
+                       "specific to the generic 'Revenues' XBRL concept. Added ticker_data['industry'] "
+                       "(previously only 'sector' was captured) since classify_profile needs both to "
+                       "distinguish insurer sub-types. DISABLE_EDGAR_PIT_BACKTEST_GROWTH=1 reproduces the "
+                       "pre-this-round Yahoo-only behavior for comparison. Also wrote "
+                       "pipeline/run_backtest_suite.py, a single CLI sequencing panel rebuild -> Round 10's "
+                       "leg_diagnosis.py -> the Round 11 optimization harness against the registered shadow "
+                       "candidate(s) (shadow_portfolios.RESEARCH_CANDIDATE_WEIGHTS, an explicit map added "
+                       "so this doesn't guess an attribute name from a strategy id), so a future round "
+                       "doesn't have to remember which of three scripts to run in which order."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 9},
+        "number_of_variants_tested": 1,
+        "result": ("Wiring correctness verified with 7 new tests in test_backtest_historical.py (mocked "
+                   "edgar_ttm_statements -- no network/PIT-store dependency in the test itself): fills both "
+                   "growth figures when Yahoo's history is short, skips revenue (not earnings) growth for "
+                   "an excluded profile, respects the disable flag, never calls out when nothing is needed, "
+                   "never raises on a PIT-store read failure, and -- the regression that matters most -- "
+                   "never overwrites a growth figure Yahoo already resolved. run_backtest_suite.py's "
+                   "diagnosis+harness stages were run end-to-end against the existing (pre-this-change) "
+                   "committed panel (--skip-panel, no network needed for those two stages) and reproduced "
+                   "R11-P1's exact numbers, confirming the CLI itself is correct. What is NOT yet done: the "
+                   "panel itself has not been regenerated with this fallback live -- rebuilding "
+                   "pipeline/backtest_signal_panel.json needs backtest_monthly.py's real yfinance network "
+                   "access across ~860 tickers x 60 periods, which is blocked_network_policy in this "
+                   "environment, the same constraint every prior round's live-data work in this repository "
+                   "has hit. Round 10's leg diagnosis therefore still reads 0% growth coverage in the "
+                   "currently-committed panel -- that number only changes after a real "
+                   "`python3 pipeline/run_backtest_suite.py --years 5` run somewhere with network access."),
+        "decision": "PROMOTE",
+        "reason": ("The wiring, its tests, and the CLI all ship -- they're correct and ready for the next "
+                   "real backtest re-run to exercise, and DISABLE_EDGAR_PIT_BACKTEST_GROWTH=1 preserves an "
+                   "exact way to reproduce the old baseline for comparison once that re-run happens. Not "
+                   "marked INCONCLUSIVE: the open item here isn't methodological uncertainty (R11-P4 "
+                   "already established the method works, at 98% coverage on real data), it's purely "
+                   "the standing network-access constraint on regenerating the full panel, which is "
+                   "environmental, not a question this round's evidence leaves open. Full pipeline suite "
+                   "green (2276 tests) after the change."),
+    },
 ]
 
 

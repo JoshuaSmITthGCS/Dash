@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-08-23T22:11:08.080761+00:00",
+  "panel_path": "/home/user/Dash/pipeline/backtest_signal_panel.json",
+  "panel_periods": 60,
+  "split": {
+    "train": 30,
+    "validation": 15,
+    "holdout": 15
+  },
+  "trial_count": 61,
+  "search_overfitting": {
+    "names": [
+      "champion",
+      "reweighted_composite_a"
+    ],
+    "splits": 8,
+    "pbo": 0.0
+  },
+  "candidates": [
+    {
+      "name": "champion",
+      "train_mean_ic": 0.0263,
+      "validation_mean_ic": 0.0518,
+      "walk_forward_efficiency": 1.9696,
+      "deflated_sharpe_probability": 0.1974,
+      "ship": false,
+      "suggested_decision": "KEEP_AS_CHALLENGER",
+      "reason": "some validation-period signal but does not clear every gate: t-statistic below 3, the bar appropriate after multiple testing; deflated Sharpe probability 0.1974 does not survive 61 trials of selection"
+    },
+    {
+      "name": "reweighted_composite_a",
+      "train_mean_ic": 0.0263,
+      "validation_mean_ic": 0.0518,
+      "walk_forward_efficiency": 1.9696,
+      "deflated_sharpe_probability": 0.1974,
+      "ship": false,
+      "suggested_decision": "KEEP_AS_CHALLENGER",
+      "reason": "some validation-period signal but does not clear every gate: t-statistic below 3, the bar appropriate after multiple testing; deflated Sharpe probability 0.1974 does not survive 61 trials of selection"
+    }
+  ]
+}
