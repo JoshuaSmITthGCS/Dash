@@ -1,7 +1,7 @@
 {
-  "description": "Diversified liquid US large- and mid-cap candidate universe. The pipeline scores every available name from free Yahoo data, derives financial-statement metrics for the top `extended_limit` shortlist, and publishes the top `publish_limit`. Breadth is deliberate: the information ratio of a signal scales with the square root of the number of independent bets, so a wider cross-section tightens every rank-IC estimate the evaluation harness produces. Alpha Vantage enrichment is capped at five symbols regardless of universe size, so growing this list costs only free Yahoo requests.",
+  "description": "Diversified liquid US large- and mid-cap candidate universe. The pipeline scores every available name from free Yahoo data, derives financial-statement metrics for the top `extended_limit` shortlist, and publishes the top `publish_limit`. Breadth is deliberate: the information ratio of a signal scales with the square root of the number of independent bets, so a wider cross-section tightens every rank-IC estimate the evaluation harness produces. Alpha Vantage enrichment is capped at five symbols on weekday intraday refreshes and up to 25 (its real free-tier daily ceiling) on the once-daily weekend refresh, so growing this list mostly costs only free Yahoo requests.",
   "publish_limit": 40,
-  "extended_limit": 320,
+  "extended_limit": 400,
   "portfolio_symbols": [
     "SCHW",
     "QCOM",

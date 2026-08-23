@@ -9,7 +9,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from fetch_advisor import (_evidence_summary, _screen_row, _sentiment_summary, build_portfolio_coverage,
                            carry_forward_missing_sessions, carry_forward_rows,
                            collect_insider_signals, compact_news,
-                           curate_candidate_news, enrich, enrichment_expansion, enrichment_rotation,
+                           curate_candidate_news, enrich, enrichment_expansion,
+                           enrichment_expansion_financial_real_estate, enrichment_rotation,
                            latest_unique_news,
                            previous_rows_by_ticker, previous_top_symbols, rank_publishable,
                            resolve_refresh_symbols, rotation_slice,
@@ -320,6 +321,45 @@ class EnrichmentPriorityTests(unittest.TestCase):
 
         self.assertEqual(expanded, ("THEMED",))
 
+    def test_financial_real_estate_expansion_includes_only_bank_insurer_and_reit_profiles(self):
+        preliminary = ("BANKCO", "INSURECO", "REITCO", "TECHCO")
+        previous_payload = {"research": [
+            {"ticker": "BANKCO", "sector": "Financial Services", "industry": "Banks-Regional",
+             "fundamental_detail": {}},
+            {"ticker": "INSURECO", "sector": "Financial Services", "industry": "Insurance-Life",
+             "fundamental_detail": {}},
+            {"ticker": "REITCO", "sector": "Real Estate", "industry": "REIT-Residential",
+             "fundamental_detail": {}},
+            {"ticker": "TECHCO", "sector": "Technology", "industry": "Software",
+             "fundamental_detail": {}},
+        ]}
+
+        expanded = enrichment_expansion_financial_real_estate(preliminary, set(), previous_payload, size=10)
+
+        self.assertEqual(set(expanded), {"BANKCO", "INSURECO", "REITCO"})
+
+    def test_financial_real_estate_expansion_excludes_names_with_no_previous_row(self):
+        preliminary = ("NEVERPOLLED", "BANKCO")
+        previous_payload = {"research": [
+            {"ticker": "BANKCO", "sector": "Financial Services", "industry": "Banks-Regional",
+             "fundamental_detail": {}},
+        ]}
+
+        expanded = enrichment_expansion_financial_real_estate(preliminary, set(), previous_payload, size=10)
+
+        self.assertEqual(expanded, ("BANKCO",))
+
+    def test_financial_real_estate_expansion_never_backfills_with_already_enriched_names(self):
+        preliminary = ("ALREADY_ENRICHED_BANK",)
+        previous_payload = {"research": [
+            {"ticker": "ALREADY_ENRICHED_BANK", "sector": "Financial Services", "industry": "Banks-Regional",
+             "last_polled_at": "2026-08-20T00:00:00+00:00", "fundamental_detail": {"raw_score": 71.0}},
+        ]}
+
+        expanded = enrichment_expansion_financial_real_estate(preliminary, set(), previous_payload, size=10)
+
+        self.assertEqual(expanded, ())
+
     def test_select_enrichment_priority_also_skips_a_mover_already_enriched(self):
         # Same guarantee, exercised through the actual production entry point. FILLERS soak
         # up the five challenger slots so MOVER and NEVER both land in the rotation pool.
@@ -342,17 +382,19 @@ class EnrichmentPriorityTests(unittest.TestCase):
         self.assertIn("NEVER", priority)
         self.assertNotIn("MOVER", priority)
 
-    def test_select_enrichment_priority_wires_in_the_expansion_queue(self):
-        # Exercised through the production entry point with the default expansion_size
-        # (140): a never-enriched, non-financial name outside every other slot (incumbent,
-        # challenger, rotation, portfolio) must still reach the priority list via expansion.
+    def test_select_enrichment_priority_wires_in_both_expansion_queues(self):
+        # Exercised through the production entry point with the default expansion sizes
+        # (140 non-financial, 130 financial/real-estate): a never-enriched name outside
+        # every other slot (incumbent, challenger, rotation, portfolio) must still reach
+        # the priority list via whichever expansion queue matches its profile -- a bank
+        # is not simply dropped, it goes through the other queue.
         previous = tuple(f"P{i:02d}" for i in range(20))
         fillers = tuple(f"F{i:02d}" for i in range(5))
-        preliminary = (*previous, *fillers, "EXPANSION_TARGET", "EXCLUDED_BANK")
+        preliminary = (*previous, *fillers, "EXPANSION_TARGET", "BANK_TARGET")
         previous_payload = {"research": [
             {"ticker": "EXPANSION_TARGET", "sector": "Technology", "industry": "Software",
              "fundamental_detail": {}},
-            {"ticker": "EXCLUDED_BANK", "sector": "Financial Services", "industry": "Banks-Regional",
+            {"ticker": "BANK_TARGET", "sector": "Financial Services", "industry": "Banks-Regional",
              "fundamental_detail": {}},
         ]}
 
@@ -362,7 +404,26 @@ class EnrichmentPriorityTests(unittest.TestCase):
         )
 
         self.assertIn("EXPANSION_TARGET", priority)
-        self.assertNotIn("EXCLUDED_BANK", priority)
+        self.assertIn("BANK_TARGET", priority)
+
+    def test_the_non_financial_expansion_queue_alone_still_excludes_bank_insurer_and_reit(self):
+        # The financial/real-estate expansion queue is a separate, deliberately-sized slot
+        # -- it must not make enrichment_expansion itself stop filtering.
+        previous = tuple(f"P{i:02d}" for i in range(20))
+        fillers = tuple(f"F{i:02d}" for i in range(5))
+        preliminary = (*previous, *fillers, "BANK_TARGET")
+        previous_payload = {"research": [
+            {"ticker": "BANK_TARGET", "sector": "Financial Services", "industry": "Banks-Regional",
+             "fundamental_detail": {}},
+        ]}
+
+        _, _, priority = select_enrichment_priority(
+            previous, preliminary, set(preliminary), (),
+            previous_payload=previous_payload, rotation_size=0, expansion_size=10,
+            financial_real_estate_expansion_size=0,
+        )
+
+        self.assertNotIn("BANK_TARGET", priority)
 
     def test_expansion_can_be_switched_off(self):
         preliminary = tuple(f"S{i:02d}" for i in range(30))

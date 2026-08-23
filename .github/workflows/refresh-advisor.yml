@@ -44,17 +44,23 @@ on:
         type: string
   schedule:
     # GitHub cron is UTC. Trigger both EDT/EST candidates, then gate on New York time.
-    # 07:00 ET is the one full sweep of the day (all ~900 stocks); 12:00 and 15:00 ET are
-    # fast refreshes limited to the prior top 100 plus portfolio holdings - see the
-    # "Select the Eastern-time refresh window" step below for how that's enforced.
+    # Weekdays: 07:00 ET is the one full sweep of the day (all ~900 stocks); 12:00 and
+    # 15:00 ET are fast refreshes limited to the prior top 100 plus portfolio holdings -
+    # see the "Select the Eastern-time refresh window" step below for how that's enforced.
     # Avoid minute zero, when GitHub documents that scheduled events are most likely to
     # be delayed or dropped under Actions load. The local-time gate below is unchanged.
-    # Runs every day, weekends included: equity quotes don't move over the weekend, but
-    # Alpha Vantage, statement enrichment (10-Ks/10-Qs/8-Ks file on any day), SEC filings,
-    # and news don't stop either, and the 07:00 ET slot's full-alpha sweep is exactly what
-    # feeds enrichment expansion. Themes need no separate schedule entry -- build_theme_layer
-    # already runs unconditionally inside fetch_advisor.py's run() on every non-rescore
-    # refresh, so it starts firing on weekends the moment this workflow does.
+    # Weekends: this cron still fires all six UTC candidates, but the gate step below
+    # only lets the 07:00 ET one through - equity quotes don't move over the weekend, so
+    # there's no case for the 12:00/15:00 fast-refresh slots, but Alpha Vantage, statement
+    # enrichment (10-Ks/10-Qs/8-Ks file on any day), SEC filings, and news don't stop
+    # either, so the single weekend run raises ALPHA_ENRICH_LIMIT to 25 - Alpha Vantage's
+    # real free-tier daily ceiling, not the 5-per-refresh weekday figure that's sized to
+    # be safe across three same-day weekday runs - and paces calls with a 13s
+    # ALPHA_VANTAGE_CALL_DELAY (5 req/min limit) so that run is mainly a universe
+    # enrichment pass, not a mirror of the weekday cadence. Themes need no separate
+    # schedule entry -- build_theme_layer already runs unconditionally inside
+    # fetch_advisor.py's run() on every non-rescore refresh, so it fires on the weekend
+    # run too.
     - cron: '7 11,12,16,17,19,20 * * *'
 
 permissions:
@@ -104,6 +110,8 @@ jobs:
           alpha_disable=1
           universe_mode=fast
           is_rescore=false
+          alpha_enrich_limit=5
+          alpha_call_delay=0
           if [[ "${{ github.event_name }}" != "schedule" ]]; then
             should_run=true
             universe_mode="${{ inputs.universe_scope || 'full' }}"
@@ -114,23 +122,45 @@ jobs:
             fi
           else
             local_hour="$(TZ=America/New_York date +%H)"
-            case "$local_hour" in
-              07)
+            # 1 (Mon) .. 7 (Sun): a weekend refresh is once daily, not three times -
+            # equity quotes don't move on a non-trading day, so the 12:00/15:00 intraday
+            # fast reruns that exist to catch same-day price movement have nothing new to
+            # catch. That "spare" capacity goes to Alpha Vantage/statement enrichment
+            # instead: weekdays cap ALPHA_ENRICH_LIMIT at 5 because the same daily quota
+            # also has to last three refreshes, but the weekend's single run can safely ask
+            # for the real free-tier ceiling of 25 since nothing else that day competes for
+            # it. ALPHA_VANTAGE_CALL_DELAY=13 keeps 25 calls under the 5-calls-per-minute
+            # sub-limit (60s / 5 = 12s minimum spacing; 13s for margin).
+            local_day="$(TZ=America/New_York date +%u)"
+            if [[ "$local_day" -ge 6 ]]; then
+              if [[ "$local_hour" == "07" ]]; then
                 should_run=true
                 alpha_disable=0
                 universe_mode=full
-                ;;
-              12|15)
-                should_run=true
-                universe_mode=fast
-                ;;
-            esac
+                alpha_enrich_limit=25
+                alpha_call_delay=13
+              fi
+            else
+              case "$local_hour" in
+                07)
+                  should_run=true
+                  alpha_disable=0
+                  universe_mode=full
+                  ;;
+                12|15)
+                  should_run=true
+                  universe_mode=fast
+                  ;;
+              esac
+            fi
           fi
           echo "should_run=$should_run" >> "$GITHUB_OUTPUT"
           echo "is_rescore=$is_rescore" >> "$GITHUB_OUTPUT"
           echo "universe_mode=$universe_mode" >> "$GITHUB_OUTPUT"
           echo "ALPHA_DISABLE=$alpha_disable" >> "$GITHUB_ENV"
           echo "ADVISOR_UNIVERSE_MODE=$universe_mode" >> "$GITHUB_ENV"
+          echo "ALPHA_ENRICH_LIMIT=$alpha_enrich_limit" >> "$GITHUB_ENV"
+          echo "ALPHA_VANTAGE_CALL_DELAY=$alpha_call_delay" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
         if: steps.refresh_window.outputs.should_run == 'true'
         with:

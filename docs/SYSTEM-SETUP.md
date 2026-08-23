@@ -97,11 +97,17 @@ or corporate action.
      +  5 challengers (best non-incumbents by preliminary rank)
      +  20 rotation slice (statement-starved names, theme-flagged ones first, then
         oldest-unenriched -- see enrichment_rotation)
+     + 140 non-financial/non-real-estate expansion slice (never-enriched names,
+        theme-flagged ones first -- see enrichment_expansion)
+     + 130 financial/real-estate expansion slice (bank/insurer/REIT profiles only,
+        same never-enriched, theme-first ordering -- see
+        enrichment_expansion_financial_real_estate)
      +  portfolio symbols
-     → priority queue, then fill to extended_limit = 150
+     → priority queue, then fill to extended_limit = 400
 7.  enrich(): multi-request financial-statement fetch for the shortlist only
        → derives ~15 statement metrics (EV/EBITDA, ROIC, Altman Z, Piotroski, ...)
-8.  Alpha Vantage enrichment for 5 symbols
+8.  Alpha Vantage enrichment for up to 5 symbols on weekday intraday refreshes, up to
+       25 (its free-tier daily ceiling) on the once-daily weekend refresh
 9.  SEC Form 4 insider scoring for the shortlist (currently no-op)
 10. FRED macro regime
 11. FINAL SCORE with full metric set
@@ -459,7 +465,7 @@ the reasoning, usually with an academic citation. Sections: `model`, `normalizat
 `recency`, `trade_size_bands`, `fundamentals`, `modifiers`, `bucket_weights`, `bucket_limits`,
 `build`, `labels`, `feature_flags`, `ranking_weights`, `news_intelligence`, `market_behavior`.
 
-Supporting config: `advisor_universe.json` (910 symbols, publish_limit 40, extended_limit 150,
+Supporting config: `advisor_universe.json` (910 symbols, publish_limit 40, extended_limit 400,
 21 portfolio symbols), `universe.json` (126 ETFs), `metric_registry.json`, `feature_registry.json`
 (49 KB), `applicability_matrix.json`, `research_contract.json`, `screen_presets.json`,
 `recommendation_policy_v2.json`, `shadow_strategies.json`, `business_profiles.json`,
