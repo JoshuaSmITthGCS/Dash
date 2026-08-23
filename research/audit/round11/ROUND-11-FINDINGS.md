@@ -95,6 +95,31 @@ Two things worth being precise about:
   real audit task in its own right and was not attempted this round; flagging it here as the
   honest state of things rather than force-merging logs whose overlap isn't yet understood.
 
+**Follow-up correction, done in this same session
+(`R11-P3-2-trial-count-logs-are-not-actually-fragmented`):** reading `harness_freeze.json` in
+full (291 lines, not just the ~15-line trial-count fragment quoted above) found the "three
+partially-overlapping systems" framing was wrong. `dsr_trial_count_used: 50` is a **frozen**
+promotion-criteria constant declared 2026-08-11/12 for four specific named prospective clocks
+(champion, swing-v1.1.0, swing_reversal-A/B/C, entry_timing_overlay) and is not read by any
+production code today — confirmed by grep, the only other reference is `backtest_swing.py`'s
+comment, which uses its *own* family-scoped count (3), not this 50.
+`experiment_registry.py`'s dynamic total is a separate mechanism for live dashboard statistics
+not tied to any one frozen clock. `hypothesis_log.jsonl`'s 8 entries are not a third,
+competing system at all — they're the literal source `harness_freeze.json`'s own note says its
+swing_reversal(3)+entry_timing_overlay(5)=8 subtotal was read from. Merging any of these into
+one number would be a category error, not a fix. What genuinely *is* still open: whether
+`experiment_registry.py`'s 16 pre-freeze entries (WO-1..C7, dated 2026-08-07..10) overlap with
+harness_freeze.json's six *other* pre-freeze categories (42 combined) can't be established —
+neither file documents which source each of those six category counts traces to, and this
+round did not guess. Separately found while reading the full file: `pipeline/validation/
+deflated_sharpe.py` (a tested, 233-line DSR+PBO implementation, explicitly named as
+`entry_timing_overlay`'s required implementation) had **zero production callers** — a real,
+different gap. Built `pipeline/validation/harness_freeze_evaluator.py` to fill it:
+`evaluate_against_promotion_criteria()` (the frozen ICIR/t-stat/deflated-Sharpe/PBO gates) and
+`evaluate_entry_timing_overlay_variant()` (its own relative-improvement-over-baseline rule),
+both correctly reporting `insufficient_periods` today since every clock this freeze covers is
+still at 0 of its required periods. 9 new tests.
+
 ## Priority 4 — EDGAR PIT growth-reconstruction feasibility
 
 **Feasible, decisively.** Round 10 found the backtest panel's `growth` leg at 0.0% coverage

@@ -761,6 +761,77 @@ REGISTRY = [
                    "environmental, not a question this round's evidence leaves open. Full pipeline suite "
                    "green (2276 tests) after the change."),
     },
+    {
+        "id": "R11-P3-2-trial-count-logs-are-not-actually-fragmented",
+        "declared_at": "2026-08-23T22:15:00+00:00",
+        "hypothesis": ("R11-P3 flagged 'a third, disconnected trial-count source' -- "
+                       "pipeline/validation/hypothesis_log.jsonl (8 entries) alongside experiment_registry.py "
+                       "(55->61) and pipeline/validation/harness_freeze.json (50) -- as fragmentation needing "
+                       "reconciliation, based on only having read harness_freeze.json's "
+                       "trial_count_for_deflated_statistics block in isolation. Reading the full file (291 "
+                       "lines, not the ~15-line fragment) to actually attempt that reconciliation, as directed."),
+        "category": "data_integrity",
+        "configuration": {
+            "file": "pipeline/validation/harness_freeze_evaluator.py (new)",
+            "finding": ("harness_freeze.json's dsr_trial_count_used=50 is a FROZEN promotion-criteria "
+                       "constant, declared 2026-08-11/12 for four specific named prospective clocks "
+                       "(champion, swing-v1.1.0, swing_reversal-A/B/C, entry_timing_overlay), and is not "
+                       "read by any production code -- confirmed by grep: the only other reference to it "
+                       "is a comment in backtest_swing.py, which uses its OWN family-scoped count (3), not "
+                       "this 50. experiment_registry.py's total_variants_tested() is a SEPARATE, "
+                       "continuously-growing count consumed by ic_harness.py/signal_metrics.py for live "
+                       "dashboard statistics not tied to any one frozen clock. hypothesis_log.jsonl's 8 "
+                       "entries are not a third system: they are the literal machine-readable source "
+                       "harness_freeze.json's own note says its 2026-08-12 swing_reversal(3)+"
+                       "entry_timing_overlay(5)=8 subtotal was read from -- a component of the 50, not a "
+                       "competitor to it. Merging these into one number would be a category error: it "
+                       "would either move the goalposts on an already-started frozen clock (if the dynamic "
+                       "registry total were substituted in) or wrongly narrow the live dashboard's "
+                       "deflation to a stale August snapshot (if the frozen 50 were substituted there). "
+                       "Separately found while reading the full file: pipeline/validation/deflated_sharpe.py "
+                       "(233 lines, its own tested DSR + PBO implementation, explicitly named as the "
+                       "required implementation in entry_timing_overlay.statistical_requirements) had zero "
+                       "production callers -- a real, different gap from what R11-P3 flagged."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {
+            "harness_freeze_pre_freeze_categories_unresolved": 6,
+            "note": ("Whether experiment_registry.py's WO-1..C7 entries (16 entries, dated 2026-08-07..10, "
+                     "before the 2026-08-11 freeze) overlap with harness_freeze.json's six OTHER pre-freeze "
+                     "categories (backtest_variants_r3/r4/r5, turnover_control_sweep_pre_r3, "
+                     "scoring_variants, regression_constructions, survivorship_reconstruction_runs, "
+                     "pre_freeze_construction_runs -- 42 combined) could not be established: neither file "
+                     "documents which source script or commit each of those six category counts traces to. "
+                     "Left unresolved rather than guessed -- see decision/reason."),
+        },
+        "number_of_variants_tested": 1,
+        "result": ("The three-way fragmentation R11-P3 reported does not exist in the form described: two "
+                   "of the three are correctly separate by design (a frozen promotion gate vs. a live "
+                   "dashboard statistic), and the third is a documented subset of one of them, not an "
+                   "independent system. What DOES remain unresolved, honestly: whether 6 of harness_freeze."
+                   "json's 8 pre-freeze category labels correspond to any work also recorded in "
+                   "experiment_registry.py under a different name. Built and tested (16 tests) the actual "
+                   "missing piece instead: harness_freeze_evaluator.py implements "
+                   "evaluate_against_promotion_criteria() (the frozen ICIR/t-stat/deflated-Sharpe/PBO gates, "
+                   "using pipeline/validation/deflated_sharpe.py per harness_freeze.json's own citation) and "
+                   "evaluate_entry_timing_overlay_variant() (its distinct relative-improvement-over-baseline "
+                   "acceptance rule). Both return insufficient_periods today, correctly, since every clock "
+                   "this freeze covers is still at 0 of its required periods (harness_start_date "
+                   "2026-09-01) -- there is nothing to evaluate yet, only machinery made ready for when "
+                   "there is. Locked with 9 tests in test_harness_freeze_evaluator.py."),
+        "decision": "PROMOTE",
+        "reason": ("Corrects the record rather than leaving R11-P3's overstated 'fragmentation' claim "
+                   "standing uncontested in the registry, which would itself be a research-integrity lapse "
+                   "in an apparatus whose entire purpose is honest bookkeeping. Ships a real evaluator for "
+                   "a criteria set that had been declared in writing but never wired to any code, using the "
+                   "exact implementation (pipeline/validation/deflated_sharpe.py) the freeze document "
+                   "itself names, rather than inventing a sixth deflated-Sharpe variant. Does not attempt "
+                   "the six-category overlap question: guessing an overlap correction either way would be "
+                   "a new, unaudited fabrication layered on top of an already-frozen document, which is "
+                   "worse than leaving it explicitly open. 9 new tests in "
+                   "test_harness_freeze_evaluator.py. Full pipeline suite green (2285 tests) after the "
+                   "change."),
+    },
 ]
 
 

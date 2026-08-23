@@ -174,5 +174,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P3-2-trial-count-logs-are-not-actually-fragmented",
+    "declared_at": "2026-08-23T22:15:00+00:00",
+    "hypothesis": "R11-P3 flagged 'a third, disconnected trial-count source' -- pipeline/validation/hypothesis_log.jsonl (8 entries) alongside experiment_registry.py (55->61) and pipeline/validation/harness_freeze.json (50) -- as fragmentation needing reconciliation, based on only having read harness_freeze.json's trial_count_for_deflated_statistics block in isolation. Reading the full file (291 lines, not the ~15-line fragment) to actually attempt that reconciliation, as directed.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]
