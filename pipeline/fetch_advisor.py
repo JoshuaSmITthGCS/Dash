@@ -1334,6 +1334,27 @@ def previous_top_symbols(payload, limit):
     return tuple(previous_rows_by_ticker(payload).keys())[:limit]
 
 
+def rank_publishable(research, publish_limit):
+    """The top ``publish_limit`` rows eligible for the ranked leaderboard, and their tickers.
+
+    ``research`` must already be sorted by ``score`` descending. A row failing
+    ``publication_gate`` must never occupy a ranked slot regardless of its raw score -- the
+    gate's own docstring promises "its champion score is not published as a ranked stance"
+    (docs/AUDIT-ROUND-4-FINDINGS.md, Task 6) -- but slicing ``research[:publish_limit]``
+    directly only ever changed the row's displayed ``stance`` label, never its ranking
+    eligibility. A name with zero usable fundamentals (an all-momentum score, renormalized
+    away from the unavailable fundamentals leg) could still out-rank names with real
+    coverage and land an INSUFFICIENT DATA row inside the published top ``publish_limit`` --
+    caught by validate_data.py's "ranked company lacks a fundamental score" check. Excluded
+    rows are not deleted: the caller is expected to route every row not in the returned
+    ticker set into ``screen_universe`` (by ticker membership, not a positional slice, since
+    a gate-failing row can sit anywhere in the score order), so they keep their diagnostics
+    and challenger scores exactly as the gate's docstring promises.
+    """
+    ranked = [row for row in research if row["publication_gate"]["published"]][:publish_limit]
+    return ranked, {row["ticker"] for row in ranked}
+
+
 def carry_forward_rows(research, symbols, previous_payload):
     """Previous-run rows for symbols a fast refresh didn't poll this cycle.
 
@@ -1934,8 +1955,7 @@ def run():
     # year -- see research/audit/CURRENT_MODEL_AUDIT.md section 3.
     assert_layers_vary(research, PUBLISHED_LAYERS)
 
-    ranked = research[:publish_limit]
-    ranked_tickers = {row["ticker"] for row in ranked}
+    ranked, ranked_tickers = rank_publishable(research, publish_limit)
 
     # The trend-exposure layer runs as its own screen, deliberately outside the score. It
     # is scored on the published leaders, every configured holding, and a bounded set of
@@ -1955,8 +1975,11 @@ def run():
     # composite score, so a strong screen candidate can rank outside the published leaderboard.
     # technical_detail and fundamental_categories are populated for the whole scored universe
     # (see technical_factors' closes-based 52-week fallback above), so publish a lightweight,
-    # history-free slice of the rest of the universe for those screens to scan.
-    screen_universe = [_screen_row(row) for row in research[publish_limit:]]
+    # history-free slice of the rest of the universe for those screens to scan. Filtered by
+    # ticker membership, not a `research[publish_limit:]` positional slice: `ranked` above
+    # already skips publication-gate-failing rows regardless of their score-sorted position,
+    # so a positional slice here would silently drop exactly those rows from both lists.
+    screen_universe = [_screen_row(row) for row in research if row["ticker"] not in ranked_tickers]
     if universe_mode == "fast":
         # Carried-forward rows only ever join the lightweight screen tail, never the
         # published `research`/`ranked` list - a stale row is never promoted to "top pick"

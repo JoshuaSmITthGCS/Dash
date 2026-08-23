@@ -126,5 +126,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R8-2-publication-gate-not-enforced",
+    "declared_at": "2026-08-23T20:00:00+00:00",
+    "hypothesis": "A recurring pipeline/validate_data.py CI failure -- 'ranked company lacks a fundamental score' / 'low resolved evidence weight must classify as insufficient evidence', hitting a different research row index on 2026-08-22T00:05 (run #190, research.38) and 2026-08-23T19:47 (run #192, research.36) -- is downstream of the same confidence-gate defect class as R8-evidence-confidence-gate, and NOT an enrichment-coverage gap: the enrichment status check for this same round confirmed MSFT and JPM (the Round 8 P1 sample's large-caps) both resolve real statement-derived fundamental_categories in production advisor.json, so enrichment reaching a name was never the question here.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

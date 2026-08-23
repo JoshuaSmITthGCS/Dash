@@ -11,9 +11,79 @@ from fetch_advisor import (_evidence_summary, _screen_row, _sentiment_summary, b
                            collect_insider_signals, compact_news,
                            curate_candidate_news, enrich, enrichment_rotation,
                            latest_unique_news,
-                           previous_rows_by_ticker, previous_top_symbols,
+                           previous_rows_by_ticker, previous_top_symbols, rank_publishable,
                            resolve_refresh_symbols, rotation_slice,
                            select_enrichment_priority, yahoo_extended)
+
+
+def _gated_row(ticker, score, published, coverage=0.9):
+    return {
+        "ticker": ticker, "score": score,
+        "publication_gate": {"published": published,
+                             "reason": None if published else f"fundamentals coverage {coverage:.2f} below floor"},
+    }
+
+
+class RankPublishableTests(unittest.TestCase):
+    """Regression for the 2026-08-23 recurring validate_data.py failure: 'ranked company
+    lacks a fundamental score' / 'low resolved evidence weight must classify as insufficient
+    evidence' on production advisor.json (run #190 research.38, run #192 research.36).
+
+    Confirmed by direct source read: `ranked = research[:publish_limit]` sliced by raw score
+    alone, so a company with zero usable fundamentals but a high momentum-only score (a
+    publication_gate failure, meant per docs/AUDIT-ROUND-4-FINDINGS.md Task 6 to publish
+    INSUFFICIENT DATA and never rank) could still out-score real coverage and land inside the
+    published top `publish_limit`. `publication_gate`'s result only ever changed the row's
+    displayed `stance` string; nothing enforced its own documented "not published as a ranked
+    stance" contract. Not a scoring or confidence.py defect -- confidence.py is never touched
+    by this fix, which is purely about which already-scored rows are eligible for a ranked slot.
+    """
+
+    def test_a_gate_failing_row_never_takes_a_ranked_slot_even_with_the_highest_score(self):
+        research = [
+            _gated_row("MOMENTUM_NO_FUNDAMENTALS", score=99, published=False),
+            _gated_row("REAL_COVERAGE_A", score=80, published=True),
+            _gated_row("REAL_COVERAGE_B", score=70, published=True),
+        ]
+
+        ranked, ranked_tickers = rank_publishable(research, publish_limit=2)
+
+        self.assertEqual([row["ticker"] for row in ranked], ["REAL_COVERAGE_A", "REAL_COVERAGE_B"])
+        self.assertNotIn("MOMENTUM_NO_FUNDAMENTALS", ranked_tickers)
+
+    def test_every_row_lands_in_ranked_or_is_excluded_none_silently_dropped(self):
+        # A gate-failing row sitting inside the first publish_limit positions by raw score
+        # must still surface somewhere (the caller routes non-ranked tickers into
+        # screen_universe) -- rank_publishable itself must never just vanish it.
+        research = [
+            _gated_row("GATE_FAIL_HIGH_SCORE", score=95, published=False),
+            _gated_row("GATE_PASS", score=50, published=True),
+        ]
+
+        ranked, ranked_tickers = rank_publishable(research, publish_limit=1)
+
+        self.assertEqual(ranked_tickers, {"GATE_PASS"})
+        excluded = [row["ticker"] for row in research if row["ticker"] not in ranked_tickers]
+        self.assertEqual(excluded, ["GATE_FAIL_HIGH_SCORE"])
+
+    def test_filters_without_re_sorting_the_callers_input_order(self):
+        # rank_publishable trusts the caller's `research.sort(key=..., reverse=True)` and
+        # only filters -- it must not silently re-derive an order of its own.
+        research = [_gated_row("C", score=60, published=True), _gated_row("A", score=90, published=True),
+                    _gated_row("B", score=75, published=True)]
+
+        ranked, _ = rank_publishable(research, publish_limit=3)
+
+        self.assertEqual([row["ticker"] for row in ranked], ["C", "A", "B"])
+
+    def test_fewer_gate_passing_rows_than_publish_limit_shrinks_ranked_rather_than_backfilling(self):
+        research = [_gated_row("ONLY_PASS", score=40, published=True),
+                    _gated_row("FAILS", score=99, published=False)]
+
+        ranked, ranked_tickers = rank_publishable(research, publish_limit=5)
+
+        self.assertEqual(ranked_tickers, {"ONLY_PASS"})
+        self.assertEqual(len(ranked), 1)
 
 
 class RefreshSymbolTests(unittest.TestCase):

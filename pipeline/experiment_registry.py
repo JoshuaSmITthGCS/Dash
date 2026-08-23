@@ -433,6 +433,63 @@ REGISTRY = [
                    "ENRICHMENT -- the fix is verified against a controlled fixture and against the committed "
                    "production advisor.json, not yet against a fresh live pull for this exact artifact."),
     },
+    {
+        "id": "R8-2-publication-gate-not-enforced",
+        "declared_at": "2026-08-23T20:00:00+00:00",
+        "hypothesis": ("A recurring pipeline/validate_data.py CI failure -- 'ranked company lacks a "
+                       "fundamental score' / 'low resolved evidence weight must classify as insufficient "
+                       "evidence', hitting a different research row index on 2026-08-22T00:05 (run #190, "
+                       "research.38) and 2026-08-23T19:47 (run #192, research.36) -- is downstream of the "
+                       "same confidence-gate defect class as R8-evidence-confidence-gate, and NOT an "
+                       "enrichment-coverage gap: the enrichment status check for this same round confirmed "
+                       "MSFT and JPM (the Round 8 P1 sample's large-caps) both resolve real statement-"
+                       "derived fundamental_categories in production advisor.json, so enrichment reaching "
+                       "a name was never the question here."),
+        "category": "data_integrity",
+        "configuration": {
+            "files": ["pipeline/fetch_advisor.py", "pipeline/tests/test_fetch_advisor.py"],
+            "change": ("Extracted rank_publishable(research, publish_limit): ranked = research[:publish_limit] "
+                       "sliced strictly by publication_gate['published'] before score, instead of by raw score "
+                       "alone. screen_universe changed from a `research[publish_limit:]` positional slice to a "
+                       "ranked_tickers membership filter, since a gate-failing row can sit anywhere in the "
+                       "score order and a positional slice would silently drop it from both lists."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {
+            "run_190_failing_row": "research.38", "run_192_failing_row": "research.36",
+            "gate_floor": 0.35,
+            "msft_capital_allocation_category": 52.4, "msft_accounting_quality_category": 62.0,
+            "jpm_capital_allocation_category": 93.3, "jpm_accounting_quality_category": 55.0,
+        },
+        "number_of_variants_tested": 1,
+        "result": (
+            "Defect confirmed by direct source read, not an enrichment gap. data_health.publication_gate's "
+            "own docstring: 'Names failing the gate keep their diagnostics and challenger output; only the "
+            "ranked champion score is withheld' -- and docs/AUDIT-ROUND-4-FINDINGS.md Task 6: a name below "
+            "the 0.35 floor 'publishes as INSUFFICIENT DATA, not as a ranked stance.' The call site only ever "
+            "set row['stance'] = 'INSUFFICIENT DATA'; nothing excluded the row from `research.sort(key=score)` "
+            "/ `research[:publish_limit]`. A company with zero usable fundamentals but a high momentum-only "
+            "score (renormalized fully onto market_behavior once fundamentals coverage hits 0) could still "
+            "out-rank real-coverage names into the published top publish_limit, contradicting the product's "
+            "own fundamentals-first framing (CLAUDE.md) and tripping validate_data.py's schema/invariant "
+            "checks on every run where this occurred. Enrichment itself was never the cause: production's "
+            "select_enrichment_priority already reaches MSFT (via ADVISOR_PORTFOLIO_SYMBOLS + "
+            "ADVISOR_FOCUS_SYMBOLS, both force-included every run) and JPM (via incumbents/challengers/"
+            "rotation) alike, and both show real statement-derived category scores in the current committed "
+            "advisor.json -- confirming this is a downstream ranking-eligibility defect, not an upstream "
+            "enrichment-coverage one."),
+        "decision": "PROMOTE",
+        "reason": ("One-function fix restoring an already-documented, already-committed contract "
+                   "(publication_gate's docstring, AUDIT-ROUND-4-FINDINGS.md) that the ranking slice never "
+                   "actually enforced -- not a change to confidence.py, valuation_score, blend_research_"
+                   "components, or any scoring weight. Locked with 4 new tests in test_fetch_advisor.py: a "
+                   "gate-failing row never takes a ranked slot even at the highest score, every row lands in "
+                   "ranked or is excluded (none silently dropped, the screen_universe positional-slice bug "
+                   "this also fixes), filtering preserves the caller's sort order rather than re-deriving one, "
+                   "and a low-coverage run with fewer than publish_limit gate-passing rows shrinks the "
+                   "leaderboard instead of backfilling with gate-failures. Full pipeline suite (2239 tests) "
+                   "and validate_data.py both green after the change."),
+    },
 ]
 
 
