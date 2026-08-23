@@ -490,6 +490,217 @@ REGISTRY = [
                    "leaderboard instead of backfilling with gate-failures. Full pipeline suite (2239 tests) "
                    "and validate_data.py both green after the change."),
     },
+    {
+        "id": "R11-P1-optimization-harness",
+        "declared_at": "2026-08-23T21:00:00+00:00",
+        "hypothesis": ("A reusable parameter-search harness that enforces train/validation/holdout "
+                       "splitting in code (not a process doc), gated by walk-forward efficiency, PBO via "
+                       "CSCV, and deflated Sharpe against the real cumulative trial count, would reproduce "
+                       "Round 10's finding that champion and the reweighted_composite_a shadow proposal "
+                       "(R7-leg-reweighting) are statistically indistinguishable in this panel -- and would "
+                       "show neither clears the promotion bar on backtest evidence alone, consistent with "
+                       "reweighted_composite_a still only running on the prospective clock, not promoted."),
+        "category": "infrastructure",
+        "configuration": {
+            "file": "pipeline/optimization_harness.py",
+            "change": ("New Panel (immutable chronological train/validation/holdout split, never "
+                       "shuffled), OptimizationSession (evaluate() only ever touches train+validation, "
+                       "never .holdout; deflated-Sharpe trials floored at experiment_registry."
+                       "total_variants_tested()), and classify() (walk-forward + search-wide PBO + "
+                       "deflated Sharpe gates, suggesting PROMOTE/KEEP_AS_CHALLENGER/ABANDON). Applied to "
+                       "pipeline/backtest_signal_panel.json (60 periods, 50/25/25 train/validation/holdout "
+                       "split) comparing champion's published leg_weights against reweighted_composite_a's "
+                       "REWEIGHTED_A_WEIGHTS (pipeline/shadow_portfolios.py). C4-turnover-controls' own "
+                       "re-run (Priority 1 item 4) is not repeated here: C7-turnover-walkforward already "
+                       "applied this exact rigor (split-half walk-forward, CSCV PBO at 6 and 8 splits, "
+                       "deflated Sharpe against 47 trials) to that specific question and reached ABANDON -- "
+                       "re-simulating it through this harness would require backtest_monthly.py-style "
+                       "monthly NAV series, a different data shape than the composite-score panel this "
+                       "harness consumes, and would not change C7's already-rigorous answer."),
+        },
+        "train_period": "backtest_signal_panel.json periods[0:30] (2021-09..2024-02)",
+        "validation_period": "backtest_signal_panel.json periods[30:45] (2024-03..2025-05)",
+        "test_period": "backtest_signal_panel.json periods[45:60] (2025-06..2026-08), informational holdout only, never used for selection",
+        "metrics": {
+            "trial_count_at_run": 55,
+            "champion_train_mean_ic": 0.0263, "champion_validation_mean_ic": 0.0518,
+            "proposal_a_train_mean_ic": 0.0263, "proposal_a_validation_mean_ic": 0.0518,
+            "walk_forward_efficiency": 1.9696,
+            "deflated_sharpe_probability": 0.2077,
+            "clears_multiple_testing_bar": False,
+            "search_wide_pbo_8_splits": 0.0,
+            "holdout_mean_ic_informational_only": 0.036, "holdout_t_stat_informational_only": 0.952,
+        },
+        "number_of_variants_tested": 2,
+        "result": ("champion and proposal_a produced byte-identical validation-period IC series (0.0518 "
+                   "mean IC both), confirming Round 10's finding under a genuinely split, gated protocol "
+                   "rather than R7's original un-split full-panel script: growth and news_sentiment "
+                   "contribute exactly 0% of the composite in this panel and capital_allocation/"
+                   "accounting_quality contribute only 6.5-6.7%, so zeroing them (proposal_a) versus "
+                   "keeping them (champion) is arithmetically indistinguishable here. Search-wide PBO of "
+                   "0.0 follows trivially from the two configurations being identical, not from either one "
+                   "being genuinely dominant. Neither configuration ships: deflated Sharpe probability "
+                   "0.2077 is well under the 0.95 bar even before this comparison's own selection is "
+                   "charged against it, and validation IC's t-statistic does not clear 3.0. Walk-forward "
+                   "efficiency of 1.97 (validation IC exceeding train IC) is itself a caution sign worth "
+                   "naming, not a good sign -- a ratio that far from 1.0 in either direction on a short, "
+                   "30/15-period split reads as small-sample noise, not evidence the signal generalizes "
+                   "unusually well out-of-sample."),
+        "decision": "KEEP_AS_CHALLENGER",
+        "reason": ("Matches R7-leg-reweighting's own standing decision and does not change it: "
+                   "reweighted_composite_a continues on the prospective clock (started 2026-08-21) exactly "
+                   "as before, this round supplies an independent, more rigorous backtest-side "
+                   "confirmation that neither backtest alone would have promoted it, so the prospective "
+                   "clock remains the only path to a promotion decision here. No production weight or "
+                   "composite construction changed. The harness itself (not this one comparison) is what "
+                   "ships: locked with 12 tests in pipeline/tests/test_optimization_harness.py covering "
+                   "split disjointness/chronology, holdout non-access, registry-floored trial count, PBO "
+                   "on synthetic noise vs. a genuinely dominant configuration, and classification's "
+                   "search-wide-overfit-abandons-everything rule. Full pipeline suite green after the "
+                   "change (2267 tests)."),
+    },
+    {
+        "id": "R11-P2-shadow-portfolio-registry-cap",
+        "declared_at": "2026-08-23T21:15:00+00:00",
+        "hypothesis": ("pipeline/shadow_portfolios.py already runs multiple strategies concurrently, but "
+                       "nothing distinguished permanent product sleeves/baselines (production, SPY, "
+                       "momentum, and so on -- always live since ACTIVATION_DATE, never subject to a "
+                       "promotion decision) from genuine research-candidate shadows (strategies with their "
+                       "own later activation date, like reweighted_composite_a, each one taxing the "
+                       "deflated Sharpe correction charged against every other concurrent candidate), and "
+                       "nothing enforced the brief's stated 3-4 concurrent-candidate cap in code."),
+        "category": "infrastructure",
+        "configuration": {
+            "file": "pipeline/shadow_portfolios.py",
+            "change": ("Added research_candidate_strategies() (returns STRATEGY_ACTIVATION_DATES -- the "
+                       "existing, already-correct definition of 'has its own activation date, distinct "
+                       "from the permanent STRATEGIES sleeves'), MAX_CONCURRENT_RESEARCH_CANDIDATES=4, and "
+                       "assert_candidate_capacity(), called once at import time against the live registry "
+                       "so a future change registering a fifth concurrent candidate without concluding one "
+                       "of the existing ones fails immediately at import/test time rather than silently."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"research_candidates_currently_registered": 1, "cap": 4},
+        "number_of_variants_tested": 1,
+        "result": ("Exactly one research-candidate shadow (reweighted_composite_a) is currently "
+                   "registered, well under the cap; this round's optimization-harness run (R11-P1) found "
+                   "no new candidate that cleared the promotion bar with enough margin to warrant "
+                   "registering a second one, so the cap-enforcement scaffolding ships without a new "
+                   "candidate behind it -- adding one that does not deserve to exist yet, just to "
+                   "demonstrate the plumbing, would itself be the kind of dishonest bookkeeping this "
+                   "registry exists to prevent."),
+        "decision": "PROMOTE",
+        "reason": ("Structural, in-code cap enforcement matching the brief's explicit 'not a process doc' "
+                   "requirement, at effectively zero risk: the guard only ever fails a future violation, "
+                   "and the live registry already passes it. Locked with 5 tests in "
+                   "test_shadow_portfolios.py covering the live registry passing its own guard, permanent "
+                   "sleeves being correctly excluded from the candidate count, a cap violation being "
+                   "refused, an at-cap registry still passing, and a caller-supplied tighter limit being "
+                   "honored."),
+    },
+    {
+        "id": "R11-P3-deflated-sharpe-trial-count-undercount",
+        "declared_at": "2026-08-23T21:30:00+00:00",
+        "hypothesis": ("Round 9 found the tear-sheet's Deflated Sharpe reads 'Insufficient, variance of "
+                       "Sharpes across registered trials is not recorded' on one view while another shows "
+                       "0.238 -- the brief attributed this to no single complete trial log existing. Direct "
+                       "source read found the sharper, more specific defect: signal_metrics.py's "
+                       "honesty_metrics() computed its own trials count from just the currently-loaded "
+                       "backtest's optimizer sweep categories (falling back to 1 if none), never reading "
+                       "experiment_registry.total_variants_tested() at all -- the exact undercount "
+                       "ic_harness.py's research_trial_count() (validation/ic_harness.py:348) already "
+                       "guards against for the audit-dashboard view, floored via max(configured, registry "
+                       "total). Whatever the specific 'Insufficient' framing traces to (not found verbatim "
+                       "in the repo; may be UI copy for the null-DSR case rather than committed data), the "
+                       "undercount itself was real and reproducible."),
+        "category": "data_integrity",
+        "configuration": {
+            "files": ["pipeline/signal_metrics.py", "pipeline/tests/test_signal_metrics.py"],
+            "change": ("trials = len(sweep categories) or 1 changed to trials = max(sweep_trials, "
+                       "experiment_registry.total_variants_tested()), mirroring ic_harness.py's existing "
+                       "research_trial_count() floor pattern exactly rather than inventing a second one."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {
+            "registry_total_variants_tested_at_fix_time": 55,
+            "committed_signal_metrics_json_trials_before_fix": 201,
+            "note": ("201 > 55, so this specific already-committed artifact's published 0.238 value does "
+                     "not change until the next refresh recomputes it -- the undercount's exposure is any "
+                     "backtest run whose own optimizer sweep is shallower than the registry total (a "
+                     "single-category or no-sweep run would previously have reported trials=1), not "
+                     "necessarily today's published number."),
+        },
+        "number_of_variants_tested": 1,
+        "result": ("Confirmed by direct source read (pipeline/signal_metrics.py honesty_metrics, trials "
+                   "line) and reproduced with a regression test: a synthetic one-category optimizer sweep "
+                   "now reports trials equal to the live registry total (55, and asserted > 1), not 1."),
+        "decision": "PROMOTE",
+        "reason": ("One-line fix restoring the same floor discipline ic_harness.py already enforces "
+                   "elsewhere, closing the gap Round 9 flagged between the tear-sheet and audit-dashboard "
+                   "Deflated Sharpe views without inventing a third calculation or touching evaluation.py's "
+                   "math. backtest_swing.py's separate DSR_TRIALS=3 was investigated and deliberately left "
+                   "unchanged: its comment and pipeline/validation/harness_freeze.json both document it as "
+                   "the swing-reversal family's own registered trial count (a narrower, family-scoped "
+                   "denominator, not a forgotten repo-wide count), a different and defensible design this "
+                   "round did not have grounds to override. Full signal_metrics test suite green (57 "
+                   "tests, 1 new) after the change."),
+    },
+    {
+        "id": "R11-P4-edgar-pit-growth-reconstruction-feasibility",
+        "declared_at": "2026-08-23T21:45:00+00:00",
+        "hypothesis": ("Round 10 found the backtest panel's growth leg at 0.0% coverage (0 of 51,600 "
+                       "ticker-periods), root-caused to Yahoo's quarterly statement history rarely reaching "
+                       "the two full trailing-twelve-month windows year-over-year growth needs. The EDGAR "
+                       "PIT fundamentals store already collected (pipeline/data/pit/fundamentals/, 4.78M+ "
+                       "as-filed observations with filed timestamps back to 2009-08) should be able to "
+                       "reconstruct historical TTM revenue growth without look-ahead risk, since "
+                       "pipeline/edgar_enrichment.py's edgar_ttm_statements(symbol, as_of) already enforces "
+                       "filed<=as_of for the live enrichment path -- this round asks whether it can also "
+                       "cover the backtest reconstruction path, which never reads from this store today."),
+        "category": "data_availability",
+        "configuration": {
+            "file": "research/audit/round11/edgar_pit_growth_pilot.py",
+            "method": ("Bounded pilot, no network access used or needed (PIT store and the SEC ticker->CIK "
+                       "entity map are both already-committed local data): revenue_growth(symbol, as_of) = "
+                       "(TTM revenue as of as_of - TTM revenue as of as_of-365d) / abs(prior), for the 19 "
+                       "of advisor_universe.json's 21 portfolio_symbols with a resolvable CIK (VOO, VGT are "
+                       "ETFs, correctly excluded -- no XBRL financials to fetch), over the most recent 24 "
+                       "monthly dates already in pipeline/backtest_signal_panel.json (2024-09..2026-08). "
+                       "Scope is deliberately narrower than the brief's assumed '45 names': the live "
+                       "portfolio_symbols list has 21, not 45."),
+        },
+        "train_period": None, "validation_period": None,
+        "test_period": "2024-09-03 through 2026-08-03, 19 symbols x 24 months = 456 ticker-periods",
+        "metrics": {
+            "ticker_periods_attempted": 456, "ticker_periods_covered": 447, "coverage_pct": 98.0,
+            "baseline_coverage_pct_yahoo_quarterly_path": 0.0,
+            "sanity_check_symbols_with_a_published_growth_score_to_compare": 6,
+            "sanity_check_directionally_consistent": 5,
+            "sanity_check_outlier": "AGO (financial guarantor): reconstructed revenue TTM growth -184.0%, published growth score 50.0",
+        },
+        "number_of_variants_tested": 1,
+        "result": ("Feasible, decisively: 98.0% coverage (447 of 456 ticker-periods) versus the existing "
+                   "path's 0.0%, using data already collected and committed -- no new network access "
+                   "required to prove this. Directional sanity check against live production's published "
+                   "growth score agreed for 5 of 6 comparable tickers (EOG, COP, BAC, ADBE, CRUS); AGO (an "
+                   "insurer/financial guarantor) was the one outlier, most likely because the generic "
+                   "'Revenues' XBRL concept nets premiums/losses oddly for insurance profiles -- the same "
+                   "reason this session's enrichment-expansion work and EXCLUDED_EXPANSION_PROFILES "
+                   "already special-case financial/insurance names elsewhere in this codebase, not a flaw "
+                   "in the filed<=as_of reconstruction method itself. This pilot measured revenue TTM "
+                   "growth only, a narrower, deliberately bounded proxy for the full multi-input production "
+                   "growth score, not a re-derivation of it."),
+        "decision": "PROMOTE",
+        "reason": ("The feasibility finding and the pilot script both ship: results are reproducible from "
+                   "committed data alone (research/audit/round11/edgar_pit_growth_pilot_results.json). "
+                   "Wiring this into pipeline/backtest_historical.py's production reconstruction path -- "
+                   "extending it to earnings_growth alongside revenue, handling the financial/insurance "
+                   "concept-mapping caveat AGO surfaced, and re-running Round 10's full leg diagnosis with "
+                   "real growth coverage restored -- is real follow-up engineering this pilot deliberately "
+                   "did not attempt, consistent with the brief's own 'bounded pilot... before trusting it "
+                   "for calibration' framing and this session's standing constraint against touching "
+                   "scoring/composite construction without separate authorization."),
+    },
 ]
 
 

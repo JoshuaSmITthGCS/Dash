@@ -730,6 +730,17 @@ class RobustnessBeyondPboTests(unittest.TestCase):
         self.assertIn(rows["pbo"]["status"], ("ready", "provisional"))
         self.assertEqual(rows["reality_check_spa"]["status"], "ready")
 
+    def test_deflated_sharpe_trials_floor_at_the_experiment_registry_total(self):
+        # Round 11 Priority 3: this backtest's own optimizer sweep (one category here) used
+        # to be the entire trial count, understating the real research programme's search
+        # width -- the same undercount ic_harness.py's research_trial_count() already fixed
+        # for the audit dashboard. The registry total must win when it is larger.
+        from experiment_registry import total_variants_tested
+        optimizer = {"sweeps": {"categories": [{"holdout_folds": [{"score_vs_spy": 1.0}]}]}}
+        rows = metrics_by_id(sm.honesty_metrics(None, optimizer))
+        self.assertEqual(rows["deflated_sharpe"]["detail"]["trials"], total_variants_tested())
+        self.assertGreater(rows["deflated_sharpe"]["detail"]["trials"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

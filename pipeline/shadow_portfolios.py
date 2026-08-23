@@ -62,6 +62,43 @@ ACTIVATION_DATE = "2026-08-02"
 STRATEGY_ACTIVATION_DATES = {
     "reweighted_composite_a": "2026-08-21",
 }
+# Round 11 Priority 2 -- a concurrent shadow-portfolio registry, capped. Every strategy in
+# STRATEGY_ACTIVATION_DATES is a research candidate on its own prospective clock, subject to
+# an eventual PROMOTE/KEEP_AS_CHALLENGER/ABANDON decision (see experiment_registry.py) -- as
+# opposed to the permanent product sleeves and baselines in STRATEGIES (production, SPY,
+# momentum, and so on) that have run unconditionally since ACTIVATION_DATE and never go
+# through a promotion decision at all. Each concurrent candidate taxes the deflated Sharpe
+# correction charged against every other one (more trials, harder for any of them to clear
+# 0.95), so the cap is enforced here in code -- not left to a reviewer to remember to check.
+MAX_CONCURRENT_RESEARCH_CANDIDATES = 4
+
+
+def research_candidate_strategies(activation_dates=None):
+    """Strategy ids with their own activation date: research candidates on the prospective
+    clock, as distinct from ``STRATEGIES``' permanent sleeves and baselines.
+    """
+    return dict(activation_dates if activation_dates is not None else STRATEGY_ACTIVATION_DATES)
+
+
+def assert_candidate_capacity(activation_dates=None, *, limit=MAX_CONCURRENT_RESEARCH_CANDIDATES):
+    """Refuse to exceed the concurrent research-candidate cap.
+
+    Called at import time below against the live ``STRATEGY_ACTIVATION_DATES``, so a future
+    change that registers a fifth concurrent candidate without first concluding one of the
+    existing ones (promoted or abandoned, per the experiment registry's decision vocabulary)
+    fails immediately rather than silently taxing every running candidate's deflated Sharpe.
+    """
+    current = research_candidate_strategies(activation_dates)
+    if len(current) > limit:
+        raise ValueError(
+            f"{len(current)} research-candidate shadow strategies are registered "
+            f"({sorted(current)}) -- over the {limit}-candidate cap. Conclude one "
+            "(PROMOTE or ABANDON it in experiment_registry.py, per Round 11 Priority 2) "
+            "before registering another.")
+
+
+assert_candidate_capacity()
+
 PERIODS_PER_YEAR = 252
 MINIMUM_ANNUALIZED_OBSERVATIONS = 20
 # Portfolio weight that may be carried at a stale price for one session before the period

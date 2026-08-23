@@ -134,5 +134,37 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P1-optimization-harness",
+    "declared_at": "2026-08-23T21:00:00+00:00",
+    "hypothesis": "A reusable parameter-search harness that enforces train/validation/holdout splitting in code (not a process doc), gated by walk-forward efficiency, PBO via CSCV, and deflated Sharpe against the real cumulative trial count, would reproduce Round 10's finding that champion and the reweighted_composite_a shadow proposal (R7-leg-reweighting) are statistically indistinguishable in this panel -- and would show neither clears the promotion bar on backtest evidence alone, consistent with reweighted_composite_a still only running on the prospective clock, not promoted.",
+    "holdout_start": "backtest_signal_panel.json periods[45:60] (2025-06..2026-08), informational holdout only, never used for selection",
+    "number_of_variants_tested": 2,
+    "decision": "KEEP_AS_CHALLENGER"
+  },
+  {
+    "test_id": "R11-P2-shadow-portfolio-registry-cap",
+    "declared_at": "2026-08-23T21:15:00+00:00",
+    "hypothesis": "pipeline/shadow_portfolios.py already runs multiple strategies concurrently, but nothing distinguished permanent product sleeves/baselines (production, SPY, momentum, and so on -- always live since ACTIVATION_DATE, never subject to a promotion decision) from genuine research-candidate shadows (strategies with their own later activation date, like reweighted_composite_a, each one taxing the deflated Sharpe correction charged against every other concurrent candidate), and nothing enforced the brief's stated 3-4 concurrent-candidate cap in code.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P3-deflated-sharpe-trial-count-undercount",
+    "declared_at": "2026-08-23T21:30:00+00:00",
+    "hypothesis": "Round 9 found the tear-sheet's Deflated Sharpe reads 'Insufficient, variance of Sharpes across registered trials is not recorded' on one view while another shows 0.238 -- the brief attributed this to no single complete trial log existing. Direct source read found the sharper, more specific defect: signal_metrics.py's honesty_metrics() computed its own trials count from just the currently-loaded backtest's optimizer sweep categories (falling back to 1 if none), never reading experiment_registry.total_variants_tested() at all -- the exact undercount ic_harness.py's research_trial_count() (validation/ic_harness.py:348) already guards against for the audit-dashboard view, floored via max(configured, registry total). Whatever the specific 'Insufficient' framing traces to (not found verbatim in the repo; may be UI copy for the null-DSR case rather than committed data), the undercount itself was real and reproducible.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P4-edgar-pit-growth-reconstruction-feasibility",
+    "declared_at": "2026-08-23T21:45:00+00:00",
+    "hypothesis": "Round 10 found the backtest panel's growth leg at 0.0% coverage (0 of 51,600 ticker-periods), root-caused to Yahoo's quarterly statement history rarely reaching the two full trailing-twelve-month windows year-over-year growth needs. The EDGAR PIT fundamentals store already collected (pipeline/data/pit/fundamentals/, 4.78M+ as-filed observations with filed timestamps back to 2009-08) should be able to reconstruct historical TTM revenue growth without look-ahead risk, since pipeline/edgar_enrichment.py's edgar_ttm_statements(symbol, as_of) already enforces filed<=as_of for the live enrichment path -- this round asks whether it can also cover the backtest reconstruction path, which never reads from this store today.",
+    "holdout_start": "2024-09-03 through 2026-08-03, 19 symbols x 24 months = 456 ticker-periods",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

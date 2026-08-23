@@ -38,6 +38,7 @@ import risk_metrics
 import sector_attribution
 import stress_scenarios
 from common import LOG, load_json, save_json
+from experiment_registry import total_variants_tested
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SETTINGS = load_json("settings.json", from_config=True) or {}
@@ -1000,7 +1001,12 @@ def honesty_metrics(backtest, optimizer):
     """The four numbers that price what seven rounds of iteration cost in credibility."""
     portfolio = (backtest or {}).get("portfolio") or {}
     returns = daily_returns_from_history(portfolio.get("history"))
-    trials = len((optimizer or {}).get("sweeps", {}).get("categories") or []) or 1
+    # This backtest's own optimizer sweep is a floor, not the answer: deflation needs the
+    # honest count of everything searched across the whole research programme, or a result
+    # here understates the same multiple-testing penalty ic_harness.py's
+    # research_trial_count() already charges elsewhere -- see Round 11 Priority 3.
+    sweep_trials = len((optimizer or {}).get("sweeps", {}).get("categories") or []) or 1
+    trials = max(sweep_trials, total_variants_tested())
     rows = []
 
     per_observation = None
