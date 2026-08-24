@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import CongressTrades from './CongressTrades'
+import PoliticalTrading from './PoliticalTrading'
 import { useData } from '../lib/useData'
 import { useAuth } from '../lib/FirebaseAuthContext.jsx'
 
@@ -15,7 +15,7 @@ const trade = (overrides = {}) => ({
   ...overrides,
 })
 
-describe('CongressTrades page', () => {
+describe('PoliticalTrading page', () => {
   beforeEach(() => {
     useAuth.mockReturnValue({ currentUser: null })
   })
@@ -33,9 +33,9 @@ describe('CongressTrades page', () => {
       loading: false, error: null,
     })
 
-    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
 
-    expect(screen.getByRole('heading', { name: /Politics/ })).toBeVisible()
+    expect(screen.getByRole('heading', { name: /Political/ })).toBeVisible()
     expect(screen.getAllByText('AAPL').length).toBeGreaterThan(0)
     expect(screen.getAllByText('MSFT').length).toBeGreaterThan(0)
     expect(screen.queryByText(/^Jane Doe$/)).not.toBeInTheDocument()
@@ -60,7 +60,7 @@ describe('CongressTrades page', () => {
       loading: false, error: null,
     })
 
-    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
 
     expect(screen.getByRole('img', { name: /Disclosed volume by period, 2 periods/ })).toBeInTheDocument()
     fireEvent.click(screen.getAllByRole('button', { name: 'Table' })[0])
@@ -79,7 +79,7 @@ describe('CongressTrades page', () => {
       loading: false, error: null,
     })
 
-    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText('Chamber'), { target: { value: 'house' } })
 
     expect(screen.queryByText('AAPL')).not.toBeInTheDocument()
@@ -91,13 +91,13 @@ describe('CongressTrades page', () => {
 
   it('shows an honest empty state when nothing has been collected yet', () => {
     useData.mockReturnValue({ data: { results: [] }, loading: false, error: null })
-    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
     expect(screen.getByText(/No disclosures collected yet/)).toBeVisible()
   })
 
   it('shows a filter-specific empty state when filters exclude every row', () => {
     useData.mockReturnValue({ data: { results: [trade({ chamber: 'senate' })] }, loading: false, error: null })
-    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText('Chamber'), { target: { value: 'house' } })
     expect(screen.getByText('No disclosures match these filters.')).toBeVisible()
   })
@@ -111,7 +111,7 @@ describe('CongressTrades page', () => {
       loading: false, error: null,
     })
 
-    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
 
     expect(screen.getByText('36,880')).toBeVisible()
     expect(screen.getByText('1,774')).toBeVisible()
@@ -131,7 +131,7 @@ describe('CongressTrades page', () => {
       loading: false, error: null,
     })
 
-    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText('Sort by'), { target: { value: 'performance' } })
 
     const rows = screen.getAllByRole('row').filter((row) => /WIN|LAG/.test(row.textContent))
@@ -147,7 +147,7 @@ describe('CongressTrades page', () => {
       loading: false, error: null,
     })
 
-    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
 
     expect(screen.getByText(/Disclosure feed unavailable/)).toBeVisible()
     expect(screen.getByText(/HTTP 403/)).toBeVisible()
@@ -162,7 +162,7 @@ describe('CongressTrades page', () => {
       loading: false, error: null,
     })
 
-    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
 
     expect(screen.getByText(/No disclosures filed in the trailing 120 days/)).toBeVisible()
   })
@@ -173,7 +173,7 @@ describe('CongressTrades page', () => {
       loading: false, error: null,
     })
 
-    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
 
     expect(screen.getByText(/No disclosures collected yet/)).toBeVisible()
   })
@@ -187,7 +187,7 @@ describe('CongressTrades page', () => {
       loading: false, error: null,
     })
 
-    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
 
     expect(screen.getByRole('alert')).toHaveTextContent(/HTTP 402/)
     expect(screen.getByText('Collected from some sources only')).toBeVisible()
@@ -198,7 +198,7 @@ describe('CongressTrades page', () => {
     useAuth.mockReturnValue({ currentUser: { uid: 'u1' } })
     useData.mockReturnValue({ data: { results: [trade()] }, loading: false, error: null })
 
-    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
 
     expect(screen.getByRole('button', { name: /Re-run collection/ })).toBeEnabled()
   })
@@ -206,8 +206,59 @@ describe('CongressTrades page', () => {
   it('hides the re-run control when nobody is signed in', () => {
     useData.mockReturnValue({ data: { results: [trade()] }, loading: false, error: null })
 
-    render(<MemoryRouter><CongressTrades /></MemoryRouter>)
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
 
     expect(screen.queryByRole('button', { name: /Re-run collection/ })).toBeNull()
+  })
+
+  it('shows an executive-branch disclosure with its office and agency, not a district', () => {
+    useData.mockReturnValue({
+      data: {
+        results: [trade({
+          chamber: 'executive', representative: 'Donald J Trump', district: null,
+          office: 'President', agency: 'White House Office', symbol: 'AAPL',
+        })],
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
+    fireEvent.click(screen.getByText('AAPL').closest('summary'))
+
+    expect(screen.getByText(/President.*White House Office/)).toBeVisible()
+    fireEvent.change(screen.getByLabelText('Chamber'), { target: { value: 'executive' } })
+    expect(screen.getAllByText('AAPL').length).toBeGreaterThan(0)
+  })
+
+  it('renders the top signals panel from the published signals block', () => {
+    useData.mockReturnValue({
+      data: {
+        results: [trade()],
+        signals: [
+          { ticker: 'AAPL', direction: 'BUY', representative: 'Donald J Trump',
+            chamber: 'executive', office: 'President', agency: 'White House Office',
+            flags: ['CLUSTER_TRADE'], rank: 1 },
+          { ticker: 'MSFT', direction: 'SELL', representative: 'Jane Doe',
+            chamber: 'senate', district: 'NC05', flags: [], rank: 2 },
+        ],
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
+
+    expect(screen.getByText('Top disclosed signals')).toBeVisible()
+    expect(screen.getByText('BUY')).toBeVisible()
+    expect(screen.getByText('SELL')).toBeVisible()
+    expect(screen.getByText(/Donald J Trump.*President.*White House Office/)).toBeVisible()
+    expect(screen.getByText(/Jane Doe.*senate.*NC05/)).toBeVisible()
+  })
+
+  it('omits the signals panel entirely when nothing published qualifies', () => {
+    useData.mockReturnValue({ data: { results: [trade()], signals: [] }, loading: false, error: null })
+
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
+
+    expect(screen.queryByText('Top disclosed signals')).not.toBeInTheDocument()
   })
 })

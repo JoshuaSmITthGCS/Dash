@@ -12,7 +12,7 @@ import AlertBadge from './components/AlertBadge.jsx'
 
 // Dashboard is the landing route on a phone opening this cold on cellular, so it ships eager.
 // Every other page loads on demand – keeps first paint off the weight of pages the visit may
-// never touch (Finances, ETF comparisons, shadow portfolios, congress trades, etc).
+// never touch (Finances, ETF comparisons, shadow portfolios, political trades, etc).
 const loadPicks = () => import('./pages/Picks.jsx')
 const loadPortfolio = () => import('./pages/Portfolio.jsx')
 const Picks = lazy(loadPicks)
@@ -33,7 +33,7 @@ const ShadowPortfolios = lazy(() => import('./pages/ShadowPortfolios.jsx'))
 const BacktestComparison = lazy(() => import('./pages/BacktestComparison.jsx'))
 const LiveValidation = lazy(() => import('./pages/LiveValidation.jsx'))
 const EarlySessionResearch = lazy(() => import('./pages/EarlySessionResearch.jsx'))
-const CongressTrades = lazy(() => import('./pages/CongressTrades.jsx'))
+const PoliticalTrading = lazy(() => import('./pages/PoliticalTrading.jsx'))
 const InstitutionalActivity = lazy(() => import('./pages/InstitutionalActivity.jsx'))
 const InsideInformation = lazy(() => import('./pages/InsideInformation.jsx'))
 const Settings = lazy(() => import('./pages/Settings.jsx'))
@@ -60,7 +60,7 @@ const NAV_GROUPS = [
       { to: '/screens/fast-growth', label: 'Growth screens', icon: 'market' },
       { to: '/screens/options', label: 'Options screens', icon: 'market' },
       { to: '/screens/themes', label: 'Theme exposure', icon: 'research' },
-      { to: '/screens/politics', label: 'Congress trades', icon: 'method' },
+      { to: '/screens/politics', label: 'Political trades', icon: 'method' },
       { to: '/screens/institutional', label: 'Institutional activity', icon: 'method' },
       { to: '/screens/early-session', label: 'Early session', icon: 'market' },
       { to: '/screens/shadow', label: 'Shadow portfolios', icon: 'market' },
@@ -318,7 +318,7 @@ function AppContent() {
           <Route path="/screens/earnings" element={<ResearchScreen file="screens/earnings-timeliness.json" eyebrow="One-to-three-month horizon" title="Earnings timeliness" description="Point-in-time revisions, earnings information, price confirmation, industry breadth, and tradability–kept separate from structural quality." />} />
           <Route path="/screens/matrix" element={<ResearchScreen file="screens/structural-tactical.json" eyebrow="Two-axis research" title="Structural versus tactical matrix" description="Distinguishes durable business evidence from timely near-term information instead of blending their horizons." />} />
           <Route path="/screens/early-session" element={<EarlySessionResearch />} />
-          <Route path="/screens/politics" element={<CongressTrades />} />
+          <Route path="/screens/politics" element={<PoliticalTrading />} />
           <Route path="/screens/institutional" element={<InstitutionalActivity />} />
           <Route path="/screens/inside-information" element={<InsideInformation />} />
           <Route path="/screens/themes" element={<ThemeExposureScreen />} />

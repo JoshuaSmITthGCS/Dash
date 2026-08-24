@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema_version", "model_version", "generated_at", "status", "summary", "results"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "model_version": {"type": "string"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["success", "partial", "unavailable"]},
+    "reason_code": {"type": "string"},
+    "publish_window_days": {"type": "integer", "minimum": 1},
+    "history_days": {"type": "integer", "minimum": 0},
+    "late_filing_threshold_days": {"type": "integer", "minimum": 0},
+    "rare_trader_minimum_history_days": {"type": "integer", "minimum": 0},
+    "concentrated_size_floor": {"type": "number", "minimum": 0},
+    "collection": {
+      "type": "object",
+      "properties": {
+        "disclosures_fetched": {"type": "integer", "minimum": 0},
+        "new_disclosures": {"type": "integer", "minimum": 0},
+        "disclosures_stored": {"type": "integer", "minimum": 0},
+        "failures": {"type": "array", "items": {"type": "string"}},
+        "source_counts": {"type": "object"}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["trades", "filings_estimated", "volume_upper", "politicians", "issuers"],
+      "properties": {
+        "trades": {"type": "integer", "minimum": 0},
+        "filings_estimated": {"type": "integer", "minimum": 0},
+        "volume_upper": {"type": "number", "minimum": 0},
+        "politicians": {"type": "integer", "minimum": 0},
+        "issuers": {"type": "integer", "minimum": 0}
+      }
+    },
+    "signals": {
+      "type": "array",
+      "description": "notable_signals() display-only leaderboard - never an advisor_engine input, see build_congress_screen.py.",
+      "items": {
+        "type": "object",
+        "required": ["ticker", "direction", "representative", "chamber", "rank_score", "rank"],
+        "properties": {
+          "ticker": {"type": "string"},
+          "direction": {"enum": ["BUY", "SELL"]},
+          "representative": {"type": "string"},
+          "chamber": {"enum": ["house", "senate", "executive"]},
+          "office": {"type": ["string", "null"]},
+          "agency": {"type": ["string", "null"]},
+          "amount_lower": {"type": ["number", "null"]},
+          "amount_upper": {"type": ["number", "null"]},
+          "transaction_date": {"type": ["string", "null"]},
+          "disclosure_date": {"type": ["string", "null"]},
+          "flags": {"type": "array", "items": {"type": "string"}},
+          "rank_score": {"type": "number"},
+          "rank": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["chamber", "representative", "transaction_type", "flags"],
+        "properties": {
+          "chamber": {"enum": ["house", "senate", "executive"]},
+          "representative": {"type": ["string", "null"]},
+          "district": {"type": ["string", "null"]},
+          "office": {"type": ["string", "null"], "description": "executive-branch only (e.g. \"President\"); null for House/Senate rows"},
+          "agency": {"type": ["string", "null"], "description": "executive-branch only (e.g. \"White House Office\"); null for House/Senate rows"},
+          "symbol": {"type": ["string", "null"]},
+          "asset_type": {"type": ["string", "null"], "description": "always null on executive-branch rows - see is_equity_purchase()'s ticker-based fallback for that source"},
+          "asset_description": {"type": ["string", "null"]},
+          "owner": {"type": ["string", "null"]},
+          "transaction_type": {"type": ["string", "null"]},
+          "amount": {"type": ["string", "null"]},
+          "amount_lower": {"type": ["number", "null"]},
+          "amount_upper": {"type": ["number", "null"]},
+          "transaction_date": {"type": ["string", "null"]},
+          "disclosure_date": {"type": ["string", "null"]},
+          "filing_delay_days": {"type": ["integer", "null"]},
+          "flags": {"type": "array", "items": {"type": "string"}},
+          "rare_trader_evaluated": {"type": "boolean"},
+          "return_since_purchase_pct": {"type": ["number", "null"]}
+        }
+      }
+    }
+  }
+}

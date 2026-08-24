@@ -11,6 +11,7 @@ from common import DATA_DIR
 
 SCHEMA_DIR = os.path.join(os.path.dirname(__file__), "schemas")
 FILES = ("trades", "prices", "news", "politicians", "signals", "picks", "status", "advisor", "etfs")
+CONGRESS_TRADES_SCHEMA = os.path.join(SCHEMA_DIR, "congress-trades.schema.json")
 
 
 def load(path):
@@ -115,6 +116,25 @@ def etf_peer_group_errors(payload):
         errors.append("etfs.json: every fund landed in one peer group, so the whole batch is "
                       "being cross-ranked again")
     return errors
+
+
+def congress_trades_schema_errors():
+    """``screens/*.json`` files sit outside the ``FILES`` loop above, which only covers
+    fixtures at ``DATA_DIR`` root - congress-trades.json is the first screen file to get
+    schema coverage, added alongside its executive-branch (OGE) rows. A missing file is not
+    reported here, unlike a ``FILES`` fixture: this screen legitimately does not exist yet
+    in a fresh checkout or an environment that has never run ``build_congress_screen.py``,
+    and that is that module's own concern (see ``run()``'s "nothing to publish yet" case),
+    not this validator's.
+    """
+    data_path = os.path.join(DATA_DIR, "screens", "congress-trades.json")
+    if not os.path.exists(data_path):
+        return []
+    payload = load(data_path)
+    validator = Draft202012Validator(load(CONGRESS_TRADES_SCHEMA), format_checker=FormatChecker())
+    return [f"screens/congress-trades.json:{'.'.join(str(part) for part in error.path) or '$'}: "
+            f"{error.message}"
+            for error in sorted(validator.iter_errors(payload), key=lambda e: list(e.path))]
 
 
 def validate(production=False):
@@ -237,6 +257,7 @@ def validate(production=False):
 
     errors.extend(theme_screen_errors(advisor.get("theme_screen")))
     errors.extend(etf_peer_group_errors(payloads.get("etfs", {})))
+    errors.extend(congress_trades_schema_errors())
 
     # Legacy political fixtures stay explicitly demo while the independent advisor and ETF
     # datasets are live.

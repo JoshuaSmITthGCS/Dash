@@ -1,7 +1,7 @@
 import os
 import pytest
 import tempfile
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from unittest.mock import Mock
 
 import build_congress_screen as module
@@ -14,6 +14,22 @@ def trade(**overrides):
         "owner": "Self", "transaction_type": "Purchase", "amount": "$15,001 - $50,000",
         "transaction_date": "2026-06-01", "disclosure_date": "2026-06-20",
         "comment": None, "link": "https://example.com",
+    }
+    base.update(overrides)
+    return base
+
+
+def executive_trade(**overrides):
+    # asset_type is always null on every executive-branch row this pipeline has ever seen
+    # (confirmed against a live pull of ~2,957 OGE 278-T rows) - the fixture reflects that
+    # rather than a plausible-looking value the real source never actually sends.
+    base = {
+        "chamber": "executive", "representative": "Donald J Trump", "district": None,
+        "office": "President", "agency": "White House Office",
+        "symbol": "AAPL", "asset_type": None, "asset_description": "APPLE INC",
+        "owner": None, "transaction_type": "Purchase", "amount": "$100,001 - $250,000",
+        "transaction_date": "2026-06-01", "disclosure_date": "2026-06-20",
+        "comment": None, "link": "https://extapps2.oge.gov/201/x.pdf",
     }
     base.update(overrides)
     return base
@@ -219,6 +235,14 @@ def test_is_equity_purchase_excludes_options_and_non_stock_assets():
     assert module.is_equity_purchase(trade(asset_type="Stock", transaction_type="Sale (Full)")) is False
 
 
+def test_is_equity_purchase_treats_a_resolved_ticker_as_equity_for_executive_rows():
+    # asset_type is null on every live executive-branch row - the "stock" substring check
+    # would silently zero out every one of these, so a resolved symbol stands in instead.
+    assert module.is_equity_purchase(executive_trade(symbol="AAPL")) is True
+    assert module.is_equity_purchase(executive_trade(symbol=None)) is False  # a bond, no ticker
+    assert module.is_equity_purchase(executive_trade(transaction_type="Sale (Full)")) is False
+
+
 def test_compute_price_performance_uses_one_call_per_distinct_symbol():
     rows = [
         trade(symbol="AAPL", transaction_date="2026-06-01"),
@@ -350,6 +374,7 @@ def _mirror_returning(rows, seen=None):
     client = Mock()
     client.senate_latest.return_value = (rows, len(rows) if seen is None else seen)
     client.house_latest.return_value = ([], 0)
+    client.executive_latest.return_value = ([], 0)
     return client
 
 
@@ -360,6 +385,7 @@ def _mirror_rejecting_every_fetch():
     client = Mock()
     client.senate_latest.side_effect = refuse
     client.house_latest.side_effect = refuse
+    client.executive_latest.side_effect = refuse
     return client
 
 
@@ -466,7 +492,9 @@ def test_run_that_collects_nothing_because_every_source_refused_is_unavailable(m
     assert payload["reason_code"] == "CONGRESS_DISCLOSURE_FEED_UNAVAILABLE"
     assert payload["results"] == []
     assert any("402" in failure for failure in payload["collection"]["failures"])
-    assert len(payload["collection"]["failures"]) == 4
+    # fmp-senate, fmp-house (both via the FMP client), mirror-senate, mirror-house,
+    # mirror-executive - every source attempted, every source failed.
+    assert len(payload["collection"]["failures"]) == 5
     assert saved["status"] == "unavailable"
 
 
@@ -496,6 +524,85 @@ def test_a_mirror_that_returns_rows_none_of_which_parse_says_so(monkeypatch):
     assert payload["status"] == "unavailable"
     assert any("columns may have changed" in failure
                for failure in payload["collection"]["failures"])
+
+
+def test_collect_attempts_the_executive_mirror_alongside_house_and_senate(monkeypatch):
+    monkeypatch.setattr(module, "SenateEfdClient", lambda: _efd_returning([]))
+    client = Mock()
+    client.senate_latest.return_value = ([], 0)
+    client.house_latest.return_value = ([], 0)
+    client.executive_latest.return_value = ([executive_trade()], 1)
+
+    _fmp_client, rows, failures, counts = module.collect(
+        fmp_factory=_fmp_rejecting_every_fetch, mirror_factory=lambda: client,
+        efd_factory=module.SenateEfdClient)
+
+    assert counts["mirror-executive"] == 1
+    assert rows == [executive_trade()]
+    assert not any("executive" in failure for failure in failures)
+
+
+def _classified(row, **kwargs):
+    return module.classify(row, trade_counts=kwargs.pop("trade_counts", {}),
+                           history_days=kwargs.pop("history_days", 200), **kwargs)
+
+
+def test_notable_signals_ranks_size_and_flags_over_a_smaller_unflagged_trade():
+    big = _classified(trade(symbol="AAPL", amount="$1,000,001 - $5,000,000",
+                            disclosure_date="2026-08-20"))
+    small = _classified(trade(symbol="MSFT", amount="$1,001 - $15,000",
+                              disclosure_date="2026-08-20"))
+
+    signals = module.notable_signals([big, small], as_of=date(2026, 8, 24))
+
+    tickers = [signal["ticker"] for signal in signals]
+    assert tickers.index("AAPL") < tickers.index("MSFT")
+
+
+def test_notable_signals_surfaces_both_buys_and_sells():
+    buy = _classified(trade(symbol="AAPL", transaction_type="Purchase", disclosure_date="2026-08-20"))
+    sell = _classified(trade(symbol="MSFT", transaction_type="Sale (Full)", disclosure_date="2026-08-20"))
+
+    signals = module.notable_signals([buy, sell], as_of=date(2026, 8, 24))
+
+    by_ticker = {signal["ticker"]: signal["direction"] for signal in signals}
+    assert by_ticker == {"AAPL": "BUY", "MSFT": "SELL"}
+
+
+def test_notable_signals_dedupes_to_the_best_row_per_ticker():
+    weak = _classified(trade(symbol="AAPL", amount="$1,001 - $15,000", disclosure_date="2026-08-20"))
+    strong = _classified(trade(symbol="AAPL", amount="$1,000,001 - $5,000,000",
+                               disclosure_date="2026-08-20"))
+
+    signals = module.notable_signals([weak, strong], as_of=date(2026, 8, 24))
+
+    assert len([s for s in signals if s["ticker"] == "AAPL"]) == 1
+    assert signals[0]["amount_lower"] == strong["amount_lower"]
+
+
+def test_notable_signals_excludes_stale_disclosures():
+    stale = _classified(trade(symbol="AAPL", disclosure_date="2020-01-01"))
+    signals = module.notable_signals([stale], as_of=date(2026, 8, 24))
+    assert signals == []
+
+
+def test_notable_signals_respects_top_n():
+    rows = [_classified(trade(symbol=f"T{i}", amount="$1,000,001 - $5,000,000",
+                              disclosure_date="2026-08-20"))
+           for i in range(8)]
+    signals = module.notable_signals(rows, top_n=3, as_of=date(2026, 8, 24))
+    assert len(signals) == 3
+    assert [s["rank"] for s in signals] == [1, 2, 3]
+
+
+def test_notable_signals_includes_executive_branch_rows_with_office_and_agency():
+    row = _classified(executive_trade(symbol="AAPL", amount="$1,000,001 - $5,000,000",
+                                      disclosure_date="2026-08-20"))
+    signals = module.notable_signals([row], as_of=date(2026, 8, 24))
+
+    assert signals[0]["office"] == "President"
+    assert signals[0]["agency"] == "White House Office"
+    assert signals[0]["chamber"] == "executive"
 
 
 def test_run_with_previously_stored_disclosures_reports_partial_not_degraded(monkeypatch):
