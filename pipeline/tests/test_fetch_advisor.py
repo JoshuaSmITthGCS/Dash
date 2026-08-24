@@ -609,6 +609,51 @@ class ScreenRowProjectionTests(unittest.TestCase):
 
         self.assertEqual(projected["fundamental_detail"], {"raw_score": 63.5})
 
+    def test_the_projection_carries_the_rows_measured_data_coverage(self):
+        # The browser gates every action label on the row-level field
+        # (src/lib/confidenceGate.js). While this projection dropped it, every one of the
+        # ~840 tail rows reported "no coverage measurement was published" and gated to
+        # INSUFFICIENT_DATA -- including rows whose coverage was high enough to act on.
+        projected = _screen_row({
+            "ticker": "AAPL", "score": 71, "data_coverage": 0.82,
+            "technical_detail": {}, "components": {},
+        })
+
+        self.assertEqual(projected["data_coverage"], 0.82)
+
+    def test_a_carried_forward_row_recovers_coverage_from_its_champion_variant(self):
+        # A fast refresh carries several hundred rows forward from the last published file,
+        # and rows published before the row-level field existed do not carry it. They do all
+        # carry the identical number under score_variants.champion, which is the variant the
+        # published score is taken from, so the fix reaches the whole tail on the next run
+        # rather than only as names come up for re-polling.
+        projected = _screen_row({
+            "ticker": "IBM", "score": 44, "technical_detail": {}, "components": {},
+            "score_variants": {"champion": {"variant": "champion", "data_coverage": 0.44}},
+        })
+
+        self.assertEqual(projected["data_coverage"], 0.44)
+
+    def test_an_unmeasured_row_publishes_none_rather_than_zero_coverage(self):
+        # Absent and zero are different claims, and the confidence gate treats them
+        # differently by design: a missing measurement withholds the action call, while a
+        # measured 0.0 would be a published assertion that nothing resolved. Defaulting one
+        # to the other is the bug this whole pair of fields exists to avoid.
+        projected = _screen_row({
+            "ticker": "NEWCO", "score": 30, "technical_detail": {}, "components": {},
+        })
+
+        self.assertIsNone(projected["data_coverage"])
+
+    def test_a_measured_zero_coverage_survives_the_projection(self):
+        # The falsy-coalescing mistake in reverse: 0.0 must not be discarded as "missing".
+        projected = _screen_row({
+            "ticker": "EMPTYCO", "score": 12, "data_coverage": 0.0,
+            "technical_detail": {}, "components": {},
+        })
+
+        self.assertEqual(projected["data_coverage"], 0.0)
+
 
 def _statement_frame(rows):
     """Two-period yfinance-shaped statement DataFrame (columns=periods, index=line items)."""
