@@ -77,9 +77,18 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # A ~900-name stock universe and a ~125-fund ETF watchlist, plus financial statements
-    # for the shortlist. Price history is batched and everything is cached, so most of the
-    # wall time is deliberate rate-limit pacing rather than transfer.
-    timeout-minutes: 90
+    # for every scored name. Price history is batched and everything is cached, so most of
+    # the wall time is deliberate rate-limit pacing rather than transfer.
+    #
+    # Raised from 90 alongside advisor_universe.json's extended_limit, which no longer caps
+    # statement enrichment at 150 names. Measured on the 2026-08-24 full sweep, enrichment
+    # ran at 0.92s/name for 138s of a 41-minute scoring step; at ~880 scored names that leg
+    # becomes roughly 15 minutes, and the tail is slower per name than the large caps that
+    # figure was measured on (obscurer names miss Yahoo more often and fall through to the
+    # slower EDGAR fallback). That put the projected full sweep near 70 minutes against a
+    # 90-minute ceiling. A timeout publishes nothing at all - the commit step never runs -
+    # so the margin matters more than the minutes do.
+    timeout-minutes: 120
     env:
       ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
       MARKETAUX_API_TOKEN: ${{ secrets.MARKETAUX_API_TOKEN }}

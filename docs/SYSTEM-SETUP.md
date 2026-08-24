@@ -98,8 +98,9 @@ or corporate action.
      +  20 rotation slice (statement-starved names, theme-flagged ones first, then
         oldest-unenriched -- see enrichment_rotation)
      +  portfolio symbols
-     → priority queue, then fill to extended_limit = 150
-7.  enrich(): multi-request financial-statement fetch for the shortlist only
+     → priority queue, then fill to extended_limit (set above the universe size,
+       so every scored name is enriched; the queue only sets the order)
+7.  enrich(): multi-request financial-statement fetch for every scored name
        → derives ~15 statement metrics (EV/EBITDA, ROIC, Altman Z, Piotroski, ...)
 8.  Alpha Vantage enrichment for 5 symbols
 9.  SEC Form 4 insider scoring for the shortlist (currently no-op)
@@ -115,33 +116,44 @@ or corporate action.
 
 ### 4.1 The structural consequence of stages 4–7
 
-This is the single most important architectural fact about the algorithm, and it is not stated in
-the README.
+**Resolved 2026-08-24 by setting `extended_limit` above the universe size.** Statements are now
+fetched for every scored name, so the shortlist is the universe. This section documents what the
+cap did while it was in force, because the published history was produced under it — every
+`pit_store` snapshot, IC reading and backtest dated before this change describes the capped model,
+not the current one.
 
-**The metrics that carry most of the model's weight are only computed for names that a thinner
-model already ranked highly.**
+**What the cap did.** The final score is 78% fundamentals, and within fundamentals the heaviest
+metrics (EV/EBITDA at 27% of valuation, ROIC at 26% of profitability, interest coverage at 30% of
+financial health, Piotroski F at 45% of accounting quality) all require financial statements. Those
+statements were fetched for only the top 150 of 910, and that top 150 was chosen by a preliminary
+score computed **without** them — on trailing P/E, price-to-book, price-to-sales, margins, and price
+behavior. So the metrics carrying most of the model's weight were only ever computed for names a
+thinner, materially different model had already ranked highly.
 
-The final score is 78% fundamentals, and within fundamentals the heaviest metrics (EV/EBITDA at 27%
-of valuation, ROIC at 26% of profitability, interest coverage at 30% of financial health, Piotroski
-F at 45% of accounting quality) all require financial statements. Statements are only fetched for
-the top 150 of 910, and that top 150 is chosen by a preliminary score computed **without** those
-statements — on trailing P/E, price-to-book, price-to-sales, margins, and price behavior.
-
-Two consequences follow:
+Two consequences followed:
 
 - **Selection bootstrapping.** A company with an unattractive trailing multiple but excellent
-  returns on capital, a fortress balance sheet, and clean accruals cannot surface. It never enters
-  the shortlist, so its best metrics are never computed, so it never scores well. The full model is
-  only ever applied to candidates pre-filtered by a materially different and weaker model.
-- **Incumbency.** `select_enrichment_priority()` seeds the queue with the previous refresh's top 20
-  and admits only 5 new challengers per refresh. Today's ranking is partly a function of yesterday's
-  ranking rather than of today's evidence.
+  returns on capital, a fortress balance sheet, and clean accruals could not surface. It never
+  entered the shortlist, so its best metrics were never computed, so it never scored well. The full
+  model was only ever applied to candidates pre-filtered by a weaker one. Removing the cap removes
+  this: every name is now scored on the same metric set.
+- **Incumbency.** `select_enrichment_priority()` still seeds the queue with the previous refresh's
+  top 20 and admits 5 new challengers plus a 20-name rotation slice. That ordering now only decides
+  who is enriched *first* within a run, not who is enriched at all, so it no longer carries the
+  bias it did while the queue was also the cutoff.
 
-Measured effect in the current published data: `capital_allocation` and `accounting_quality` are
-scored for **84 of 374** names in the screen universe. Those two categories are 20% of the stated
-fundamental weight. For the other 290 names that weight is silently redistributed across the
-remaining categories by the within-category reweighting rule, so most of the universe is ranked by
-a different effective model than the documented one.
+Measured effect while the cap was in force: `capital_allocation` and `accounting_quality` were
+scored for **84 of 374** names in the screen universe, and the last capped full sweep reported
+`statement_health.state: critical` at 12.5% mean coverage against a 70% expectation. Those two
+categories are 20% of the stated fundamental weight; for names without them that weight was
+silently redistributed across the remaining categories by the within-category reweighting rule, so
+most of the universe was ranked by a different effective model than the documented one.
+
+**This changes rankings, and has not yet been validated out-of-sample.** Per
+`docs/VALIDATION-METHODOLOGY.md` a scoring change ships on improved post-deflation out-of-sample
+IC. This one shipped on a coverage argument instead — the previous state ranked ~760 of 910 names
+without the metrics the documented model says it uses — so the IC comparison is owed, not waived.
+Treat the first weeks of post-change readings as the evidence for whether it helped.
 
 ### 4.2 Refresh modes
 
@@ -464,7 +476,7 @@ the reasoning, usually with an academic citation. Sections: `model`, `normalizat
 `recency`, `trade_size_bands`, `fundamentals`, `modifiers`, `bucket_weights`, `bucket_limits`,
 `build`, `labels`, `feature_flags`, `ranking_weights`, `news_intelligence`, `market_behavior`.
 
-Supporting config: `advisor_universe.json` (910 symbols, publish_limit 40, extended_limit 150,
+Supporting config: `advisor_universe.json` (910 symbols, publish_limit 40, extended_limit 1000,
 21 portfolio symbols), `universe.json` (126 ETFs), `metric_registry.json`, `feature_registry.json`
 (49 KB), `applicability_matrix.json`, `research_contract.json`, `screen_presets.json`,
 `recommendation_policy_v2.json`, `shadow_strategies.json`, `business_profiles.json`,

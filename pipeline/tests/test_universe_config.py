@@ -83,10 +83,18 @@ class StockUniverseTests(unittest.TestCase):
         # needs enough names per bucket to be more than noise.
         self.assertGreaterEqual(len(SYMBOLS), 300)
 
-    def test_the_statement_shortlist_stays_well_under_the_universe(self):
-        # Statement enrichment costs several requests per company, so it must grow
-        # sub-linearly with the universe or the run stops fitting in its window.
-        self.assertLess(ADVISOR["extended_limit"], len(SYMBOLS) / 2)
+    def test_statement_enrichment_covers_the_whole_scored_universe(self):
+        # This assertion used to run the other way: extended_limit had to stay under half
+        # the universe, on the reasoning that statement enrichment "must grow sub-linearly
+        # or the run stops fitting in its window". Measurement contradicted the premise --
+        # on the 2026-08-24 full sweep enrichment took 138s of a 41-minute scoring step,
+        # 0.92s per name and the cheapest major phase in the run, while the theme screen
+        # took 22 minutes. The cap was not buying window; it was buying selection bias,
+        # because the metrics carrying most of the model's weight (EV/EBITDA, ROIC,
+        # interest coverage, Piotroski F) were only computed for names a weaker price-only
+        # model had already ranked highly. See docs/SYSTEM-SETUP.md 4.1.
+        self.assertGreater(ADVISOR["extended_limit"], len(SYMBOLS),
+                           "extended_limit must exceed the universe so enrich() never truncates")
         self.assertGreaterEqual(ADVISOR["extended_limit"], ADVISOR["publish_limit"])
 
     def test_configured_holdings_are_inside_the_scored_universe(self):
