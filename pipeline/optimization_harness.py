@@ -141,6 +141,117 @@ def formula_weights(periods, *, legs=None, periods_per_year=12):
     return {leg: round(weight / total, 6) for leg, weight in raw.items() if weight}
 
 
+def equal_weight_candidate(legs):
+    """1/N per leg -- the no-opinion baseline every weighting scheme should beat.
+
+    Exists so a search session always has a control that encodes no belief about which
+    leg matters, not just hand-tuned or IC-derived candidates that could all be
+    correlated in the same direction.
+    """
+    legs = list(legs)
+    if not legs:
+        return {}
+    share = round(1.0 / len(legs), 6)
+    return {leg: share for leg in legs}
+
+
+def blended_full_coverage_candidate(recommended, legs, *, blend=0.5):
+    """Average ``recommended`` with an equal-weight baseline over the FULL leg universe.
+
+    ``recommended`` (e.g. reweighted_composite_a) may assign zero weight to legs it drops
+    entirely -- that is a deliberate finding, not an oversight, but it also means the
+    candidate never gets tested with every leg still contributing something. Blending
+    against equal_weight_candidate(legs), which by construction covers every leg, keeps
+    every leg's coefficient above zero (at least ``(1 - blend) / len(legs)``) while still
+    pulling the mix toward whatever ``recommended`` emphasizes.
+    """
+    legs = list(legs)
+    if not legs:
+        return {}
+    if not 0 <= blend <= 1:
+        raise ValueError("blend must be within [0, 1]")
+    equal = equal_weight_candidate(legs)
+    raw = {leg: blend * recommended.get(leg, 0.0) + (1 - blend) * equal[leg] for leg in legs}
+    total = sum(raw.values())
+    if not total:
+        return {}
+    return {leg: round(weight / total, 6) for leg, weight in raw.items() if weight}
+
+
+def period_sectors(period):
+    """{ticker: sector} for one panel period, or {} if the panel predates sector tagging."""
+    return period.get("sectors") or {}
+
+
+def sectors_in_panel(periods):
+    """Every distinct sector label present anywhere in the panel, sorted, excluding None."""
+    found = set()
+    for period in periods:
+        found.update(sector for sector in period_sectors(period).values() if sector)
+    return sorted(found)
+
+
+def filter_periods_by_sector(periods, sector):
+    """New period objects restricted to tickers tagged with ``sector``.
+
+    Sector is the CURRENT GICS sector applied retroactively (panels carry no
+    point-in-time sector history -- see ``backtest_swing.py``'s ``current_sector_map``,
+    the same approximation this reuses), so this answers "how would each leg have scored
+    on today's tech names historically", not "how would it have scored on whichever
+    names were classified as tech at the time." A period with no tickers in the sector
+    after filtering keeps an empty ``leg_scores``/``forward_returns``/``scores`` rather
+    than being dropped, so period count stays stable across sectors for comparison.
+    """
+    filtered = []
+    for period in periods:
+        tickers = {ticker for ticker, name in period_sectors(period).items() if name == sector}
+        restricted = {**period}
+        for key in ("leg_scores", "forward_returns", "scores"):
+            values = period.get(key) or {}
+            restricted[key] = {ticker: value for ticker, value in values.items() if ticker in tickers}
+        filtered.append(restricted)
+    return filtered
+
+
+def sector_weight_report(periods, *, legs=None, periods_per_year=12, minimum_periods=6):
+    """formula_weights(), leg_coverage(), and standalone IC computed independently per
+    sector -- answers whether different sectors warrant different leg weightings (a tech
+    slice with heavy R&D/buyback-funded capital allocation, say, versus a utility slice
+    priced mostly on financial_health) rather than assuming one weight vector fits every
+    sector equally.
+
+    Call this on a train slice only, same rule as ``formula_weights`` itself -- these
+    per-sector weights are meant to be validated on a held-out slice before anyone trusts
+    them, not read directly off the same periods a decision will be graded against.
+
+    A sector with fewer than ``minimum_periods`` calendar periods carrying at least 5
+    names is reported with ``formula_weights: None`` rather than a formula fit to noise
+    from a handful of names.
+    """
+    report = {}
+    for sector in sectors_in_panel(periods):
+        sector_periods = filter_periods_by_sector(periods, sector)
+        usable = sum(1 for period in sector_periods if len(period.get("leg_scores") or {}) >= 5)
+        if usable < minimum_periods:
+            report[sector] = {
+                "usable_periods": usable,
+                "formula_weights": None,
+                "reason": f"fewer than {minimum_periods} periods with >=5 names in this sector",
+            }
+            continue
+        sector_legs = list(legs) if legs else sorted({leg for period in sector_periods
+                                                       for scores in (period.get("leg_scores") or {}).values()
+                                                       for leg in scores})
+        report[sector] = {
+            "usable_periods": usable,
+            "coverage": leg_coverage(sector_periods, sector_legs),
+            "standalone_ic": per_leg_ic(sector_periods, sector_legs, periods_per_year=periods_per_year),
+            "formula_weights": formula_weights(sector_periods, legs=sector_legs,
+                                               periods_per_year=periods_per_year),
+        }
+    return report
+
+
 class OptimizationSession:
     """One bounded search over a fixed :class:`Panel`.
 

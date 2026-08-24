@@ -37,6 +37,7 @@ from backtest_historical import (  # noqa: E402
 from common import LOG, load_json  # noqa: E402
 from costs import estimate_cost_bps  # noqa: E402
 from portfolio_construction import apply_controls  # noqa: E402
+from screen_inputs import universe_rows  # noqa: E402
 
 COST_MODELS = ("flat", "tiered")
 
@@ -164,6 +165,19 @@ def panel_leg_weights(settings):
         if ranking.get(name):
             weights[name] = ranking[name]
     return weights
+
+
+def current_sector_map():
+    """{ticker: sector} from the live advisor snapshot.
+
+    Same approximation ``backtest_swing.py``'s ``current_sector_map`` already discloses:
+    the backtest cache carries no point-in-time sector history, so this is the CURRENT
+    GICS sector applied retroactively to every historical period. It is the only sector
+    data that exists anywhere in this repository. Good enough to ask "how would each leg
+    have scored on today's tech names historically", not point-in-time-accurate for names
+    that changed sector classification along the way.
+    """
+    return {row["ticker"]: row.get("sector") for row in universe_rows() if row.get("ticker")}
 
 
 def panel_scores(rows):
@@ -601,6 +615,7 @@ def main():
 
     plans, panel_periods = [], []
     leg_weights = panel_leg_weights(load_json("settings.json", from_config=True) or {})
+    sectors = current_sector_map()
     holdings, held_months, previous_scores = [], {}, {}
     for index, (signal_date, execution_date) in enumerate(calendar, 1):
         spy_idx = price_index(benchmark["dates"], signal_date)
@@ -639,6 +654,7 @@ def main():
             "names": len(scores),
             "scores": scores,
             "leg_scores": leg_scores,
+            "sectors": {ticker: sectors.get(ticker) for ticker in scores if sectors.get(ticker)},
             "forward_returns_by_horizon": forwards,
             "forward_returns": forwards[PANEL_PRIMARY_HORIZON],
         })

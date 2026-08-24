@@ -55,6 +55,23 @@ Stages, each independently skippable:
    candidates rather than a handful of named ones. N is required, no default count, matching
    --auto-search's "state how many up front" discipline. No network needed.
 
+Cross-stage candidate flags (harness AND elo stages):
+
+- --include-equal-weight: adds a 1/N-per-leg candidate -- the no-opinion control every
+  weighting scheme should beat.
+- --include-blend (with --blend-ratio, default 0.5): adds a candidate blending equal-weight
+  with this domain's recommended weights (reweighted_composite_a for fundamentals, if
+  registered), so every leg keeps a nonzero share even where the recommended candidate drops
+  one to zero.
+- --sector-breakdown (harness stage, fundamentals-only): per-sector formula_weights()
+  computed independently on the train slice, using each ticker's CURRENT sector applied
+  retroactively (same disclosed approximation as backtest_swing.py's current_sector_map) --
+  answers whether e.g. tech warrants a different leg weighting than the champion vector
+  applies uniformly. Requires a panel rebuilt with sector tagging.
+- --top-n-from-elo N --elo-results-in PATH (harness stage): pulls the top N names off a
+  previous elo run's leaderboard and adds them as harness (and, with --holdout-check,
+  holdout) candidates -- "test the top N" without retyping weight vectors.
+
 Usage:
     python3 pipeline/run_backtest_suite.py --years 5 --cache-only
     python3 pipeline/run_backtest_suite.py --skip-panel --auto-search 12 --search-seed 1
@@ -214,6 +231,75 @@ def range_search_candidates(legs, *, count, seed, minimum, maximum):
            for index in range(count)]
 
 
+def recommended_weights(domain):
+    """The (name, weights) pair used as the blend's other pole for --include-blend.
+
+    fundamentals: reweighted_composite_a if it's registered (R7's own pre-registered
+    finding), else whatever default_candidates(domain) returns first. swing:
+    swing-reversal-B, the domain's only registered default.
+    """
+    candidates = default_candidates(domain)
+    if not candidates:
+        return None
+    for name, weights in candidates:
+        if name == "reweighted_composite_a":
+            return name, weights
+    return candidates[0]
+
+
+def shared_extra_candidates(args, domain, periods):
+    """--include-equal-weight / --include-blend candidates, shared by the harness and elo
+    stages so both "backtest them" paths the user asked for see the same two extra
+    candidates.
+    """
+    import optimization_harness as harness
+
+    extra = []
+    legs = universe_legs(periods)
+    if getattr(args, "include_equal_weight", False):
+        extra.append(("equal_weight", harness.equal_weight_candidate(legs)))
+    if getattr(args, "include_blend", False):
+        picked = recommended_weights(domain)
+        if picked is None:
+            print("[candidates] --include-blend requested but no recommended candidate is "
+                 "registered for this domain, skipping")
+        else:
+            name, recommended = picked
+            blended = harness.blended_full_coverage_candidate(recommended, legs, blend=args.blend_ratio)
+            extra.append((f"equal_blend_{name}", blended))
+    return extra
+
+
+def load_elo_leaderboard(path):
+    with open(path) as handle:
+        data = json.load(handle)
+    return data["leaderboard"], data["candidates"]
+
+
+def top_candidates_from_elo(path, count, *, exclude):
+    """The top ``count`` non-excluded names from a previously-written elo_tournament_results.json,
+    as (name, weights) pairs in leaderboard order.
+
+    Lets "test the top N" mean exactly that: rank once in the elo stage, then feed that
+    same ranking's winners into a fresh harness (and, with --holdout-check, holdout) pass
+    on a later run -- without hand-retyping weight vectors from a printed leaderboard.
+    """
+    leaderboard, elo_candidates = load_elo_leaderboard(path)
+    picked = []
+    for row in leaderboard:
+        if len(picked) >= count:
+            break
+        name = row["name"]
+        if name in exclude:
+            continue
+        weights = elo_candidates.get(name)
+        if not weights:
+            continue
+        picked.append((name, weights))
+        exclude.add(name)
+    return picked
+
+
 def rank_key(candidate):
     # PROMOTE first, then KEEP_AS_CHALLENGER, then ABANDON; within a tier, higher validation
     # IC first. Missing IC sorts last within its tier rather than raising.
@@ -266,6 +352,16 @@ def run_harness_stage(args):
         candidates += auto_search_candidates(
             champion_weights, count=args.auto_search, seed=args.search_seed,
             perturbation=args.search_perturbation, drop_probability=args.search_drop_probability)
+    candidates += shared_extra_candidates(args, args.domain, periods)
+    if args.top_n_from_elo:
+        if not args.elo_results_in:
+            print("[harness] --top-n-from-elo requires --elo-results-in PATH, skipping")
+        else:
+            existing = {name for name, _ in candidates}
+            added = top_candidates_from_elo(args.elo_results_in, args.top_n_from_elo, exclude=existing)
+            candidates += added
+            print(f"[harness] added top {len(added)} candidates from "
+                 f"{args.elo_results_in}'s leaderboard: {[name for name, _ in added]}")
 
     if len(candidates) < 2:
         print("[harness] no candidates beyond champion (pass --candidates or --auto-search), "
@@ -309,6 +405,27 @@ def run_harness_stage(args):
                        if args.auto_search else None),
         "candidates": ranked_candidates,
     }
+
+    if args.sector_breakdown:
+        if args.domain != "fundamentals":
+            print("[sector] --sector-breakdown is fundamentals-only (swing panels carry no "
+                 "sector labels), skipping")
+        else:
+            sector_report = harness.sector_weight_report(panel.train)
+            if not sector_report:
+                print("[sector] no sector labels found in this panel -- rebuild it with the "
+                     "current backtest_monthly.py to pick up sector tagging")
+            else:
+                summary["sector_breakdown"] = sector_report
+                print("\n[sector] per-sector formula_weights(), train slice only:")
+                for sector, row in sector_report.items():
+                    if row["formula_weights"] is None:
+                        print(f"  {sector:<28} {row['reason']}")
+                    else:
+                        weights = ", ".join(f"{leg}={weight}" for leg, weight in
+                                            sorted(row["formula_weights"].items(),
+                                                  key=lambda item: -item[1]))
+                        print(f"  {sector:<28} ({row['usable_periods']} periods) {weights}")
 
     if args.holdout_check:
         print("\n" + "=" * 70)
@@ -355,6 +472,7 @@ def run_elo_stage(args):
         else:
             print("[elo] formula_weights() returned nothing usable on the train slice, "
                  "skipping that candidate")
+    candidates += shared_extra_candidates(args, args.domain, periods)
     if args.elo_search:
         legs = universe_legs(periods)
         candidates += range_search_candidates(
@@ -423,6 +541,31 @@ def main():
                              "[1-perturbation, 1+perturbation]")
     parser.add_argument("--search-drop-probability", type=float, default=0.3,
                         help="Chance each leg is dropped to 0 entirely in a given candidate")
+    parser.add_argument("--include-equal-weight", action="store_true",
+                        help="Also test a 1/N-per-leg candidate -- the no-opinion baseline. "
+                             "Available in both the harness and elo stages.")
+    parser.add_argument("--include-blend", action="store_true",
+                        help="Also test a candidate blending equal-weight with this domain's "
+                             "recommended weights (reweighted_composite_a for fundamentals if "
+                             "registered) -- unlike the recommended candidate alone, every leg "
+                             "keeps a nonzero share. See --blend-ratio. Available in both the "
+                             "harness and elo stages.")
+    parser.add_argument("--blend-ratio", type=float, default=0.5,
+                        help="Weight given to the recommended candidate in --include-blend "
+                             "(the rest goes to equal-weight); 0.5 = an even split")
+    parser.add_argument("--sector-breakdown", action="store_true",
+                        help="Fundamentals-only. Print/record formula_weights() computed "
+                             "independently per sector (train slice only) -- whether tech, "
+                             "say, warrants a different leg weighting than the champion "
+                             "vector applies uniformly. Requires a panel rebuilt with sector "
+                             "tagging (current backtest_monthly.py).")
+    parser.add_argument("--top-n-from-elo", type=int, default=0, metavar="N",
+                        help="Pull the top N names off a previous elo run's leaderboard "
+                             "(--elo-results-in PATH) and add them as harness candidates -- "
+                             "'test the top N' without retyping weight vectors by hand.")
+    parser.add_argument("--elo-results-in", default="",
+                        help="Path to a previously-written elo_tournament_results.json, read "
+                             "by --top-n-from-elo")
     parser.add_argument("--train-fraction", type=float, default=0.5)
     parser.add_argument("--validation-fraction", type=float, default=0.25)
     parser.add_argument("--pbo-splits", type=int, default=8)

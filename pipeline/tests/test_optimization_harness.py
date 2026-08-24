@@ -203,5 +203,116 @@ class FormulaWeightsTests(unittest.TestCase):
             self.assertTrue(all(weight > 0 for weight in weights.values()))
 
 
+class EqualWeightCandidateTests(unittest.TestCase):
+    def test_every_leg_gets_the_same_share_summing_to_one(self):
+        candidate = harness.equal_weight_candidate(["a", "b", "c", "d"])
+        self.assertEqual(set(candidate), {"a", "b", "c", "d"})
+        for weight in candidate.values():
+            self.assertAlmostEqual(weight, 0.25)
+        self.assertAlmostEqual(sum(candidate.values()), 1.0)
+
+    def test_empty_legs_returns_empty(self):
+        self.assertEqual(harness.equal_weight_candidate([]), {})
+
+
+class BlendedFullCoverageCandidateTests(unittest.TestCase):
+    def test_a_leg_dropped_by_the_recommended_candidate_still_gets_nonzero_weight(self):
+        recommended = {"valuation": 0.6, "profitability": 0.4}  # drops financial_health entirely
+        legs = ["valuation", "profitability", "financial_health"]
+        blended = harness.blended_full_coverage_candidate(recommended, legs, blend=0.5)
+        self.assertGreater(blended.get("financial_health", 0), 0)
+        self.assertEqual(set(blended), set(legs))
+
+    def test_weights_sum_to_one(self):
+        recommended = {"valuation": 1.0}
+        legs = ["valuation", "profitability"]
+        blended = harness.blended_full_coverage_candidate(recommended, legs, blend=0.5)
+        self.assertAlmostEqual(sum(blended.values()), 1.0, places=4)
+
+    def test_blend_zero_is_pure_equal_weight(self):
+        recommended = {"valuation": 1.0}
+        legs = ["valuation", "profitability"]
+        blended = harness.blended_full_coverage_candidate(recommended, legs, blend=0.0)
+        self.assertAlmostEqual(blended["valuation"], blended["profitability"], places=4)
+
+    def test_an_out_of_range_blend_raises(self):
+        with self.assertRaises(ValueError):
+            harness.blended_full_coverage_candidate({"a": 1.0}, ["a"], blend=1.5)
+
+
+class SectorHelpersTests(unittest.TestCase):
+    def test_sectors_in_panel_collects_distinct_labels_excluding_none(self):
+        periods = [
+            {"sectors": {"AAPL": "Technology", "XOM": "Energy"}},
+            {"sectors": {"MSFT": "Technology", "UNKNOWN": None}},
+        ]
+        self.assertEqual(harness.sectors_in_panel(periods), ["Energy", "Technology"])
+
+    def test_a_panel_with_no_sector_tagging_gives_an_empty_universe(self):
+        periods = [{"leg_scores": {"AAPL": {"x": 1.0}}}]
+        self.assertEqual(harness.sectors_in_panel(periods), [])
+
+    def test_filter_periods_by_sector_keeps_only_that_sectors_tickers(self):
+        periods = [{
+            "sectors": {"AAPL": "Technology", "XOM": "Energy"},
+            "leg_scores": {"AAPL": {"x": 1.0}, "XOM": {"x": 2.0}},
+            "forward_returns": {"AAPL": 0.01, "XOM": -0.01},
+            "scores": {"AAPL": 50.0, "XOM": 40.0},
+        }]
+        tech_only = harness.filter_periods_by_sector(periods, "Technology")
+        self.assertEqual(set(tech_only[0]["leg_scores"]), {"AAPL"})
+        self.assertEqual(set(tech_only[0]["forward_returns"]), {"AAPL"})
+
+    def test_filter_periods_by_sector_keeps_period_count_stable_even_when_empty(self):
+        periods = [{"sectors": {"AAPL": "Technology"}, "leg_scores": {"AAPL": {"x": 1.0}},
+                   "forward_returns": {"AAPL": 0.01}, "scores": {"AAPL": 50.0}}]
+        empty_sector = harness.filter_periods_by_sector(periods, "Energy")
+        self.assertEqual(len(empty_sector), 1)
+        self.assertEqual(empty_sector[0]["leg_scores"], {})
+
+
+def synthetic_sector_periods(count, *, names_per_sector=20, seed=31, noise=0.03):
+    """Two sectors, each with its own single predictive leg -- Technology responds only to
+    "growth", Energy only to "valuation" -- so a per-sector formula should recover a
+    different winning leg per sector rather than one leg dominating everywhere.
+    """
+    generator = random.Random(seed)
+    periods = []
+    for index in range(count):
+        leg_scores, forwards, sectors = {}, {}, {}
+        for sector, predictive_leg in (("Technology", "growth"), ("Energy", "valuation")):
+            for position in range(names_per_sector):
+                ticker = f"{sector[:2]}{position}"
+                true_score = generator.uniform(0, 100)
+                forward = (true_score - 50) / 50 * 0.02 + generator.gauss(0, noise)
+                leg_scores[ticker] = {
+                    "growth": true_score if predictive_leg == "growth" else generator.uniform(0, 100),
+                    "valuation": true_score if predictive_leg == "valuation" else generator.uniform(0, 100),
+                }
+                forwards[ticker] = forward
+                sectors[ticker] = sector
+        periods.append({"date": f"2026-{index + 1:02d}", "leg_scores": leg_scores,
+                        "forward_returns": forwards, "sectors": sectors})
+    return periods
+
+
+class SectorWeightReportTests(unittest.TestCase):
+    def test_each_sector_concentrates_on_its_own_predictive_leg(self):
+        periods = synthetic_sector_periods(60, names_per_sector=25, noise=0.02, seed=41)
+        report = harness.sector_weight_report(periods, minimum_periods=6)
+        self.assertEqual(set(report), {"Technology", "Energy"})
+        tech_weights = report["Technology"]["formula_weights"]
+        energy_weights = report["Energy"]["formula_weights"]
+        self.assertGreater(tech_weights.get("growth", 0), tech_weights.get("valuation", 0))
+        self.assertGreater(energy_weights.get("valuation", 0), energy_weights.get("growth", 0))
+
+    def test_a_sector_below_the_minimum_period_floor_reports_none_rather_than_fitting_noise(self):
+        periods = synthetic_sector_periods(60, names_per_sector=25, noise=0.02, seed=42)
+        report = harness.sector_weight_report(periods, minimum_periods=1000)
+        for row in report.values():
+            self.assertIsNone(row["formula_weights"])
+            self.assertIn("reason", row)
+
+
 if __name__ == "__main__":
     unittest.main()

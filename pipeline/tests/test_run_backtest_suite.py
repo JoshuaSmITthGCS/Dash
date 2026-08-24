@@ -1,6 +1,9 @@
+import argparse
+import json
 import os
 import random
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -218,6 +221,91 @@ class HoldoutCheckTests(unittest.TestCase):
         row = results[0]
         self.assertIn("deflated_sharpe_probability", row)
         self.assertIn("ship", row)
+
+
+class RecommendedWeightsTests(unittest.TestCase):
+    def test_fundamentals_prefers_reweighted_composite_a_when_registered(self):
+        import shadow_portfolios
+        registered = shadow_portfolios.research_candidate_strategies()
+        if "reweighted_composite_a" not in registered:
+            self.skipTest("reweighted_composite_a not currently registered")
+        name, weights = suite.recommended_weights("fundamentals")
+        self.assertEqual(name, "reweighted_composite_a")
+        self.assertGreater(sum(weights.values()), 0)
+
+    def test_swing_returns_the_registered_reversal_b_weights(self):
+        name, weights = suite.recommended_weights("swing")
+        self.assertEqual(name, "swing-reversal-B")
+        self.assertEqual(weights, suite.SWING_REVERSAL_B_WEIGHTS)
+
+
+class SharedExtraCandidatesTests(unittest.TestCase):
+    PERIODS = [{"leg_scores": {"T1": {"valuation": 1.0, "profitability": 2.0}}}]
+
+    def _args(self, **overrides):
+        base = {"include_equal_weight": False, "include_blend": False, "blend_ratio": 0.5}
+        base.update(overrides)
+        return argparse.Namespace(**base)
+
+    def test_neither_flag_set_returns_nothing(self):
+        self.assertEqual(suite.shared_extra_candidates(self._args(), "fundamentals", self.PERIODS), [])
+
+    def test_include_equal_weight_adds_exactly_one_candidate_covering_every_panel_leg(self):
+        extra = suite.shared_extra_candidates(self._args(include_equal_weight=True),
+                                              "fundamentals", self.PERIODS)
+        names = [name for name, _ in extra]
+        self.assertIn("equal_weight", names)
+        weights = dict(extra)["equal_weight"]
+        self.assertEqual(set(weights), {"valuation", "profitability"})
+
+    def test_include_blend_adds_a_candidate_covering_every_panel_leg(self):
+        extra = suite.shared_extra_candidates(self._args(include_blend=True),
+                                              "fundamentals", self.PERIODS)
+        self.assertEqual(len(extra), 1)
+        name, weights = extra[0]
+        self.assertTrue(name.startswith("equal_blend_"))
+        self.assertEqual(set(weights), {"valuation", "profitability"})
+
+    def test_both_flags_add_two_distinctly_named_candidates(self):
+        extra = suite.shared_extra_candidates(
+            self._args(include_equal_weight=True, include_blend=True), "fundamentals", self.PERIODS)
+        names = [name for name, _ in extra]
+        self.assertEqual(len(names), 2)
+        self.assertEqual(len(set(names)), 2)
+
+
+class TopCandidatesFromEloTests(unittest.TestCase):
+    def _write_elo_results(self, leaderboard, candidates):
+        handle = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
+        json.dump({"leaderboard": leaderboard, "candidates": candidates}, handle)
+        handle.close()
+        self.addCleanup(os.remove, handle.name)
+        return handle.name
+
+    def test_returns_the_top_n_in_leaderboard_order(self):
+        path = self._write_elo_results(
+            [{"name": "champion", "elo": 1600}, {"name": "b", "elo": 1550},
+             {"name": "a", "elo": 1500}],
+            {"champion": {"x": 1.0}, "b": {"x": 0.6}, "a": {"x": 0.4}},
+        )
+        picked = suite.top_candidates_from_elo(path, 2, exclude=set())
+        self.assertEqual([name for name, _ in picked], ["champion", "b"])
+
+    def test_excluded_names_are_skipped(self):
+        path = self._write_elo_results(
+            [{"name": "champion", "elo": 1600}, {"name": "b", "elo": 1550}],
+            {"champion": {"x": 1.0}, "b": {"x": 0.6}},
+        )
+        picked = suite.top_candidates_from_elo(path, 2, exclude={"champion"})
+        self.assertEqual([name for name, _ in picked], ["b"])
+
+    def test_a_leaderboard_name_missing_from_candidates_is_skipped_not_raised(self):
+        path = self._write_elo_results(
+            [{"name": "ghost", "elo": 1600}, {"name": "b", "elo": 1550}],
+            {"b": {"x": 0.6}},
+        )
+        picked = suite.top_candidates_from_elo(path, 2, exclude=set())
+        self.assertEqual([name for name, _ in picked], ["b"])
 
 
 if __name__ == "__main__":
