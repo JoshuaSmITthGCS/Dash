@@ -204,9 +204,13 @@ def test_signal_panel_is_none_by_default_and_populated_only_when_requested(tmp_p
     assert panel["periods"], "variant A graded periods, so the panel must not be empty"
     # Shape optimization_harness.Panel/score_with_weights expect: leg_scores keyed by
     # ticker, each a {leg: value} dict, alongside forward_returns for the same tickers.
+    # ``sectors`` is what lets sector_weight_search run against this panel the same way
+    # it already does against the fundamental/behavioral panel.
     first = panel["periods"][0]
-    assert set(first) >= {"date", "leg_scores", "forward_returns"}
+    assert set(first) >= {"date", "leg_scores", "forward_returns", "sectors"}
     for ticker, legs in first["leg_scores"].items():
         assert ticker in first["forward_returns"]
         assert isinstance(legs, dict)
         assert set(legs) <= set(module.swing_signals.SWING_WEIGHTS)
+    assert set(first["sectors"]) <= set(first["leg_scores"])
+    assert set(first["sectors"].values()) <= {"Technology", "Energy"}

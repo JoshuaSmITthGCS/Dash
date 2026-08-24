@@ -388,9 +388,12 @@ def run_backtest(*, years=2, universe_limit=0, cadence_sessions=CADENCE_SESSIONS
                 if collect_signal_panel and variant == swing_signals.BASELINE_VARIANT:
                     leg_scores = {row["ticker"]: row["leg_scores"] for row in eligible
                                  if row["ticker"] in forward_returns}
+                    period_sectors = {row["ticker"]: row.get("sector") for row in eligible
+                                      if row["ticker"] in forward_returns and row.get("sector")}
                     signal_panel_periods.append({
                         "date": as_of, "leg_scores": leg_scores,
                         "forward_returns": forward_returns,
+                        "sectors": period_sectors,
                     })
             book = {row["ticker"] for row in swing_signals.book_rows(scored, config)}
             weekly_books[variant].append(book)

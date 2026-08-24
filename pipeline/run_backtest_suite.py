@@ -432,25 +432,21 @@ def run_harness_stage(args):
     }
 
     if args.sector_breakdown:
-        if args.domain != "fundamentals":
-            print("[sector] --sector-breakdown is fundamentals-only (swing panels carry no "
-                 "sector labels), skipping")
+        sector_report = harness.sector_weight_report(panel.train)
+        if not sector_report:
+            print("[sector] no sector labels found in this panel -- rebuild it with the "
+                 "current backtest_monthly.py/backtest_swing.py to pick up sector tagging")
         else:
-            sector_report = harness.sector_weight_report(panel.train)
-            if not sector_report:
-                print("[sector] no sector labels found in this panel -- rebuild it with the "
-                     "current backtest_monthly.py to pick up sector tagging")
-            else:
-                summary["sector_breakdown"] = sector_report
-                print("\n[sector] per-sector formula_weights(), train slice only:")
-                for sector, row in sector_report.items():
-                    if row["formula_weights"] is None:
-                        print(f"  {sector:<28} {row['reason']}")
-                    else:
-                        weights = ", ".join(f"{leg}={weight}" for leg, weight in
-                                            sorted(row["formula_weights"].items(),
-                                                  key=lambda item: -item[1]))
-                        print(f"  {sector:<28} ({row['usable_periods']} periods) {weights}")
+            summary["sector_breakdown"] = sector_report
+            print("\n[sector] per-sector formula_weights(), train slice only:")
+            for sector, row in sector_report.items():
+                if row["formula_weights"] is None:
+                    print(f"  {sector:<28} {row['reason']}")
+                else:
+                    weights = ", ".join(f"{leg}={weight}" for leg, weight in
+                                        sorted(row["formula_weights"].items(),
+                                              key=lambda item: -item[1]))
+                    print(f"  {sector:<28} ({row['usable_periods']} periods) {weights}")
 
     if args.metric_sector_breakdown:
         if args.domain != "fundamentals":
@@ -495,89 +491,84 @@ def run_harness_stage(args):
         summary["growth_quality_focus"] = harness.GROWTH_QUALITY_GATES
 
     if args.sector_candidate_check:
-        if args.domain != "fundamentals":
-            print("[sector-check] --sector-candidate-check is fundamentals-only, skipping")
+        check_panel = sector_panel
+        candidate_report = harness.sector_candidate_report(
+            check_panel, champion_weights=champion_weights, trial_count=session.trial_count)
+        if not candidate_report:
+            print("[sector-check] no sector labels found in this panel -- rebuild it with "
+                 "the current backtest_monthly.py/backtest_swing.py to pick up sector tagging")
         else:
-            check_panel = sector_panel
-            candidate_report = harness.sector_candidate_report(
-                check_panel, champion_weights=champion_weights, trial_count=session.trial_count)
-            if not candidate_report:
-                print("[sector-check] no sector labels found in this panel -- rebuild it with "
-                     "the current backtest_monthly.py to pick up sector tagging")
-            else:
-                summary["sector_candidate_check"] = candidate_report
-                print("\n[sector-check] sector_formula (fit on that sector's train slice) vs "
-                     "champion AND an equal-weight control, evaluated on that SAME sector's "
-                     "validation slice -- data the formula never saw. REAL requires all four "
-                     "gates; anything less is NOT_ESTABLISHED, not a weaker yes:")
-                for sector, row in candidate_report.items():
-                    if row["candidates"] is None:
-                        print(f"  {sector:<24} {row['reason']}")
-                        continue
-                    by_name = {c["name"]: c for c in row["candidates"]}
-                    champ, formula = by_name.get("champion", {}), by_name.get("sector_formula")
-                    verdict = row.get("verdict") or {}
-                    if formula is None:
-                        print(f"  {sector:<24} {verdict.get('reason', 'no sector_formula')}")
-                        continue
-                    print(f"  {sector:<24} champ={champ.get('validation_mean_ic')} "
-                         f"formula={formula['validation_mean_ic']} "
-                         f"eq={(by_name.get('equal_weight') or {}).get('validation_mean_ic')} "
-                         f"eff={formula['walk_forward_efficiency']} "
-                         f"t={(formula.get('validation_ic') or {}).get('t_stat')} "
-                         f"-> {verdict.get('verdict')}"
-                         + (f" (failed: {', '.join(verdict['failed_gates'])})"
-                            if verdict.get("failed_gates") else ""))
-                real = [s for s, r in candidate_report.items()
-                       if (r.get("verdict") or {}).get("verdict") == "REAL"]
-                threshold = next((r["verdict"]["significance_threshold"]
-                                 for r in candidate_report.values() if r.get("verdict")), None)
-                print(f"\n[sector-check] {len(real)} of {len(candidate_report)} sectors cleared "
-                     f"every gate (|t| bar {threshold}, Bonferroni-adjusted for the number of "
-                     f"sectors searched): {real or 'none'}")
+            summary["sector_candidate_check"] = candidate_report
+            print("\n[sector-check] sector_formula (fit on that sector's train slice) vs "
+                 "champion AND an equal-weight control, evaluated on that SAME sector's "
+                 "validation slice -- data the formula never saw. REAL requires all four "
+                 "gates; anything less is NOT_ESTABLISHED, not a weaker yes:")
+            for sector, row in candidate_report.items():
+                if row["candidates"] is None:
+                    print(f"  {sector:<24} {row['reason']}")
+                    continue
+                by_name = {c["name"]: c for c in row["candidates"]}
+                champ, formula = by_name.get("champion", {}), by_name.get("sector_formula")
+                verdict = row.get("verdict") or {}
+                if formula is None:
+                    print(f"  {sector:<24} {verdict.get('reason', 'no sector_formula')}")
+                    continue
+                print(f"  {sector:<24} champ={champ.get('validation_mean_ic')} "
+                     f"formula={formula['validation_mean_ic']} "
+                     f"eq={(by_name.get('equal_weight') or {}).get('validation_mean_ic')} "
+                     f"eff={formula['walk_forward_efficiency']} "
+                     f"t={(formula.get('validation_ic') or {}).get('t_stat')} "
+                     f"-> {verdict.get('verdict')}"
+                     + (f" (failed: {', '.join(verdict['failed_gates'])})"
+                        if verdict.get("failed_gates") else ""))
+            real = [s for s, r in candidate_report.items()
+                   if (r.get("verdict") or {}).get("verdict") == "REAL"]
+            threshold = next((r["verdict"]["significance_threshold"]
+                             for r in candidate_report.values() if r.get("verdict")), None)
+            print(f"\n[sector-check] {len(real)} of {len(candidate_report)} sectors cleared "
+                 f"every gate (|t| bar {threshold}, Bonferroni-adjusted for the number of "
+                 f"sectors searched): {real or 'none'}")
 
     if args.sector_search:
-        if args.domain != "fundamentals":
-            print("[sector-search] --sector-search is fundamentals-only, skipping")
+        print(f"\n[sector-search] searching {args.sector_search} random candidates plus "
+             "the structured pool (formula, shrunk blends, equal weight) PER SECTOR. "
+             "Selection happens inside each sector's train slice (fit 60% / select 40%); "
+             "only each sector's winner is graded on validation, deflated for the full "
+             "pool it beat. This can take a while -- that's the cost of an actual search.")
+        search_report = harness.sector_weight_search(
+            sector_panel, champion_weights=champion_weights, count=args.sector_search,
+            seed=args.sector_search_seed, trial_count=session.trial_count)
+        if not search_report:
+            print("[sector-search] no sector labels found in this panel -- rebuild it "
+                 "with the current backtest_monthly.py/backtest_swing.py to pick up sector "
+                 "tagging")
         else:
-            print(f"\n[sector-search] searching {args.sector_search} random candidates plus "
-                 "the structured pool (formula, shrunk blends, equal weight) PER SECTOR. "
-                 "Selection happens inside each sector's train slice (fit 60% / select 40%); "
-                 "only each sector's winner is graded on validation, deflated for the full "
-                 "pool it beat. This can take a while -- that's the cost of an actual search.")
-            search_report = harness.sector_weight_search(
-                sector_panel, champion_weights=champion_weights, count=args.sector_search,
-                seed=args.sector_search_seed, trial_count=session.trial_count)
-            if not search_report:
-                print("[sector-search] no sector labels found in this panel -- rebuild it "
-                     "with the current backtest_monthly.py to pick up sector tagging")
-            else:
-                summary["sector_weight_search"] = search_report
-                for sector, row in search_report.items():
-                    if row["candidates"] is None:
-                        print(f"  {sector:<24} {row['reason']}")
-                        continue
-                    by_name = {c["name"]: c for c in row["candidates"]}
-                    winner = by_name["search_winner"]
-                    champ = by_name.get("champion", {})
-                    verdict = row.get("verdict") or {}
-                    top = sorted(winner["weights"].items(), key=lambda kv: -kv[1])[:3]
-                    top_txt = ", ".join(f"{leg}={weight:.2f}" for leg, weight in top)
-                    print(f"  {sector:<24} winner[{winner['picked_as']}]: {top_txt}")
-                    print(f"  {'':<24} select_ic={winner['select_mean_ic']} -> "
-                         f"val_ic={winner['validation_mean_ic']} "
-                         f"(champ={champ.get('validation_mean_ic')}) "
-                         f"eff={winner['walk_forward_efficiency']} "
-                         f"t={(winner.get('validation_ic') or {}).get('t_stat')} "
-                         f"pbo={row['search_pbo']} -> {verdict.get('verdict')}"
-                         + (f" (failed: {', '.join(verdict['failed_gates'])})"
-                            if verdict.get("failed_gates") else ""))
-                real = [s for s, r in search_report.items()
-                       if (r.get("verdict") or {}).get("verdict") == "REAL"]
-                print(f"\n[sector-search] {len(real)} of {len(search_report)} sectors cleared "
-                     f"every gate after a real search: {real or 'none'}. A high search_pbo "
-                     "(>0.5) in a sector means its winner is likely the luckiest of the pool, "
-                     "whatever its validation number says.")
+            summary["sector_weight_search"] = search_report
+            for sector, row in search_report.items():
+                if row["candidates"] is None:
+                    print(f"  {sector:<24} {row['reason']}")
+                    continue
+                by_name = {c["name"]: c for c in row["candidates"]}
+                winner = by_name["search_winner"]
+                champ = by_name.get("champion", {})
+                verdict = row.get("verdict") or {}
+                top = sorted(winner["weights"].items(), key=lambda kv: -kv[1])[:3]
+                top_txt = ", ".join(f"{leg}={weight:.2f}" for leg, weight in top)
+                print(f"  {sector:<24} winner[{winner['picked_as']}]: {top_txt}")
+                print(f"  {'':<24} select_ic={winner['select_mean_ic']} -> "
+                     f"val_ic={winner['validation_mean_ic']} "
+                     f"(champ={champ.get('validation_mean_ic')}) "
+                     f"eff={winner['walk_forward_efficiency']} "
+                     f"t={(winner.get('validation_ic') or {}).get('t_stat')} "
+                     f"pbo={row['search_pbo']} -> {verdict.get('verdict')}"
+                     + (f" (failed: {', '.join(verdict['failed_gates'])})"
+                        if verdict.get("failed_gates") else ""))
+            real = [s for s, r in search_report.items()
+                   if (r.get("verdict") or {}).get("verdict") == "REAL"]
+            print(f"\n[sector-search] {len(real)} of {len(search_report)} sectors cleared "
+                 f"every gate after a real search: {real or 'none'}. A high search_pbo "
+                 "(>0.5) in a sector means its winner is likely the luckiest of the pool, "
+                 "whatever its validation number says.")
 
     if args.holdout_check:
         print("\n" + "=" * 70)
