@@ -59,13 +59,22 @@ REQUEST_TIMEOUT = 30
 # JSON array distinguished by a "chamber" field - see _fetch's per-row chamber filter
 # below, which is what lets this file serve both HOUSE_DATASET and SENATE_DATASET without
 # assuming the whole payload is one chamber the way the original stock-watcher files were.
-# SENATE_DATASET is left on the dead default: SenateEfdClient already covers the Senate
-# from the authoritative source directly, so there is nothing to gain from also fetching a
-# multi-MB third-party file for that chamber - only a working override if a caller wants one.
+#
+# SENATE_DATASET's default used to point at the dead stock-watcher S3 bucket on the theory
+# that SenateEfdClient already covers the Senate authoritatively, so a redundant fetch had
+# nothing to gain - but that reasoning assumed eFD is always reachable. It isn't: eFD is a
+# live, bot-defensive government site that can be down, rate-limit, change shape, or simply
+# be unreachable from wherever this runs (see SenateEfdClientTests' own docstring), and when
+# it is, a SENATE_DATASET pointed at a bucket that always 403s contributes nothing -
+# the Senate goes uncovered even though a live source of Senate rows already exists one
+# field away. congress-trading-monitor's combined file - already fetched for
+# HOUSE_DATASET - carries its own live "senate" chamber slice (confirmed against a live
+# pull: ~980 Senate rows in a 5,000-row sample), so pointing both defaults at the same URL
+# gives senate_latest() a real fallback instead of a guaranteed-empty one, at the cost of
+# one already-open connection being reused rather than a second file fetched.
 HOUSE_DATASET = os.getenv("CONGRESS_HOUSE_DATASET_URL") or (
     "https://raw.githubusercontent.com/kadoa-org/congress-trading-monitor/main/public/data/trades.json")
-SENATE_DATASET = os.getenv("CONGRESS_SENATE_DATASET_URL") or (
-    "https://senate-stock-watcher-data.s3-us-west-2.amazonaws.com/aggregate/all_transactions.json")
+SENATE_DATASET = os.getenv("CONGRESS_SENATE_DATASET_URL") or HOUSE_DATASET
 # These files are the full history, not a recent window - tens of MB - so the read is
 # streamed to a parsed list once per run and then filtered locally by the publish window.
 DATASET_TIMEOUT = 120
@@ -471,8 +480,9 @@ class SenateEfdClient:
 
 class StockWatcherClient:
     """Third-party mirrors of the Clerk and eFD filings, scraped and republished as keyless
-    JSON - the default HOUSE_DATASET (congress-trading-monitor) and, for callers who
-    override SENATE_DATASET, the original stock-watcher shape.
+    JSON - both HOUSE_DATASET and SENATE_DATASET default to congress-trading-monitor's
+    combined file (see the module-level comment on those constants), and either can be
+    overridden independently to the original single-chamber stock-watcher shape instead.
 
     No credential, so this is the source that keeps the screen populated when the FMP plan
     does not cover the Congressional endpoints. The cost of that is provenance: it is a

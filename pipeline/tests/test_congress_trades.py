@@ -2,8 +2,18 @@ import unittest
 import urllib.error
 from unittest.mock import Mock, patch
 
-from congress_trades import (CongressTradesClient, CongressTradesError, SenateEfdClient,
-                             StockWatcherClient, normalize_date)
+from congress_trades import (HOUSE_DATASET, SENATE_DATASET, CongressTradesClient,
+                             CongressTradesError, SenateEfdClient, StockWatcherClient,
+                             normalize_date)
+
+
+class DatasetDefaultsTests(unittest.TestCase):
+    def test_senate_dataset_defaults_to_the_same_live_file_as_house_dataset(self):
+        # SENATE_DATASET used to default to the dead stock-watcher S3 bucket - a guaranteed
+        # 403 - on the theory that SenateEfdClient alone covers the Senate. That leaves the
+        # Senate with zero real fallback when eFD is down or blocked, even though the file
+        # HOUSE_DATASET already fetches carries a live "senate" chamber slice of its own.
+        self.assertEqual(SENATE_DATASET, HOUSE_DATASET)
 
 
 class NormalizeDateTests(unittest.TestCase):
