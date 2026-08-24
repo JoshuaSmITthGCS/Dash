@@ -381,6 +381,53 @@ sector's train-slice pattern was fit to noise, and Priority 9's number for it sh
 trusted regardless of how intuitive it looked (e.g. "Utilities favors leverage metrics" reads
 as a sensible story either way — this check is what actually tells the two apart).
 
+## Priority 11 — Verdict gates and growth-quality focus (`R11-P10` in the registry)
+
+Two gaps in Priority 10 as first shipped, closed before running it on real data.
+
+**Rigor.** It reported one comparison per sector (`sector_formula` vs `champion` validation
+IC). That's the weakest possible reading — beating champion in a sector is equally consistent
+with champion simply being *miscalibrated* there — and searching 11 sectors for a winner is 11
+chances to find one in noise. `sector_verdict()` now grades a sector `REAL` only on all four
+of:
+
+1. beats champion on validation IC,
+2. **also** beats the equal-weight no-opinion control (separates "this sector wants these
+   weights" from "champion is badly calibrated here"),
+3. keeps ≥50% of its train IC on validation (a collapse is the overfitting signature),
+4. clears a Bonferroni-adjusted |t| bar derived from the number of sectors searched, floored
+   at the repo's own standing |t| ≥ 3.
+
+Anything short of all four reads `NOT_ESTABLISHED` with the failed gates named — never a
+weaker yes. (Bonferroni at 11 sectors is ~2.84, looser than the standing bar, so the floor
+binds today and the adjustment only starts mattering above ~50 sectors. Stated rather than
+left as a silent no-op.)
+
+**Objective.** The harness optimizes for predicting forward returns across the *whole*
+universe, which is not the same question as ranking high-growth, good-quality companies well —
+and the latter is what the score exists to do. `--growth-quality-focus` restricts each period
+to names clearing `GROWTH_QUALITY_GATES` (growth ≥70th percentile; profitability and
+financial_health *averaged* ≥50th) within that period's own cross-section, so qualification is
+point-in-time and never uses a threshold derived from later data.
+
+Two things only came out by running it, not by reasoning about it:
+
+- The first draft used three independent floors. Those compound multiplicatively to ~7.5%
+  retention — on a per-sector slice of the real panel (~80 names/sector) that's ~6 names per
+  period, below the harness's own ≥5-name floor. Rebuilt as two gates, averaging profitability
+  and financial_health into one "quality" concept (they measure the same thing; two floors
+  double-counted it). ~15% retention, verified at 14.9%.
+- On a 160-name/90-period synthetic panel with a deliberately planted leg per sector, the
+  gates discriminated correctly: full universe → both plants `REAL` (t=29.4, t=22.0); with
+  growth-quality focus narrowing to 15% of names → Energy stayed `REAL` (t=10.9) while
+  Technology correctly fell to `NOT_ESTABLISHED`, naming all three gates it failed (t dropped
+  to 2.33). A narrower universe producing a weaker verdict is the honest result, not a
+  regression.
+
+16 new tests. Both additions make the Priority 10 check strictly harder to pass, never easier.
+Still not run against the real panel — the per-sector findings from Priorities 9 and 10 remain
+unvalidated until that happens.
+
 ## What NOT done, per the brief and this session's standing constraints
 
 No production leg weights, composite construction, or ranking logic changed. No shadow variant

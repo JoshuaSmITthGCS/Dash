@@ -222,5 +222,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P10-sector-verdict-gates-and-growth-quality-focus",
+    "declared_at": "2026-08-24T16:30:00+00:00",
+    "hypothesis": "User, before running R11-P9's --sector-candidate-check on real data: 'make sure its rigorous testing though and make sure the score is focused on high growth good companies'. Two distinct gaps in R11-P9 as shipped. (1) Rigor: it reported a single comparison per sector (sector_formula vs champion validation IC), the weakest possible reading -- beating champion in one sector is equally consistent with champion simply being miscalibrated there, and searching 11 sectors for a winner is 11 chances to find one in noise while grading each against the bar a single pre-registered hypothesis would face. (2) Objective: the harness optimizes for predicting forward returns across the WHOLE ~910-name universe, which is not the same question as ranking high-growth, good-quality companies well -- and the latter is what the score exists to do.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

@@ -1150,6 +1150,80 @@ REGISTRY = [
                    "in this sandbox, only against synthetic ground-truth and a small fabricated "
                    "smoke-test panel."),
     },
+    {
+        "id": "R11-P10-sector-verdict-gates-and-growth-quality-focus",
+        "declared_at": "2026-08-24T16:30:00+00:00",
+        "hypothesis": ("User, before running R11-P9's --sector-candidate-check on real data: "
+                       "'make sure its rigorous testing though and make sure the score is focused "
+                       "on high growth good companies'. Two distinct gaps in R11-P9 as shipped. "
+                       "(1) Rigor: it reported a single comparison per sector (sector_formula vs "
+                       "champion validation IC), the weakest possible reading -- beating champion "
+                       "in one sector is equally consistent with champion simply being "
+                       "miscalibrated there, and searching 11 sectors for a winner is 11 chances "
+                       "to find one in noise while grading each against the bar a single "
+                       "pre-registered hypothesis would face. (2) Objective: the harness optimizes "
+                       "for predicting forward returns across the WHOLE ~910-name universe, which "
+                       "is not the same question as ranking high-growth, good-quality companies "
+                       "well -- and the latter is what the score exists to do."),
+        "category": "methodology",
+        "configuration": {
+            "files": ["pipeline/optimization_harness.py", "pipeline/run_backtest_suite.py",
+                     "pipeline/tests/test_optimization_harness.py"],
+            "change": ("Rigor: sector_verdict(candidates, significance_threshold, "
+                       "efficiency_floor) grades a sector REAL only on a conjunction of four "
+                       "gates -- beats champion, ALSO beats the equal-weight no-opinion control "
+                       "(separating 'this sector wants these weights' from 'champion is "
+                       "miscalibrated here'), keeps >=50% of its train IC on validation "
+                       "(SECTOR_EFFICIENCY_FLOOR; a collapse is the overfitting signature), and "
+                       "clears sector_significance_threshold(): a Bonferroni-adjusted |t| bar "
+                       "computed from the number of sectors actually searched, floored at the "
+                       "repo's own standing |t| >= 3. Anything short of all four reads "
+                       "NOT_ESTABLISHED with the failed gates named, never a weaker yes. "
+                       "Objective: filter_periods_by_quality_gates(periods, gates) restricts each "
+                       "period to names clearing GROWTH_QUALITY_GATES -- growth >= 70th "
+                       "percentile, and profitability+financial_health AVERAGED >= 50th -- ranked "
+                       "within that period's own cross-section, so qualification is point-in-time "
+                       "and never uses a threshold derived from later data. Panel.from_slices() "
+                       "applies that filter to already-split slices without re-deriving the "
+                       "train/validation boundary (re-splitting filtered data would silently move "
+                       "the line, the exact leakage Panel.__init__ exists to prevent). Wired as "
+                       "--growth-quality-focus on --sector-candidate-check, which prints surviving "
+                       "retention so a too-thin cross-section is visible rather than silent."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 16},
+        "number_of_variants_tested": 1,
+        "result": ("16 new tests (2 Panel.from_slices, 6 quality-gate filtering, 2 significance "
+                   "threshold, 5 verdict gates, 1 retention). Two design findings came out of "
+                   "running it rather than reasoning about it. First: the initial draft used three "
+                   "independent floors (growth 0.70, profitability 0.50, financial_health 0.50); a "
+                   "smoke run showed those compound multiplicatively to ~7.5% retention, which on "
+                   "a per-sector slice of the real panel (~80 names/sector) leaves ~6 names per "
+                   "period -- below the harness's own >=5-names usable-period floor, i.e. an "
+                   "unmeasurable slice. Rebuilt as two gates with profitability+financial_health "
+                   "averaged into one 'quality' concept (they measure the same thing; two floors "
+                   "double-counted it), giving ~15% retention, verified at 14.9% on a "
+                   "realistic-width synthetic panel. Second: end-to-end CLI runs against a "
+                   "160-name/90-period synthetic panel with a deliberately planted leg per sector "
+                   "showed the gates discriminating correctly -- on the full universe both planted "
+                   "sectors read REAL (t=29.4, t=22.0); with --growth-quality-focus narrowing to "
+                   "15% of names, Energy stayed REAL (t=10.9) while Technology correctly fell to "
+                   "NOT_ESTABLISHED, naming all three gates it failed (beats_champion, "
+                   "beats_equal_weight, clears_sector_adjusted_significance; t dropped to 2.33). A "
+                   "narrower universe producing a weaker verdict is the honest result, not a "
+                   "regression."),
+        "decision": "PROMOTE",
+        "reason": ("Ships as tooling only -- no production weight, panel, or promotion decision "
+                   "changed. Both additions make the standing R11-P9 check strictly harder to "
+                   "pass, never easier: the verdict gates can only downgrade a sector a bare IC "
+                   "comparison would have called a winner, and the growth-quality focus asks a "
+                   "narrower question on less data. Bonferroni at 11 sectors (~2.84) is looser "
+                   "than the repo's existing |t| >= 3, so the floor binds at today's sector count "
+                   "and the adjustment only starts mattering above ~50 -- stated here rather than "
+                   "left as a silent no-op. Not yet run against the user's real panel: that is the "
+                   "next step, and the per-sector findings from R11-P8/P9 remain unvalidated until "
+                   "it happens."),
+    },
 ]
 
 

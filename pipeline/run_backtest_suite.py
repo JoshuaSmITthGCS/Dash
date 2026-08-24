@@ -486,32 +486,60 @@ def run_harness_stage(args):
         if args.domain != "fundamentals":
             print("[sector-check] --sector-candidate-check is fundamentals-only, skipping")
         else:
+            check_panel = panel
+            if args.growth_quality_focus:
+                check_panel = harness.Panel.from_slices(
+                    harness.filter_periods_by_quality_gates(panel.train),
+                    harness.filter_periods_by_quality_gates(panel.validation),
+                    panel.holdout)
+                gates = ", ".join(
+                    f"{label}(={'+'.join(gate['legs'])})>={int(gate['floor'] * 100)}th pct"
+                    for label, gate in harness.GROWTH_QUALITY_GATES.items())
+                kept = sum(len(p.get("leg_scores") or {}) for p in check_panel.train)
+                before = sum(len(p.get("leg_scores") or {}) for p in panel.train)
+                retention = f"{kept}/{before} train ticker-periods kept" + (
+                    f", {kept / before * 100:.1f}%" if before else "")
+                print(f"\n[sector-check] growth-quality focus ON: each period restricted to "
+                     f"names clearing {gates} within that period's own cross-section "
+                     f"({retention})")
             candidate_report = harness.sector_candidate_report(
-                panel, champion_weights=champion_weights, trial_count=session.trial_count)
+                check_panel, champion_weights=champion_weights, trial_count=session.trial_count)
             if not candidate_report:
                 print("[sector-check] no sector labels found in this panel -- rebuild it with "
                      "the current backtest_monthly.py to pick up sector tagging")
             else:
                 summary["sector_candidate_check"] = candidate_report
+                summary["growth_quality_focus"] = (harness.GROWTH_QUALITY_GATES
+                                                   if args.growth_quality_focus else None)
                 print("\n[sector-check] sector_formula (fit on that sector's train slice) vs "
-                     "champion, evaluated on that SAME sector's validation slice -- data the "
-                     "formula never saw -- to tell a real per-sector pattern apart from noise:")
+                     "champion AND an equal-weight control, evaluated on that SAME sector's "
+                     "validation slice -- data the formula never saw. REAL requires all four "
+                     "gates; anything less is NOT_ESTABLISHED, not a weaker yes:")
                 for sector, row in candidate_report.items():
                     if row["candidates"] is None:
-                        print(f"  {sector:<28} {row['reason']}")
+                        print(f"  {sector:<24} {row['reason']}")
                         continue
                     by_name = {c["name"]: c for c in row["candidates"]}
-                    champ = by_name.get("champion", {})
-                    formula = by_name.get("sector_formula")
+                    champ, formula = by_name.get("champion", {}), by_name.get("sector_formula")
+                    verdict = row.get("verdict") or {}
                     if formula is None:
-                        print(f"  {sector:<28} champion val_ic={champ.get('validation_mean_ic')} "
-                             "-- sector_formula produced nothing usable on this sector's train slice")
+                        print(f"  {sector:<24} {verdict.get('reason', 'no sector_formula')}")
                         continue
-                    verdict = "BEATS champion" if (formula["validation_mean_ic"] or float("-inf")) > \
-                        (champ.get("validation_mean_ic") or float("-inf")) else "does not beat champion"
-                    print(f"  {sector:<28} champion val_ic={champ.get('validation_mean_ic')} "
-                         f"sector_formula val_ic={formula['validation_mean_ic']} "
-                         f"efficiency={formula['walk_forward_efficiency']} -> {verdict}")
+                    print(f"  {sector:<24} champ={champ.get('validation_mean_ic')} "
+                         f"formula={formula['validation_mean_ic']} "
+                         f"eq={(by_name.get('equal_weight') or {}).get('validation_mean_ic')} "
+                         f"eff={formula['walk_forward_efficiency']} "
+                         f"t={(formula.get('validation_ic') or {}).get('t_stat')} "
+                         f"-> {verdict.get('verdict')}"
+                         + (f" (failed: {', '.join(verdict['failed_gates'])})"
+                            if verdict.get("failed_gates") else ""))
+                real = [s for s, r in candidate_report.items()
+                       if (r.get("verdict") or {}).get("verdict") == "REAL"]
+                threshold = next((r["verdict"]["significance_threshold"]
+                                 for r in candidate_report.values() if r.get("verdict")), None)
+                print(f"\n[sector-check] {len(real)} of {len(candidate_report)} sectors cleared "
+                     f"every gate (|t| bar {threshold}, Bonferroni-adjusted for the number of "
+                     f"sectors searched): {real or 'none'}")
 
     if args.holdout_check:
         print("\n" + "=" * 70)
@@ -663,6 +691,17 @@ def main():
                              "formula fit to noise in a thin, sector-restricted train sample. "
                              "Never touches holdout. Requires a panel rebuilt with sector "
                              "tagging (current backtest_monthly.py).")
+    parser.add_argument("--growth-quality-focus", action="store_true",
+                        help="Restrict --sector-candidate-check to high-growth, good-quality "
+                             "companies: each period keeps only names clearing "
+                             "optimization_harness.GROWTH_QUALITY_GATES (growth >=70th "
+                             "percentile, and profitability+financial_health averaged >=50th) "
+                             "within that period's OWN cross-section, so qualification is "
+                             "point-in-time and never uses a threshold derived from later "
+                             "data. Answers 'do these weights rank THAT kind of company well', "
+                             "which is a different question from ranking the whole universe. "
+                             "Retention is printed so a too-thin surviving cross-section is "
+                             "visible rather than silently producing an unmeasurable slice.")
     parser.add_argument("--top-n-from-elo", type=int, default=0, metavar="N",
                         help="Pull the top N names off a previous elo run's leaderboard "
                              "(--elo-results-in PATH) and add them as harness candidates -- "

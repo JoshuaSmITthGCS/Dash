@@ -343,6 +343,151 @@ class SectorWeightReportTests(unittest.TestCase):
             self.assertIn("reason", row)
 
 
+class PanelFromSlicesTests(unittest.TestCase):
+    def test_slices_are_preserved_exactly_rather_than_re_split(self):
+        panel = harness.Panel.from_slices([{"a": 1}], [{"b": 2}], [{"c": 3}])
+        self.assertEqual(panel.train, ({"a": 1},))
+        self.assertEqual(panel.validation, ({"b": 2},))
+        self.assertEqual(panel.holdout, ({"c": 3},))
+
+    def test_an_empty_slice_is_rejected(self):
+        with self.assertRaises(ValueError):
+            harness.Panel.from_slices([], [{"b": 2}], [{"c": 3}])
+
+
+class GrowthQualityFilterTests(unittest.TestCase):
+    def _period(self, names):
+        return {
+            "leg_scores": {t: legs for t, legs in names.items()},
+            "forward_returns": {t: 0.01 for t in names},
+            "scores": {t: 50.0 for t in names},
+        }
+
+    def test_only_names_clearing_every_gate_survive(self):
+        # 10 names, everything ascending together -- the 70th-percentile growth gate admits
+        # the top 3, and the quality gate (median) does not cut further here.
+        names = {f"T{i}": {"growth": float(i * 10), "profitability": float(i * 10),
+                           "financial_health": float(i * 10)} for i in range(10)}
+        filtered = harness.filter_periods_by_quality_gates([self._period(names)])
+        kept = set(filtered[0]["leg_scores"])
+        self.assertEqual(kept, {"T7", "T8", "T9"})
+        # forward_returns is filtered in lockstep -- a kept name must stay gradeable.
+        self.assertEqual(set(filtered[0]["forward_returns"]), kept)
+
+    def test_a_high_growth_name_that_fails_quality_is_excluded(self):
+        names = {f"T{i}": {"growth": float(i), "profitability": float(10 - i),
+                           "financial_health": float(10 - i)} for i in range(10)}
+        filtered = harness.filter_periods_by_quality_gates([self._period(names)])
+        # Growth and quality are perfectly anticorrelated here, so nothing clears both.
+        self.assertEqual(filtered[0]["leg_scores"], {})
+
+    def test_the_quality_gate_averages_its_legs_rather_than_gating_on_each(self):
+        # Strong profitability, weak financial_health: the AVERAGE clears the median floor,
+        # so this name survives -- where two independent floors would have dropped it.
+        names = {f"T{i}": {"growth": float(i * 10), "profitability": float(i * 10),
+                           "financial_health": float((9 - i) * 10)} for i in range(10)}
+        # T9: growth 90th pct (top), profitability top, financial_health bottom -> avg 0.5.
+        filtered = harness.filter_periods_by_quality_gates([self._period(names)])
+        self.assertIn("T9", filtered[0]["leg_scores"])
+
+    def test_a_name_missing_every_leg_in_a_gate_fails_it_rather_than_passing_by_default(self):
+        names = {f"T{i}": {"growth": float(i * 10), "profitability": float(i * 10),
+                           "financial_health": float(i * 10)} for i in range(10)}
+        names["T9"].pop("profitability")
+        names["T9"].pop("financial_health")
+        filtered = harness.filter_periods_by_quality_gates([self._period(names)])
+        self.assertNotIn("T9", filtered[0]["leg_scores"])
+
+    def test_a_partially_present_gate_scores_on_the_legs_that_do_resolve(self):
+        names = {f"T{i}": {"growth": float(i * 10), "profitability": float(i * 10),
+                           "financial_health": float(i * 10)} for i in range(10)}
+        names["T9"].pop("financial_health")  # profitability alone still tops the quality gate
+        filtered = harness.filter_periods_by_quality_gates([self._period(names)])
+        self.assertIn("T9", filtered[0]["leg_scores"])
+
+    def test_ranking_is_per_period_so_a_later_periods_levels_never_leak_backward(self):
+        early = self._period({f"T{i}": {"growth": float(i), "profitability": float(i),
+                                        "financial_health": float(i)} for i in range(10)})
+        # Same relative ordering, wildly different absolute levels.
+        late = self._period({f"T{i}": {"growth": float(i * 1000), "profitability": float(i * 1000),
+                                       "financial_health": float(i * 1000)} for i in range(10)})
+        filtered = harness.filter_periods_by_quality_gates([early, late])
+        self.assertEqual(set(filtered[0]["leg_scores"]), set(filtered[1]["leg_scores"]))
+
+    def test_retention_is_roughly_the_product_of_the_two_gates_not_three(self):
+        # The reason this is two gates and not three: with ~independent legs, three floats at
+        # 0.70/0.50/0.50 keep ~7.5%, too thin per sector to measure. Two keep ~15%.
+        generator = random.Random(3)
+        names = {f"T{i}": {"growth": generator.uniform(0, 100),
+                           "profitability": generator.uniform(0, 100),
+                           "financial_health": generator.uniform(0, 100)} for i in range(400)}
+        filtered = harness.filter_periods_by_quality_gates([self._period(names)])
+        retention = len(filtered[0]["leg_scores"]) / len(names)
+        self.assertGreater(retention, 0.10)
+        self.assertLess(retention, 0.22)
+
+
+class SectorSignificanceThresholdTests(unittest.TestCase):
+    def test_the_bar_rises_with_the_number_of_sectors_searched(self):
+        self.assertGreater(harness.sector_significance_threshold(200),
+                           harness.sector_significance_threshold(50))
+
+    def test_it_never_drops_below_the_repos_own_multiple_testing_floor(self):
+        # Bonferroni at 11 sectors is ~2.84, looser than the repo's standing |t| >= 3 bar --
+        # the floor must win, not the adjustment.
+        self.assertEqual(harness.sector_significance_threshold(11), 3.0)
+        self.assertEqual(harness.sector_significance_threshold(1), 3.0)
+
+
+class SectorVerdictTests(unittest.TestCase):
+    def _candidates(self, *, formula_ic, champion_ic, equal_ic, efficiency, t_stat):
+        return [
+            {"name": "sector_formula", "validation_mean_ic": formula_ic,
+             "walk_forward_efficiency": efficiency, "validation_ic": {"t_stat": t_stat}},
+            {"name": "champion", "validation_mean_ic": champion_ic},
+            {"name": "equal_weight", "validation_mean_ic": equal_ic},
+        ]
+
+    def test_all_gates_passing_reads_real(self):
+        verdict = harness.sector_verdict(
+            self._candidates(formula_ic=0.05, champion_ic=0.01, equal_ic=0.02,
+                             efficiency=0.9, t_stat=3.5),
+            significance_threshold=3.0)
+        self.assertEqual(verdict["verdict"], "REAL")
+        self.assertEqual(verdict["failed_gates"], [])
+
+    def test_beating_champion_but_not_equal_weight_is_not_established(self):
+        # The case this gate exists for: champion is simply miscalibrated in this sector,
+        # which is not the same finding as the sector wanting these particular weights.
+        verdict = harness.sector_verdict(
+            self._candidates(formula_ic=0.03, champion_ic=0.01, equal_ic=0.05,
+                             efficiency=0.9, t_stat=3.5),
+            significance_threshold=3.0)
+        self.assertEqual(verdict["verdict"], "NOT_ESTABLISHED")
+        self.assertIn("beats_equal_weight", verdict["failed_gates"])
+
+    def test_a_collapsing_walk_forward_efficiency_is_not_established(self):
+        verdict = harness.sector_verdict(
+            self._candidates(formula_ic=0.05, champion_ic=0.01, equal_ic=0.02,
+                             efficiency=0.05, t_stat=3.5),
+            significance_threshold=3.0)
+        self.assertEqual(verdict["verdict"], "NOT_ESTABLISHED")
+        self.assertIn("efficiency_holds", verdict["failed_gates"])
+
+    def test_a_t_stat_below_the_adjusted_bar_is_not_established(self):
+        verdict = harness.sector_verdict(
+            self._candidates(formula_ic=0.05, champion_ic=0.01, equal_ic=0.02,
+                             efficiency=0.9, t_stat=2.1),
+            significance_threshold=3.0)
+        self.assertEqual(verdict["verdict"], "NOT_ESTABLISHED")
+        self.assertIn("clears_sector_adjusted_significance", verdict["failed_gates"])
+
+    def test_no_formula_reports_its_own_verdict_rather_than_raising(self):
+        verdict = harness.sector_verdict(
+            [{"name": "champion", "validation_mean_ic": 0.01}], significance_threshold=3.0)
+        self.assertEqual(verdict["verdict"], "NO_FORMULA")
+
+
 class SectorCandidateReportTests(unittest.TestCase):
     """The validation-side follow-up to sector_weight_report -- does a sector-fitted formula
     generalize to data it was never fit on, or was the train-slice pattern noise.

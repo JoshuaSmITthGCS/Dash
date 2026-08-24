@@ -57,6 +57,25 @@ class Panel:
                 "split produced an empty train, validation, or holdout slice -- "
                 "panel too short for this split")
 
+    @classmethod
+    def from_slices(cls, train, validation, holdout):
+        """A Panel whose three slices are supplied directly, for transforming an
+        already-split panel without re-splitting it.
+
+        The split-once-before-any-candidate-exists guarantee lives in ``__init__``; this is
+        for applying the SAME row filter to slices that were already split there (a universe
+        restriction, say), never for choosing new boundaries. Re-deriving a split from
+        filtered data would silently move the train/validation line, which is exactly the
+        leakage ``__init__`` exists to prevent -- so callers pass the original boundaries
+        through and only the contents change.
+        """
+        panel = cls.__new__(cls)
+        panel.train, panel.validation, panel.holdout = (tuple(train), tuple(validation),
+                                                        tuple(holdout))
+        if not (panel.train and panel.validation and panel.holdout):
+            raise ValueError("from_slices requires a nonempty train, validation, and holdout")
+        return panel
+
 
 def score_with_weights(periods, weights):
     """Attach a ``scores`` key computed by ``composite_score`` under ``weights``.
@@ -213,6 +232,77 @@ def filter_periods_by_sector(periods, sector):
     return filtered
 
 
+# "High-growth, good company", stated as explicit gates rather than left implicit.
+#
+# Two gates, not three, and deliberately so: profitability and financial_health are both
+# measures of the same underlying idea (is this a sound business), so requiring each to clear
+# its own independent floor both double-counts quality and compounds the selectivity
+# multiplicatively -- three ~independent floors at 0.70/0.50/0.50 keep only ~7.5% of a
+# cross-section, which on a per-sector slice leaves too few names per period to compute a rank
+# IC on at all. Averaging the two quality percentiles into one gate is also the more robust
+# reading: it lets a strongly profitable name with a merely-adequate balance sheet qualify,
+# instead of dropping it on a single marginal metric. Net retention is ~0.30 x 0.50 = 15%.
+GROWTH_QUALITY_GATES = {
+    "growth": {"legs": ("growth",), "floor": 0.70},
+    "quality": {"legs": ("profitability", "financial_health"), "floor": 0.50},
+}
+
+
+def _period_percentile_ranks(period, leg):
+    """{ticker: percentile in [0, 1]} for one leg within one period's own cross-section."""
+    scores = {ticker: legs.get(leg) for ticker, legs in (period.get("leg_scores") or {}).items()}
+    scores = {ticker: value for ticker, value in scores.items() if isinstance(value, (int, float))}
+    if not scores:
+        return {}
+    ordered = sorted(scores.items(), key=lambda item: item[1])
+    last = max(len(ordered) - 1, 1)
+    return {ticker: index / last for index, (ticker, _score) in enumerate(ordered)}
+
+
+def filter_periods_by_quality_gates(periods, gates=None):
+    """Restrict each period to names clearing every gate within that period's OWN
+    cross-section.
+
+    ``gates`` maps a label to ``{"legs": (...), "floor": percentile}``. A gate scores a name
+    by the MEAN of its available legs' percentiles, so a multi-leg gate reads as one concept
+    (see ``GROWTH_QUALITY_GATES``) rather than as several independent thresholds that compound
+    away the cross-section.
+
+    Ranking within each period separately is what keeps this point-in-time honest: a name
+    qualifies on how it compared to its peers on that date, never against a threshold derived
+    from the full history, which would leak later information backward. A name with no score
+    for ANY leg in a gate fails that gate rather than passing by default -- missing data is
+    not evidence of quality.
+
+    Used to answer "do these weights rank high-growth, good companies well", which is a
+    different question from "do they rank the whole universe well" -- and the one that matters
+    if that is the kind of company the score exists to surface.
+    """
+    gates = GROWTH_QUALITY_GATES if gates is None else gates
+    filtered = []
+    for period in periods:
+        ranks = {label: {leg: _period_percentile_ranks(period, leg) for leg in gate["legs"]}
+                 for label, gate in gates.items()}
+        qualifying = set()
+        for ticker in (period.get("leg_scores") or {}):
+            clears = True
+            for label, gate in gates.items():
+                available = [ranks[label][leg][ticker] for leg in gate["legs"]
+                             if ticker in ranks[label][leg]]
+                if not available or sum(available) / len(available) < gate["floor"]:
+                    clears = False
+                    break
+            if clears:
+                qualifying.add(ticker)
+        restricted = {**period}
+        for key in ("leg_scores", "forward_returns", "scores"):
+            values = period.get(key) or {}
+            restricted[key] = {ticker: value for ticker, value in values.items()
+                               if ticker in qualifying}
+        filtered.append(restricted)
+    return filtered
+
+
 def as_metric_periods(periods):
     """Periods with ``metric_scores`` standing in for ``leg_scores``.
 
@@ -265,6 +355,69 @@ def sector_weight_report(periods, *, legs=None, periods_per_year=12, minimum_per
                                                periods_per_year=periods_per_year),
         }
     return report
+
+
+# A sector "win" has to clear more than "beat champion once". Testing N sectors is N chances
+# to find a winner by luck, and champion being badly calibrated in one sector is not the same
+# finding as that sector genuinely wanting different weights.
+SECTOR_EFFICIENCY_FLOOR = 0.5  # validation IC at least half the train IC: the pattern held
+
+
+def sector_significance_threshold(sector_count, *, family_alpha=0.05, floor=3.0):
+    """Bonferroni-adjusted |t| a per-sector result must clear, never below the repo's own
+    existing ``clears_multiple_testing_bar`` threshold of 3.
+
+    Searching 11 sectors for one that beats champion is 11 independent chances to find a
+    winner in noise; grading each against the same bar a single pre-registered hypothesis
+    would face is how a family of tests manufactures a false positive.
+    """
+    from statistics import NormalDist
+
+    if sector_count < 1:
+        return floor
+    per_test_alpha = family_alpha / sector_count
+    return max(floor, NormalDist().inv_cdf(1 - per_test_alpha / 2))
+
+
+def sector_verdict(candidates, *, significance_threshold,
+                   efficiency_floor=SECTOR_EFFICIENCY_FLOOR):
+    """Whether one sector's fitted formula is real evidence or noise, as an explicit
+    conjunction of gates rather than a single IC comparison.
+
+    Every gate has to pass. Beating champion alone is the weakest possible reading -- it is
+    equally consistent with "champion happens to be miscalibrated in this sector" -- so the
+    formula must also beat the no-opinion equal-weight control, keep at least
+    ``efficiency_floor`` of its train-slice IC when moved to validation (a collapse there is
+    the overfitting signature), and clear a significance bar already adjusted for how many
+    sectors were searched.
+    """
+    by_name = {row["name"]: row for row in candidates}
+    formula = by_name.get("sector_formula")
+    if formula is None:
+        return {"verdict": "NO_FORMULA", "gates": {},
+                "reason": "formula_weights() produced nothing usable on this sector's train slice"}
+
+    def ic(name):
+        value = (by_name.get(name) or {}).get("validation_mean_ic")
+        return value if value is not None else float("-inf")
+
+    efficiency = formula.get("walk_forward_efficiency")
+    t_stat = ((formula.get("validation_ic") or {}).get("t_stat"))
+    gates = {
+        "beats_champion": ic("sector_formula") > ic("champion"),
+        "beats_equal_weight": ic("sector_formula") > ic("equal_weight"),
+        "efficiency_holds": efficiency is not None and efficiency >= efficiency_floor,
+        "clears_sector_adjusted_significance":
+            t_stat is not None and abs(t_stat) >= significance_threshold,
+    }
+    failed = [name for name, passed in gates.items() if not passed]
+    return {
+        "verdict": "REAL" if not failed else "NOT_ESTABLISHED",
+        "gates": gates,
+        "failed_gates": failed,
+        "significance_threshold": round(significance_threshold, 4),
+        "efficiency_floor": efficiency_floor,
+    }
 
 
 def sector_candidate_report(panel, *, champion_weights, periods_per_year=12, quantiles=5,
@@ -334,6 +487,7 @@ def sector_candidate_report(panel, *, champion_weights, periods_per_year=12, qua
                 "name": name, "weights": weights,
                 "train_mean_ic": train_ic, "validation_mean_ic": validation_ic,
                 "walk_forward_efficiency": efficiency,
+                "validation_ic": validation_verdict["ic"],
                 "deflated_sharpe_probability": validation_verdict["deflated_sharpe_probability"],
                 "ship": validation_verdict["ship"],
             })
@@ -344,6 +498,14 @@ def sector_candidate_report(panel, *, champion_weights, periods_per_year=12, qua
             "usable_validation_periods": usable_validation,
             "candidates": results,
         }
+
+    # Graded only once every sector's own result exists: the significance bar depends on how
+    # many sectors were actually searched, which isn't known until the loop finishes.
+    threshold = sector_significance_threshold(
+        sum(1 for row in report.values() if row.get("candidates")))
+    for row in report.values():
+        if row.get("candidates"):
+            row["verdict"] = sector_verdict(row["candidates"], significance_threshold=threshold)
     return report
 
 
