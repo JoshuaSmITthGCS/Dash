@@ -13,14 +13,14 @@
     "decision",
     "reason"
   ],
-  "total_experiments": 25,
+  "total_experiments": 26,
   "by_decision": {
     "ABANDON": 5,
     "INCONCLUSIVE": 2,
     "KEEP_AS_CHALLENGER": 4,
-    "PROMOTE": 14
+    "PROMOTE": 15
   },
-  "total_variants_tested": 64,
+  "total_variants_tested": 65,
   "experiments": [
     {
       "id": "WO-1",
@@ -705,6 +705,29 @@
       "result": "Verified with 19 new tests (18 in test_optimization_harness.py including the new leg_coverage/formula_weights coverage, 13 in test_elo_tournament.py -- note some overlap in touched files with R11-P5's count) and a live smoke test against this sandbox's own (stale, pre-10-year-rebuild) committed panel: a genuinely predictive synthetic leg reliably out-rates a noise leg over 100 rounds (Elo separates cleanly), two candidates that are actually identical stay locked at the same rating for 150 rounds rather than one drifting ahead by chance, and -- the case worth stating plainly -- on this sandbox's stale panel, formula_weights() itself collapsed to {market_behavior: 1.0} and tied champion and reweighted_composite_a on every single round (100/100), because on that specific panel those three candidates produce byte-identical per-ticker scores (the same coverage-collapse dynamic R11-P1 already found: most tickers only ever resolve market_behavior). That is the tool working correctly, not a bug: three functionally-identical candidates showing zero rating separation across 100 independent resamples is exactly the honest answer, not a failure to find one.",
       "decision": "PROMOTE",
       "reason": "Ships as tooling only -- no production weight, panel, or promotion decision changed, and formula_weights()'s own docstring states plainly it must never be computed on validation/holdout data. Explicitly scoped as a complement to, not a replacement for, the existing PBO/deflated-Sharpe gates: bootstrap resampling cannot manufacture statistical power beyond what a panel's real period count already contains, and the tournament is designed to show that honestly (ratings staying close) rather than obscure it. The genuinely informative next test is against a real, network-fetched, EDGAR-refreshed panel outside this sandbox, not available in this environment -- flagged rather than faked. Full pipeline suite green (2314 tests) after the change."
+    },
+    {
+      "id": "R11-P7-edgar-pit-statement-fallback-beyond-growth",
+      "declared_at": "2026-08-24T06:00:00+00:00",
+      "hypothesis": "The user's own real 10-year panel + --sector-breakdown run traced a root cause for a finding that looked at first like a fresh-fetch flake: every sector's sector_weight_report only ever showed growth and market_behavior, never valuation/profitability/financial_health/capital_allocation/accounting_quality. Reproduced locally against a real cached ticker (AAPL) plus this repo's own committed EDGAR PIT store: for an as_of outside Yahoo's ~2-year cached quarterly window, build_snapshot's start_idx comes back None and income_ttm/balance_now/cashflow_ttm were left as *empty* statements outright -- not just missing growth, the R11-P4 fix's own scope -- so every ratio basic_ratios()/derive_extended() compute from them went to None too. For a 5-10 year backtest that's most of the window. edgar_ttm_statements() (edgar_enrichment.py) already returns full income/balance/cashflow dicts in build_ttm_statements' exact shape, so hypothesis: substitute it directly for the empty-statement branch, the same 'reuse the existing adapter, don't rebuild it' move R11-P4 made for growth specifically.",
+      "category": "data_availability",
+      "configuration": {
+        "files": [
+          "pipeline/backtest_historical.py",
+          "pipeline/tests/test_backtest_historical.py"
+        ],
+        "change": "edgar_pit_statement_fallback(ticker_data, as_of): returns (income, balance, cashflow) from edgar_ttm_statements(), or (None, None, None) if disabled (DISABLE_EDGAR_PIT_BACKTEST_STATEMENTS=1), no resolvable CIK, EDGAR history that also doesn't reach back far enough, or a PIT-store read failure -- never raises, same contract as edgar_pit_growth_fallback. Wired into build_snapshot()'s start_idx-is-None branch ahead of the pre-existing empty-statement fallback, which now only fires when EDGAR has nothing either. Growth still resolves correctly through the normal revenue_now/revenue_prior path once income_ttm is EDGAR's real data -- edgar_pit_growth_fallback is no longer even called in that case, since revenue_growth/earnings_growth aren't None anymore. Also: edgar_enrichment.BALANCE_ROWS has no shares-outstanding concept, so market_cap (and every ratio needing it) would still be None even with real EDGAR statements; added a further fallback to diluted (then basic) weighted-average shares from the income statement via the existing fundamentals_extended 'diluted_shares' alias -- a standard, disclosed stand-in for a precise point-in-time float count, only used when neither a live share count (blocked by allow_current_shares for point-in-time correctness) nor a balance-sheet share count resolved."
+      },
+      "train_period": null,
+      "validation_period": null,
+      "test_period": null,
+      "metrics": {
+        "tests_added": 8
+      },
+      "number_of_variants_tested": 1,
+      "result": "8 new tests (4 for edgar_pit_statement_fallback in isolation, 4 for build_snapshot's wiring, mocked edgar_ttm_statements -- no network/PIT-store dependency in the test itself). Also reproduced end-to-end against real data in this sandbox: this repo carries both a real cached AAPL ticker file and the real committed EDGAR PIT store (pipeline/data/pit/fundamentals/), so build_snapshot(AAPL, 2024-06-30) was called directly before and after the change. Before: only revenue_growth, earnings_growth, and price/volume technicals were non-None (extended_coverage=0.0). After: extended_coverage=1.0 and every category resolves real values -- price_to_sales=8.52, return_on_equity=1.3531, current_ratio=1.04, debt_to_equity=1.38, altman_z=2.78, piotroski_f=7.9, ev_to_ebitda=25.61, gross_buyback_yield=0.0252, market_cap resolved via the diluted-shares fallback -- not a synthetic test, the actual production function called against the actual committed data. Full pipeline suite green (2356 tests, 448 subtests) after the change.",
+      "decision": "PROMOTE",
+      "reason": "Same shape as R11-P4-2: correct, tested, and backtest-reconstruction-only -- build_snapshot is not on the live scoring path (advisor_engine/scorer.py), so no production score, weight, or promotion decision changes. What this does change is the honesty of every backtest result already produced this round: R11-P1 through R11-P6's harness/Elo/holdout comparisons were run against a panel where 5 of 8 legs had almost no real coverage outside the most recent ~1.5 years, so their apparent agreement (growth + market_behavior dominating, other legs collapsing toward identical or near-zero contribution) was this bug's signature, not a settled finding about those legs' true predictive power. The panel has NOT yet been regenerated with this fix live -- that needs backtest_monthly.py's real yfinance network access across the full universe, the same standing constraint on this sandbox every prior round's live-data work has hit. Every harness/Elo/holdout number produced before this fix regenerates the panel should be treated as measuring growth+market_behavior's edge specifically, not the full 8-leg blend the weight vectors nominally describe."
     }
   ]
 }

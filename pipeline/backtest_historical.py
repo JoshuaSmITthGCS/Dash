@@ -40,6 +40,21 @@ no resolvable CIK, or with EDGAR history that also doesn't reach back far enough
 reweights around it. Set ``DISABLE_EDGAR_PIT_BACKTEST_GROWTH=1`` to reproduce the pre-Round-11
 Yahoo-only behavior.
 
+Growth wasn't the only casualty of that ~2-year window, just the one first diagnosed: for an
+as_of date entirely outside it, Yahoo's cached quarters resolve *no* known statement date at
+all (``build_ttm_statements`` never runs), so valuation, profitability, financial_health,
+capital_allocation, and accounting_quality were silently left at ``None`` too -- everywhere
+older than roughly the trailing 1.5-2 years of a multi-year backtest, which for a 5-10 year
+window is most of it. Round 11 Priority 7 closes this the same way: ``edgar_ttm_statements``
+already returns full income/balance/cashflow dicts in the shape ``build_ttm_statements``
+produces, so ``edgar_pit_statement_fallback`` substitutes them directly for that empty
+window rather than reconstructing just two numbers. EDGAR's balance mapping carries no
+shares-outstanding concept, so market-cap-dependent ratios there fall back further, to
+diluted (then basic) weighted-average shares from the income statement -- a standard,
+disclosed stand-in, not a precise point-in-time float count. Set
+``DISABLE_EDGAR_PIT_BACKTEST_STATEMENTS=1`` to reproduce the pre-Priority-7 behavior (only
+growth filled, every other ratio empty outside Yahoo's window).
+
 Needs real network access + yfinance (this script is meant to be run locally, not in a sandboxed
 agent session): `python3 pipeline/backtest_historical.py --help`
 """
@@ -82,6 +97,19 @@ REVENUE_GROWTH_EXCLUDED_PROFILES = {
 DISABLE_EDGAR_PIT_BACKTEST_GROWTH = os.getenv("DISABLE_EDGAR_PIT_BACKTEST_GROWTH", "").lower() in {
     "1", "true", "yes",
 }
+# Round 11 Priority 7: edgar_pit_growth_fallback (above) only ever fills the two YoY growth
+# figures -- for an as_of date entirely outside Yahoo's ~2-year quarterly window (start_idx
+# None below), income_ttm/balance_now/cashflow_ttm themselves were left as *empty* statements,
+# not just growth. Every ratio basic_ratios()/derive_extended() compute from them --
+# valuation, profitability, financial_health, capital_allocation, accounting_quality --
+# silently went to None for that whole stretch, while growth (via the fallback above) and
+# market_behavior (pure price/volume) kept working. A 5-10 year backtest is mostly older than
+# Yahoo's window, so this was near-total: five of eight research-score legs carried almost no
+# real signal outside the most recent ~1.5 years. edgar_ttm_statements() already returns full
+# income/balance/cashflow dicts in the exact shape build_ttm_statements() produces, so this
+# reuses it directly as those statements' fallback, not just a source for two numbers.
+DISABLE_EDGAR_PIT_BACKTEST_STATEMENTS = os.getenv(
+    "DISABLE_EDGAR_PIT_BACKTEST_STATEMENTS", "").lower() in {"1", "true", "yes"}
 
 
 def _edgar_ttm_line(symbol, as_of_str, label):
@@ -128,6 +156,28 @@ def edgar_pit_growth_fallback(ticker_data, as_of, *, need_revenue, need_earnings
             earnings_growth = round(now / prior - 1, 4)
 
     return revenue_growth, earnings_growth
+
+
+def edgar_pit_statement_fallback(ticker_data, as_of):
+    """Full (income, balance, cashflow) TTM statements from the EDGAR PIT store, for an
+    as_of date entirely outside Yahoo's cached quarterly window.
+
+    Returns ``(None, None, None)`` if disabled, the ticker has no resolvable CIK, or EDGAR
+    history doesn't reach back far enough either -- callers fall back to the pre-existing
+    empty-statement behavior in that case. Never raises, matching
+    edgar_pit_growth_fallback's own contract: a PIT-store read must never sink the backtest.
+    """
+    if DISABLE_EDGAR_PIT_BACKTEST_STATEMENTS:
+        return None, None, None
+    try:
+        statements = edgar_ttm_statements(ticker_data["symbol"], as_of.isoformat())
+    except Exception:  # noqa: BLE001 - a PIT-store read must never sink the backtest
+        return None, None, None
+    if not statements:
+        return None, None, None
+    empty = {"periods": [], "rows": {}}
+    return (statements.get("income") or empty, statements.get("balance") or empty,
+           statements.get("cashflow") or empty)
 
 
 # ---------------- data collection ----------------
@@ -339,8 +389,10 @@ def build_snapshot(ticker_data, as_of, report_lag_days, allow_current_shares=Tru
         return None
 
     if start_idx is None:
-        empty = {"periods": [], "rows": {}}
-        income_ttm, balance_now, cashflow_ttm = empty, empty, empty
+        income_ttm, balance_now, cashflow_ttm = edgar_pit_statement_fallback(ticker_data, as_of)
+        if income_ttm is None:
+            empty = {"periods": [], "rows": {}}
+            income_ttm, balance_now, cashflow_ttm = empty, empty, empty
     else:
         income_ttm, balance_now, cashflow_ttm = build_ttm_statements(ticker_data, start_idx)
     raw_closes = ticker_data.get("raw_closes") or ticker_data["closes"]
@@ -351,6 +403,15 @@ def build_snapshot(ticker_data, as_of, report_lag_days, allow_current_shares=Tru
     balance_shares = at(line(balance_now, "shares_outstanding"))
     if balance_shares:
         shares = balance_shares
+    elif not shares:
+        # Neither a live share count (blocked by allow_current_shares for point-in-time
+        # correctness) nor a balance-sheet share count resolved -- EDGAR's balance mapping
+        # carries no shares-outstanding concept at all (edgar_enrichment.BALANCE_ROWS), so
+        # its statements never populate ``balance_shares`` above. Diluted/basic weighted
+        # average shares from the income statement is not the same figure, but it's a
+        # standard, disclosed practical stand-in for market cap here, and strictly better
+        # than leaving every market-cap-dependent valuation ratio at None for this stretch.
+        shares = at(line(income_ttm, "diluted_shares"))
     market_cap = price * shares if shares else None
 
     revenue_now = at(line(income_ttm, "revenue"), 0)

@@ -198,5 +198,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P7-edgar-pit-statement-fallback-beyond-growth",
+    "declared_at": "2026-08-24T06:00:00+00:00",
+    "hypothesis": "The user's own real 10-year panel + --sector-breakdown run traced a root cause for a finding that looked at first like a fresh-fetch flake: every sector's sector_weight_report only ever showed growth and market_behavior, never valuation/profitability/financial_health/capital_allocation/accounting_quality. Reproduced locally against a real cached ticker (AAPL) plus this repo's own committed EDGAR PIT store: for an as_of outside Yahoo's ~2-year cached quarterly window, build_snapshot's start_idx comes back None and income_ttm/balance_now/cashflow_ttm were left as *empty* statements outright -- not just missing growth, the R11-P4 fix's own scope -- so every ratio basic_ratios()/derive_extended() compute from them went to None too. For a 5-10 year backtest that's most of the window. edgar_ttm_statements() (edgar_enrichment.py) already returns full income/balance/cashflow dicts in build_ttm_statements' exact shape, so hypothesis: substitute it directly for the empty-statement branch, the same 'reuse the existing adapter, don't rebuild it' move R11-P4 made for growth specifically.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

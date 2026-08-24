@@ -280,6 +280,51 @@ human-reviewed shortlist, per this round's own standing "no fabricated results" 
 tests (12 in `test_optimization_harness.py`, 12 in `test_run_backtest_suite.py`, 1 updated in
 `test_shadow_portfolios.py` for the new cap).
 
+## Priority 8 — EDGAR PIT statement fallback beyond growth (`R11-P7` in the registry)
+
+A live `--sector-breakdown` run on the user's own real 10-year panel surfaced what first looked
+like a fresh-fetch flake: every sector's report showed only `growth` and `market_behavior` —
+never `valuation`, `profitability`, `financial_health`, `capital_allocation`, or
+`accounting_quality`. `--cache-only` reproduced the identical result, ruling out a network
+issue, and a direct local cache check found 0 of 861 cached tickers had empty income
+statements — ruling out a thin/corrupted cache too.
+
+Root cause, traced by reproducing `build_snapshot()` directly against a real cached ticker
+(AAPL) and this repo's own committed EDGAR PIT store: Yahoo's cached quarterly statements only
+reach back ~1.5–2 years. For any `as_of` older than that — most of a 5–10 year backtest —
+`start_idx` comes back `None` and `income_ttm`/`balance_now`/`cashflow_ttm` were left as
+**empty** statements outright, not just missing growth (Priority 4's own scope). Every ratio
+`basic_ratios()`/`derive_extended()` compute from them went to `None` too. Only `growth`
+(already EDGAR-backed since Priority 4) and `market_behavior` (pure price/volume) survived —
+exactly the pattern observed.
+
+Fix: `edgar_pit_statement_fallback(ticker_data, as_of)` substitutes
+`edgar_enrichment.edgar_ttm_statements()`'s full income/balance/cashflow dicts directly for
+that empty branch — the same adapter Priority 4 already uses for two numbers, now used for the
+statements themselves. `edgar_enrichment.BALANCE_ROWS` carries no shares-outstanding concept,
+so market-cap-dependent ratios needed a further fallback: diluted (then basic) weighted-average
+shares from the income statement, via the existing `fundamentals_extended` `diluted_shares`
+alias — a standard, disclosed stand-in for a precise point-in-time float count.
+
+Verified two ways: 8 new tests in `test_backtest_historical.py` (mocked EDGAR, no
+network/PIT-store dependency), and a direct before/after call against real committed data —
+`build_snapshot(AAPL, 2024-06-30)` went from `extended_coverage=0.0` (only growth and
+technicals populated) to `extended_coverage=1.0`, with real values across every category
+(`price_to_sales=8.52`, `return_on_equity=1.3531`, `current_ratio=1.04`, `debt_to_equity=1.38`,
+`altman_z=2.78`, `piotroski_f=7.9`, `ev_to_ebitda=25.61`, `gross_buyback_yield=0.0252`). Not a
+synthetic test — the actual production function, called against the actual committed cache and
+PIT store. `DISABLE_EDGAR_PIT_BACKTEST_STATEMENTS=1` reproduces the pre-fix behavior.
+
+**This changes how every backtest result from Priorities 1–6 this round should be read.** Those
+harness/Elo/holdout comparisons ran against a panel where 5 of 8 legs had almost no real
+coverage outside the most recent ~1.5 years — the growth+market_behavior dominance and
+near-identical scoring across candidates observed throughout this round was substantially this
+bug's signature, not a settled finding about those legs' true predictive power. The panel has
+NOT yet been regenerated with this fix live; that still needs a real network-fetched
+`backtest_monthly.py` run across the full universe. Every number produced before that re-run
+should be treated as measuring growth+market_behavior's edge specifically, not the full 8-leg
+blend the weight vectors nominally describe.
+
 ## What NOT done, per the brief and this session's standing constraints
 
 No production leg weights, composite construction, or ranking logic changed. No shadow variant

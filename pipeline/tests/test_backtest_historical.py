@@ -13,6 +13,30 @@ def _edgar_statements(revenue, net_income):
     return {"income": {"rows": {"Total Revenue": [revenue], "Net Income": [net_income]}}}
 
 
+def _edgar_full_statements(*, revenue_now, revenue_prior, net_income_now, net_income_prior,
+                           equity=None, total_debt=None, current_assets=None,
+                           current_liabilities=None, diluted_shares=None):
+    """A full edgar_ttm_statements() return: index 0 = TTM as-of, index 1 = one year prior --
+    everything build_snapshot's start_idx-is-None branch needs to score a period entirely
+    outside Yahoo's cached quarterly window.
+    """
+    periods = ["2024-06-30", "2023-06-30"]
+    return {
+        "income": {"periods": periods, "rows": {
+            "Total Revenue": [revenue_now, revenue_prior],
+            "Net Income": [net_income_now, net_income_prior],
+            "Diluted Average Shares": [diluted_shares, diluted_shares],
+        }},
+        "balance": {"periods": periods, "rows": {
+            "Stockholders Equity": [equity, equity],
+            "Total Debt": [total_debt, total_debt],
+            "Current Assets": [current_assets, current_assets],
+            "Current Liabilities": [current_liabilities, current_liabilities],
+        }},
+        "cashflow": {"periods": periods, "rows": {}},
+    }
+
+
 def quarterly_ticker_data(symbol="AAA", *, quarters=4, sector="Technology", industry="Software",
                           revenue_per_quarter=100.0, net_income_per_quarter=10.0):
     """Minimal ticker_data with only ``quarters`` quarters of statement history -- enough for
@@ -111,6 +135,91 @@ class EdgarPitGrowthFallbackTests(unittest.TestCase):
                 ticker_data, date(2026, 8, 1), need_revenue=True, need_earnings=True)
         self.assertIsNone(revenue_growth)
         self.assertIsNone(earnings_growth)
+
+
+class EdgarPitStatementFallbackTests(unittest.TestCase):
+    def test_returns_the_full_income_balance_cashflow_dicts_when_edgar_has_data(self):
+        ticker_data = quarterly_ticker_data()
+        fixture = _edgar_full_statements(revenue_now=440.0, revenue_prior=400.0,
+                                         net_income_now=44.0, net_income_prior=40.0)
+        with patch.object(bh, "edgar_ttm_statements", return_value=fixture):
+            income, balance, cashflow = bh.edgar_pit_statement_fallback(
+                ticker_data, date(2020, 1, 1))
+        self.assertEqual(income, fixture["income"])
+        self.assertEqual(balance, fixture["balance"])
+        self.assertEqual(cashflow, fixture["cashflow"])
+
+    def test_a_disabled_flag_short_circuits_before_any_edgar_call(self):
+        ticker_data = quarterly_ticker_data()
+        with patch.object(bh, "DISABLE_EDGAR_PIT_BACKTEST_STATEMENTS", True), \
+             patch.object(bh, "edgar_ttm_statements") as mocked:
+            result = bh.edgar_pit_statement_fallback(ticker_data, date(2020, 1, 1))
+        self.assertEqual(result, (None, None, None))
+        mocked.assert_not_called()
+
+    def test_no_edgar_history_reaching_back_that_far_returns_all_none(self):
+        ticker_data = quarterly_ticker_data()
+        with patch.object(bh, "edgar_ttm_statements", return_value=None):
+            result = bh.edgar_pit_statement_fallback(ticker_data, date(2020, 1, 1))
+        self.assertEqual(result, (None, None, None))
+
+    def test_a_pit_store_read_failure_never_raises(self):
+        ticker_data = quarterly_ticker_data()
+        with patch.object(bh, "edgar_ttm_statements", side_effect=RuntimeError("boom")):
+            result = bh.edgar_pit_statement_fallback(ticker_data, date(2020, 1, 1))
+        self.assertEqual(result, (None, None, None))
+
+
+class BuildSnapshotEdgarStatementWiringTests(unittest.TestCase):
+    """Round 11 Priority 7: an as_of entirely outside Yahoo's cached window (start_idx None)
+    used to leave income_ttm/balance_now/cashflow_ttm empty, so every ratio besides growth
+    and price-based technicals silently went to None. These cover the fix.
+    """
+
+    def test_ratios_beyond_growth_populate_from_edgar_when_yahoo_has_no_quarters_at_all(self):
+        ticker_data = quarterly_ticker_data(quarters=0)
+        fixture = _edgar_full_statements(
+            revenue_now=440.0, revenue_prior=400.0, net_income_now=44.0, net_income_prior=40.0,
+            equity=500.0, total_debt=200.0, current_assets=300.0, current_liabilities=150.0,
+            diluted_shares=50.0)
+        with patch.object(bh, "edgar_ttm_statements", return_value=fixture) as mocked:
+            snap, _, _ = bh.build_snapshot(ticker_data, date(2024, 6, 15), report_lag_days=45,
+                                           allow_current_shares=False, allow_empty_fundamentals=True)
+        # One call for the statements themselves -- growth reads off the same income_ttm,
+        # so it must not need a second, separate edgar_pit_growth_fallback lookup.
+        self.assertEqual(mocked.call_count, 1)
+        self.assertAlmostEqual(snap["revenue_growth"], 0.1)
+        self.assertAlmostEqual(snap["earnings_growth"], 0.1)
+        self.assertAlmostEqual(snap["return_on_equity"], 44.0 / 500.0)
+        self.assertAlmostEqual(snap["debt_to_equity"], 200.0 / 500.0, places=2)
+        self.assertAlmostEqual(snap["current_ratio"], 300.0 / 150.0, places=2)
+        self.assertAlmostEqual(snap["profit_margin"], 44.0 / 440.0)
+
+    def test_market_cap_falls_back_to_diluted_shares_when_no_balance_sheet_share_count_exists(self):
+        # edgar_enrichment.BALANCE_ROWS never carries a shares-outstanding concept, so
+        # balance_shares alone would leave market_cap (and every ratio needing it) at None.
+        ticker_data = quarterly_ticker_data(quarters=0)
+        fixture = _edgar_full_statements(
+            revenue_now=440.0, revenue_prior=400.0, net_income_now=44.0, net_income_prior=40.0,
+            diluted_shares=50.0)
+        with patch.object(bh, "edgar_ttm_statements", return_value=fixture):
+            snap, _, _ = bh.build_snapshot(ticker_data, date(2024, 6, 15), report_lag_days=45,
+                                           allow_current_shares=False, allow_empty_fundamentals=True)
+        self.assertAlmostEqual(snap["market_cap"], snap["price"] * 50.0)
+
+    def test_still_falls_back_to_empty_statements_when_edgar_has_nothing_either(self):
+        ticker_data = quarterly_ticker_data(quarters=0)
+        with patch.object(bh, "edgar_ttm_statements", return_value=None):
+            snap, _, _ = bh.build_snapshot(ticker_data, date(2024, 6, 15), report_lag_days=45,
+                                           allow_empty_fundamentals=True)
+        self.assertIsNone(snap["return_on_equity"])
+        self.assertIsNone(snap["revenue_growth"])
+
+    def test_a_yahoo_native_quarter_never_consults_edgar_statements_at_all(self):
+        ticker_data = quarterly_ticker_data(quarters=8)
+        with patch.object(bh, "edgar_ttm_statements") as mocked:
+            bh.build_snapshot(ticker_data, date(2026, 8, 15), report_lag_days=45)
+        mocked.assert_not_called()
 
 
 class BuildSnapshotEdgarWiringTests(unittest.TestCase):
