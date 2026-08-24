@@ -466,6 +466,31 @@ evidence the uniform champion is genuinely adequate per sector — a much strong
 than one-guess-per-sector could support. The train-era sign instability (champion IC negative
 in train, positive in validation, across most sectors) remains the bigger open question.
 
+## Priority 13 — Fama-MacBeth ridge candidates in the sector search (`R11-P12` in the registry)
+
+Answer to "could ML make this better": one method genuinely fits the data, and it was added;
+the ones that don't were declined explicitly. Boosting/neural nets on ~60 monthly training
+observations per sector would memorize noise and the gates would correctly reject them — not
+built. Unsupervised pseudo-sector clustering (grouping stocks by leg profiles instead of GICS
+labels) is interesting but a large new multiple-testing surface — noted as possible future
+work, not smuggled in.
+
+What was built: `ridge_weights()` — per period, z-score all legs within that period's own
+cross-section, regress forward returns on **all legs jointly** with a ridge penalty, average
+the coefficients across periods (Fama-MacBeth), clip negatives, renormalize. This targets
+`formula_weights`' identified blind spot: it scores each leg standalone, so correlated legs
+(profitability and financial_health co-move by construction) each collect full credit for the
+same information; a joint regression splits the credit instead. Pure stdlib (an 8×8 Gaussian
+elimination), no new dependencies.
+
+Wired as three pool candidates (`ridge_0.1/1/10`) in `--sector-search`, behind exactly the
+same gates as everything else — select-slice selection, pool-width deflation, `search_pbo`,
+four verdict gates. Verified: on a planted redundant-leg panel, ridge concentrates on the true
+signal more sharply than the formula (0.709 vs 0.608 on the signal leg); on the planted
+two-sector panel, `ridge_0.1` won the Energy sector's search outright (REAL, `search_pbo` 0.0)
+while the formula kept Technology — the pool picking different structured candidates per
+sector is the mechanism working. 9 new tests.
+
 ## What NOT done, per the brief and this session's standing constraints
 
 No production leg weights, composite construction, or ranking logic changed. No shadow variant

@@ -1288,6 +1288,65 @@ REGISTRY = [
                    "IC across most sectors) remains the bigger open question and caps how much "
                    "any per-sector result should be trusted until it is explained."),
     },
+    {
+        "id": "R11-P12-fama-macbeth-ridge-candidates",
+        "declared_at": "2026-08-24T18:45:00+00:00",
+        "hypothesis": ("User asked whether ML ('unsupervised learning or something') could improve "
+                       "the weight search. Honest triage first: gradient boosting / neural nets on "
+                       "~60 monthly training observations per sector would memorize noise and the "
+                       "existing gates would correctly reject them -- not built. The one ML method "
+                       "actually sized for this data is regularized cross-sectional regression "
+                       "(Fama-MacBeth-style ridge), and it targets a real, identified blind spot: "
+                       "formula_weights scores each leg STANDALONE, so two correlated legs "
+                       "(profitability and financial_health co-move by construction) each collect "
+                       "full credit for the same information. A joint regression splits credit "
+                       "between correlated legs instead of double-counting."),
+        "category": "methodology",
+        "configuration": {
+            "files": ["pipeline/optimization_harness.py",
+                     "pipeline/tests/test_optimization_harness.py"],
+            "change": ("optimization_harness.ridge_weights(periods, legs, lam): per period, "
+                       "z-score every leg within that period's own cross-section (missing values "
+                       "imputed at the cross-sectional mean -- absence carries no information, "
+                       "matching composite_score's renormalize-around-missing contract), regress "
+                       "demeaned forward returns on all legs jointly with ridge penalty "
+                       "lam * n_names on the Gram diagonal, average coefficients across periods "
+                       "(Fama-MacBeth), clip negatives to zero (production weights are long-only "
+                       "shares; a leg whose best joint use is as a short signal is a separate "
+                       "finding, not a negative weight composite_score would renormalize "
+                       "incoherently), renormalize to sum 1. Pure stdlib -- an 8x8 Gaussian "
+                       "elimination (_solve_linear_system), no numpy, matching the pipeline's "
+                       "existing zero-dependency arithmetic. Wired into _sector_search_pool as "
+                       "three candidates (ridge_0.1 / ridge_1 / ridge_10) alongside formula, "
+                       "shrunk blends, equal weight, and the random sweep -- graded through "
+                       "exactly the same select-slice selection, pool-width deflation, "
+                       "search_pbo, and four verdict gates as every other pool member. Periods "
+                       "with fewer than max(5, legs+2) names are skipped rather than fit."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 9},
+        "number_of_variants_tested": 1,
+        "result": ("9 new tests. The one that matters: on a planted panel where 'half' is a "
+                   "corrupted copy of 'good' (correlated, strictly less informative), ridge "
+                   "concentrates weight on 'good' more sharply than formula_weights does "
+                   "(measured 0.709/0.291 vs 0.608/0.392 -- a real but modest gap on that "
+                   "synthetic, asserted as a ratio inequality rather than magic constants). "
+                   "Also: anti-predictive legs clip to zero, weights sum to 1, deterministic, "
+                   "degenerate inputs return {} rather than raising, and all three ridge "
+                   "candidates appear in the sector-search pool. End-to-end CLI smoke on the "
+                   "planted two-sector panel: ridge_0.1 WON the Energy sector's search outright "
+                   "(valuation=0.93, REAL, search_pbo 0.0) while formula kept Technology -- the "
+                   "pool picking different structured candidates per sector is the mechanism "
+                   "working as designed. Full pipeline suite green after the change."),
+        "decision": "PROMOTE",
+        "reason": ("Ships as three more pool candidates behind the existing gates -- nothing about "
+                   "selection honesty changes, deflation already charges for pool width, and a "
+                   "ridge candidate that wins a sector still has to clear select-slice selection, "
+                   "validation grading, search_pbo, and all four verdict gates. Deliberately NOT "
+                   "built: boosting/NN (sample size), and unsupervised pseudo-sector clustering "
+                   "(interesting but a large new multiple-testing surface; noted as possible "
+                   "future work, not smuggled in)."),
+    },
 ]
 
 

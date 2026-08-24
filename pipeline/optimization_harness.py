@@ -518,6 +518,106 @@ def sector_candidate_report(panel, *, champion_weights, periods_per_year=12, qua
     return report
 
 
+def _solve_linear_system(matrix, vector):
+    """Solve ``matrix @ x = vector`` by Gaussian elimination with partial pivoting.
+
+    Pure-stdlib on purpose: the pipeline carries no numpy, and a ridge system here is at
+    most legs x legs (8x8), where this is instant and exact enough.
+    """
+    size = len(vector)
+    augmented = [list(row) + [value] for row, value in zip(matrix, vector)]
+    for col in range(size):
+        pivot = max(range(col, size), key=lambda r: abs(augmented[r][col]))
+        if abs(augmented[pivot][col]) < 1e-12:
+            return None
+        augmented[col], augmented[pivot] = augmented[pivot], augmented[col]
+        for row in range(col + 1, size):
+            factor = augmented[row][col] / augmented[col][col]
+            for k in range(col, size + 1):
+                augmented[row][k] -= factor * augmented[col][k]
+    solution = [0.0] * size
+    for row in range(size - 1, -1, -1):
+        residual = augmented[row][size] - sum(augmented[row][k] * solution[k]
+                                              for k in range(row + 1, size))
+        solution[row] = residual / augmented[row][row]
+    return solution
+
+
+def ridge_weights(periods, *, legs=None, lam=1.0):
+    """Fama-MacBeth-style ridge weights: per period, regress forward returns on ALL legs
+    jointly (cross-sectionally standardized, ridge-shrunk), then average the coefficients
+    across periods and keep the positive part as a weight vector.
+
+    The supervised-learning fix for ``formula_weights``' structural blind spot: that formula
+    scores each leg standalone, so two correlated legs (profitability and financial_health
+    move together by construction) each collect full credit for the same information. A
+    joint regression splits credit between correlated legs instead of double-counting; the
+    ridge penalty (``lam``, scaled by the cross-section size) keeps the 7x7 system stable on
+    the small samples a sector slice actually has, shrinking coefficients toward zero rather
+    than letting near-collinear legs trade huge offsetting loadings.
+
+    Legs are z-scored within each period's own cross-section (missing values imputed at the
+    cross-sectional mean, i.e. zero -- absence carries no information, matching how
+    ``composite_score`` renormalizes around missing legs rather than penalizing them), so no
+    period's scale leaks into another and the averaged coefficients are comparable across
+    time. Negative averaged coefficients clip to zero: production weights are long-only
+    shares by contract, and a leg whose best joint use is as a SHORT signal is a finding to
+    surface separately, not to smuggle in as a negative weight ``composite_score`` would
+    renormalize incoherently. Fit on train (or fit) slices only, same rule as
+    ``formula_weights``. Returns {} when nothing earns positive weight.
+    """
+    legs = list(legs or sorted({leg for period in periods
+                                for scores in (period.get("leg_scores") or {}).values()
+                                for leg in scores}))
+    if not legs:
+        return {}
+    size = len(legs)
+    coefficient_sums = [0.0] * size
+    usable_periods = 0
+    for period in periods:
+        forwards = period.get("forward_returns") or {}
+        leg_scores = period.get("leg_scores") or {}
+        tickers = [ticker for ticker in forwards
+                   if forwards[ticker] is not None and ticker in leg_scores]
+        if len(tickers) < max(5, size + 2):
+            continue
+        columns = []
+        for leg in legs:
+            values = [leg_scores[ticker].get(leg) for ticker in tickers]
+            present = [value for value in values if isinstance(value, (int, float))]
+            if len(present) < 2:
+                columns.append([0.0] * len(tickers))
+                continue
+            mean = sum(present) / len(present)
+            variance = sum((value - mean) ** 2 for value in present) / len(present)
+            spread = variance ** 0.5
+            columns.append([((value - mean) / spread if isinstance(value, (int, float))
+                            and spread else 0.0) for value in values])
+        returns = [forwards[ticker] for ticker in tickers]
+        mean_return = sum(returns) / len(returns)
+        centered = [value - mean_return for value in returns]
+        rows = len(tickers)
+        gram = [[sum(columns[i][r] * columns[j][r] for r in range(rows))
+                 for j in range(size)] for i in range(size)]
+        for i in range(size):
+            gram[i][i] += lam * rows
+        moment = [sum(columns[i][r] * centered[r] for r in range(rows)) for i in range(size)]
+        beta = _solve_linear_system(gram, moment)
+        if beta is None:
+            continue
+        for i in range(size):
+            coefficient_sums[i] += beta[i]
+        usable_periods += 1
+    if not usable_periods:
+        return {}
+    averaged = [total / usable_periods for total in coefficient_sums]
+    clipped = {leg: coefficient for leg, coefficient in zip(legs, averaged) if coefficient > 0}
+    total = sum(clipped.values())
+    if not total:
+        return {}
+    return {leg: round(coefficient / total, 6) for leg, coefficient in clipped.items()}
+
+
 def _mean_ic(periods, weights):
     """Plain mean of the per-period rank ICs for one weight vector, and how many resolved."""
     series = [value for value in _configuration_ic_series(periods, weights) if value is not None]
@@ -533,8 +633,11 @@ def _sector_search_pool(fit_periods, legs, *, count, seed):
     Deliberate mix rather than random-only: ``formula`` is the coverage-x-IC point estimate;
     the ``shrunk_*`` entries pull it toward equal weight (its known failure mode is
     collapsing to one or two legs when most train ICs are negative -- shrinkage keeps the
-    idea while restoring breadth); ``equal_weight`` anchors the no-opinion baseline; the
-    range-sampled remainder covers weight space the structured guesses don't.
+    idea while restoring breadth); the ``ridge_*`` entries are the supervised-learning
+    candidates (``ridge_weights``: legs regressed JOINTLY on forward returns, so correlated
+    legs split credit instead of double-counting, at three shrinkage strengths);
+    ``equal_weight`` anchors the no-opinion baseline; the range-sampled remainder covers
+    weight space the structured guesses don't.
     """
     pool = [("equal_weight", equal_weight_candidate(legs))]
     fitted = formula_weights(fit_periods, legs=legs)
@@ -544,6 +647,10 @@ def _sector_search_pool(fit_periods, legs, *, count, seed):
             blended = blended_full_coverage_candidate(fitted, legs, blend=share)
             if blended:
                 pool.append((f"shrunk_{int(share * 100)}", blended))
+    for lam in (0.1, 1.0, 10.0):
+        learned = ridge_weights(fit_periods, legs=legs, lam=lam)
+        if learned:
+            pool.append((f"ridge_{lam:g}", learned))
     rng = random.Random(seed)
     for index in range(count):
         raw = {leg: rng.uniform(0.0, 1.0) for leg in legs}

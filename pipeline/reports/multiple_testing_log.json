@@ -238,5 +238,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P12-fama-macbeth-ridge-candidates",
+    "declared_at": "2026-08-24T18:45:00+00:00",
+    "hypothesis": "User asked whether ML ('unsupervised learning or something') could improve the weight search. Honest triage first: gradient boosting / neural nets on ~60 monthly training observations per sector would memorize noise and the existing gates would correctly reject them -- not built. The one ML method actually sized for this data is regularized cross-sectional regression (Fama-MacBeth-style ridge), and it targets a real, identified blind spot: formula_weights scores each leg STANDALONE, so two correlated legs (profitability and financial_health co-move by construction) each collect full credit for the same information. A joint regression splits credit between correlated legs instead of double-counting.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

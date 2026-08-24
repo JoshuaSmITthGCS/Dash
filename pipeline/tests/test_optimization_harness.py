@@ -558,6 +558,86 @@ class SectorCandidateReportTests(unittest.TestCase):
             self.assertIn("reweighted_composite_a", names, sector)
 
 
+def _ridge_periods(count, *, names=80, seed=17, noise=0.03, redundant=False):
+    """Synthetic panel for the ridge tests. ``good`` carries the signal; ``bad`` is noise;
+    with ``redundant``, ``half`` is a corrupted copy of ``good`` (correlated, strictly less
+    informative) -- the case standalone-IC weighting double-counts and a joint regression
+    should not.
+    """
+    generator = random.Random(seed)
+    periods = []
+    for index in range(count):
+        leg_scores, forwards = {}, {}
+        for position in range(names):
+            ticker = f"T{position}"
+            true_score = generator.uniform(0, 100)
+            legs = {"good": true_score, "bad": generator.uniform(0, 100)}
+            if redundant:
+                legs["half"] = 0.5 * true_score + 0.5 * generator.uniform(0, 100)
+            leg_scores[ticker] = legs
+            forwards[ticker] = (true_score - 50) / 50 * 0.02 + generator.gauss(0, noise)
+        periods.append({"date": f"2026-{index + 1:02d}", "leg_scores": leg_scores,
+                        "forward_returns": forwards})
+    return periods
+
+
+class RidgeWeightsTests(unittest.TestCase):
+    def test_the_predictive_leg_dominates_and_the_dead_leg_is_dropped_or_tiny(self):
+        weights = harness.ridge_weights(_ridge_periods(40), lam=1.0)
+        self.assertGreater(weights.get("good", 0), 0.8)
+        self.assertLess(weights.get("bad", 0), 0.2)
+
+    def test_a_correlated_redundant_leg_is_not_double_counted_the_way_formula_weights_does(self):
+        # ``half`` = 0.5*good + 0.5*noise: real standalone IC (so formula_weights pays it
+        # substantially), but conditional on ``good`` it adds almost nothing. The joint
+        # regression should concentrate on ``good`` far more sharply than the
+        # standalone-IC formula does -- this is the entire reason ridge is in the pool.
+        periods = _ridge_periods(40, redundant=True)
+        ridge = harness.ridge_weights(periods, lam=1.0)
+        formula = harness.formula_weights(periods)
+        ridge_ratio = ridge.get("good", 0) / max(ridge.get("half", 0), 1e-9)
+        formula_ratio = formula.get("good", 0) / max(formula.get("half", 0), 1e-9)
+        self.assertGreater(ridge_ratio, formula_ratio)
+        self.assertGreater(ridge.get("good", 0), ridge.get("half", 0))
+
+    def test_an_anti_predictive_leg_clips_to_zero_rather_than_going_negative(self):
+        periods = _ridge_periods(40)
+        for period in periods:
+            for legs in period["leg_scores"].values():
+                legs["inverse"] = 100 - legs["good"]
+        weights = harness.ridge_weights(periods, lam=1.0)
+        self.assertNotIn("inverse", weights)
+        for weight in weights.values():
+            self.assertGreater(weight, 0)
+
+    def test_weights_sum_to_one(self):
+        weights = harness.ridge_weights(_ridge_periods(40), lam=1.0)
+        self.assertAlmostEqual(sum(weights.values()), 1.0, places=4)
+
+    def test_too_few_names_per_period_returns_empty_rather_than_fitting_noise(self):
+        self.assertEqual(harness.ridge_weights(_ridge_periods(10, names=4), lam=1.0), {})
+
+    def test_no_periods_returns_empty(self):
+        self.assertEqual(harness.ridge_weights([], lam=1.0), {})
+
+    def test_deterministic_no_randomness_between_calls(self):
+        periods = _ridge_periods(30)
+        self.assertEqual(harness.ridge_weights(periods, lam=1.0),
+                         harness.ridge_weights(periods, lam=1.0))
+
+    def test_stronger_shrinkage_still_returns_a_usable_vector(self):
+        weights = harness.ridge_weights(_ridge_periods(40), lam=10.0)
+        self.assertTrue(weights)
+        self.assertGreater(weights.get("good", 0), weights.get("bad", 0))
+
+    def test_the_sector_search_pool_carries_the_ridge_candidates(self):
+        periods = _ridge_periods(40)
+        pool = dict(harness._sector_search_pool(periods, ["good", "bad"], count=5, seed=0))
+        self.assertIn("ridge_0.1", pool)
+        self.assertIn("ridge_1", pool)
+        self.assertIn("ridge_10", pool)
+
+
 class SectorWeightSearchTests(unittest.TestCase):
     """The actual per-sector search: many candidates per sector, selection inside train,
     only the winner graded on validation, deflation charged for the whole pool.
