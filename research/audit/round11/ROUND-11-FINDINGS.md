@@ -354,6 +354,33 @@ console-flooding lesson (Priority 7's `_drop_series` fix).
 `backtest_monthly.py` before `metric_scores` exists to analyze — not run against real data in
 this sandbox.
 
+## Priority 10 — Sector candidate validation check (`R11-P9` in the registry)
+
+Direct answer to "is Priority 9's per-sector finding real or noise": `formula_weights()` is
+train-slice-only by contract, so nothing in Priority 9 was yet evidence a sector's pattern
+generalizes rather than being fit to a thinner, sector-restricted sample.
+
+`optimization_harness.sector_candidate_report(panel, champion_weights, ...)` fits
+`formula_weights()` on each sector's own train slice, then evaluates it — alongside champion
+and an equal-weight control — purely on that **same sector's validation slice**, data the
+formula never saw, through the identical `walk_forward`/`evaluate_candidate` machinery (same
+deflated-Sharpe gate, same trial count) every other candidate this round has been graded
+through. Never touches `panel.holdout`. New `--sector-candidate-check` flag, composes with
+`--sector-breakdown`/`--metric-sector-breakdown` in the same invocation.
+
+5 new tests, plus an end-to-end CLI run against a small fabricated two-sector panel with a
+deliberately planted leg per sector — the flag correctly recovered both plants
+(`sector_formula` beat a mismatched champion in both sectors, matching the planted ground
+truth exactly), confirming the wiring itself, not just the isolated function.
+
+**How to read the output once it's run on the real panel**: if a sector's `sector_formula`
+beats `champion` on validation IC with `walk_forward_efficiency` holding up (not collapsing
+toward zero or negative), that's real evidence the sector genuinely wants different weights —
+Priority 9's train-slice finding for that sector generalizes. If efficiency collapses, that
+sector's train-slice pattern was fit to noise, and Priority 9's number for it should not be
+trusted regardless of how intuitive it looked (e.g. "Utilities favors leverage metrics" reads
+as a sensible story either way — this check is what actually tells the two apart).
+
 ## What NOT done, per the brief and this session's standing constraints
 
 No production leg weights, composite construction, or ranking logic changed. No shadow variant

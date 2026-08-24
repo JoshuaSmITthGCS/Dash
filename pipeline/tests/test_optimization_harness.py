@@ -343,5 +343,62 @@ class SectorWeightReportTests(unittest.TestCase):
             self.assertIn("reason", row)
 
 
+class SectorCandidateReportTests(unittest.TestCase):
+    """The validation-side follow-up to sector_weight_report -- does a sector-fitted formula
+    generalize to data it was never fit on, or was the train-slice pattern noise.
+    """
+
+    def test_never_touches_the_holdout_slice(self):
+        periods = synthetic_sector_periods(90, names_per_sector=25, noise=0.02, seed=61)
+        panel = harness.Panel(periods, train_fraction=0.4, validation_fraction=0.4)
+        original_holdout = panel.holdout
+        harness.sector_candidate_report(
+            panel, champion_weights={"growth": 0.5, "valuation": 0.5}, trial_count=10)
+        self.assertEqual(panel.holdout, original_holdout)
+
+    def test_a_genuinely_stable_sector_pattern_beats_a_mismatched_champion_on_validation(self):
+        # synthetic_sector_periods' relationship is the SAME in every period (Technology
+        # always driven by "growth"), so it holds in both train and validation -- a real,
+        # generalizing pattern, not train-sample luck. champion is deliberately mismatched
+        # (all weight on the leg that does NOT predict Technology) so sector_formula, which
+        # learns "growth" matters from Technology's own train slice, should win on validation.
+        periods = synthetic_sector_periods(90, names_per_sector=25, noise=0.02, seed=62)
+        panel = harness.Panel(periods, train_fraction=0.4, validation_fraction=0.4)
+        report = harness.sector_candidate_report(
+            panel, champion_weights={"growth": 0.0, "valuation": 1.0}, trial_count=10)
+        tech = {c["name"]: c for c in report["Technology"]["candidates"]}
+        self.assertGreater(tech["sector_formula"]["validation_mean_ic"],
+                           tech["champion"]["validation_mean_ic"])
+
+    def test_a_sector_below_the_minimum_period_floor_reports_no_candidates(self):
+        periods = synthetic_sector_periods(90, names_per_sector=25, noise=0.02, seed=63)
+        panel = harness.Panel(periods, train_fraction=0.4, validation_fraction=0.4)
+        report = harness.sector_candidate_report(
+            panel, champion_weights={"growth": 0.5, "valuation": 0.5}, trial_count=10,
+            minimum_periods=1000)
+        for row in report.values():
+            self.assertIsNone(row["candidates"])
+            self.assertIn("reason", row)
+
+    def test_candidates_within_a_sector_are_sorted_by_validation_ic_descending(self):
+        periods = synthetic_sector_periods(90, names_per_sector=25, noise=0.02, seed=64)
+        panel = harness.Panel(periods, train_fraction=0.4, validation_fraction=0.4)
+        report = harness.sector_candidate_report(
+            panel, champion_weights={"growth": 0.5, "valuation": 0.5}, trial_count=10)
+        for row in report.values():
+            ics = [c["validation_mean_ic"] or float("-inf") for c in row["candidates"]]
+            self.assertEqual(ics, sorted(ics, reverse=True))
+
+    def test_extra_candidates_are_evaluated_alongside_champion_and_the_sector_formula(self):
+        periods = synthetic_sector_periods(90, names_per_sector=25, noise=0.02, seed=65)
+        panel = harness.Panel(periods, train_fraction=0.4, validation_fraction=0.4)
+        report = harness.sector_candidate_report(
+            panel, champion_weights={"growth": 0.5, "valuation": 0.5}, trial_count=10,
+            extra_candidates=[("reweighted_composite_a", {"growth": 1.0})])
+        for sector, row in report.items():
+            names = {c["name"] for c in row["candidates"]}
+            self.assertIn("reweighted_composite_a", names, sector)
+
+
 if __name__ == "__main__":
     unittest.main()

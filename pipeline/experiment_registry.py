@@ -1089,6 +1089,67 @@ REGISTRY = [
                    "analyze -- not run against real data in this environment, same standing constraint "
                    "as R11-P7's own statement fallback."),
     },
+    {
+        "id": "R11-P9-sector-candidate-validation-check",
+        "declared_at": "2026-08-24T15:30:00+00:00",
+        "hypothesis": ("User's own real R11-P7/P8 run found genuinely different per-sector "
+                       "leg/metric patterns (Utilities favoring leverage/size metrics, Technology "
+                       "favoring margin/quality metrics, Energy showing six legs with positive train-"
+                       "slice IC) -- but formula_weights() is explicitly train-slice-only by its own "
+                       "contract, so none of that is yet evidence the pattern generalizes rather than "
+                       "being fit to noise in a sector-restricted, thinner-than-full-universe sample. "
+                       "User's explicit request: 'validate the finding' -- test each sector's train-"
+                       "fitted formula on that SAME sector's own validation slice, the direct "
+                       "out-of-sample check, before trusting any of R11-P8's per-sector numbers."),
+        "category": "infrastructure",
+        "configuration": {
+            "files": ["pipeline/optimization_harness.py", "pipeline/run_backtest_suite.py",
+                     "pipeline/tests/test_optimization_harness.py"],
+            "change": ("optimization_harness.sector_candidate_report(panel, champion_weights, "
+                       "trial_count=None, minimum_periods=6, extra_candidates=None): per sector, "
+                       "fits formula_weights() on that sector's own Panel.train slice (filtered via "
+                       "the existing filter_periods_by_sector), then evaluates it -- alongside "
+                       "champion and an equal_weight control, plus any extra_candidates -- purely on "
+                       "that SAME sector's Panel.validation slice, through the identical "
+                       "walk_forward/evaluate_candidate apparatus (deflated Sharpe, same trial count) "
+                       "every other candidate this round has been graded through. Never reads "
+                       "panel.holdout. A sector with fewer than minimum_periods usable periods in "
+                       "either its train or validation slice reports candidates: None rather than a "
+                       "comparison built on too few names. New run_backtest_suite.py "
+                       "--sector-candidate-check flag (fundamentals-only, composes with "
+                       "--sector-breakdown/--metric-sector-breakdown in the same invocation), console "
+                       "output one line per sector (champion vs sector_formula validation IC, "
+                       "walk-forward efficiency, BEATS/does-not-beat verdict) -- full detail in "
+                       "--harness-out."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 5},
+        "number_of_variants_tested": 1,
+        "result": ("5 new tests: holdout never touched (mirrors OptimizationSession's own "
+                   "test), a genuinely stable synthetic sector pattern (same relationship in both "
+                   "train and validation) beats a deliberately mismatched champion on validation IC, "
+                   "the minimum-period floor gates a thin sector to candidates: None, results sort "
+                   "by validation IC descending, and extra_candidates flow through alongside champion "
+                   "and the sector formula. Also ran the actual CLI end-to-end (not just the isolated "
+                   "function) against a small fabricated panel with two sectors, each driven by a "
+                   "different, deliberately-planted leg: --sector-candidate-check correctly reported "
+                   "'Energy val_ic=0.2783 -> sector_formula val_ic=0.2912 -> BEATS champion' and "
+                   "'Technology val_ic=0.0881 -> sector_formula val_ic=0.2886 -> BEATS champion', "
+                   "matching the planted ground truth exactly -- confirming the flag wiring itself, "
+                   "not just the underlying function in isolation. Full pipeline suite green after "
+                   "the change."),
+        "decision": "PROMOTE",
+        "reason": ("Ships as tooling only -- same scope discipline as every other harness addition "
+                   "this round, no production weight or promotion decision changed. This is the "
+                   "actual answer to 'is R11-P8's per-sector finding noise': a sector where "
+                   "sector_formula's validation-slice IC collapses relative to its train-slice IC "
+                   "(walk_forward_efficiency near zero or negative) is the overfitting signature; "
+                   "one where it holds up is real, generalizing evidence. Needs a real, "
+                   "network-fetched panel rebuild (same standing constraint as R11-P7/P8) to run "
+                   "against the user's actual per-sector findings -- not run against that real data "
+                   "in this sandbox, only against synthetic ground-truth and a small fabricated "
+                   "smoke-test panel."),
+    },
 ]
 
 

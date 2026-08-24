@@ -77,6 +77,12 @@ Cross-stage candidate flags (harness AND elo stages):
   runs unchanged at the metric level -- one implementation, not two. Requires a panel rebuilt
   with per-metric tagging (current backtest_monthly.py); composes with --sector-breakdown in
   the same invocation.
+- --sector-candidate-check (harness stage, fundamentals-only): the validation-side follow-up
+  to --sector-breakdown. Fits formula_weights() on each sector's own train slice, then tests
+  it against champion on that SAME sector's validation slice -- data the formula never saw --
+  through the same walk_forward/evaluate_candidate apparatus every other candidate this
+  session has been graded through. Tells a real, generalizing per-sector pattern apart from a
+  formula fit to noise in a thin, sector-restricted train sample. Never touches holdout.
 - --top-n-from-elo N --elo-results-in PATH (harness stage): pulls the top N names off a
   previous elo run's leaderboard and adds them as harness (and, with --holdout-check,
   holdout) candidates -- "test the top N" without retyping weight vectors.
@@ -476,6 +482,37 @@ def run_harness_stage(args):
                         print(f"  {sector:<28} ({row['usable_periods']} periods, "
                              f"{len(row['formula_weights'])} metrics scored) top5: {weights}")
 
+    if args.sector_candidate_check:
+        if args.domain != "fundamentals":
+            print("[sector-check] --sector-candidate-check is fundamentals-only, skipping")
+        else:
+            candidate_report = harness.sector_candidate_report(
+                panel, champion_weights=champion_weights, trial_count=session.trial_count)
+            if not candidate_report:
+                print("[sector-check] no sector labels found in this panel -- rebuild it with "
+                     "the current backtest_monthly.py to pick up sector tagging")
+            else:
+                summary["sector_candidate_check"] = candidate_report
+                print("\n[sector-check] sector_formula (fit on that sector's train slice) vs "
+                     "champion, evaluated on that SAME sector's validation slice -- data the "
+                     "formula never saw -- to tell a real per-sector pattern apart from noise:")
+                for sector, row in candidate_report.items():
+                    if row["candidates"] is None:
+                        print(f"  {sector:<28} {row['reason']}")
+                        continue
+                    by_name = {c["name"]: c for c in row["candidates"]}
+                    champ = by_name.get("champion", {})
+                    formula = by_name.get("sector_formula")
+                    if formula is None:
+                        print(f"  {sector:<28} champion val_ic={champ.get('validation_mean_ic')} "
+                             "-- sector_formula produced nothing usable on this sector's train slice")
+                        continue
+                    verdict = "BEATS champion" if (formula["validation_mean_ic"] or float("-inf")) > \
+                        (champ.get("validation_mean_ic") or float("-inf")) else "does not beat champion"
+                    print(f"  {sector:<28} champion val_ic={champ.get('validation_mean_ic')} "
+                         f"sector_formula val_ic={formula['validation_mean_ic']} "
+                         f"efficiency={formula['walk_forward_efficiency']} -> {verdict}")
+
     if args.holdout_check:
         print("\n" + "=" * 70)
         print("[holdout] ONE-TIME CHECK -- spending the holdout slice now.")
@@ -617,6 +654,15 @@ def main():
                              "the top 5 metrics per sector; the full list is in --harness-out. "
                              "Requires a panel rebuilt with per-metric tagging (current "
                              "backtest_monthly.py).")
+    parser.add_argument("--sector-candidate-check", action="store_true",
+                        help="Fundamentals-only. The validation-side follow-up to "
+                             "--sector-breakdown: fits formula_weights() on each sector's OWN "
+                             "train slice, then tests it against champion on that SAME "
+                             "sector's validation slice -- data the formula never saw -- to "
+                             "tell a real, generalizing per-sector pattern apart from a "
+                             "formula fit to noise in a thin, sector-restricted train sample. "
+                             "Never touches holdout. Requires a panel rebuilt with sector "
+                             "tagging (current backtest_monthly.py).")
     parser.add_argument("--top-n-from-elo", type=int, default=0, metavar="N",
                         help="Pull the top N names off a previous elo run's leaderboard "
                              "(--elo-results-in PATH) and add them as harness candidates -- "

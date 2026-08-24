@@ -214,5 +214,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P9-sector-candidate-validation-check",
+    "declared_at": "2026-08-24T15:30:00+00:00",
+    "hypothesis": "User's own real R11-P7/P8 run found genuinely different per-sector leg/metric patterns (Utilities favoring leverage/size metrics, Technology favoring margin/quality metrics, Energy showing six legs with positive train-slice IC) -- but formula_weights() is explicitly train-slice-only by its own contract, so none of that is yet evidence the pattern generalizes rather than being fit to noise in a sector-restricted, thinner-than-full-universe sample. User's explicit request: 'validate the finding' -- test each sector's train-fitted formula on that SAME sector's own validation slice, the direct out-of-sample check, before trusting any of R11-P8's per-sector numbers.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

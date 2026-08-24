@@ -267,6 +267,86 @@ def sector_weight_report(periods, *, legs=None, periods_per_year=12, minimum_per
     return report
 
 
+def sector_candidate_report(panel, *, champion_weights, periods_per_year=12, quantiles=5,
+                            trial_count=None, minimum_periods=6, extra_candidates=None):
+    """The validation-side follow-up to ``sector_weight_report``: fit a candidate on one
+    sector's OWN train slice, then test it on that SAME sector's validation slice -- data the
+    candidate was never fit on -- to tell a real, generalizing sector pattern apart from a
+    formula fit to noise in a thin, sector-restricted train sample.
+
+    For each sector with enough usable train AND validation periods: builds
+    ``sector_formula`` (``formula_weights`` on the sector's train slice only) and
+    ``equal_weight`` (the no-opinion control), evaluates both alongside ``champion_weights``
+    and any ``extra_candidates`` ([(name, weights)]) purely on the sector's validation slice,
+    via the same ``walk_forward``/``evaluate_candidate`` apparatus every other candidate this
+    session has been graded through -- same deflated-Sharpe gate, same trial count. A sector
+    where ``sector_formula`` beats champion here is real evidence its pattern generalizes;
+    one where it doesn't (walk_forward_efficiency collapsing toward zero or negative) is the
+    classic overfitting signature this whole harness exists to catch, not a reason to trust
+    the train-slice number anyway.
+
+    Never touches ``panel.holdout`` -- this is a validation-side check, not the one-time
+    final grade. A sector with fewer than ``minimum_periods`` usable periods in either train
+    or validation is reported with ``candidates: None`` rather than a comparison built on too
+    few names to mean anything.
+    """
+    trial_count = trial_count if trial_count is not None else total_variants_tested()
+    report = {}
+    for sector in sectors_in_panel(panel.train):
+        sector_train = filter_periods_by_sector(panel.train, sector)
+        sector_validation = filter_periods_by_sector(panel.validation, sector)
+        usable_train = sum(1 for period in sector_train if len(period.get("leg_scores") or {}) >= 5)
+        usable_validation = sum(1 for period in sector_validation
+                                if len(period.get("leg_scores") or {}) >= 5)
+        if usable_train < minimum_periods or usable_validation < minimum_periods:
+            report[sector] = {
+                "usable_train_periods": usable_train,
+                "usable_validation_periods": usable_validation,
+                "candidates": None,
+                "reason": f"fewer than {minimum_periods} usable periods in this sector's "
+                         "train or validation slice",
+            }
+            continue
+
+        legs = sorted({leg for period in sector_train
+                       for scores in (period.get("leg_scores") or {}).values() for leg in scores})
+        sector_formula = formula_weights(sector_train, legs=legs, periods_per_year=periods_per_year)
+
+        candidates = [("champion", champion_weights)]
+        if sector_formula:
+            candidates.append(("sector_formula", sector_formula))
+        if legs:
+            candidates.append(("equal_weight", equal_weight_candidate(legs)))
+        candidates += list(extra_candidates or [])
+
+        results = []
+        for name, weights in candidates:
+            train_result = walk_forward(score_with_weights(sector_train, weights),
+                                        quantiles=quantiles, periods_per_year=periods_per_year)
+            validation_verdict = evaluate_candidate(
+                score_with_weights(sector_validation, weights), trials=trial_count,
+                quantiles=quantiles, periods_per_year=periods_per_year)
+            train_ic = train_result["ic"]["mean_ic"]
+            validation_ic = validation_verdict["ic"]["mean_ic"]
+            efficiency = (round(validation_ic / train_ic, 4)
+                         if train_ic and validation_ic is not None else None)
+            results.append({
+                "name": name, "weights": weights,
+                "train_mean_ic": train_ic, "validation_mean_ic": validation_ic,
+                "walk_forward_efficiency": efficiency,
+                "deflated_sharpe_probability": validation_verdict["deflated_sharpe_probability"],
+                "ship": validation_verdict["ship"],
+            })
+        results.sort(key=lambda row: -(row["validation_mean_ic"] if row["validation_mean_ic"]
+                                       is not None else float("-inf")))
+        report[sector] = {
+            "usable_train_periods": usable_train,
+            "usable_validation_periods": usable_validation,
+            "candidates": results,
+        }
+    return report
+
+
 class OptimizationSession:
     """One bounded search over a fixed :class:`Panel`.
 
