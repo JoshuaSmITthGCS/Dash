@@ -75,6 +75,66 @@ class RandomNeighborTests(unittest.TestCase):
         self.assertNotEqual(first, second)
 
 
+class UniverseLegsTests(unittest.TestCase):
+    def test_collects_every_leg_that_appears_anywhere_in_the_panel(self):
+        periods = [
+            {"leg_scores": {"A": {"x": 1.0, "y": 2.0}}},
+            {"leg_scores": {"B": {"z": 3.0}}},
+        ]
+        self.assertEqual(suite.universe_legs(periods), ["x", "y", "z"])
+
+    def test_empty_periods_give_an_empty_universe(self):
+        self.assertEqual(suite.universe_legs([]), [])
+
+
+class RangeSampledCandidateTests(unittest.TestCase):
+    LEGS = ["a", "b", "c", "d"]
+
+    def test_every_declared_leg_is_present_and_weights_sum_to_one(self):
+        rng = random.Random(1)
+        candidate = suite.range_sampled_candidate(self.LEGS, rng, minimum=0.0, maximum=0.4)
+        self.assertEqual(set(candidate), set(self.LEGS))
+        self.assertAlmostEqual(sum(candidate.values()), 1.0, places=4)
+
+    def test_a_nonzero_minimum_is_respected_before_normalization(self):
+        # Each raw draw before normalization must be >= minimum; normalization can shrink
+        # them proportionally but never reorders which leg got the smallest raw draw versus
+        # the largest, so if every raw draw is >= minimum, the two smallest normalized
+        # weights should reflect that floor relative to each other, not collapse to zero.
+        rng = random.Random(2)
+        candidate = suite.range_sampled_candidate(self.LEGS, rng, minimum=0.1, maximum=0.1)
+        # minimum == maximum: every leg gets an identical raw draw, so after normalization
+        # every leg must end up with an exactly equal share.
+        for weight in candidate.values():
+            self.assertAlmostEqual(weight, 1.0 / len(self.LEGS), places=4)
+
+    def test_the_same_seed_reproduces_the_same_candidate(self):
+        first = suite.range_sampled_candidate(self.LEGS, random.Random(5), minimum=0.0, maximum=0.4)
+        second = suite.range_sampled_candidate(self.LEGS, random.Random(5), minimum=0.0, maximum=0.4)
+        self.assertEqual(first, second)
+
+
+class RangeSearchCandidatesTests(unittest.TestCase):
+    def test_generates_exactly_the_requested_count(self):
+        candidates = suite.range_search_candidates(["a", "b"], count=7, seed=0,
+                                                    minimum=0.0, maximum=0.4)
+        self.assertEqual(len(candidates), 7)
+
+    def test_the_same_seed_reproduces_the_same_batch(self):
+        first = suite.range_search_candidates(["a", "b", "c"], count=5, seed=3,
+                                              minimum=0.0, maximum=0.4)
+        second = suite.range_search_candidates(["a", "b", "c"], count=5, seed=3,
+                                               minimum=0.0, maximum=0.4)
+        self.assertEqual(first, second)
+
+    def test_a_different_seed_generally_produces_a_different_batch(self):
+        first = suite.range_search_candidates(["a", "b", "c"], count=5, seed=3,
+                                              minimum=0.0, maximum=0.4)
+        second = suite.range_search_candidates(["a", "b", "c"], count=5, seed=4,
+                                               minimum=0.0, maximum=0.4)
+        self.assertNotEqual(first, second)
+
+
 class RankKeyTests(unittest.TestCase):
     def test_promote_sorts_before_keep_as_challenger_before_abandon(self):
         candidates = [

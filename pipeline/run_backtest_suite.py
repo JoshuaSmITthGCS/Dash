@@ -47,8 +47,13 @@ Stages, each independently skippable:
    a coverage-and-signal-derived candidate (optimization_harness.formula_weights(), computed
    from the train slice only): weight_leg proportional to coverage_leg * max(0,
    standalone_ic_leg), directly correcting the common drift where a leg's hand-set weight
-   stops tracking its real, currently-measured coverage and predictive power. No network
-   needed.
+   stops tracking its real, currently-measured coverage and predictive power. --elo-search N
+   adds N more candidates that each independently sample every leg in the panel's full
+   universe from [--elo-search-min, --elo-search-max] and renormalize -- not a perturbation
+   around champion (that's --auto-search's job in the harness stage), but a genuine sweep
+   across each leg's own declared range, so the leaderboard ranks an actual population of
+   candidates rather than a handful of named ones. N is required, no default count, matching
+   --auto-search's "state how many up front" discipline. No network needed.
 
 Usage:
     python3 pipeline/run_backtest_suite.py --years 5 --cache-only
@@ -177,6 +182,38 @@ def auto_search_candidates(base_weights, *, count, seed, perturbation, drop_prob
            for index in range(count)]
 
 
+def universe_legs(periods):
+    """Every leg name that appears anywhere in the panel, not just the ones champion happens
+    to declare -- the actual universe a range sweep should draw from.
+    """
+    return sorted({leg for period in periods
+                  for scores in (period.get("leg_scores") or {}).values() for leg in scores})
+
+
+def range_sampled_candidate(legs, rng, *, minimum, maximum):
+    """One weight vector: each leg drawn independently and uniformly from
+    ``[minimum, maximum]``, normalized to sum to 1.
+
+    Unlike ``random_neighbor`` (a perturbation *around* one base point), this samples the
+    whole declared range for every leg independently -- covering the space a leg's weight
+    could plausibly take, not just the neighborhood of whatever champion already does. An
+    all-zero draw (possible when ``minimum`` is 0) falls back to an equal-weight vector
+    rather than emitting a candidate composite_score can't score at all.
+    """
+    raw = {leg: rng.uniform(minimum, maximum) for leg in legs}
+    total = sum(raw.values())
+    if not total:
+        return {leg: round(1.0 / len(legs), 6) for leg in legs}
+    return {leg: round(weight / total, 6) for leg, weight in raw.items()}
+
+
+def range_search_candidates(legs, *, count, seed, minimum, maximum):
+    rng = random.Random(seed)
+    return [(f"range-{seed}-{index:03d}",
+            range_sampled_candidate(legs, rng, minimum=minimum, maximum=maximum))
+           for index in range(count)]
+
+
 def rank_key(candidate):
     # PROMOTE first, then KEEP_AS_CHALLENGER, then ABANDON; within a tier, higher validation
     # IC first. Missing IC sorts last within its tier rather than raising.
@@ -276,6 +313,14 @@ def run_elo_stage(args):
         else:
             print("[elo] formula_weights() returned nothing usable on the train slice, "
                  "skipping that candidate")
+    if args.elo_search:
+        legs = universe_legs(periods)
+        candidates += range_search_candidates(
+            legs, count=args.elo_search, seed=args.elo_search_seed,
+            minimum=args.elo_search_min, maximum=args.elo_search_max)
+        print(f"[elo] added {args.elo_search} range-sampled candidates over {len(legs)} legs "
+             f"(each leg drawn from [{args.elo_search_min}, {args.elo_search_max}], "
+             f"seed={args.elo_search_seed})")
 
     if len(candidates) < 2:
         print("[elo] no candidates beyond champion (pass --candidates or --include-formula), "
@@ -294,9 +339,13 @@ def run_elo_stage(args):
     with open(args.elo_out, "w") as handle:
         json.dump(result, handle, indent=2)
     print(f"[elo] wrote {args.elo_out}")
-    print(f"[elo] leaderboard after {args.elo_rounds} rounds "
+    print(f"[elo] leaderboard after {args.elo_rounds} rounds, {len(candidates)} candidates "
          f"(pool={result['pool_size']} validation periods, sample={result['sample_size']}):")
-    for row in result["leaderboard"]:
+    board = result["leaderboard"]
+    shown = board if len(board) <= 25 else board[:15] + board[-5:]
+    for index, row in enumerate(shown):
+        if len(board) > 25 and index == 15:
+            print(f"  ... {len(board) - 20} more in {args.elo_out} ...")
         print(f"  {row['elo']:>7.1f}  {row['name']}")
 
 
@@ -347,6 +396,19 @@ def main():
     parser.add_argument("--include-formula", action="store_true",
                         help="Also enter optimization_harness.formula_weights() (derived "
                              "from the train slice) as a candidate in the Elo tournament.")
+    parser.add_argument("--elo-search", type=int, default=0, metavar="N",
+                        help="Also enter N candidates that independently sample every leg in "
+                             "the panel's full universe from [--elo-search-min, "
+                             "--elo-search-max] (not a perturbation around champion -- the "
+                             "whole declared range for every leg). Required to be explicit "
+                             "(no default count), matching --auto-search's discipline: state "
+                             "how many up front. This is what turns the leaderboard from a "
+                             "handful of named candidates into an actual ranked sweep.")
+    parser.add_argument("--elo-search-seed", type=int, default=0)
+    parser.add_argument("--elo-search-min", type=float, default=0.0)
+    parser.add_argument("--elo-search-max", type=float, default=0.4,
+                        help="Per-leg cap so a single leg can't be handed the whole budget "
+                             "by construction -- 0.4 leaves room for at least 3 legs")
     parser.add_argument("--elo-out", default=DEFAULT_ELO_OUT)
     args = parser.parse_args()
 
