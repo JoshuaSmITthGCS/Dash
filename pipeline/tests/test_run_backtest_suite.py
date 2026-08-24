@@ -138,29 +138,6 @@ class RangeSearchCandidatesTests(unittest.TestCase):
         self.assertNotEqual(first, second)
 
 
-class DropSeriesTests(unittest.TestCase):
-    def test_removes_series_keys_at_any_depth_without_touching_other_keys(self):
-        nested = {
-            "sector_breakdown": {
-                "Technology": {
-                    "standalone_ic": {"growth": {"mean_ic": 0.01, "series": [0.1, 0.2, 0.3]}},
-                    "usable_periods": 60,
-                },
-            },
-            "candidates": [{"name": "champion", "series": [1, 2]}],
-        }
-        cleaned = suite._drop_series(nested)
-        self.assertNotIn("series", cleaned["sector_breakdown"]["Technology"]["standalone_ic"]["growth"])
-        self.assertEqual(cleaned["sector_breakdown"]["Technology"]["standalone_ic"]["growth"]["mean_ic"], 0.01)
-        self.assertEqual(cleaned["sector_breakdown"]["Technology"]["usable_periods"], 60)
-        self.assertNotIn("series", cleaned["candidates"][0])
-
-    def test_does_not_mutate_the_original(self):
-        original = {"a": {"series": [1, 2, 3], "b": 1}}
-        suite._drop_series(original)
-        self.assertIn("series", original["a"])
-
-
 class RankKeyTests(unittest.TestCase):
     def test_promote_sorts_before_keep_as_challenger_before_abandon(self):
         candidates = [

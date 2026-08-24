@@ -315,23 +315,6 @@ def top_candidates_from_elo(path, count, *, exclude):
     return picked
 
 
-def _drop_series(value):
-    """Deep copy of ``value`` with every ``"series"`` key removed.
-
-    ``per_leg_ic``'s per-period IC series (used by ``sector_weight_report`` and, through it,
-    the harness summary's ``sector_breakdown``) is meant for the saved JSON file, not the
-    terminal -- one sector's worth is already dozens of floats, times every leg, times every
-    sector, and it drowns the actually-actionable coverage/IC/formula_weights lines in the
-    same print. The full data is still written to ``--harness-out`` unabridged; only the
-    console echo is trimmed.
-    """
-    if isinstance(value, dict):
-        return {key: _drop_series(item) for key, item in value.items() if key != "series"}
-    if isinstance(value, list):
-        return [_drop_series(item) for item in value]
-    return value
-
-
 def rank_key(candidate):
     # PROMOTE first, then KEEP_AS_CHALLENGER, then ABANDON; within a tier, higher validation
     # IC first. Missing IC sorts last within its tier rather than raising.
@@ -559,7 +542,20 @@ def run_harness_stage(args):
     with open(args.harness_out, "w") as handle:
         json.dump(summary, handle, indent=2)
     print(f"[harness] wrote {args.harness_out}")
-    print(json.dumps(_drop_series(summary), indent=2))
+    # Compact by design. Every stage above already prints its own readable summary, and the
+    # per-sector/per-metric blocks make the full object thousands of lines -- dumping it here
+    # scrolled the actionable lines off the top of the terminal on every real run. The file
+    # holds everything; the console holds what a human reads.
+    print(json.dumps({
+        "panel_periods": summary["panel_periods"],
+        "split": summary["split"],
+        "trial_count": summary["trial_count"],
+        "search_overfitting": summary["search_overfitting"],
+        "candidates": [{key: candidate[key] for key in
+                        ("name", "validation_mean_ic", "deflated_sharpe_probability",
+                         "suggested_decision")}
+                       for candidate in summary["candidates"]],
+    }, indent=2))
 
 
 def run_elo_stage(args):
