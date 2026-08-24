@@ -356,6 +356,25 @@
 .result-card-list { display: none; }
 .congress-kpi-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-bottom: var(--sp-5); }
 .congress-flag-row { display: flex; flex-wrap: wrap; gap: var(--sp-1-5); }
+
+.political-signals { margin-bottom: var(--sp-5); }
+.political-signals-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.political-signals-title { margin: 0; font: var(--fw-bold) var(--fs-md) var(--font-display); }
+.political-signals-note { color: var(--text-faint); font-size: var(--fs-2xs); }
+.political-signals-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-3); margin: 0; padding: 0; list-style: none; }
+.political-signal-card { display: flex; flex-direction: column; gap: var(--sp-1-5); min-width: 0; padding: var(--sp-3); border: 1px solid var(--border-default); border-radius: var(--control-radius); background: var(--surface-secondary); }
+.political-signal-card b { font-size: var(--fs-lg); }
+.political-signal-filer { overflow-wrap: anywhere; color: var(--text-secondary); font-size: var(--fs-2xs); }
+.chip.signal-direction { align-self: flex-start; font: var(--fw-bold) var(--fs-2xs) var(--font-mono); letter-spacing: .05em; }
+.chip.signal-direction.positive { background: var(--pill-positive-bg); color: var(--pill-positive-ink); }
+.chip.signal-direction.negative { background: var(--pill-negative-bg); color: var(--pill-negative-ink); }
+
+@media (max-width: 900px) {
+  .political-signals-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .political-signals-list { grid-template-columns: 1fr; }
+}
 .finance-form { display: grid; gap: var(--sp-3); align-items: end; margin-bottom: var(--sp-5); }
 .finance-form-budget { grid-template-columns: 2fr 1fr 1fr auto; }
 .finance-form-pool, .finance-form-account { grid-template-columns: 2fr 1fr auto; }

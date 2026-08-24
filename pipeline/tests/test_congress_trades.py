@@ -95,9 +95,18 @@ class StockWatcherClientTests(unittest.TestCase):
     }
     KADOA_EXECUTIVE_ROW = {
         "chamber": None, "branch": "executive", "filer_name": "Donald J Trump",
+        "office": "President", "agency": "White House Office",
         "asset_name": "Some Bond", "asset_type": "CS", "transaction_type": "Purchase",
         "amount_range_label": "$1,001 - $15,000", "transaction_date": "2026-05-01",
         "filing_date": "2026-06-01",
+    }
+    KADOA_EXECUTIVE_TICKER_ROW = {
+        "chamber": None, "branch": "executive", "filer_name": "Donald J Trump",
+        "office": "President", "agency": "White House Office", "ticker": "AAPL",
+        "asset_name": "APPLE INC", "asset_type": None, "transaction_type": "Sale (Full)",
+        "amount_range_label": "$1,001 - $15,000", "transaction_date": "2026-06-23",
+        "filing_date": "2026-08-22",
+        "doc_url": "https://extapps2.oge.gov/201/Presiden.nsf/PAS+Index/x/$FILE/x.pdf",
     }
 
     def test_a_combined_file_is_split_by_each_rows_own_chamber_field(self):
@@ -145,6 +154,51 @@ class StockWatcherClientTests(unittest.TestCase):
         # "Municipal Security" already contains no "stock" substring - nothing to translate,
         # and it must keep failing the equity-purchase check, not accidentally pass it.
         self.assertNotIn("stock", rows[0]["asset_type"].lower())
+
+    def test_executive_latest_reads_only_the_executive_branch_rows(self):
+        # The only source anywhere in this client that covers OGE (executive-branch) filers,
+        # including the President - selected by "branch", not "chamber", since executive
+        # rows carry chamber:null (see the comment on _fetch_executive).
+        combined = [self.KADOA_HOUSE_ROW, self.KADOA_SENATE_ROW, self.KADOA_EXECUTIVE_ROW]
+        client = StockWatcherClient(opener=lambda url: combined)
+
+        rows, seen = client.executive_latest()
+
+        self.assertEqual(seen, 1)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["chamber"], "executive")
+        self.assertEqual(rows[0]["representative"], "Donald J Trump")
+        self.assertEqual(rows[0]["office"], "President")
+        self.assertEqual(rows[0]["agency"], "White House Office")
+
+    def test_executive_rows_carry_no_district_even_though_office_is_present(self):
+        # The district fallback ("district", "state", "office") exists for House rows that
+        # have no dedicated district field - it must not repurpose "office" ("President") as
+        # a district for executive rows, which have their own "office" field instead.
+        client = StockWatcherClient(opener=lambda url: [self.KADOA_EXECUTIVE_ROW])
+        rows, _ = client.executive_latest()
+
+        self.assertIsNone(rows[0]["district"])
+
+    def test_a_congress_row_carries_no_office_or_agency(self):
+        # office/agency are executive-branch-only fields - a House/Senate row must not pick
+        # up "office" a second time under the new field name.
+        client = StockWatcherClient(opener=lambda url: [self.KADOA_HOUSE_ROW])
+        rows, _ = client.house_latest()
+
+        self.assertIsNone(rows[0]["office"])
+        self.assertIsNone(rows[0]["agency"])
+
+    def test_an_executive_ticker_row_normalizes_like_any_other_equity_disclosure(self):
+        client = StockWatcherClient(opener=lambda url: [self.KADOA_EXECUTIVE_TICKER_ROW])
+        rows, _ = client.executive_latest()
+
+        row = rows[0]
+        self.assertEqual(row["symbol"], "AAPL")
+        self.assertEqual(row["transaction_type"], "Sale (Full)")
+        self.assertEqual(row["transaction_date"], "2026-06-23")
+        self.assertEqual(row["disclosure_date"], "2026-08-22")
+        self.assertIsNone(row["asset_type"])  # confirmed null on every live executive row
 
     def test_a_row_with_no_chamber_field_is_trusted_to_be_whichever_chamber_was_asked_for(self):
         # The original stock-watcher shape has no "chamber" field at all - every row in the
