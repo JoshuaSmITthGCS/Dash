@@ -246,5 +246,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P13-regime-diagnosis",
+    "declared_at": "2026-08-24T19:30:00+00:00",
+    "hypothesis": "The user's two real 500-wide sector searches (full universe and growth-quality) both returned 0 of 11 sectors REAL, and their select-slice columns exposed the deeper pattern: in several sectors the best of ~505 candidates had NEGATIVE select-era IC that flipped positive in validation (Basic Materials -0.009->+0.096, Consumer Defensive -0.034->+0.006), while others flipped the opposite way (Communication Services +0.146->-0.038). The instability is in the signal across TIME, not the weights across sectors -- no static weight vector survives a signal that points backwards for half its history. Three hypotheses with distinct fingerprints: a real regime break at a market event; a data-source artifact at the boundary where statements stop being Yahoo-native and become the R11-P7 EDGAR reconstruction; or diffuse noise with no single break at all.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

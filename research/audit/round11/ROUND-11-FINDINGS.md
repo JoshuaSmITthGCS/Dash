@@ -491,6 +491,40 @@ two-sector panel, `ridge_0.1` won the Energy sector's search outright (REAL, `se
 while the formula kept Technology — the pool picking different structured candidates per
 sector is the mechanism working. 9 new tests.
 
+## Priority 14 — Regime diagnosis (`R11-P13` in the registry)
+
+The user's two real 500-wide sector searches (full universe and growth-quality) both returned
+**0 of 11 sectors REAL** — the strong-form settlement of the per-sector question on this
+panel. Their select-slice columns exposed the deeper pattern: in several sectors the best of
+~505 candidates had *negative* select-era IC that flipped positive in validation (Basic
+Materials −0.009→+0.096, Consumer Defensive −0.034→+0.006), while others flipped the other
+way (Communication Services +0.146→−0.038). The instability lives in the signal across
+**time**, not the weights across sectors; no static weight vector survives a signal that
+points backwards for half its history.
+
+`pipeline/regime_diagnosis.py` is the decision instrument for that question. It reads the
+committed panel and cache (no network, changes nothing) and reports: a per-year champion IC
+table; the single strongest breakpoint (Welch's t, minimum 24 periods per side) with a
+permutation test on the **maximum** |t| over all breakpoints — so scanning every location is
+priced into the p-value; the Yahoo-native/EDGAR data-source boundary **computed from the
+actual cache** (median oldest quarterly income period + 45-day lag across tickers) rather
+than assumed; and a per-leg before/after table. Verdict is an explicit trichotomy:
+
+- **DATA_ARTIFACT_SUSPECTED** — significant break within 3 months of the computed data
+  boundary: the earlier era is a measurement question about the reconstruction, not market
+  history.
+- **REGIME_BREAK** — significant break far from the boundary: any weights validated on one
+  side are untested on the other; regime-conditioning becomes the research question.
+- **NO_SIGNIFICANT_BREAK** — instability is diffuse: the honest summary is "no stable edge
+  at this horizon", not "an edge with one bad patch".
+
+13 new tests (planted flip located within 3 periods; steady signal correctly not declared a
+break; the same flip reads REGIME_BREAK or DATA_ARTIFACT_SUSPECTED depending on where the
+fabricated cache boundary is placed). End-to-end verified against this sandbox's real (stale,
+5-year) panel and real cache — boundary 2025-02-14 computed from 860 tickers, p=0.432,
+NO_SIGNIFICANT_BREAK — which validates the mechanics and says nothing about the user's
+10-year panel, whose run is the one that matters.
+
 ## What NOT done, per the brief and this session's standing constraints
 
 No production leg weights, composite construction, or ranking logic changed. No shadow variant

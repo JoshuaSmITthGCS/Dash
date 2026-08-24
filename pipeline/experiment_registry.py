@@ -1347,6 +1347,65 @@ REGISTRY = [
                    "(interesting but a large new multiple-testing surface; noted as possible "
                    "future work, not smuggled in)."),
     },
+    {
+        "id": "R11-P13-regime-diagnosis",
+        "declared_at": "2026-08-24T19:30:00+00:00",
+        "hypothesis": ("The user's two real 500-wide sector searches (full universe and "
+                       "growth-quality) both returned 0 of 11 sectors REAL, and their select-slice "
+                       "columns exposed the deeper pattern: in several sectors the best of ~505 "
+                       "candidates had NEGATIVE select-era IC that flipped positive in validation "
+                       "(Basic Materials -0.009->+0.096, Consumer Defensive -0.034->+0.006), while "
+                       "others flipped the opposite way (Communication Services +0.146->-0.038). "
+                       "The instability is in the signal across TIME, not the weights across "
+                       "sectors -- no static weight vector survives a signal that points backwards "
+                       "for half its history. Three hypotheses with distinct fingerprints: a real "
+                       "regime break at a market event; a data-source artifact at the boundary "
+                       "where statements stop being Yahoo-native and become the R11-P7 EDGAR "
+                       "reconstruction; or diffuse noise with no single break at all."),
+        "category": "methodology",
+        "configuration": {
+            "files": ["pipeline/regime_diagnosis.py", "pipeline/tests/test_regime_diagnosis.py"],
+            "change": ("New standalone pipeline/regime_diagnosis.py (reads the committed panel and "
+                       "cache, no network, changes nothing): per-year champion IC table with hit "
+                       "rates; single-break scan maximizing Welch's t between before/after "
+                       "segments (min 24 periods each); permutation test on the MAXIMUM |t| over "
+                       "all breakpoints, so scanning every break location is priced into the "
+                       "p-value rather than quietly inflating significance; the Yahoo-native/EDGAR "
+                       "data-source boundary COMPUTED from the actual cache (median over tickers "
+                       "of oldest quarterly income period + 45d reporting lag) rather than "
+                       "assumed; per-leg before/after IC table to show whether a break is "
+                       "composite-wide or leg-specific. Verdict is an explicit trichotomy: "
+                       "DATA_ARTIFACT_SUSPECTED when a significant break sits within 3 months of "
+                       "the computed boundary, REGIME_BREAK when significant and far from it, "
+                       "NO_SIGNIFICANT_BREAK otherwise -- with the honest reading attached to "
+                       "each (diffuse instability reads 'no stable edge at this horizon', not "
+                       "'an edge with one bad patch')."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 13},
+        "number_of_variants_tested": 1,
+        "result": ("13 new tests: a planted sign-flip at period 60 is located within 3 periods "
+                   "and reads significant; a steady signal is NOT declared a break (permutation "
+                   "p > 0.05); the same planted flip reads REGIME_BREAK when the fabricated cache "
+                   "boundary is years away and DATA_ARTIFACT_SUSPECTED when the boundary is "
+                   "placed at the flip; the boundary median is computed correctly from fabricated "
+                   "cache files; degenerate inputs error rather than guess. End-to-end CLI run "
+                   "against this sandbox's real committed (stale, 5-year, 60-period) panel and "
+                   "real cache: computed boundary 2025-02-14 from 860 tickers, strongest break "
+                   "2024-01 at permutation p=0.432 -> NO_SIGNIFICANT_BREAK -- mechanics verified "
+                   "on real data, though this stale panel is NOT the user's 10-year panel and "
+                   "its verdict says nothing about theirs."),
+        "decision": "PROMOTE",
+        "reason": ("Pure diagnosis: reads committed data, selects nothing, promotes nothing, "
+                   "touches no holdout semantics. This is the decision instrument for the round's "
+                   "biggest open question -- whether R11's every backtest number is history or "
+                   "measurement. Its three verdicts have different consequences: "
+                   "DATA_ARTIFACT_SUSPECTED redirects effort to the EDGAR reconstruction's "
+                   "fidelity; REGIME_BREAK means any weights validated on one side are untested "
+                   "on the other and regime-conditioning becomes the research question; "
+                   "NO_SIGNIFICANT_BREAK means the monthly-horizon edge claim itself, not its "
+                   "weighting, is what lacks support. Awaits the user's real 10-year run."),
+    },
 ]
 
 
