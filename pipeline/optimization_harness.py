@@ -407,8 +407,15 @@ def sector_verdict(candidates, *, significance_threshold,
         "beats_champion": ic("sector_formula") > ic("champion"),
         "beats_equal_weight": ic("sector_formula") > ic("equal_weight"),
         "efficiency_holds": efficiency is not None and efficiency >= efficiency_floor,
+        # Directional on purpose, not abs(): a strongly NEGATIVE t is a significant result
+        # that the weights rank backwards, which must never read as evidence for them. The
+        # real Consumer Defensive slice hit exactly this -- sector_formula scored IC -0.2627
+        # at t = -3.457, clearing |t| >= 3 while being the worst candidate in its sector.
+        # The other gates caught it there, but only incidentally; a sector where champion and
+        # equal_weight were even more negative would have let an anti-predictive formula
+        # through on a conjunction that looks airtight.
         "clears_sector_adjusted_significance":
-            t_stat is not None and abs(t_stat) >= significance_threshold,
+            t_stat is not None and t_stat >= significance_threshold,
     }
     failed = [name for name, passed in gates.items() if not passed]
     return {

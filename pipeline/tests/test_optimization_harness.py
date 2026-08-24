@@ -482,6 +482,19 @@ class SectorVerdictTests(unittest.TestCase):
         self.assertEqual(verdict["verdict"], "NOT_ESTABLISHED")
         self.assertIn("clears_sector_adjusted_significance", verdict["failed_gates"])
 
+    def test_a_significantly_NEGATIVE_t_stat_does_not_count_as_significance(self):
+        # Regression: the gate originally used abs(t_stat), so a candidate that ranked
+        # backwards strongly enough passed the "significance" gate. The real Consumer
+        # Defensive slice did exactly this (IC -0.2627 at t = -3.457). Here champion and
+        # equal_weight are even worse, so the two comparison gates pass -- meaning abs()
+        # would have produced a REAL verdict for an actively anti-predictive formula.
+        verdict = harness.sector_verdict(
+            self._candidates(formula_ic=-0.26, champion_ic=-0.40, equal_ic=-0.38,
+                             efficiency=0.9, t_stat=-3.5),
+            significance_threshold=3.0)
+        self.assertEqual(verdict["verdict"], "NOT_ESTABLISHED")
+        self.assertIn("clears_sector_adjusted_significance", verdict["failed_gates"])
+
     def test_no_formula_reports_its_own_verdict_rather_than_raising(self):
         verdict = harness.sector_verdict(
             [{"name": "champion", "validation_mean_ic": 0.01}], significance_threshold=3.0)
