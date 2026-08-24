@@ -1,0 +1,144 @@
+{
+  "panel_periods": 120,
+  "resolved_periods": 119,
+  "champion_weights": {
+    "valuation": 0.2184,
+    "profitability": 0.2028,
+    "financial_health": 0.117,
+    "growth": 0.0858,
+    "capital_allocation": 0.078,
+    "accounting_quality": 0.078,
+    "market_behavior": 0.18,
+    "news_sentiment": 0.04
+  },
+  "yearly": [
+    {
+      "year": "2016",
+      "periods": 4,
+      "mean_ic": 0.0351,
+      "hit_rate": 0.5
+    },
+    {
+      "year": "2017",
+      "periods": 12,
+      "mean_ic": 0.0037,
+      "hit_rate": 0.5
+    },
+    {
+      "year": "2018",
+      "periods": 12,
+      "mean_ic": -0.0331,
+      "hit_rate": 0.25
+    },
+    {
+      "year": "2019",
+      "periods": 12,
+      "mean_ic": -0.0209,
+      "hit_rate": 0.417
+    },
+    {
+      "year": "2020",
+      "periods": 12,
+      "mean_ic": -0.0525,
+      "hit_rate": 0.25
+    },
+    {
+      "year": "2021",
+      "periods": 12,
+      "mean_ic": 0.028,
+      "hit_rate": 0.583
+    },
+    {
+      "year": "2022",
+      "periods": 12,
+      "mean_ic": 0.0491,
+      "hit_rate": 0.583
+    },
+    {
+      "year": "2023",
+      "periods": 12,
+      "mean_ic": 0.0084,
+      "hit_rate": 0.5
+    },
+    {
+      "year": "2024",
+      "periods": 12,
+      "mean_ic": 0.0462,
+      "hit_rate": 0.75
+    },
+    {
+      "year": "2025",
+      "periods": 12,
+      "mean_ic": 0.0187,
+      "hit_rate": 0.833
+    },
+    {
+      "year": "2026",
+      "periods": 7,
+      "mean_ic": 0.0689,
+      "hit_rate": 0.714
+    }
+  ],
+  "break": {
+    "date": "2021-03-01",
+    "index": 54,
+    "welch_t": 3.221,
+    "permutation_p_value": 0.019,
+    "permutations": 2000,
+    "min_segment": 24,
+    "mean_ic_before": -0.0231,
+    "mean_ic_after": 0.0375
+  },
+  "data_source_boundary": {
+    "yahoo_native_start_median": "2025-02-14",
+    "tickers_measured": 861,
+    "months_from_break": 47,
+    "alignment_window_months": 3
+  },
+  "per_leg_at_break": {
+    "accounting_quality": {
+      "mean_ic_before": -0.0155,
+      "mean_ic_after": -0.0026,
+      "periods_before": 54,
+      "periods_after": 59
+    },
+    "capital_allocation": {
+      "mean_ic_before": -0.0145,
+      "mean_ic_after": 0.0178,
+      "periods_before": 54,
+      "periods_after": 59
+    },
+    "financial_health": {
+      "mean_ic_before": -0.0089,
+      "mean_ic_after": 0.0102,
+      "periods_before": 54,
+      "periods_after": 65
+    },
+    "growth": {
+      "mean_ic_before": 0.0098,
+      "mean_ic_after": 0.0082,
+      "periods_before": 54,
+      "periods_after": 65
+    },
+    "market_behavior": {
+      "mean_ic_before": -0.0091,
+      "mean_ic_after": 0.0182,
+      "periods_before": 53,
+      "periods_after": 65
+    },
+    "profitability": {
+      "mean_ic_before": -0.0066,
+      "mean_ic_after": 0.0169,
+      "periods_before": 54,
+      "periods_after": 59
+    },
+    "valuation": {
+      "mean_ic_before": -0.0148,
+      "mean_ic_after": 0.0391,
+      "periods_before": 54,
+      "periods_after": 65
+    }
+  },
+  "verdict": "REGIME_BREAK",
+  "reading": "a significant break (47 month(s) from the data boundary, too far to blame the data seam) -- the signal genuinely behaved differently before and after this date, and any weight vector validated only on one side of it is untested on the other"
+}
