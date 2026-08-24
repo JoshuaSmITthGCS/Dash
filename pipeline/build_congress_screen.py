@@ -1,6 +1,9 @@
-"""Weekly Congressional (STOCK Act) trade disclosure screen.
+"""Weekly political trade disclosure screen: Congress (House + Senate) and the executive
+branch (OGE Form 278-T filers, including the President) in one pool.
 
-Fetches new Senate and House disclosures from Financial Modeling Prep, appends them
+Fetches new Senate, House, and executive-branch disclosures from Financial Modeling Prep
+and the congress-trading-monitor mirror (the only source that carries executive-branch
+rows - see congress_trades.py), appends them
 point-in-time (never overwritten, same convention as pit_store.py) under
 pipeline/data/congress/, and publishes the trailing window with defensible,
 computable flags - no invented "conflict of interest" scoring that would need data
@@ -68,6 +71,22 @@ BUY_SELL_FLIP_WINDOW_DAYS = 60
 # stronger tell when the name is a small, unfamiliar company than when it's a mega-cap
 # most portfolios already hold - EXTRAORDINARY_BUY requires both, not either alone.
 OBSCURE_MARKET_CAP_CEILING = 2_000_000_000
+
+# notable_signals() display ranking - separate from congress_signal.score_congressional_
+# buying's capped, buy-only, advisor-facing modifier (see that module's docstring for why
+# political inputs to the research score are deliberately narrow). This ranking exists only
+# to pick a top-N leaderboard for the screen page itself; it is never read by advisor_engine.
+NOTABLE_SIGNAL_TOP_N = 5
+# The disclosed amount (range floor) at which the size component of a signal's rank saturates
+# at 1.0 - chosen so a $1M+ disclosure maxes out the size contribution rather than a handful
+# of eight-figure trades dominating every slot regardless of how novel or clustered they are.
+NOTABLE_SIGNAL_SIZE_REFERENCE = 1_000_000
+NOTABLE_SIGNAL_FLAG_WEIGHTS = {
+    "EXTRAORDINARY_BUY": 3.0,
+    "CLUSTER_TRADE": 2.0,
+    "NOVEL_TICKER": 1.5,
+    "CONCENTRATED_SIZE": 1.0,
+}
 
 
 def _path():
@@ -302,12 +321,90 @@ def classify(trade, *, trade_counts, history_days, relational=None, market_cap_l
     }
 
 
+def notable_signals(rows, *, top_n=NOTABLE_SIGNAL_TOP_N, as_of=None):
+    """A curated "most worth noticing" leaderboard over already-classified rows -
+    display-only, never fed into advisor_engine or any published score.
+
+    Unlike congress_signal.score_congressional_buying (capped, buy-only, breadth x
+    freshness, and the one deliberate exception to this pipeline's "no political inputs"
+    rule), this ranks BUYS AND SELLS together by disclosed size, novelty (NOVEL_TICKER /
+    EXTRAORDINARY_BUY), and cross-filer clustering (CLUSTER_TRADE), scaled by the same
+    freshness decay congress_signal already uses - so a large, unusual, or multiply-
+    disclosed trade from *last week* outranks an even larger one from four months ago.
+
+    Deduped to one row per ticker (the highest-ranked disclosure for that symbol) so a
+    single prolific filer's repeated trades in one name can't fill every slot.
+    """
+    from insider_signal import decay  # local import: same lazy pattern as compute_price_performance
+
+    as_of_date = as_of or date.today()
+    best_by_ticker = {}
+    for row in rows:
+        symbol = row.get("symbol")
+        transaction_type = row.get("transaction_type")
+        direction = "BUY" if is_buy(transaction_type) else "SELL" if is_sell(transaction_type) else None
+        if not (symbol and direction):
+            continue
+        when = row.get("disclosure_date") or row.get("transaction_date")
+        try:
+            days_since = (as_of_date - date.fromisoformat(when)).days if when else None
+        except ValueError:
+            days_since = None
+        freshness = decay(days_since)
+        if freshness <= 0:
+            continue
+
+        flags = row.get("flags") or []
+        flag_bonus = sum(NOTABLE_SIGNAL_FLAG_WEIGHTS.get(flag, 0.0) for flag in flags)
+        amount_lower = row.get("amount_lower") or 0
+        size_component = min(1.0, amount_lower / NOTABLE_SIGNAL_SIZE_REFERENCE)
+        rank_score = round((size_component + flag_bonus) * freshness, 4)
+        if rank_score <= 0:
+            continue
+
+        candidate = {
+            "ticker": symbol,
+            "direction": direction,
+            "representative": row.get("representative"),
+            "chamber": row.get("chamber"),
+            "office": row.get("office"),
+            "agency": row.get("agency"),
+            "amount_lower": row.get("amount_lower"),
+            "amount_upper": row.get("amount_upper"),
+            "transaction_date": row.get("transaction_date"),
+            "disclosure_date": row.get("disclosure_date"),
+            "flags": flags,
+            "rank_score": rank_score,
+        }
+        existing = best_by_ticker.get(symbol)
+        if existing is None or rank_score > existing["rank_score"]:
+            best_by_ticker[symbol] = candidate
+
+    ranked = sorted(best_by_ticker.values(), key=lambda row: (-row["rank_score"], row["ticker"]))[:top_n]
+    for position, row in enumerate(ranked, 1):
+        row["rank"] = position
+    return ranked
+
+
 def is_equity_purchase(row):
     """A plain stock buy - excludes options (already their own flag) and bonds/munis,
-    which have no meaningful daily price series to measure against."""
+    which have no meaningful daily price series to measure against.
+
+    Executive-branch (OGE 278-T) rows never carry an ``asset_type`` at all - it is null on
+    every row the congress-trading-monitor mirror has served so far, confirmed against a
+    live pull covering ~2,957 executive-branch rows, none with asset_type set. The
+    "stock"-substring check below would silently zero out every executive equity purchase,
+    so those rows fall back to a resolved ``symbol`` as the equity signal instead: in that
+    same pull, every row with a ticker was a real large-cap equity and every bond/muni row
+    had no ticker at all, so presence of a ticker is a reliable (if less precise than
+    asset_type) stand-in for this source specifically.
+    """
+    if not (row.get("symbol") and is_buy(row.get("transaction_type"))):
+        return False
+    if row.get("chamber") == "executive":
+        return True
     asset_type = str(row.get("asset_type") or "").lower()
-    return bool(row.get("symbol")) and is_buy(row.get("transaction_type")) \
-        and "stock" in asset_type and "option" not in asset_type
+    return "stock" in asset_type and "option" not in asset_type
 
 
 def compute_price_performance(rows, client=None, yf=None):
@@ -463,7 +560,11 @@ def collect(fmp_factory=CongressTradesClient, mirror_factory=StockWatcherClient,
 
     mirror_client = mirror_factory()
     sources = [("mirror-senate", mirror_client.senate_latest),
-               ("mirror-house", mirror_client.house_latest)]
+               ("mirror-house", mirror_client.house_latest),
+               # The only source anywhere in this module that covers executive-branch (OGE
+               # 278-T) filers - the President included - since FMP and the Senate eFD system
+               # are Congress-only. See congress_trades.py's StockWatcherClient docstring.
+               ("mirror-executive", mirror_client.executive_latest)]
     if efd_factory is not None:
         # The Senate's own system, added after both original stock-watcher mirrors were
         # withdrawn and started answering 403 to everything. Senate only - the House Clerk's
@@ -551,7 +652,7 @@ def run():
 
     status, reason_code = publication_status(results, stored, failures)
     payload = {
-        "schema_version": "1.1.0", "model_version": "congress-trades-v1.2.0",
+        "schema_version": "1.2.0", "model_version": "congress-trades-v1.3.0",
         "generated_at": generated_at.isoformat(), "status": status,
         **({"reason_code": reason_code} if reason_code else {}),
         "publish_window_days": PUBLISH_WINDOW_DAYS, "history_days": history_days,
@@ -562,6 +663,7 @@ def run():
                        "disclosures_stored": len(stored), "failures": failures,
                        "source_counts": source_counts},
         "summary": summary_stats(results),
+        "signals": notable_signals(results, as_of=generated_at.date()),
         "results": results,
     }
     save_json("screens/congress-trades.json", payload)

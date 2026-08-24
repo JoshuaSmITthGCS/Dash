@@ -1,8 +1,40 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import {
-  InsideInformationView, mergeResearchStock, themeExposureName, themeExposureScore,
+  CoverageScoreDial, InsideInformationView, mergeResearchStock, themeExposureName,
+  themeExposureScore,
 } from './StockDetailModal.jsx'
+
+describe('CoverageScoreDial', () => {
+  it('reports the measured coverage', () => {
+    render(<CoverageScoreDial score={71} dataCoverage={0.82} />)
+
+    expect(screen.getByText('82% data coverage')).toBeInTheDocument()
+  })
+
+  it('says coverage was not measured rather than showing zero', () => {
+    // The lightweight universe projection published no coverage for ~840 of 879 rows, and
+    // the `?? 0` this replaces turned that silence into a confident "0% data coverage"
+    // beside the faintest, most broken arc the dial can draw. Absent is not zero.
+    render(<CoverageScoreDial score={67} dataCoverage={null} />)
+
+    expect(screen.getByText('data coverage not measured')).toBeInTheDocument()
+    expect(screen.queryByText('0% data coverage')).not.toBeInTheDocument()
+  })
+
+  it('still shows a genuinely measured zero as zero', () => {
+    render(<CoverageScoreDial score={12} dataCoverage={0} />)
+
+    expect(screen.getByText('0% data coverage')).toBeInTheDocument()
+  })
+
+  it('describes an unmeasured row to screen readers without asserting a percentage', () => {
+    render(<CoverageScoreDial score={67} dataCoverage={undefined} />)
+
+    expect(screen.getByRole('img')).toHaveAccessibleName(
+      'Research score 67, data coverage not measured for this row')
+  })
+})
 
 describe('theme exposure entries', () => {
   const published = {

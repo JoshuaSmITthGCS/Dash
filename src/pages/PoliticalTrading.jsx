@@ -70,7 +70,45 @@ function FlagChips({ flags }) {
   </div>
 }
 
-export default function CongressTrades() {
+// A member of Congress reads as "chamber · district"; an executive-branch filer
+// (office/agency present, no district) reads as "office · agency" instead.
+function filerRole(row) {
+  if (row.office) return [row.office, row.agency].filter(Boolean).join(' · ')
+  return [row.chamber, row.district].filter(Boolean).join(' · ')
+}
+
+function filerLine(row) {
+  return [row.representative, filerRole(row)].filter(Boolean).join(' · ')
+}
+
+// notable_signals()'s top-5 leaderboard: display-only, not a score - see
+// build_congress_screen.py's docstring on why this never feeds the research score the way
+// congress_signal.score_congressional_buying does.
+function SignalsPanel({ signals }) {
+  if (!signals?.length) return null
+  return (
+    <div className="card political-signals" aria-label="Most notable disclosures">
+      <div className="political-signals-head">
+        <h2 className="political-signals-title">Top disclosed signals</h2>
+        <span className="political-signals-note">Largest, most novel, or most clustered disclosed trades this window – not a score, not advice.</span>
+      </div>
+      <ol className="political-signals-list">
+        {signals.map((signal) => (
+          <li key={signal.ticker} className="political-signal-card">
+            <span className={`chip signal-direction ${signal.direction === 'BUY' ? 'positive' : 'negative'}`}>
+              {signal.direction}
+            </span>
+            <b className="mono">{signal.ticker}</b>
+            <span className="political-signal-filer">{filerLine(signal)}</span>
+            <FlagChips flags={signal.flags} />
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+export default function PoliticalTrading() {
   const { data, loading, error, reload } = useData('screens/congress-trades.json')
   const refresh = useScreenRefresh('congress', reload)
   const [filters, setFilters] = useState({ chamber: 'all', flag: 'all', sort: 'disclosed' })
@@ -98,15 +136,16 @@ export default function CongressTrades() {
     <ScreenNavigation />
     <div className="page-head">
       <div>
-        <span className="eyebrow">STOCK Act disclosures</span>
-        <h1 className="page-title">Politics <span className="accent">trade alert</span></h1>
+        <span className="eyebrow">STOCK Act &amp; OGE 278-T disclosures</span>
+        <h1 className="page-title">Political <span className="accent">trade alert</span></h1>
         <p className="page-sub">
-          Senate and House trade disclosures, collected weekly from Financial Modeling Prep and the public
-          House/Senate disclosure datasets – both mirrors of the same Clerk and eFD filings. Flags are computed
-          directly from the disclosure data – a late filing, an options trade, an unusually large or clustered
-          position, a repeat pattern – not a claim that any trade was improper. Where a plain stock purchase has
-          enough price history, "since purchase" shows how the stock has actually performed – a price fact, not a
-          claim about why it moved or a recommendation to trade.
+          Senate, House, and executive-branch (OGE Form 278-T, including the President) trade disclosures,
+          collected weekly from Financial Modeling Prep and the public House/Senate/executive-branch disclosure
+          datasets – all mirrors of the same Clerk, eFD, and OGE filings. Flags are computed directly from the
+          disclosure data – a late filing, an options trade, an unusually large or clustered position, a repeat
+          pattern – not a claim that any trade was improper. Where a plain stock purchase has enough price
+          history, "since purchase" shows how the stock has actually performed – a price fact, not a claim about
+          why it moved or a recommendation to trade.
         </p>
       </div>
       {refresh.available && (
@@ -132,7 +171,7 @@ export default function CongressTrades() {
     )}
 
     {loading ? <Loading /> : error ? (
-      <div className="card etf-state" role="alert"><strong>Congress trades screen unavailable</strong><span>{error.message}</span></div>
+      <div className="card etf-state" role="alert"><strong>Political trades screen unavailable</strong><span>{error.message}</span></div>
     ) : <>
       {data && data.status === 'partial' && (
         // Rows are real but incomplete: at least one source answered and at least one did
@@ -142,6 +181,8 @@ export default function CongressTrades() {
           <span>{`Some disclosures below may be missing – ${(data.collection?.failures || []).join('; ')}`}</span>
         </div>
       )}
+
+      <SignalsPanel signals={data?.signals} />
 
       {summary && (
         <div className="grid congress-kpi-grid">
@@ -183,6 +224,7 @@ export default function CongressTrades() {
             <option value="all">All</option>
             <option value="senate">Senate</option>
             <option value="house">House</option>
+            <option value="executive">Executive branch</option>
           </select>
         </label>
         <label>Flag
@@ -210,7 +252,7 @@ export default function CongressTrades() {
             { key: 'symbol', label: 'Stock', cell: (row) => (
               <details className="trade-identity-reveal">
                 <summary><b className="mono">{row.symbol || '\u2013'}</b></summary>
-                <span><b>{row.asset_description || 'Issuer unavailable'}</b><small>{row.representative || 'Representative unavailable'} \u00b7 {row.chamber}{row.district ? ` \u00b7 ${row.district}` : ''}</small></span>
+                <span><b>{row.asset_description || 'Issuer unavailable'}</b><small>{row.representative || 'Representative unavailable'} \u00b7 {filerRole(row)}</small></span>
               </details>) },
             { key: 'transaction_type', label: 'Type', cell: (row) => row.transaction_type || '\u2013' },
             { key: 'amount', label: 'Size', numeric: true, cell: (row) => <span className="mono">{row.amount || '\u2013'}</span> },

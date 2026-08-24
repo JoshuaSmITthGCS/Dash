@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-22T04:43:09.603147+00:00",
+  "generated_at": "2026-08-24T17:38:41.713681+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "1cc97d9af67f764ae471132b075bbbed592ad343",
-  "config_hash": "3e3e79f4053481444e7c97d1750f0a9b98f19fc300874da5ff154033af9fade5",
+  "code_commit_hash": "1e5e382829b8c75b9b1855cff68ad8f9ba223593",
+  "config_hash": "ae4d188f2c6d6808ee2edcf2da308b051842737c393d266691484a1203456902",
   "headline": {
     "validation_status": "no calibration history yet",
     "ic_periods_accumulated": 0,
@@ -143,7 +143,7 @@
         "description": "CRSP US small cap",
         "cagr": 0.079278,
         "volatility": 0.207505,
-        "sharpe": 0.474,
+        "sharpe": 0.4741,
         "max_drawdown": -0.281541,
         "beta": 0.7131,
         "annualized_alpha_pct": 10.101,
@@ -178,12 +178,12 @@
         "name": "VXF",
         "description": "Extended market (completion index) -- everything outside the S&P 500",
         "cagr": 0.068344,
-        "volatility": 0.224805,
-        "sharpe": 0.4087,
+        "volatility": 0.224929,
+        "sharpe": 0.4093,
         "max_drawdown": -0.363936,
-        "beta": 0.6181,
-        "annualized_alpha_pct": 11.59,
-        "newey_west_t_statistic": 2.294,
+        "beta": 0.6198,
+        "annualized_alpha_pct": 11.576,
+        "newey_west_t_statistic": 2.291,
         "significant": true
       },
       {
@@ -218,7 +218,6 @@
       ],
       "beaten_on_cagr_count": "14 of 14",
       "benchmarks_compared": 14,
-      "honesty_disclosure": "Six-factor regression (market, size, value, profitability, investment, momentum controlled for jointly, n=57 months): no significant residual alpha, t=0.68. Pairwise vs. each of 14 individual benchmarks, unadjusted for testing that many at once: significant positive alpha against 6 of 14 benchmark(s) in an unadjusted pairwise test.",
       "significant_positive_alpha_against": [
         "IJH",
         "IJR",
@@ -227,20 +226,7 @@
         "VB",
         "VXF"
       ],
-      "six_factor_alpha_context": {
-        "factors_controlled": [
-          "investment",
-          "market_excess",
-          "momentum",
-          "profitability",
-          "size",
-          "value"
-        ],
-        "newey_west_t_statistic": 0.68,
-        "observations": 57,
-        "significant": false
-      },
-      "verdict": "significant positive alpha against 6 of 14 benchmark(s) in an unadjusted pairwise test"
+      "verdict": "significant positive alpha against 6 benchmark(s)"
     }
   },
   "factor_exposures": {
@@ -520,22 +506,20 @@
   "experiments": {
     "status": "measured",
     "summary": {
-      "experiments": 17,
-      "total_variants_tested": 55,
+      "experiments": 15,
+      "total_variants_tested": 53,
       "by_decision": {
         "ABANDON": 5,
         "INCONCLUSIVE": 2,
         "KEEP_AS_CHALLENGER": 3,
-        "PROMOTE": 7
+        "PROMOTE": 5
       },
       "promoted_to_champion": [
         "WO-1",
         "WO-2",
         "WO-3",
         "A1-NEWS-NEUTRAL",
-        "C6-applicability-unification",
-        "R8-evidence-confidence-gate",
-        "R8-2-publication-gate-not-enforced"
+        "C6-applicability-unification"
       ]
     },
     "experiments": [
@@ -673,24 +657,6 @@
         "decision": "KEEP_AS_CHALLENGER",
         "reason": "No promotion case: the differences between champion, A, and B are within noise on 59 monthly periods, and B's apparent edge is in-sample selection on a mismeasured diagnostic. Proposal A runs prospectively as shadow reweighted_composite_a from 2026-08-21; the prospective clock, not this panel, decides. B is deliberately NOT registered as a shadow - carrying both would spend a second trial on the same idea.",
         "number_of_variants_tested": 2
-      },
-      {
-        "id": "R8-evidence-confidence-gate",
-        "hypothesis": "Every ticker on the live v2 validation dashboard (HIG, JPM, O, NEE, BSX, MSFT, XOM, MRNA, VTI, TLT) reporting company evidence confidence below 0.40, a 0-of-0 peer sample, and 0% profile confidence -- including for large, liquid, well-covered names like MSFT and JPM -- is a wiring/data-join defect in pipeline/live_v2_validation.py, not a genuine data-coverage gap.",
-        "category": "data_integrity",
-        "result": "Confirmed a split root cause. (a) Peer sample was a pure stub -- a hardcoded literal, not a computation -- category (a)/broken-join, not data scarcity. (b) Structural/profile confidence was genuinely low GIVEN the inputs validate_live() gathered, but the reason those inputs were incomplete is itself a wiring gap: the script never invoked the enrichment stage production uses. Confirmed against production: public/data/advisor.json shows HIG at data_coverage 0.82 the same week this view published structural.coverage 0.35 for the identical company -- the gap is the validation harness's scope, not HIG's real-world coverage. Regression test (test_live_v2_validation.py) shows wiring the same yahoo_extended() call production already uses raises a synthetic company's structural confidence from 0.21 to 0.41, crossing the action gate from insufficient_evidence to watch, with identical quote data on both sides -- isolating the enrichment step as the swing factor. (c) The timeliness layer's effective_score: None is a separate, correctly-reported, already-documented gap (scoring_v2.py's own unavailable_reason string: no free provider supplies broad forward-estimate revisions, earnings-surprise collection is opt-in) and is deliberately left untouched.",
-        "decision": "PROMOTE",
-        "reason": "Two wiring defects fixed at the source (pipeline/live_v2_validation.py), not a display-only patch: peer sample now calls peer_groups.canonical_percentiles() over the real validated batch, and statement enrichment now runs identically to fetch_advisor.enrich(). Locked by pipeline/tests/test_live_v2_validation.py (3 tests: peer sample computed not hardcoded, enrichment wired in and raises confidence, a genuinely statement-starved company still correctly gates low). A live re-run of pipeline/live_v2_validation.py to refresh the committed public/data/validation/live_v2_validation.json artifact with real Yahoo data is blocked_network_policy in this environment, same as A3-FULL-UNIVERSE-ENRICHMENT -- the fix is verified against a controlled fixture and against the committed production advisor.json, not yet against a fresh live pull for this exact artifact.",
-        "number_of_variants_tested": 1
-      },
-      {
-        "id": "R8-2-publication-gate-not-enforced",
-        "hypothesis": "A recurring pipeline/validate_data.py CI failure -- 'ranked company lacks a fundamental score' / 'low resolved evidence weight must classify as insufficient evidence', hitting a different research row index on 2026-08-22T00:05 (run #190, research.38) and 2026-08-23T19:47 (run #192, research.36) -- is downstream of the same confidence-gate defect class as R8-evidence-confidence-gate, and NOT an enrichment-coverage gap: the enrichment status check for this same round confirmed MSFT and JPM (the Round 8 P1 sample's large-caps) both resolve real statement-derived fundamental_categories in production advisor.json, so enrichment reaching a name was never the question here.",
-        "category": "data_integrity",
-        "result": "Defect confirmed by direct source read, not an enrichment gap. data_health.publication_gate's own docstring: 'Names failing the gate keep their diagnostics and challenger output; only the ranked champion score is withheld' -- and docs/AUDIT-ROUND-4-FINDINGS.md Task 6: a name below the 0.35 floor 'publishes as INSUFFICIENT DATA, not as a ranked stance.' The call site only ever set row['stance'] = 'INSUFFICIENT DATA'; nothing excluded the row from `research.sort(key=score)` / `research[:publish_limit]`. A company with zero usable fundamentals but a high momentum-only score (renormalized fully onto market_behavior once fundamentals coverage hits 0) could still out-rank real-coverage names into the published top publish_limit, contradicting the product's own fundamentals-first framing (CLAUDE.md) and tripping validate_data.py's schema/invariant checks on every run where this occurred. Enrichment itself was never the cause: production's select_enrichment_priority already reaches MSFT (via ADVISOR_PORTFOLIO_SYMBOLS + ADVISOR_FOCUS_SYMBOLS, both force-included every run) and JPM (via incumbents/challengers/rotation) alike, and both show real statement-derived category scores in the current committed advisor.json -- confirming this is a downstream ranking-eligibility defect, not an upstream enrichment-coverage one.",
-        "decision": "PROMOTE",
-        "reason": "One-function fix restoring an already-documented, already-committed contract (publication_gate's docstring, AUDIT-ROUND-4-FINDINGS.md) that the ranking slice never actually enforced -- not a change to confidence.py, valuation_score, blend_research_components, or any scoring weight. Locked with 4 new tests in test_fetch_advisor.py: a gate-failing row never takes a ranked slot even at the highest score, every row lands in ranked or is excluded (none silently dropped, the screen_universe positional-slice bug this also fixes), filtering preserves the caller's sort order rather than re-deriving one, and a low-coverage run with fewer than publish_limit gate-passing rows shrinks the leaderboard instead of backfilling with gate-failures. Full pipeline suite (2239 tests) and validate_data.py both green after the change.",
-        "number_of_variants_tested": 1
       }
     ]
   },
@@ -710,7 +676,7 @@
             "total": 40
           },
           "financial_health": {
-            "scored": 37,
+            "scored": 30,
             "total": 40
           },
           "growth": {
@@ -722,7 +688,7 @@
             "total": 40
           },
           "valuation": {
-            "scored": 40,
+            "scored": 39,
             "total": 40
           }
         }
@@ -732,19 +698,19 @@
         "total_rows": 839,
         "categories": {
           "accounting_quality": {
-            "scored": 242,
+            "scored": 835,
             "total": 839
           },
           "capital_allocation": {
-            "scored": 242,
+            "scored": 836,
             "total": 839
           },
           "financial_health": {
-            "scored": 792,
+            "scored": 801,
             "total": 839
           },
           "growth": {
-            "scored": 827,
+            "scored": 835,
             "total": 839
           },
           "profitability": {
@@ -752,63 +718,53 @@
             "total": 839
           },
           "valuation": {
-            "scored": 820,
+            "scored": 834,
             "total": 839
           }
         }
       }
     },
     "enriched_vs_non_enriched": {
-      "enriched_count": 282,
-      "non_enriched_count": 597,
+      "enriched_count": 875,
+      "non_enriched_count": 4,
       "score": {
         "enriched": {
-          "n": 282,
-          "mean": 69.14,
-          "median": 70.45,
-          "stdev": 10.13
+          "n": 875,
+          "mean": 63.71,
+          "median": 64.9,
+          "stdev": 11.56
         },
         "non_enriched": {
-          "n": 597,
-          "mean": 60.63,
-          "median": 61.6,
-          "stdev": 8.2
+          "n": 4,
+          "mean": 67.83,
+          "median": 71.45,
+          "stdev": 8.21
         }
       },
       "sector_distribution": {
         "enriched": {
-          "Technology": 78,
-          "Financial Services": 68,
-          "Industrials": 33,
-          "Energy": 25,
-          "Healthcare": 23,
-          "Consumer Cyclical": 20,
-          "Consumer Defensive": 9,
-          "Communication Services": 8,
-          "Utilities": 8,
-          "Basic Materials": 6,
-          "Real Estate": 3,
+          "Technology": 152,
+          "Industrials": 138,
+          "Financial Services": 124,
+          "Consumer Cyclical": 113,
+          "Healthcare": 100,
+          "Consumer Defensive": 56,
+          "Real Estate": 53,
+          "Energy": 39,
+          "Basic Materials": 38,
+          "Utilities": 34,
+          "Communication Services": 27,
           "Unknown": 1
         },
         "non_enriched": {
-          "Industrials": 105,
-          "Consumer Cyclical": 93,
-          "Healthcare": 77,
-          "Technology": 74,
-          "Financial Services": 57,
-          "Real Estate": 50,
-          "Consumer Defensive": 47,
-          "Basic Materials": 32,
-          "Utilities": 26,
-          "Communication Services": 19,
-          "Energy": 14,
           "ETF": 2,
+          "Financial Services": 1,
           "Unknown": 1
         }
       },
       "market_cap_comparison": {
         "status": "not_measurable",
-        "rows_with_market_cap": 40,
+        "rows_with_market_cap": 38,
         "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
       },
       "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
@@ -818,8 +774,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "e3eaa87833c94cb03ff6dd36f9f90acc86d73810",
-    "config_hash": "3e3e79f4053481444e7c97d1750f0a9b98f19fc300874da5ff154033af9fade5",
-    "generated_at": "2026-08-22T04:43:09.603147+00:00"
+    "git_commit_sha": "1e5e382829b8c75b9b1855cff68ad8f9ba223593",
+    "config_hash": "ae4d188f2c6d6808ee2edcf2da308b051842737c393d266691484a1203456902",
+    "generated_at": "2026-08-24T17:38:41.713681+00:00"
   }
 }

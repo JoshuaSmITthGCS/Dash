@@ -88,15 +88,25 @@ on screen is precomputed by the pipeline.
 
 ### The one non-obvious architectural fact
 
-The pipeline does **not** compute full fundamentals for the whole universe. It computes a cheap
-preliminary score for all ~910 names (price-based multiples only), ranks by that, then only
-fetches financial statements (the metrics carrying most of the model's stated weight — EV/EBITDA,
-ROIC, interest coverage, Piotroski F, etc.) for a shortlist of the top-ranked ~150
-(`select_enrichment_priority()` in `pipeline/fetch_advisor.py`, seeded with the prior top 20 +
-5 new challengers + portfolio symbols). A name that never makes the preliminary shortlist never
-gets its best metrics computed, and today's ranking is partly a function of yesterday's ranking.
-See `docs/SYSTEM-SETUP.md` §4.1 for the measured consequences before changing selection, enrichment
-limits, or coverage/confidence logic.
+The pipeline computes a cheap preliminary score for all ~910 names (price-based multiples only),
+ranks by that, and uses the ranking to order statement enrichment. Until 2026-08-24 that ordering
+was also a **cutoff**: only the top ~150 had financial statements fetched — the metrics carrying
+most of the model's stated weight (EV/EBITDA, ROIC, interest coverage, Piotroski F). A name that
+never made the preliminary shortlist never got its best metrics computed, so the full model only
+ever ran on candidates a weaker model had already picked.
+
+`extended_limit` in `pipeline/config/advisor_universe.json` is now set above the universe size, so
+every scored name is enriched and `select_enrichment_priority()` only decides the order within a
+run. Two things follow that still matter when changing this area:
+
+- **The published history predates the change.** Every `pit_store` snapshot, IC reading and
+  backtest dated before 2026-08-24 was produced under the cap, so it measures a different model
+  than the one running now. Do not compare across that boundary without saying so.
+- **The change itself is not yet IC-validated.** It shipped on a coverage argument, not on
+  improved out-of-sample IC, which `docs/VALIDATION-METHODOLOGY.md` normally requires.
+
+See `docs/SYSTEM-SETUP.md` §4.1 for the measured consequences before changing selection,
+enrichment limits, or coverage/confidence logic.
 
 ### Config-driven, not code-driven
 

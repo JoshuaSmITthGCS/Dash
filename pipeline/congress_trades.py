@@ -59,13 +59,22 @@ REQUEST_TIMEOUT = 30
 # JSON array distinguished by a "chamber" field - see _fetch's per-row chamber filter
 # below, which is what lets this file serve both HOUSE_DATASET and SENATE_DATASET without
 # assuming the whole payload is one chamber the way the original stock-watcher files were.
-# SENATE_DATASET is left on the dead default: SenateEfdClient already covers the Senate
-# from the authoritative source directly, so there is nothing to gain from also fetching a
-# multi-MB third-party file for that chamber - only a working override if a caller wants one.
+#
+# SENATE_DATASET's default used to point at the dead stock-watcher S3 bucket on the theory
+# that SenateEfdClient already covers the Senate authoritatively, so a redundant fetch had
+# nothing to gain - but that reasoning assumed eFD is always reachable. It isn't: eFD is a
+# live, bot-defensive government site that can be down, rate-limit, change shape, or simply
+# be unreachable from wherever this runs (see SenateEfdClientTests' own docstring), and when
+# it is, a SENATE_DATASET pointed at a bucket that always 403s contributes nothing -
+# the Senate goes uncovered even though a live source of Senate rows already exists one
+# field away. congress-trading-monitor's combined file - already fetched for
+# HOUSE_DATASET - carries its own live "senate" chamber slice (confirmed against a live
+# pull: ~980 Senate rows in a 5,000-row sample), so pointing both defaults at the same URL
+# gives senate_latest() a real fallback instead of a guaranteed-empty one, at the cost of
+# one already-open connection being reused rather than a second file fetched.
 HOUSE_DATASET = os.getenv("CONGRESS_HOUSE_DATASET_URL") or (
     "https://raw.githubusercontent.com/kadoa-org/congress-trading-monitor/main/public/data/trades.json")
-SENATE_DATASET = os.getenv("CONGRESS_SENATE_DATASET_URL") or (
-    "https://senate-stock-watcher-data.s3-us-west-2.amazonaws.com/aggregate/all_transactions.json")
+SENATE_DATASET = os.getenv("CONGRESS_SENATE_DATASET_URL") or HOUSE_DATASET
 # These files are the full history, not a recent window - tens of MB - so the read is
 # streamed to a parsed list once per run and then filtered locally by the publish window.
 DATASET_TIMEOUT = 120
@@ -471,8 +480,9 @@ class SenateEfdClient:
 
 class StockWatcherClient:
     """Third-party mirrors of the Clerk and eFD filings, scraped and republished as keyless
-    JSON - the default HOUSE_DATASET (congress-trading-monitor) and, for callers who
-    override SENATE_DATASET, the original stock-watcher shape.
+    JSON - both HOUSE_DATASET and SENATE_DATASET default to congress-trading-monitor's
+    combined file (see the module-level comment on those constants), and either can be
+    overridden independently to the original single-chamber stock-watcher shape instead.
 
     No credential, so this is the source that keeps the screen populated when the FMP plan
     does not cover the Congressional endpoints. The cost of that is provenance: it is a
@@ -482,6 +492,10 @@ class StockWatcherClient:
     mirror seen so far has used, and ``fetch`` reports how many rows it read against how many
     it could normalize, so a silent schema change shows up as a coverage number rather than
     as an empty screen that claims Congress did not trade.
+
+    ``executive_latest`` reads the same congress-trading-monitor file for OGE (executive
+    branch) 278-T rows - the only source anywhere in this client that covers the President
+    and other executive-branch filers, since neither FMP nor the Senate eFD system does.
     """
 
     def __init__(self, house_url=HOUSE_DATASET, senate_url=SENATE_DATASET, opener=None):
@@ -499,6 +513,35 @@ class StockWatcherClient:
             return json.loads(response.read().decode("utf-8", errors="replace"))
 
     def _fetch(self, url, chamber):
+        payload = self._read(url, chamber)
+        # The original stock-watcher shape was one chamber per file with no "chamber" key at
+        # all - every row there is this chamber by construction. congress-trading-monitor
+        # publishes House, Senate, and OGE executive-branch disclosures together in one file,
+        # each row carrying its own "chamber" (null for executive-branch rows), so
+        # HOUSE_DATASET and SENATE_DATASET can point at the same URL and each still only reads
+        # its own chamber. Only a row with the key entirely *absent* defaults to whichever
+        # chamber this call asked for - a row that carries the key, even as null, means this
+        # file distinguishes chambers and an executive-branch row must not leak into either.
+        same_chamber = [row for row in payload if isinstance(row, dict) and
+                        str(row["chamber"] if "chamber" in row else chamber).strip().lower()
+                        == chamber]
+        return self._normalize_and_filter(same_chamber, chamber)
+
+    def _fetch_executive(self, url):
+        """Executive-branch (OGE 278-T) rows from congress-trading-monitor's combined file.
+
+        These rows carry ``chamber: null`` (see ``_fetch``'s comment) and are distinguished
+        instead by ``branch: "executive"`` - a separate dimension the mirror added when it
+        folded OGE filings in alongside House and Senate. ``_fetch``'s chamber-equality
+        filter can't select these (``None == "executive"`` is always false), so this reads
+        the same payload through a branch filter instead.
+        """
+        payload = self._read(url, "executive")
+        executive_rows = [row for row in payload if isinstance(row, dict) and
+                          str(row.get("branch") or "").strip().lower() == "executive"]
+        return self._normalize_and_filter(executive_rows, "executive")
+
+    def _read(self, url, chamber):
         try:
             payload = self._opener(url)
         except urllib.error.HTTPError as exc:
@@ -516,29 +559,35 @@ class StockWatcherClient:
                 f"{chamber} disclosure dataset request failed ({type(exc).__name__}: {exc})") from exc
         if not isinstance(payload, list):
             raise CongressTradesError(f"{chamber} disclosure dataset returned an invalid response")
-        # The original stock-watcher shape was one chamber per file with no "chamber" key at
-        # all - every row there is this chamber by construction. congress-trading-monitor
-        # publishes House, Senate, and OGE executive-branch disclosures together in one file,
-        # each row carrying its own "chamber" (null for executive-branch rows), so
-        # HOUSE_DATASET and SENATE_DATASET can point at the same URL and each still only reads
-        # its own chamber. Only a row with the key entirely *absent* defaults to whichever
-        # chamber this call asked for - a row that carries the key, even as null, means this
-        # file distinguishes chambers and an executive-branch row must not leak into either.
-        same_chamber = [row for row in payload if isinstance(row, dict) and
-                        str(row["chamber"] if "chamber" in row else chamber).strip().lower()
-                        == chamber]
-        rows = [self._normalize(row, chamber) for row in same_chamber]
+        return payload
+
+    def _normalize_and_filter(self, rows, chamber):
+        """``seen`` (the second return value) is this chamber's own row count before the
+        disclosure-date/symbol filter below - matching the original single-chamber-per-file
+        mirrors' semantics, where every row in the file already belonged to one chamber.
+        A combined file's total row count would overstate this chamber's real coverage."""
+        normalized = [self._normalize(row, chamber) for row in rows]
         # A row with neither a traded symbol nor a disclosure date cannot be flagged, dated or
         # deduped, so it is dropped here rather than downstream where it would look like data.
-        usable = [row for row in rows if row["disclosure_date"] and
+        usable = [row for row in normalized if row["disclosure_date"] and
                   (row["symbol"] or row["asset_description"])]
-        return usable, len(same_chamber)
+        return usable, len(rows)
 
     def house_latest(self):
         return self._fetch(self.house_url, "house")
 
     def senate_latest(self):
         return self._fetch(self.senate_url, "senate")
+
+    def executive_latest(self):
+        # OGE executive-branch rows only ever arrive via congress-trading-monitor's combined
+        # file today (SenateEfdClient and CongressTradesClient/FMP cover Congress only, and
+        # there is no equivalent authoritative structured source for OGE - see the module
+        # docstring). Reusing house_url rather than adding a third override is deliberate:
+        # both HOUSE_DATASET and this already point at the one file that carries executive
+        # rows, so a caller overriding CONGRESS_HOUSE_DATASET_URL to a House-only mirror
+        # would also (correctly) lose executive coverage rather than silently keep stale data.
+        return self._fetch_executive(self.house_url)
 
     @staticmethod
     def _normalize(row, chamber):
@@ -547,7 +596,13 @@ class StockWatcherClient:
         from. Covers both the original stock-watcher column names and
         congress-trading-monitor's (``filer_name``, ``filing_date``, ``amount_range_label``,
         ``doc_url``, ...) - see ``_fetch`` for the fields that differ, ``comment`` for those
-        that don't."""
+        that don't.
+
+        ``office``/``agency`` are new, executive-branch-only fields (e.g. "President" /
+        "White House Office") - null for House/Senate rows, which have no equivalent. Kept
+        separate from ``representative`` rather than overloading it, since the display layer
+        needs to distinguish "Donald J Trump, President" from a member's district/party.
+        """
         symbol = _first(row, "ticker", "symbol")
         asset_type = _first(row, "asset_type", "type_of_asset", "assetType")
         return {
@@ -558,7 +613,12 @@ class StockWatcherClient:
             # near-duplicate "representative" per state/chamber instead of the actual member.
             "representative": _first(row, "representative", "senator", "filer_name", "office",
                                      "member_name"),
-            "district": _first(row, "district", "state", "office"),
+            # "office" is deliberately excluded from this district fallback for executive
+            # rows - it holds "President"/"Secretary" there, not a district, and is already
+            # captured in its own field below.
+            "district": None if chamber == "executive" else _first(row, "district", "state", "office"),
+            "office": _first(row, "office") if chamber == "executive" else None,
+            "agency": _first(row, "agency") if chamber == "executive" else None,
             # The mirrors use "--" as their null ticker, which _first already filters; what
             # survives can still carry whitespace or lower case from the scrape.
             "symbol": str(symbol).strip().upper() if symbol else None,

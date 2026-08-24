@@ -328,6 +328,23 @@ def _screen_sue(row):
         return None
 
 
+def _screen_data_coverage(row):
+    """This row's measured data coverage, from the row itself or its champion variant.
+
+    The variant fallback is what makes the fix reach the tail on the very next run rather
+    than only as names are re-polled. A fast refresh carries several hundred rows forward
+    from the last published file, and every one of those predates the row-level field - but
+    they all already carry the identical number under ``score_variants.champion``, because
+    that is the variant the published score is taken from. Without the fallback those
+    carried rows would keep reporting no measurement until their rotation slot came up.
+    """
+    coverage = row.get("data_coverage")
+    if coverage is None:
+        champion = (row.get("score_variants") or {}).get("champion") or {}
+        coverage = champion.get("data_coverage")
+    return coverage if isinstance(coverage, (int, float)) else None
+
+
 def _screen_row(row):
     """Project a full or already-lightweight row into the screen_universe shape.
 
@@ -354,6 +371,16 @@ def _screen_row(row):
         # not have - VOO ranked as a stock and, at one point, was the single name clearing
         # the catalyst screen.
         "is_etf": row.get("is_etf", False),
+        # Measured for every scored row, and previously discarded here - the single most
+        # consequential omission this projection ever made. The browser gates every action
+        # label on the row-level field (src/lib/confidenceGate.js), so dropping it made all
+        # ~840 tail rows read "no coverage measurement was published", which the confidence
+        # gate correctly treats as `insufficient`. The measurement existed the whole time:
+        # the champion variant below carried it, and against the published snapshot only 117
+        # of 839 rows were actually under the 40% floor while 114 measured high enough to
+        # carry an action call. Absent and zero are different claims (see the band table in
+        # confidenceGate.js), so this stays None rather than 0.0 when nothing resolved.
+        "data_coverage": _screen_data_coverage(row),
         # When this row's inputs were last actually fetched, as opposed to carried forward
         # from an earlier run. It is what lets a fast refresh rotate the stalest part of the
         # tail back into the poll (see rotation_slice) instead of re-polling the same

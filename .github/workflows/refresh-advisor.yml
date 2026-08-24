@@ -48,20 +48,35 @@ on:
     # 15:00 ET are fast refreshes limited to the prior top 100 plus portfolio holdings -
     # see the "Select the Eastern-time refresh window" step below for how that's enforced.
     # Avoid minute zero, when GitHub documents that scheduled events are most likely to
-    # be delayed or dropped under Actions load. The local-time gate below is unchanged.
-    # Weekends: this cron still fires all six UTC candidates, but the gate step below
-    # only lets the 07:00 ET one through - equity quotes don't move over the weekend, so
-    # there's no case for the 12:00/15:00 fast-refresh slots, but Alpha Vantage, statement
+    # be delayed or dropped under Actions load.
+    #
+    # These are six separate entries rather than one '7 11,12,16,17,19,20 * * *' line so
+    # that `github.event.schedule` identifies WHICH slot fired. Actions only reports the
+    # matching cron expression, never the instant it was meant to fire, so a combined entry
+    # left the gate below with nothing to read but the wall clock - and scheduled runs in
+    # this repo have started 25-60 minutes late (measured across every slot), which is
+    # enough to carry a firing into the next Eastern hour and silently reclassify it.
+    #
+    # Every day, not just weekdays (`* * *`, not `* * 1-5`): the gate step below only lets
+    # the weekend 07:00 ET slot through (equity quotes don't move over the weekend, so
+    # there's no case for the 12:00/15:00 fast-refresh slots), but Alpha Vantage, statement
     # enrichment (10-Ks/10-Qs/8-Ks file on any day), SEC filings, and news don't stop
-    # either, so the single weekend run raises ALPHA_ENRICH_LIMIT to 25 - Alpha Vantage's
-    # real free-tier daily ceiling, not the 5-per-refresh weekday figure that's sized to
-    # be safe across three same-day weekday runs - and paces calls with a 13s
+    # either, so that single weekend run raises ALPHA_ENRICH_LIMIT to 25 - Alpha Vantage's
+    # real free-tier daily ceiling, not the 5-per-refresh weekday figure that's sized to be
+    # safe across three same-day weekday runs - and paces calls with a 13s
     # ALPHA_VANTAGE_CALL_DELAY (5 req/min limit) so that run is mainly a universe
     # enrichment pass, not a mirror of the weekday cadence. Themes need no separate
     # schedule entry -- build_theme_layer already runs unconditionally inside
     # fetch_advisor.py's run() on every non-rescore refresh, so it fires on the weekend
     # run too.
-    - cron: '7 11,12,16,17,19,20 * * *'
+    #
+    #                    EDT (UTC-4)        EST (UTC-5)
+    - cron: '7 11 * * *'  # 07:00 full sweep | 06:00 no-op
+    - cron: '7 12 * * *'  # 08:00 no-op      | 07:00 full sweep
+    - cron: '7 16 * * *'  # 12:00 fast       | 11:00 no-op
+    - cron: '7 17 * * *'  # 13:00 no-op      | 12:00 fast
+    - cron: '7 19 * * *'  # 15:00 fast       | 14:00 no-op
+    - cron: '7 20 * * *'  # 16:00 no-op      | 15:00 fast
 
 permissions:
   contents: write
@@ -75,9 +90,18 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # A ~900-name stock universe and a ~125-fund ETF watchlist, plus financial statements
-    # for the shortlist. Price history is batched and everything is cached, so most of the
-    # wall time is deliberate rate-limit pacing rather than transfer.
-    timeout-minutes: 90
+    # for every scored name. Price history is batched and everything is cached, so most of
+    # the wall time is deliberate rate-limit pacing rather than transfer.
+    #
+    # Raised from 90 alongside advisor_universe.json's extended_limit, which no longer caps
+    # statement enrichment at 150 names. Measured on the 2026-08-24 full sweep, enrichment
+    # ran at 0.92s/name for 138s of a 41-minute scoring step; at ~880 scored names that leg
+    # becomes roughly 15 minutes, and the tail is slower per name than the large caps that
+    # figure was measured on (obscurer names miss Yahoo more often and fall through to the
+    # slower EDGAR fallback). That put the projected full sweep near 70 minutes against a
+    # 90-minute ceiling. A timeout publishes nothing at all - the commit step never runs -
+    # so the margin matters more than the minutes do.
+    timeout-minutes: 120
     env:
       ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
       MARKETAUX_API_TOKEN: ${{ secrets.MARKETAUX_API_TOKEN }}
@@ -112,16 +136,49 @@ jobs:
           is_rescore=false
           alpha_enrich_limit=5
           alpha_call_delay=0
+
+          # The Eastern hour this run was SCHEDULED for, derived from the cron entry that
+          # fired rather than from `date` at execution time.
+          #
+          # Actions routinely starts a scheduled run late - every slot in this workflow has
+          # been observed 25-60 minutes behind its cron minute, and the 12:07 UTC slot ran
+          # 56, 57, 58 and 60 minutes late on four consecutive weekdays. The wall clock
+          # therefore does not identify the window: only 53 minutes of slack separate :07
+          # from the next Eastern hour, so a delay of the size this repo already sees on one
+          # slot would read the 07:00 ET firing as 08:00, take the no-op branch, and drop the
+          # day's ONLY full sweep - reported as a green four-second run indistinguishable
+          # from an intentional no-op. Anchoring to the schedule makes the classification
+          # independent of how long the run waited for a runner.
+          scheduled_hour_et() {
+            local cron minute hour rest
+            cron="$1"
+            minute="${cron%% *}"
+            rest="${cron#* }"
+            hour="${rest%% *}"
+            [[ "$minute" =~ ^[0-9]{1,2}$ && "$hour" =~ ^[0-9]{1,2}$ ]] || return 1
+            # 10# so a zero-padded cron field is read as decimal, not octal.
+            TZ=America/New_York date \
+              -d "$(date -u +%Y-%m-%d)T$(printf '%02d:%02d' "$((10#$hour))" "$((10#$minute))")Z" \
+              +%H
+          }
+
           if [[ "${{ github.event_name }}" != "schedule" ]]; then
             should_run=true
             universe_mode="${{ inputs.universe_scope || 'full' }}"
+            window="manual ${{ inputs.refresh_mode }} / ${universe_mode} universe"
             if [[ "${{ inputs.refresh_mode }}" == "full-alpha" ]]; then
               alpha_disable=0
             elif [[ "${{ inputs.refresh_mode }}" == "rescore-only" ]]; then
               is_rescore=true
             fi
           else
-            local_hour="$(TZ=America/New_York date +%H)"
+            if ! local_hour="$(scheduled_hour_et '${{ github.event.schedule }}')"; then
+              # An unparseable cron expression must not cost a refresh: fall back to the
+              # wall clock, which is what this gate used before, and say so in the summary.
+              local_hour="$(TZ=America/New_York date +%H)"
+              echo "::warning::Could not read the cron entry that fired \
+          ('${{ github.event.schedule }}'); classified this run by wall clock instead"
+            fi
             # 1 (Mon) .. 7 (Sun): a weekend refresh is once daily, not three times -
             # equity quotes don't move on a non-trading day, so the 12:00/15:00 intraday
             # fast reruns that exist to catch same-day price movement have nothing new to
@@ -130,7 +187,11 @@ jobs:
             # also has to last three refreshes, but the weekend's single run can safely ask
             # for the real free-tier ceiling of 25 since nothing else that day competes for
             # it. ALPHA_VANTAGE_CALL_DELAY=13 keeps 25 calls under the 5-calls-per-minute
-            # sub-limit (60s / 5 = 12s minimum spacing; 13s for margin).
+            # sub-limit (60s / 5 = 12s minimum spacing; 13s for margin). Computed from the
+            # wall clock rather than the schedule: the lateness this gate corrects for
+            # (25-60 minutes) is nowhere near enough to cross a day boundary except right at
+            # midnight ET, so the added complexity of a schedule-anchored day isn't earning
+            # its keep the way schedule-anchored HOUR does above.
             local_day="$(TZ=America/New_York date +%u)"
             if [[ "$local_day" -ge 6 ]]; then
               if [[ "$local_hour" == "07" ]]; then
@@ -139,6 +200,9 @@ jobs:
                 universe_mode=full
                 alpha_enrich_limit=25
                 alpha_call_delay=13
+                window="${local_hour}:00 ET - weekend full sweep + enrichment (~900 names, Alpha Vantage enabled, enrich limit 25)"
+              else
+                window="${local_hour}:00 ET - weekend, outside the once-daily refresh window, nothing to do"
               fi
             else
               case "$local_hour" in
@@ -146,10 +210,15 @@ jobs:
                   should_run=true
                   alpha_disable=0
                   universe_mode=full
+                  window="${local_hour}:00 ET - full sweep (~900 names, Alpha Vantage enabled)"
                   ;;
                 12|15)
                   should_run=true
                   universe_mode=fast
+                  window="${local_hour}:00 ET - fast refresh (prior top 100 plus holdings)"
+                  ;;
+                *)
+                  window="${local_hour}:00 ET - outside every refresh window, nothing to do"
                   ;;
               esac
             fi
@@ -161,6 +230,20 @@ jobs:
           echo "ADVISOR_UNIVERSE_MODE=$universe_mode" >> "$GITHUB_ENV"
           echo "ALPHA_ENRICH_LIMIT=$alpha_enrich_limit" >> "$GITHUB_ENV"
           echo "ALPHA_VANTAGE_CALL_DELAY=$alpha_call_delay" >> "$GITHUB_ENV"
+          # A gated-off run is a four-second success on the runs list, which looks exactly
+          # like a broken one. Name the selected window on the run's own summary page so
+          # "did today's full sweep actually happen?" is answerable without reading logs.
+          {
+            echo "### Refresh window: $window"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Trigger | \`${{ github.event_name }}\` |"
+            echo "| Cron entry | \`${{ github.event.schedule || 'n/a' }}\` |"
+            echo "| Pipeline runs | $should_run |"
+            echo "| Universe mode | $universe_mode |"
+            echo "| Alpha Vantage enrich limit | $alpha_enrich_limit (call delay ${alpha_call_delay}s) |"
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@v4
         if: steps.refresh_window.outputs.should_run == 'true'
         with:
