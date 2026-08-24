@@ -44,25 +44,43 @@ const signed = (value, digits = 1, suffix = '%') =>
 const moveColor = (value) => (value == null ? undefined : value >= 0 ? 'var(--pos)' : 'var(--neg)')
 
 /**
+ * Whether a coverage measurement exists at all, by exactly the rule confidenceGate.js's own
+ * `finite()` applies. The two must agree: if the dial called a value measured where the gate
+ * called it absent, a row could print a coverage percentage beside "no data-coverage
+ * measurement was published". Deliberately stricter than `Number(value)`, which maps both
+ * null and '' to a perfectly finite 0.
+ */
+function isMeasuredCoverage(value) {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+/**
  * The arc lightens and breaks as data coverage falls. The quantity is completeness, not
  * reliability -- see src/lib/confidenceGate.js and
  * research/audit/CURRENT_MODEL_AUDIT.md section 4.
  */
-function CoverageScoreDial({ score, dataCoverage }) {
+export function CoverageScoreDial({ score, dataCoverage }) {
   const dial = modelSettings.interface.score_dial
   const maskId = `score-mask-${useId().replaceAll(':', '')}`
   const safeScore = Math.max(0, Math.min(100, Number(score) || 0))
-  const safeCoverage = Math.max(0, Math.min(1, Number(dataCoverage) || 0))
-  const dash = dial.minimum_dash + safeCoverage * (dial.maximum_dash - dial.minimum_dash)
-  const gap = dial.maximum_gap - safeCoverage * (dial.maximum_gap - dial.minimum_gap)
-  const opacity = dial.minimum_opacity + safeCoverage * (1 - dial.minimum_opacity)
+  // An unmeasured row gets no coverage styling at all rather than the styling for zero.
+  // Modulating the arc on a coverage of 0 would render the most broken, faintest arc the
+  // dial can draw - the strongest visual claim available that the evidence is missing - on
+  // rows whose coverage simply was never published. An unmodulated arc asserts nothing.
+  const measured = isMeasuredCoverage(dataCoverage)
+  const safeCoverage = measured ? Math.max(0, Math.min(1, dataCoverage)) : null
+  const dash = measured ? dial.minimum_dash + safeCoverage * (dial.maximum_dash - dial.minimum_dash) : dial.maximum_dash
+  const gap = measured ? dial.maximum_gap - safeCoverage * (dial.maximum_gap - dial.minimum_gap) : dial.minimum_gap
+  const opacity = measured ? dial.minimum_opacity + safeCoverage * (1 - dial.minimum_opacity) : 1
   return <div className="confidence-score-dial" style={{ '--dial-size': `${dial.size}px` }}>
-    <svg viewBox={`0 0 ${dial.viewbox_size} ${dial.viewbox_size}`} role="img" aria-label={`Research score ${safeScore.toFixed(0)} with ${Math.round(safeCoverage * 100)} percent data coverage`}>
+    <svg viewBox={`0 0 ${dial.viewbox_size} ${dial.viewbox_size}`} role="img" aria-label={measured
+      ? `Research score ${safeScore.toFixed(0)} with ${Math.round(safeCoverage * 100)} percent data coverage`
+      : `Research score ${safeScore.toFixed(0)}, data coverage not measured for this row`}>
       <circle className="score-dial-track" cx={dial.center} cy={dial.center} r={dial.radius} strokeWidth={dial.stroke_width} />
       <defs><mask id={maskId}><circle cx={dial.center} cy={dial.center} r={dial.radius} pathLength="100" stroke="white" strokeWidth={dial.stroke_width} fill="none" strokeDasharray={`${safeScore} ${100 - safeScore}`} /></mask></defs>
       <circle className="score-dial-arc" cx={dial.center} cy={dial.center} r={dial.radius} pathLength="100" strokeWidth={dial.stroke_width} mask={`url(#${maskId})`} style={{ opacity, strokeDasharray: `${dash} ${gap}` }} />
     </svg>
-    <div><span>1 · Research score</span><strong>{safeScore.toFixed(0)}</strong><small>{Math.round(safeCoverage * 100)}% data coverage</small></div>
+    <div><span>1 · Research score</span><strong>{safeScore.toFixed(0)}</strong><small>{measured ? `${Math.round(safeCoverage * 100)}% data coverage` : 'data coverage not measured'}</small></div>
   </div>
 }
 
@@ -187,7 +205,14 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
   const percentile = stock.valuation_percentile
   const setupGuidance = watchlistGuidance(stock, null, null, { sizingMode: preferences.watchlistSizingMode })
   const score = stock.score ?? structural?.effective_score
-  const dataCoverage = stock.data_coverage ?? structural?.coverage ?? 0
+  // Null, never 0, when nothing was measured. confidenceGate.js draws the distinction the
+  // whole coverage model rests on - "we did not measure this" is not "we measured it and it
+  // was nothing" - and the `?? 0` that used to close this expression collapsed the two,
+  // printing a confident "0%" and an empty arc for rows that had never been asked.
+  const coverageSource = stock.data_coverage
+    ?? structural?.coverage
+    ?? stock.score_variants?.champion?.data_coverage
+  const dataCoverage = isMeasuredCoverage(coverageSource) ? coverageSource : null
   const theme = primaryTheme(stock)
   const themeName = themeExposureName(theme) || 'No material theme identified'
   const themeScore = theme ? themeExposureScore(theme) : undefined
@@ -258,7 +283,9 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
         <section className="stock-concept-hero" aria-label="Research summary">
           <CoverageScoreDial score={score} dataCoverage={dataCoverage} />
           <div className="stock-concept-list">
-            <article><span>2 · Data coverage</span><strong>{Math.round(dataCoverage * 100)}%</strong><p>How much of the evidence this model intends to use actually resolved. Not a reliability score and not a probability of a price move; the arc lightens as coverage falls.</p></article>
+            <article><span>2 · Data coverage</span><strong>{dataCoverage === null ? 'Not measured' : `${Math.round(dataCoverage * 100)}%`}</strong><p>{dataCoverage === null
+              ? 'No coverage measurement was published for this row, so there is nothing to report here yet. This is not a reading of zero.'
+              : 'How much of the evidence this model intends to use actually resolved. Not a reliability score and not a probability of a price move; the arc lightens as coverage falls.'}</p></article>
             <article><span>3 · Guidance</span><strong>{recommendation?.action || 'Watch'}</strong><p>{recommendation?.summary || 'Review the evidence before acting.'}</p></article>
             <article><span>4 · Theme exposure</span><strong>{themeName}</strong><p>{!Number.isFinite(themeScore) ? 'No material long-term theme exposure is published for this company.' : `${themeScore.toFixed(0)} out of 100. Theme exposure stays independent from the research score.`}{otherThemes.length > 0 && ` Also exposed to ${otherThemes.map(themeExposureName).join(', ')}.`}</p></article>
           </div>

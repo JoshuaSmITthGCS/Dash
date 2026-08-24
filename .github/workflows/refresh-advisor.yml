@@ -48,8 +48,22 @@ on:
     # fast refreshes limited to the prior top 100 plus portfolio holdings - see the
     # "Select the Eastern-time refresh window" step below for how that's enforced.
     # Avoid minute zero, when GitHub documents that scheduled events are most likely to
-    # be delayed or dropped under Actions load. The local-time gate below is unchanged.
-    - cron: '7 11,12,16,17,19,20 * * 1-5'
+    # be delayed or dropped under Actions load.
+    #
+    # These are six separate entries rather than one '7 11,12,16,17,19,20 * * 1-5' line so
+    # that `github.event.schedule` identifies WHICH slot fired. Actions only reports the
+    # matching cron expression, never the instant it was meant to fire, so a combined entry
+    # left the gate below with nothing to read but the wall clock - and scheduled runs in
+    # this repo have started 25-60 minutes late (measured across every slot), which is
+    # enough to carry a firing into the next Eastern hour and silently reclassify it.
+    #
+    #                         EDT (UTC-4)        EST (UTC-5)
+    - cron: '7 11 * * 1-5'  # 07:00 full sweep | 06:00 no-op
+    - cron: '7 12 * * 1-5'  # 08:00 no-op      | 07:00 full sweep
+    - cron: '7 16 * * 1-5'  # 12:00 fast       | 11:00 no-op
+    - cron: '7 17 * * 1-5'  # 13:00 no-op      | 12:00 fast
+    - cron: '7 19 * * 1-5'  # 15:00 fast       | 14:00 no-op
+    - cron: '7 20 * * 1-5'  # 16:00 no-op      | 15:00 fast
 
 permissions:
   contents: write
@@ -63,9 +77,18 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # A ~900-name stock universe and a ~125-fund ETF watchlist, plus financial statements
-    # for the shortlist. Price history is batched and everything is cached, so most of the
-    # wall time is deliberate rate-limit pacing rather than transfer.
-    timeout-minutes: 90
+    # for every scored name. Price history is batched and everything is cached, so most of
+    # the wall time is deliberate rate-limit pacing rather than transfer.
+    #
+    # Raised from 90 alongside advisor_universe.json's extended_limit, which no longer caps
+    # statement enrichment at 150 names. Measured on the 2026-08-24 full sweep, enrichment
+    # ran at 0.92s/name for 138s of a 41-minute scoring step; at ~880 scored names that leg
+    # becomes roughly 15 minutes, and the tail is slower per name than the large caps that
+    # figure was measured on (obscurer names miss Yahoo more often and fall through to the
+    # slower EDGAR fallback). That put the projected full sweep near 70 minutes against a
+    # 90-minute ceiling. A timeout publishes nothing at all - the commit step never runs -
+    # so the margin matters more than the minutes do.
+    timeout-minutes: 120
     env:
       ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
       MARKETAUX_API_TOKEN: ${{ secrets.MARKETAUX_API_TOKEN }}
@@ -98,25 +121,63 @@ jobs:
           alpha_disable=1
           universe_mode=fast
           is_rescore=false
+
+          # The Eastern hour this run was SCHEDULED for, derived from the cron entry that
+          # fired rather than from `date` at execution time.
+          #
+          # Actions routinely starts a scheduled run late - every slot in this workflow has
+          # been observed 25-60 minutes behind its cron minute, and the 12:07 UTC slot ran
+          # 56, 57, 58 and 60 minutes late on four consecutive weekdays. The wall clock
+          # therefore does not identify the window: only 53 minutes of slack separate :07
+          # from the next Eastern hour, so a delay of the size this repo already sees on one
+          # slot would read the 07:00 ET firing as 08:00, take the no-op branch, and drop the
+          # day's ONLY full sweep - reported as a green four-second run indistinguishable
+          # from an intentional no-op. Anchoring to the schedule makes the classification
+          # independent of how long the run waited for a runner.
+          scheduled_hour_et() {
+            local cron minute hour rest
+            cron="$1"
+            minute="${cron%% *}"
+            rest="${cron#* }"
+            hour="${rest%% *}"
+            [[ "$minute" =~ ^[0-9]{1,2}$ && "$hour" =~ ^[0-9]{1,2}$ ]] || return 1
+            # 10# so a zero-padded cron field is read as decimal, not octal.
+            TZ=America/New_York date \
+              -d "$(date -u +%Y-%m-%d)T$(printf '%02d:%02d' "$((10#$hour))" "$((10#$minute))")Z" \
+              +%H
+          }
+
           if [[ "${{ github.event_name }}" != "schedule" ]]; then
             should_run=true
             universe_mode="${{ inputs.universe_scope || 'full' }}"
+            window="manual ${{ inputs.refresh_mode }} / ${universe_mode} universe"
             if [[ "${{ inputs.refresh_mode }}" == "full-alpha" ]]; then
               alpha_disable=0
             elif [[ "${{ inputs.refresh_mode }}" == "rescore-only" ]]; then
               is_rescore=true
             fi
           else
-            local_hour="$(TZ=America/New_York date +%H)"
+            if ! local_hour="$(scheduled_hour_et '${{ github.event.schedule }}')"; then
+              # An unparseable cron expression must not cost a refresh: fall back to the
+              # wall clock, which is what this gate used before, and say so in the summary.
+              local_hour="$(TZ=America/New_York date +%H)"
+              echo "::warning::Could not read the cron entry that fired \
+          ('${{ github.event.schedule }}'); classified this run by wall clock instead"
+            fi
             case "$local_hour" in
               07)
                 should_run=true
                 alpha_disable=0
                 universe_mode=full
+                window="${local_hour}:00 ET - full sweep (~900 names, Alpha Vantage enabled)"
                 ;;
               12|15)
                 should_run=true
                 universe_mode=fast
+                window="${local_hour}:00 ET - fast refresh (prior top 100 plus holdings)"
+                ;;
+              *)
+                window="${local_hour}:00 ET - outside every refresh window, nothing to do"
                 ;;
             esac
           fi
@@ -125,6 +186,19 @@ jobs:
           echo "universe_mode=$universe_mode" >> "$GITHUB_OUTPUT"
           echo "ALPHA_DISABLE=$alpha_disable" >> "$GITHUB_ENV"
           echo "ADVISOR_UNIVERSE_MODE=$universe_mode" >> "$GITHUB_ENV"
+          # A gated-off run is a four-second success on the runs list, which looks exactly
+          # like a broken one. Name the selected window on the run's own summary page so
+          # "did today's full sweep actually happen?" is answerable without reading logs.
+          {
+            echo "### Refresh window: $window"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Trigger | \`${{ github.event_name }}\` |"
+            echo "| Cron entry | \`${{ github.event.schedule || 'n/a' }}\` |"
+            echo "| Pipeline runs | $should_run |"
+            echo "| Universe mode | $universe_mode |"
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@v4
         if: steps.refresh_window.outputs.should_run == 'true'
         with:
