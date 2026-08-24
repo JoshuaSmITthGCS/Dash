@@ -262,5 +262,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P15-gzip-panel-io",
+    "declared_at": "2026-08-24T21:15:00+00:00",
+    "hypothesis": "The user's 10-year panel with R11-P8 metric_scores is 174MB -- past GitHub's hard 100MB file limit, so the panel of record cannot be committed raw (their push was rejected), and an uncommitted panel means refresh-advisor.yml -> signal_metrics.py computes the R11-P14 rolling-IC regime monitor against whatever stale panel is in the tree. The same repetition that makes the file huge (metric key names repeated per ticker-period) makes it compress on the order of 10x.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

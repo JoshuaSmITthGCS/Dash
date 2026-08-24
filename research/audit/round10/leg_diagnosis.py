@@ -150,8 +150,10 @@ def quantile_membership_turnover(periods, weights, quantiles=5):
 
 
 def main():
-    with open(PANEL_PATH, encoding="utf-8") as handle:
-        panel = json.load(handle)
+    from panel_io import load_panel
+    panel = load_panel(PANEL_PATH)
+    if panel is None:
+        raise SystemExit(f"panel not found at {PANEL_PATH}(.gz)")
     periods = panel["periods"]
     weights = panel["leg_weights"]
     horizon_field = panel["horizon_trading_days"]

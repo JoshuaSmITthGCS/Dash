@@ -79,6 +79,7 @@ sys.path.insert(0, HERE)
 
 from build_swing_screen import resolve_sue  # noqa: E402
 from common import LOG, STORE_DIR  # noqa: E402
+from panel_io import save_panel  # noqa: E402
 from costs import estimate_cost_bps  # noqa: E402
 from evaluation import deflated_sharpe_ratio, probability_of_backtest_overfitting, walk_forward  # noqa: E402
 from screen_inputs import BACKTEST_CACHE, median_dollar_volume, universe_rows  # noqa: E402
@@ -549,8 +550,7 @@ def main(argv=None):
                  f"deflated Sharpe {summary['deflated_sharpe_probability_net_of_cost']}")
     LOG.info(f"backtest_swing: wrote {args.out}")
     if args.panel_out and signal_panel:
-        with open(args.panel_out, "w") as handle:
-            json.dump(signal_panel, handle, indent=2)
+        save_panel(args.panel_out, signal_panel)
         LOG.info(f"backtest_swing: wrote {args.panel_out}: "
                  f"{len(signal_panel['periods'])} scored cross-sections")
     return 0

@@ -112,6 +112,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
+import panel_io  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
@@ -361,7 +362,9 @@ def run_harness_stage(args):
     import optimization_harness as harness
 
     panel_path = panel_path_for(args.domain)
-    panel_data = json.load(open(panel_path))
+    panel_data = panel_io.load_panel(panel_path)
+    if panel_data is None:
+        raise SystemExit(f"[panel] {panel_path}(.gz) not found -- run the panel stage first")
     periods = panel_data["periods"]
     champion_weights = panel_data["leg_weights"]
 
@@ -615,7 +618,9 @@ def run_elo_stage(args):
     import optimization_harness as harness
 
     panel_path = panel_path_for(args.domain)
-    panel_data = json.load(open(panel_path))
+    panel_data = panel_io.load_panel(panel_path)
+    if panel_data is None:
+        raise SystemExit(f"[panel] {panel_path}(.gz) not found -- run the panel stage first")
     periods = panel_data["periods"]
     champion_weights = panel_data["leg_weights"]
 

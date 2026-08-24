@@ -46,6 +46,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 from optimization_harness import _configuration_ic_series  # noqa: E402
+from panel_io import load_panel  # noqa: E402
 
 DEFAULT_PANEL = os.path.join(HERE, "backtest_signal_panel.json")
 DEFAULT_OUT = os.path.join(os.path.dirname(HERE), "research", "audit", "round11",
@@ -262,8 +263,10 @@ def main():
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
-    with open(args.panel, encoding="utf-8") as handle:
-        panel_data = json.load(handle)
+    panel_data = load_panel(args.panel)
+    if panel_data is None:
+        print(f"[regime] panel not found at {args.panel}(.gz)")
+        return 1
     result = diagnose(panel_data, cache_dir=args.cache_dir, min_segment=args.min_segment,
                       permutations=args.permutations, seed=args.seed)
     if "error" in result:

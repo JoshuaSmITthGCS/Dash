@@ -1462,6 +1462,48 @@ REGISTRY = [
                    "carrying such caveats, and the CI claim scanner confirms nothing now claims "
                    "validation the repository cannot support."),
     },
+    {
+        "id": "R11-P15-gzip-panel-io",
+        "declared_at": "2026-08-24T21:15:00+00:00",
+        "hypothesis": ("The user's 10-year panel with R11-P8 metric_scores is 174MB -- past "
+                       "GitHub's hard 100MB file limit, so the panel of record cannot be "
+                       "committed raw (their push was rejected), and an uncommitted panel means "
+                       "refresh-advisor.yml -> signal_metrics.py computes the R11-P14 rolling-IC "
+                       "regime monitor against whatever stale panel is in the tree. The same "
+                       "repetition that makes the file huge (metric key names repeated per "
+                       "ticker-period) makes it compress on the order of 10x."),
+        "category": "infrastructure",
+        "configuration": {
+            "files": ["pipeline/panel_io.py", "pipeline/tests/test_panel_io.py",
+                     "pipeline/backtest_monthly.py", "pipeline/backtest_swing.py",
+                     "pipeline/run_backtest_suite.py", "pipeline/signal_metrics.py",
+                     "pipeline/regime_diagnosis.py", "pipeline/elo_tournament.py",
+                     "research/audit/round10/leg_diagnosis.py"],
+            "change": ("New panel_io.load_panel(path)/save_panel(path, data): save gzips when "
+                       "the path ends .gz (compact separators either way -- indent was a third "
+                       "of the raw size); load reads the given path, falls back to path+'.gz', "
+                       "returns None if neither exists, so a fresh local .json rebuild always "
+                       "wins over the committed compressed copy. Every panel reader (suite "
+                       "harness+elo stages, signal_metrics, regime_diagnosis, elo CLI, round10 "
+                       "leg_diagnosis) and both writers (backtest_monthly, backtest_swing) "
+                       "wired through it."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 5},
+        "number_of_variants_tested": 1,
+        "result": ("5 tests (round trips both formats, .json->.gz fallback, fresh-json-beats-"
+                   "stale-gz precedence, missing-file None). Real end-to-end: this sandbox's "
+                   "committed panel round-trips through gzip at 15.2MB -> 3.6MB and loads via "
+                   "the .json-path fallback with period counts intact. A first patch of "
+                   "leg_diagnosis.py referenced a REPO name that doesn't exist in that script's "
+                   "scope -- caught by re-reading the file, fixed before commit. Full pipeline "
+                   "suite green."),
+        "decision": "PROMOTE",
+        "reason": ("Pure IO plumbing with an explicit precedence contract; no statistic, "
+                   "weight, or artifact shape changes. Unblocks committing the 10-year panel "
+                   "of record (as .json.gz) so the scheduled refresh publishes the regime "
+                   "monitor against real history instead of a stale panel."),
+    },
 ]
 
 

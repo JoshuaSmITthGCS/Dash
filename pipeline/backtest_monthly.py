@@ -37,6 +37,7 @@ from backtest_historical import (  # noqa: E402
 from common import LOG, load_json  # noqa: E402
 from costs import estimate_cost_bps  # noqa: E402
 from portfolio_construction import apply_controls  # noqa: E402
+from panel_io import save_panel  # noqa: E402
 from screen_inputs import universe_rows  # noqa: E402
 
 COST_MODELS = ("flat", "tiered")
@@ -783,8 +784,7 @@ def main():
     with open(args.out, "w", encoding="utf-8") as handle:
         json.dump(result, handle, indent=2)
     if args.panel_out:
-        with open(args.panel_out, "w", encoding="utf-8") as handle:
-            json.dump(build_panel(panel_periods, universe_data, leg_weights), handle, indent=2)
+        save_panel(args.panel_out, build_panel(panel_periods, universe_data, leg_weights))
         graded = sum(1 for period in panel_periods if period["forward_returns"])
         print(f"Wrote {args.panel_out}: {len(panel_periods)} scored cross-sections, "
               f"{graded} with {PANEL_PRIMARY_HORIZON} forward returns")

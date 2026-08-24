@@ -34,6 +34,7 @@ import statistics
 from datetime import datetime, timezone
 
 import evaluation
+import panel_io
 import risk_metrics
 import sector_attribution
 import stress_scenarios
@@ -1951,7 +1952,7 @@ def build_report(*, backtest=_UNSET, optimizer=_UNSET, panel=_UNSET, factors=_UN
     "this input genuinely does not exist", which is a different thing and must stay so."""
     backtest = _read_json(BACKTEST_PATH) if backtest is _UNSET else backtest
     optimizer = _read_json(OPTIMIZER_PATH) if optimizer is _UNSET else optimizer
-    panel = _read_json(PANEL_PATH) if panel is _UNSET else panel
+    panel = panel_io.load_panel(PANEL_PATH) if panel is _UNSET else panel
     factors = load_json("factors/french.json") if factors is _UNSET else factors
     ic_validation = (load_json("validation/ic_validation.json")
                      if ic_validation is _UNSET else ic_validation)

@@ -142,7 +142,10 @@ def main(argv=None):
     parser.add_argument("--out", default="")
     args = parser.parse_args(argv)
 
-    panel_data = json.load(open(args.panel))
+    from panel_io import load_panel
+    panel_data = load_panel(args.panel)
+    if panel_data is None:
+        raise SystemExit(f"panel not found at {args.panel}(.gz)")
     periods = panel_data["periods"]
     panel = Panel(periods, train_fraction=args.train_fraction,
                  validation_fraction=args.validation_fraction)
