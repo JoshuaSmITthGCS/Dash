@@ -3,8 +3,11 @@
 `docs/P0-Q1-BENCHMARK.md` established that SPY is the wrong yardstick for a beta-0.79,
 small/mid-tilted book, and that against RSP and IWM the strategy is competitive or better. It
 also established, via a six-factor Newey-West regression, that no residual alpha survives once
-market, size, value, profitability, investment and momentum are controlled for
-(annualized alpha -2.57%, |t| = 0.437).
+market, size, value, profitability, investment and momentum are controlled for. The exact point
+estimate moves with each re-run (pipeline/reports/factor_regression_p0.json, WO-4's original
+2026-08-07 run: annualized alpha -2.57%, |t| = 0.437), but the |t| has stayed well under the 2.0
+significance bar every time it has been measured -- that stability, not any single point
+estimate, is the finding this module's disclosure leans on.
 
 This extends the benchmark side of that work using ETFs already committed to the repository.
 The academic factor regression answers "is there alpha versus the factor *model*". A tradeable
@@ -51,6 +54,7 @@ from p0_q1_benchmark_factor_report import (BACKTEST_PATH, ETF_DIR, load_etf_benc
 # thing that report does not have -- a Newey-West regression of the strategy on each
 # individual tradeable fund -- so it gets its own path rather than racing for the same one.
 OUT_PATH = os.path.join(HERE, "reports", "benchmark_alpha_regressions.json")
+FACTOR_REGRESSION_PATH = os.path.join(HERE, "reports", "factor_regression_p0.json")
 ENTRY_COST_BPS = 10.0
 
 # Committed ETFs standing in for the exposures the six-factor regression found significant
@@ -158,6 +162,32 @@ def regress_on_benchmark(strategy_monthly, benchmark_monthly):
     }
 
 
+def _six_factor_alpha_context(path=FACTOR_REGRESSION_PATH):
+    """The one regression that controls for all six factors at once, for the honesty
+    disclosure below -- a count of "significant" pairwise per-benchmark regressions is not
+    adjusted for having run 14 of them, and the C1-benchmark-suite experiment's own decision
+    (ABANDON, docs/AUDIT-ROUND-7-FINDINGS.md / pipeline/experiment_registry.py "C1") turned
+    on this joint test, not the pairwise count. Never raises: an unbuilt or unreadable
+    report degrades to no disclosure rather than a fabricated one.
+    """
+    try:
+        with open(path, encoding="utf-8") as handle:
+            report = json.load(handle)
+    except (OSError, json.JSONDecodeError, KeyError):
+        return None
+    regression = report.get("six_factor_regression") or {}
+    alpha = regression.get("coefficients", {}).get("alpha")
+    newey_west_t = (alpha or {}).get("newey_west_t_statistic")
+    if newey_west_t is None:
+        return None
+    return {
+        "newey_west_t_statistic": round(newey_west_t, 3),
+        "significant": abs(newey_west_t) >= 2.0,
+        "observations": regression.get("observations"),
+        "factors_controlled": sorted(k for k in regression.get("coefficients", {}) if k != "alpha"),
+    }
+
+
 def build_report(backtest=None):
     if backtest is None:
         with open(BACKTEST_PATH, encoding="utf-8") as handle:
@@ -199,6 +229,29 @@ def build_report(backtest=None):
         if abs(leg["strategy_versus_this_benchmark"].get("newey_west_t_statistic") or 0) >= 2.0
         and (leg["strategy_versus_this_benchmark"].get("monthly_alpha") or 0) > 0
     ]
+    pairwise_verdict = (
+        "no tradeable benchmark in this set is beaten with statistically significant "
+        "alpha" if not significant else
+        f"significant positive alpha against {len(significant)} of {len(legs)} benchmark(s) "
+        "in an unadjusted pairwise test")
+    six_factor = _six_factor_alpha_context()
+    # The pairwise count above is 14 (or fewer) independent significance tests run at the
+    # same |t| >= 2.0 bar with no multiple-testing adjustment -- exactly the shape of search
+    # the C1-benchmark-suite experiment (pipeline/experiment_registry.py) was ABANDONed for
+    # trusting on its own. The six-factor regression is a single joint test and is the one
+    # that decision actually turned on, so the headline disclosure leads with it whenever
+    # it is available, and only falls back to the unadjusted pairwise count when it is not.
+    if six_factor is not None:
+        disclosure = (
+            f"Six-factor regression (market, size, value, profitability, investment, "
+            f"momentum controlled for jointly, n={six_factor['observations']} months): "
+            f"{'significant' if six_factor['significant'] else 'no significant'} residual "
+            f"alpha, t={six_factor['newey_west_t_statistic']}. Pairwise vs. each of "
+            f"{len(legs)} individual benchmarks, unadjusted for testing that many at once: "
+            f"{pairwise_verdict}.")
+    else:
+        disclosure = (f"{pairwise_verdict} (pairwise, unadjusted for testing {len(legs)} "
+                      "benchmarks at once; the six-factor joint regression has not been built).")
     return {
         "schema_version": 1,
         "generated_at": backtest.get("generated_at"),
@@ -220,10 +273,9 @@ def build_report(backtest=None):
             "beaten_on_cagr": sorted(beaten),
             "beaten_on_cagr_count": f"{len(beaten)} of {len(legs)}",
             "significant_positive_alpha_against": sorted(significant),
-            "verdict": (
-                "no tradeable benchmark in this set is beaten with statistically significant "
-                "alpha" if not significant else
-                f"significant positive alpha against {len(significant)} benchmark(s)"),
+            "verdict": pairwise_verdict,
+            "six_factor_alpha_context": six_factor,
+            "honesty_disclosure": disclosure,
         },
     }
 
@@ -248,6 +300,7 @@ def main():
               f"{regression.get('newey_west_t_statistic', float('nan')):>6.2f}")
     print(f"\nbeaten on CAGR: {report['summary']['beaten_on_cagr_count']}")
     print(f"verdict: {report['summary']['verdict']}")
+    print(f"disclosure: {report['summary']['honesty_disclosure']}")
     print(f"wrote {OUT_PATH}")
     return report
 

@@ -74,6 +74,35 @@ describe('BenchmarkPanel', () => {
     expect(selfRow).toHaveClass('evidence-row-self')
     expect(screen.getByRole('rowheader', { name: 'VTV' })).toBeInTheDocument()
   })
+
+  it('leads with the six-factor joint disclosure over a per-benchmark pairwise count, so a reader cannot see "significant" tags in the table beside a caption that denies any exist', () => {
+    // Regression: the pairwise verdict alone flips to "significant positive alpha against
+    // N benchmark(s)" as soon as any single unadjusted pairwise regression clears |t| >= 2,
+    // which reads as "beats the market with real edge" sitting directly under rows carrying
+    // an evidence-significant tag -- while the properly-controlled six-factor regression
+    // (which is what the C1-benchmark-suite experiment's ABANDON decision actually turned
+    // on) can simultaneously show no significant residual alpha. Both facts must be visible
+    // together, not just the more flattering pairwise one.
+    const withSignificantPairs = {
+      ...benchmarks,
+      rows: [{ ...benchmarks.rows[1], significant: true, newey_west_t_statistic: 2.48 }],
+      summary: {
+        beaten_on_cagr_count: '14 of 14',
+        verdict: 'significant positive alpha against 1 of 14 benchmark(s) in an unadjusted pairwise test',
+        six_factor_alpha_context: { newey_west_t_statistic: 0.68, significant: false },
+        honesty_disclosure: 'Six-factor regression (market, size, value, profitability, '
+          + 'investment, momentum controlled for jointly, n=57 months): no significant '
+          + 'residual alpha, t=0.68. Pairwise vs. each of 14 individual benchmarks, '
+          + 'unadjusted for testing that many at once: significant positive alpha against '
+          + '1 of 14 benchmark(s) in an unadjusted pairwise test.',
+      },
+    }
+
+    render(<BenchmarkPanel panel={withSignificantPairs} />)
+
+    expect(screen.getByText(/no significant residual alpha, t=0\.68/i)).toBeInTheDocument()
+    expect(screen.getByText(/significant positive alpha against 1 of 14/i)).toBeInTheDocument()
+  })
 })
 
 describe('FactorPanel', () => {

@@ -9,11 +9,82 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from fetch_advisor import (_evidence_summary, _screen_row, _sentiment_summary, build_portfolio_coverage,
                            carry_forward_missing_sessions, carry_forward_rows,
                            collect_insider_signals, compact_news,
-                           curate_candidate_news, enrich, enrichment_rotation,
+                           curate_candidate_news, enrich, enrichment_expansion,
+                           enrichment_expansion_financial_real_estate, enrichment_rotation,
                            latest_unique_news,
-                           previous_rows_by_ticker, previous_top_symbols,
+                           previous_rows_by_ticker, previous_top_symbols, rank_publishable,
                            resolve_refresh_symbols, rotation_slice,
                            select_enrichment_priority, yahoo_extended)
+
+
+def _gated_row(ticker, score, published, coverage=0.9):
+    return {
+        "ticker": ticker, "score": score,
+        "publication_gate": {"published": published,
+                             "reason": None if published else f"fundamentals coverage {coverage:.2f} below floor"},
+    }
+
+
+class RankPublishableTests(unittest.TestCase):
+    """Regression for the 2026-08-23 recurring validate_data.py failure: 'ranked company
+    lacks a fundamental score' / 'low resolved evidence weight must classify as insufficient
+    evidence' on production advisor.json (run #190 research.38, run #192 research.36).
+
+    Confirmed by direct source read: `ranked = research[:publish_limit]` sliced by raw score
+    alone, so a company with zero usable fundamentals but a high momentum-only score (a
+    publication_gate failure, meant per docs/AUDIT-ROUND-4-FINDINGS.md Task 6 to publish
+    INSUFFICIENT DATA and never rank) could still out-score real coverage and land inside the
+    published top `publish_limit`. `publication_gate`'s result only ever changed the row's
+    displayed `stance` string; nothing enforced its own documented "not published as a ranked
+    stance" contract. Not a scoring or confidence.py defect -- confidence.py is never touched
+    by this fix, which is purely about which already-scored rows are eligible for a ranked slot.
+    """
+
+    def test_a_gate_failing_row_never_takes_a_ranked_slot_even_with_the_highest_score(self):
+        research = [
+            _gated_row("MOMENTUM_NO_FUNDAMENTALS", score=99, published=False),
+            _gated_row("REAL_COVERAGE_A", score=80, published=True),
+            _gated_row("REAL_COVERAGE_B", score=70, published=True),
+        ]
+
+        ranked, ranked_tickers = rank_publishable(research, publish_limit=2)
+
+        self.assertEqual([row["ticker"] for row in ranked], ["REAL_COVERAGE_A", "REAL_COVERAGE_B"])
+        self.assertNotIn("MOMENTUM_NO_FUNDAMENTALS", ranked_tickers)
+
+    def test_every_row_lands_in_ranked_or_is_excluded_none_silently_dropped(self):
+        # A gate-failing row sitting inside the first publish_limit positions by raw score
+        # must still surface somewhere (the caller routes non-ranked tickers into
+        # screen_universe) -- rank_publishable itself must never just vanish it.
+        research = [
+            _gated_row("GATE_FAIL_HIGH_SCORE", score=95, published=False),
+            _gated_row("GATE_PASS", score=50, published=True),
+        ]
+
+        ranked, ranked_tickers = rank_publishable(research, publish_limit=1)
+
+        self.assertEqual(ranked_tickers, {"GATE_PASS"})
+        excluded = [row["ticker"] for row in research if row["ticker"] not in ranked_tickers]
+        self.assertEqual(excluded, ["GATE_FAIL_HIGH_SCORE"])
+
+    def test_filters_without_re_sorting_the_callers_input_order(self):
+        # rank_publishable trusts the caller's `research.sort(key=..., reverse=True)` and
+        # only filters -- it must not silently re-derive an order of its own.
+        research = [_gated_row("C", score=60, published=True), _gated_row("A", score=90, published=True),
+                    _gated_row("B", score=75, published=True)]
+
+        ranked, _ = rank_publishable(research, publish_limit=3)
+
+        self.assertEqual([row["ticker"] for row in ranked], ["C", "A", "B"])
+
+    def test_fewer_gate_passing_rows_than_publish_limit_shrinks_ranked_rather_than_backfilling(self):
+        research = [_gated_row("ONLY_PASS", score=40, published=True),
+                    _gated_row("FAILS", score=99, published=False)]
+
+        ranked, ranked_tickers = rank_publishable(research, publish_limit=5)
+
+        self.assertEqual(ranked_tickers, {"ONLY_PASS"})
+        self.assertEqual(len(ranked), 1)
 
 
 class RefreshSymbolTests(unittest.TestCase):
@@ -181,6 +252,114 @@ class EnrichmentPriorityTests(unittest.TestCase):
         self.assertEqual(set(rotated), {"NEVER_A", "NEVER_B"})
         self.assertNotIn("MOVER", rotated)
 
+    def test_expansion_excludes_bank_insurer_and_reit_profiles(self):
+        preliminary = ("TECHCO", "BANKCO", "INSURECO", "REITCO")
+        previous_payload = {"research": [
+            {"ticker": "TECHCO", "sector": "Technology", "industry": "Software",
+             "fundamental_detail": {}},
+            {"ticker": "BANKCO", "sector": "Financial Services", "industry": "Banks-Regional",
+             "fundamental_detail": {}},
+            {"ticker": "INSURECO", "sector": "Financial Services", "industry": "Insurance-Life",
+             "fundamental_detail": {}},
+            {"ticker": "REITCO", "sector": "Real Estate", "industry": "REIT-Residential",
+             "fundamental_detail": {}},
+        ]}
+
+        expanded = enrichment_expansion(preliminary, set(), previous_payload, size=10)
+
+        self.assertEqual(expanded, ("TECHCO",))
+
+    def test_expansion_excludes_names_with_no_previous_row_rather_than_guessing_profile(self):
+        # NEVERPOLLED has no prior row at all -- its profile can't be classified, so this
+        # targeted queue leaves it out rather than risking an unusable bank/REIT admission.
+        # It remains eligible for the untargeted enrichment_rotation slot elsewhere.
+        preliminary = ("NEVERPOLLED", "TECHCO")
+        previous_payload = {"research": [
+            {"ticker": "TECHCO", "sector": "Technology", "industry": "Software",
+             "fundamental_detail": {}},
+        ]}
+
+        expanded = enrichment_expansion(preliminary, set(), previous_payload, size=10)
+
+        self.assertEqual(expanded, ("TECHCO",))
+
+    def test_expansion_never_backfills_with_already_enriched_names(self):
+        # Unlike enrichment_rotation, this queue exists to grow new coverage -- it must
+        # return fewer than `size` rather than re-touching an already-enriched name.
+        preliminary = ("ALREADY_ENRICHED",)
+        previous_payload = {"research": [
+            {"ticker": "ALREADY_ENRICHED", "sector": "Technology", "industry": "Software",
+             "last_polled_at": "2026-08-20T00:00:00+00:00",
+             "fundamental_detail": {"raw_score": 71.0}},
+        ]}
+
+        expanded = enrichment_expansion(preliminary, set(), previous_payload, size=10)
+
+        self.assertEqual(expanded, ())
+
+    def test_expansion_respects_the_size_cap_and_already_selected_set(self):
+        preliminary = tuple(f"T{i:02d}" for i in range(5))
+        previous_payload = {"research": [
+            {"ticker": t, "sector": "Technology", "industry": "Software", "fundamental_detail": {}}
+            for t in preliminary
+        ]}
+
+        expanded = enrichment_expansion(preliminary, {"T00", "T01"}, previous_payload, size=2)
+
+        self.assertEqual(set(expanded), {"T02", "T03"})
+
+    def test_expansion_puts_theme_flagged_names_first(self):
+        preliminary = ("PLAIN", "THEMED")
+        previous_payload = {"research": [
+            {"ticker": "PLAIN", "sector": "Technology", "industry": "Software",
+             "fundamental_detail": {}, "theme_exposure": []},
+            {"ticker": "THEMED", "sector": "Technology", "industry": "Software",
+             "fundamental_detail": {}, "theme_exposure": [{"theme_id": "ai_infrastructure"}]},
+        ]}
+
+        expanded = enrichment_expansion(preliminary, set(), previous_payload, size=1)
+
+        self.assertEqual(expanded, ("THEMED",))
+
+    def test_financial_real_estate_expansion_includes_only_bank_insurer_and_reit_profiles(self):
+        preliminary = ("BANKCO", "INSURECO", "REITCO", "TECHCO")
+        previous_payload = {"research": [
+            {"ticker": "BANKCO", "sector": "Financial Services", "industry": "Banks-Regional",
+             "fundamental_detail": {}},
+            {"ticker": "INSURECO", "sector": "Financial Services", "industry": "Insurance-Life",
+             "fundamental_detail": {}},
+            {"ticker": "REITCO", "sector": "Real Estate", "industry": "REIT-Residential",
+             "fundamental_detail": {}},
+            {"ticker": "TECHCO", "sector": "Technology", "industry": "Software",
+             "fundamental_detail": {}},
+        ]}
+
+        expanded = enrichment_expansion_financial_real_estate(preliminary, set(), previous_payload, size=10)
+
+        self.assertEqual(set(expanded), {"BANKCO", "INSURECO", "REITCO"})
+
+    def test_financial_real_estate_expansion_excludes_names_with_no_previous_row(self):
+        preliminary = ("NEVERPOLLED", "BANKCO")
+        previous_payload = {"research": [
+            {"ticker": "BANKCO", "sector": "Financial Services", "industry": "Banks-Regional",
+             "fundamental_detail": {}},
+        ]}
+
+        expanded = enrichment_expansion_financial_real_estate(preliminary, set(), previous_payload, size=10)
+
+        self.assertEqual(expanded, ("BANKCO",))
+
+    def test_financial_real_estate_expansion_never_backfills_with_already_enriched_names(self):
+        preliminary = ("ALREADY_ENRICHED_BANK",)
+        previous_payload = {"research": [
+            {"ticker": "ALREADY_ENRICHED_BANK", "sector": "Financial Services", "industry": "Banks-Regional",
+             "last_polled_at": "2026-08-20T00:00:00+00:00", "fundamental_detail": {"raw_score": 71.0}},
+        ]}
+
+        expanded = enrichment_expansion_financial_real_estate(preliminary, set(), previous_payload, size=10)
+
+        self.assertEqual(expanded, ())
+
     def test_select_enrichment_priority_also_skips_a_mover_already_enriched(self):
         # Same guarantee, exercised through the actual production entry point. FILLERS soak
         # up the five challenger slots so MOVER and NEVER both land in the rotation pool.
@@ -202,6 +381,55 @@ class EnrichmentPriorityTests(unittest.TestCase):
         self.assertEqual(set(challengers), set(fillers))
         self.assertIn("NEVER", priority)
         self.assertNotIn("MOVER", priority)
+
+    def test_select_enrichment_priority_wires_in_both_expansion_queues(self):
+        # Exercised through the production entry point with the default expansion sizes
+        # (140 non-financial, 130 financial/real-estate): a never-enriched name outside
+        # every other slot (incumbent, challenger, rotation, portfolio) must still reach
+        # the priority list via whichever expansion queue matches its profile -- a bank
+        # is not simply dropped, it goes through the other queue.
+        previous = tuple(f"P{i:02d}" for i in range(20))
+        fillers = tuple(f"F{i:02d}" for i in range(5))
+        preliminary = (*previous, *fillers, "EXPANSION_TARGET", "BANK_TARGET")
+        previous_payload = {"research": [
+            {"ticker": "EXPANSION_TARGET", "sector": "Technology", "industry": "Software",
+             "fundamental_detail": {}},
+            {"ticker": "BANK_TARGET", "sector": "Financial Services", "industry": "Banks-Regional",
+             "fundamental_detail": {}},
+        ]}
+
+        _, _, priority = select_enrichment_priority(
+            previous, preliminary, set(preliminary), (),
+            previous_payload=previous_payload, rotation_size=0,
+        )
+
+        self.assertIn("EXPANSION_TARGET", priority)
+        self.assertIn("BANK_TARGET", priority)
+
+    def test_the_non_financial_expansion_queue_alone_still_excludes_bank_insurer_and_reit(self):
+        # The financial/real-estate expansion queue is a separate, deliberately-sized slot
+        # -- it must not make enrichment_expansion itself stop filtering.
+        previous = tuple(f"P{i:02d}" for i in range(20))
+        fillers = tuple(f"F{i:02d}" for i in range(5))
+        preliminary = (*previous, *fillers, "BANK_TARGET")
+        previous_payload = {"research": [
+            {"ticker": "BANK_TARGET", "sector": "Financial Services", "industry": "Banks-Regional",
+             "fundamental_detail": {}},
+        ]}
+
+        _, _, priority = select_enrichment_priority(
+            previous, preliminary, set(preliminary), (),
+            previous_payload=previous_payload, rotation_size=0, expansion_size=10,
+            financial_real_estate_expansion_size=0,
+        )
+
+        self.assertNotIn("BANK_TARGET", priority)
+
+    def test_expansion_can_be_switched_off(self):
+        preliminary = tuple(f"S{i:02d}" for i in range(30))
+        _, _, priority = select_enrichment_priority(
+            (), preliminary, set(preliminary), (), rotation_size=0, expansion_size=0)
+        self.assertEqual(len(priority), 25)
 
     def test_rotation_can_be_switched_off(self):
         preliminary = tuple(f"S{i:02d}" for i in range(30))

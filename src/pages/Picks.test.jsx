@@ -85,6 +85,76 @@ describe('Picks research page', () => {
     expect(screen.getByText('VOO')).toBeVisible()
   })
 
+  describe('sector filter toggle', () => {
+    const techStock = stock({ ticker: 'AAPL', name: 'Apple Inc.', sector: 'Technology' })
+    const healthStock = stock({ ticker: 'JNJ', name: 'Johnson & Johnson', sector: 'Healthcare' })
+
+    beforeEach(() => {
+      useData.mockImplementation((file) => {
+        if (file === 'report.json') return { data: { research: [techStock, healthStock] }, loading: false }
+        return { data: { etfs: [] }, loading: false }
+      })
+    })
+
+    it('shows every sector by default, with the toggle off and no checkboxes visible', () => {
+      render(<MemoryRouter><Picks /></MemoryRouter>)
+
+      expect(screen.getByText('AAPL')).toBeVisible()
+      expect(screen.getByText('JNJ')).toBeVisible()
+      expect(screen.queryByLabelText('Technology')).not.toBeInTheDocument()
+      expect(screen.queryByLabelText('Healthcare')).not.toBeInTheDocument()
+    })
+
+    it('turning the toggle on seeds every sector checked, so nothing disappears yet', () => {
+      render(<MemoryRouter><Picks /></MemoryRouter>)
+
+      fireEvent.click(screen.getByLabelText(/Filter by sector/))
+
+      expect(screen.getByLabelText('Technology')).toBeChecked()
+      expect(screen.getByLabelText('Healthcare')).toBeChecked()
+      expect(screen.getByText('AAPL')).toBeVisible()
+      expect(screen.getByText('JNJ')).toBeVisible()
+    })
+
+    it('unchecking one sector removes only that sector\'s names', () => {
+      render(<MemoryRouter><Picks /></MemoryRouter>)
+      fireEvent.click(screen.getByLabelText(/Filter by sector/))
+
+      fireEvent.click(screen.getByLabelText('Healthcare'))
+
+      expect(screen.getByText('AAPL')).toBeVisible()
+      expect(screen.queryByText('JNJ')).not.toBeInTheDocument()
+    })
+
+    it('turning the toggle back off restores the unfiltered view regardless of checkbox state', () => {
+      render(<MemoryRouter><Picks /></MemoryRouter>)
+      const masterToggle = screen.getByLabelText(/Filter by sector/)
+      fireEvent.click(masterToggle)
+      fireEvent.click(screen.getByLabelText('Healthcare'))
+      expect(screen.queryByText('JNJ')).not.toBeInTheDocument()
+
+      fireEvent.click(masterToggle)
+
+      expect(screen.getByText('AAPL')).toBeVisible()
+      expect(screen.getByText('JNJ')).toBeVisible()
+      expect(screen.queryByLabelText('Technology')).not.toBeInTheDocument()
+    })
+
+    it('re-enabling the toggle re-seeds every sector checked, discarding the prior partial selection', () => {
+      // Documents the chosen persistence behavior (reset-to-all-checked, not restore-last-selection).
+      render(<MemoryRouter><Picks /></MemoryRouter>)
+      const masterToggle = screen.getByLabelText(/Filter by sector/)
+      fireEvent.click(masterToggle)
+      fireEvent.click(screen.getByLabelText('Healthcare'))
+      fireEvent.click(masterToggle)
+
+      fireEvent.click(masterToggle)
+
+      expect(screen.getByLabelText('Healthcare')).toBeChecked()
+      expect(screen.getByText('JNJ')).toBeVisible()
+    })
+  })
+
   it('the bucket planner allocates across stocks only by default, never blending in an ETF score', () => {
     useData.mockImplementation((file) => {
       if (file === 'report.json') return { data: { research: [stock({ score: 62 })] }, loading: false }

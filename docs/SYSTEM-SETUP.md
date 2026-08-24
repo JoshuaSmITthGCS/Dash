@@ -97,12 +97,18 @@ or corporate action.
      +  5 challengers (best non-incumbents by preliminary rank)
      +  20 rotation slice (statement-starved names, theme-flagged ones first, then
         oldest-unenriched -- see enrichment_rotation)
+     + 140 non-financial/non-real-estate expansion slice (never-enriched names,
+        theme-flagged ones first -- see enrichment_expansion)
+     + 130 financial/real-estate expansion slice (bank/insurer/REIT profiles only,
+        same never-enriched, theme-first ordering -- see
+        enrichment_expansion_financial_real_estate)
      +  portfolio symbols
      → priority queue, then fill to extended_limit (set above the universe size,
        so every scored name is enriched; the queue only sets the order)
 7.  enrich(): multi-request financial-statement fetch for every scored name
        → derives ~15 statement metrics (EV/EBITDA, ROIC, Altman Z, Piotroski, ...)
-8.  Alpha Vantage enrichment for 5 symbols
+8.  Alpha Vantage enrichment for up to 5 symbols on weekday intraday refreshes, up to
+       25 (its free-tier daily ceiling) on the once-daily weekend refresh
 9.  SEC Form 4 insider scoring for the shortlist (currently no-op)
 10. FRED macro regime
 11. FINAL SCORE with full metric set

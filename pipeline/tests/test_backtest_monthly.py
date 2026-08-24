@@ -15,6 +15,7 @@ from backtest_monthly import (  # noqa: E402
     panel_dollar_volume,
     panel_forward_returns,
     panel_leg_weights,
+    panel_metric_scores,
     panel_scores,
     performance_metrics,
     simulate_locked_portfolio,
@@ -126,6 +127,25 @@ class ScoredPanelTests(unittest.TestCase):
         self.assertEqual(legs["AAA"], {"valuation": 60.0, "market_behavior": 55.0,
                                        "news_sentiment": 50.0})
         self.assertNotIn("BBB", legs, "an unscored row cannot be graded")
+
+    def test_panel_metric_scores_captures_every_individual_numeric_metric(self):
+        metrics = panel_metric_scores([
+            {"ticker": "AAA", "score": 71.0, "price_to_sales": 8.52, "return_on_equity": 1.35,
+             "piotroski_f": 7.9, "market_cap": 3.25e12, "is_etf": False, "sector": "Technology",
+             "name": "AAA Inc", "fundamental_categories": {"valuation": 60.0},
+             "components": {"market_behavior": 55.0}, "recommendation": {"action": "buy"}},
+        ])
+        self.assertEqual(metrics["AAA"], {
+            "price_to_sales": 8.52, "return_on_equity": 1.35, "piotroski_f": 7.9,
+            "market_cap": 3.25e12,
+        })
+
+    def test_panel_metric_scores_excludes_booleans_and_a_ticker_without_one(self):
+        metrics = panel_metric_scores([
+            {"ticker": "AAA", "is_etf": True, "trailing_pe": 32.38},
+            {"score": 50.0, "trailing_pe": 10.0},  # no ticker
+        ])
+        self.assertEqual(metrics, {"AAA": {"trailing_pe": 32.38}})
 
     def test_forward_returns_are_measured_from_the_execution_close(self):
         forwards = panel_forward_returns(self.universe, "2024-01-02", ["AAA", "BBB"])

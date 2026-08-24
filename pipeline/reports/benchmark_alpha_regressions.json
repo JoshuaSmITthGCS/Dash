@@ -3,7 +3,7 @@
     "IJH": {
       "cagr": 0.08917,
       "description": "S&P MidCap 400 -- the strategy's actual size band",
-      "final_value": 152588.97,
+      "final_value": 152588.96,
       "max_drawdown": -0.241047,
       "sharpe": 0.5346,
       "strategy_versus_this_benchmark": {
@@ -37,7 +37,7 @@
     "IJR": {
       "cagr": 0.075671,
       "description": "S&P SmallCap 600",
-      "final_value": 143459.0,
+      "final_value": 143459.01,
       "max_drawdown": -0.280241,
       "sharpe": 0.4519,
       "strategy_versus_this_benchmark": {
@@ -54,7 +54,7 @@
     "IWD": {
       "cagr": 0.1191,
       "description": "Russell 1000 Value",
-      "final_value": 174489.65,
+      "final_value": 174489.67,
       "max_drawdown": -0.190394,
       "sharpe": 0.8369,
       "strategy_versus_this_benchmark": {
@@ -71,7 +71,7 @@
     "IWF": {
       "cagr": 0.122776,
       "description": "Russell 1000 Growth",
-      "final_value": 177343.07,
+      "final_value": 177343.05,
       "max_drawdown": -0.327226,
       "sharpe": 0.6426,
       "strategy_versus_this_benchmark": {
@@ -88,7 +88,7 @@
     "IWM": {
       "cagr": 0.07325,
       "description": "Russell 2000 -- small cap",
-      "final_value": 141868.7,
+      "final_value": 141868.72,
       "max_drawdown": -0.319116,
       "sharpe": 0.4289,
       "strategy_versus_this_benchmark": {
@@ -105,7 +105,7 @@
     "NOBL": {
       "cagr": 0.06709,
       "description": "S&P 500 Dividend Aristocrats -- quality proxy",
-      "final_value": 137885.84,
+      "final_value": 137885.86,
       "max_drawdown": -0.179209,
       "sharpe": 0.5232,
       "strategy_versus_this_benchmark": {
@@ -122,7 +122,7 @@
     "RSP": {
       "cagr": 0.092176,
       "description": "S&P 500 equal weight -- breadth-matched",
-      "final_value": 154683.61,
+      "final_value": 154683.66,
       "max_drawdown": -0.213844,
       "sharpe": 0.6285,
       "strategy_versus_this_benchmark": {
@@ -139,7 +139,7 @@
     "SCHD": {
       "cagr": 0.098943,
       "description": "Dow Jones US Dividend 100 -- quality/dividend screen",
-      "final_value": 159483.62,
+      "final_value": 159483.64,
       "max_drawdown": -0.168443,
       "sharpe": 0.731,
       "strategy_versus_this_benchmark": {
@@ -156,7 +156,7 @@
     "SPY": {
       "cagr": 0.131209,
       "description": "S&P 500 -- the published, least representative comparison",
-      "final_value": 184031.36,
+      "final_value": 184031.39,
       "max_drawdown": -0.244964,
       "sharpe": 0.8048,
       "strategy_versus_this_benchmark": {
@@ -173,9 +173,9 @@
     "VB": {
       "cagr": 0.079278,
       "description": "CRSP US small cap",
-      "final_value": 145854.85,
+      "final_value": 145854.84,
       "max_drawdown": -0.281541,
-      "sharpe": 0.4741,
+      "sharpe": 0.474,
       "strategy_versus_this_benchmark": {
         "annualized_alpha_pct": 10.101,
         "beta": 0.7131,
@@ -190,7 +190,7 @@
     "VTV": {
       "cagr": 0.127104,
       "description": "CRSP US large value",
-      "final_value": 180750.89,
+      "final_value": 180750.88,
       "max_drawdown": -0.17039,
       "sharpe": 0.9384,
       "strategy_versus_this_benchmark": {
@@ -207,7 +207,7 @@
     "VUG": {
       "cagr": 0.125674,
       "description": "CRSP US large growth",
-      "final_value": 179619.68,
+      "final_value": 179619.66,
       "max_drawdown": -0.35613,
       "sharpe": 0.6395,
       "strategy_versus_this_benchmark": {
@@ -224,19 +224,19 @@
     "VXF": {
       "cagr": 0.068344,
       "description": "Extended market (completion index) -- everything outside the S&P 500",
-      "final_value": 138689.33,
+      "final_value": 138689.3,
       "max_drawdown": -0.363936,
-      "sharpe": 0.4093,
+      "sharpe": 0.4087,
       "strategy_versus_this_benchmark": {
-        "annualized_alpha_pct": 11.576,
-        "beta": 0.6198,
+        "annualized_alpha_pct": 11.59,
+        "beta": 0.6181,
         "classical_t_statistic": 1.964,
-        "monthly_alpha": 0.00917,
+        "monthly_alpha": 0.00918,
         "months": 59,
-        "newey_west_t_statistic": 2.291,
-        "r_squared": 0.5174
+        "newey_west_t_statistic": 2.294,
+        "r_squared": 0.516
       },
-      "volatility": 0.224929
+      "volatility": 0.224805
     }
   },
   "benchmarks_unavailable": [],
@@ -274,6 +274,7 @@
     ],
     "beaten_on_cagr_count": "14 of 14",
     "benchmarks_compared": 14,
+    "honesty_disclosure": "Six-factor regression (market, size, value, profitability, investment, momentum controlled for jointly, n=57 months): no significant residual alpha, t=0.68. Pairwise vs. each of 14 individual benchmarks, unadjusted for testing that many at once: significant positive alpha against 6 of 14 benchmark(s) in an unadjusted pairwise test.",
     "significant_positive_alpha_against": [
       "IJH",
       "IJR",
@@ -282,7 +283,20 @@
       "VB",
       "VXF"
     ],
-    "verdict": "significant positive alpha against 6 benchmark(s)"
+    "six_factor_alpha_context": {
+      "factors_controlled": [
+        "investment",
+        "market_excess",
+        "momentum",
+        "profitability",
+        "size",
+        "value"
+      ],
+      "newey_west_t_statistic": 0.68,
+      "observations": 57,
+      "significant": false
+    },
+    "verdict": "significant positive alpha against 6 of 14 benchmark(s) in an unadjusted pairwise test"
   },
   "window": {
     "end": "2026-08-13",

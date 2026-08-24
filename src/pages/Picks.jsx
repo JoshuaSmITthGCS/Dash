@@ -456,7 +456,16 @@ export default function Picks() {
   const { data: etfData, loading: etfLoading } = useData('etfs.json')
   const { positions, loading: portfolioLoading, addPosition } = useFirebasePortfolio()
   const { createRule } = useAlerts()
-  const [sector, setSector] = useState('all')
+  // Off by default: every sector shows, no checkboxes rendered. Turning the master toggle
+  // on seeds every checkbox as checked (nothing disappears the moment it's switched on,
+  // since everything starts selected) - the common bad pattern is starting from nothing and
+  // forcing the user to re-add every sector one at a time. Turning it back off shows every
+  // sector again regardless of checkbox state; turning it back on re-seeds all-checked again
+  // rather than restoring the prior partial selection - simpler to reason about than tracking
+  // a stale selection across a toggle-off, and it can't go wrong if the sector list itself
+  // changes (a data refresh) while the filter was off.
+  const [sectorFilterOn, setSectorFilterOn] = useState(false)
+  const [enabledSectors, setEnabledSectors] = useState(() => new Set())
   // Defaults to a plain column sort, not a model: the page's job on arrival is to let
   // someone browse the whole ranked list. Every model is a screen that can legitimately
   // hide most of the universe, which is the right behaviour once a question has been
@@ -591,7 +600,7 @@ export default function Picks() {
   // whichever model happened to produce higher numbers crowd out the other. Filtering keeps
   // both pools available; ranking never mixes them again after this split.
   const filtered = researchWithMeta
-    .filter((row) => sector === 'all' || row.sector === sector)
+    .filter((row) => !sectorFilterOn || enabledSectors.has(row.sector))
     .filter((row) => ownership === 'all' || (ownership === 'bought') === heldTickers.has(row.ticker))
     .filter((row) => !normalized || row.ticker.toLowerCase().includes(normalized) || String(row.name || '').toLowerCase().includes(normalized))
   const filteredStocks = filtered.filter((row) => !row.is_etf)
@@ -707,9 +716,16 @@ export default function Picks() {
           <Icon name="research" size={18} /><span className="sr-only">Search companies</span>
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search ticker or company" />
         </label>
-        <label><span className="sr-only">Filter by sector</span><select value={sector} onChange={(event) => setSector(event.target.value)}>
-          <option value="all">All sectors</option>{sectors.map((item) => <option key={item}>{item}</option>)}
-        </select></label>
+        <label className="toggle-control">
+          <input type="checkbox" checked={sectorFilterOn} onChange={(event) => {
+            const on = event.target.checked
+            setSectorFilterOn(on)
+            // Re-seed every checkbox as checked on every off-to-on transition, discarding
+            // any previous partial selection - see the state comment above for why.
+            if (on) setEnabledSectors(new Set(sectors))
+          }} />
+          <span>Filter by sector{sectorFilterOn ? ` (${enabledSectors.size}/${sectors.length})` : ''}</span>
+        </label>
         <span className="sort-with-info">
           <label><span className="sr-only">Sort research</span><select value={sort} onChange={(event) => setSort(event.target.value)}>
             {/* Grouped because the two kinds behave differently: a column sort re-orders
@@ -737,6 +753,23 @@ export default function Picks() {
           <option value="all">Bought &amp; not bought</option><option value="bought">Bought</option><option value="not-bought">Not bought</option>
         </select></label>
       </div>
+      {sectorFilterOn && (
+        <div className="research-sector-checkboxes" role="group" aria-label="Sectors to include">
+          {sectors.map((item) => (
+            <label key={item} className="toggle-control">
+              <input type="checkbox" checked={enabledSectors.has(item)} onChange={(event) => {
+                setEnabledSectors((current) => {
+                  const next = new Set(current)
+                  if (event.target.checked) next.add(item)
+                  else next.delete(item)
+                  return next
+                })
+              }} />
+              <span>{item}</span>
+            </label>
+          ))}
+        </div>
+      )}
       {tradeNotice && <div className={`research-trade-notice ${tradeNotice.error ? 'error' : ''}`} role="status" aria-live="polite">{tradeNotice.message}</div>}
       {modelActive && <ModelSummary sort={sort} coverage={coverage} shown={stockRows.length} />}
 

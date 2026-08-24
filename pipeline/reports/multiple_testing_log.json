@@ -118,5 +118,157 @@
     "holdout_start": "prospective: proposal A registered as shadow strategy reweighted_composite_a (pipeline/shadow_portfolios.py), collecting from 2026-08-21",
     "number_of_variants_tested": 2,
     "decision": "KEEP_AS_CHALLENGER"
+  },
+  {
+    "test_id": "R8-evidence-confidence-gate",
+    "declared_at": "2026-08-23T00:00:00+00:00",
+    "hypothesis": "Every ticker on the live v2 validation dashboard (HIG, JPM, O, NEE, BSX, MSFT, XOM, MRNA, VTI, TLT) reporting company evidence confidence below 0.40, a 0-of-0 peer sample, and 0% profile confidence -- including for large, liquid, well-covered names like MSFT and JPM -- is a wiring/data-join defect in pipeline/live_v2_validation.py, not a genuine data-coverage gap.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R8-2-publication-gate-not-enforced",
+    "declared_at": "2026-08-23T20:00:00+00:00",
+    "hypothesis": "A recurring pipeline/validate_data.py CI failure -- 'ranked company lacks a fundamental score' / 'low resolved evidence weight must classify as insufficient evidence', hitting a different research row index on 2026-08-22T00:05 (run #190, research.38) and 2026-08-23T19:47 (run #192, research.36) -- is downstream of the same confidence-gate defect class as R8-evidence-confidence-gate, and NOT an enrichment-coverage gap: the enrichment status check for this same round confirmed MSFT and JPM (the Round 8 P1 sample's large-caps) both resolve real statement-derived fundamental_categories in production advisor.json, so enrichment reaching a name was never the question here.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P1-optimization-harness",
+    "declared_at": "2026-08-23T21:00:00+00:00",
+    "hypothesis": "A reusable parameter-search harness that enforces train/validation/holdout splitting in code (not a process doc), gated by walk-forward efficiency, PBO via CSCV, and deflated Sharpe against the real cumulative trial count, would reproduce Round 10's finding that champion and the reweighted_composite_a shadow proposal (R7-leg-reweighting) are statistically indistinguishable in this panel -- and would show neither clears the promotion bar on backtest evidence alone, consistent with reweighted_composite_a still only running on the prospective clock, not promoted.",
+    "holdout_start": "backtest_signal_panel.json periods[45:60] (2025-06..2026-08), informational holdout only, never used for selection",
+    "number_of_variants_tested": 2,
+    "decision": "KEEP_AS_CHALLENGER"
+  },
+  {
+    "test_id": "R11-P2-shadow-portfolio-registry-cap",
+    "declared_at": "2026-08-23T21:15:00+00:00",
+    "hypothesis": "pipeline/shadow_portfolios.py already runs multiple strategies concurrently, but nothing distinguished permanent product sleeves/baselines (production, SPY, momentum, and so on -- always live since ACTIVATION_DATE, never subject to a promotion decision) from genuine research-candidate shadows (strategies with their own later activation date, like reweighted_composite_a, each one taxing the deflated Sharpe correction charged against every other concurrent candidate), and nothing enforced the brief's stated 3-4 concurrent-candidate cap in code.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P3-deflated-sharpe-trial-count-undercount",
+    "declared_at": "2026-08-23T21:30:00+00:00",
+    "hypothesis": "Round 9 found the tear-sheet's Deflated Sharpe reads 'Insufficient, variance of Sharpes across registered trials is not recorded' on one view while another shows 0.238 -- the brief attributed this to no single complete trial log existing. Direct source read found the sharper, more specific defect: signal_metrics.py's honesty_metrics() computed its own trials count from just the currently-loaded backtest's optimizer sweep categories (falling back to 1 if none), never reading experiment_registry.total_variants_tested() at all -- the exact undercount ic_harness.py's research_trial_count() (validation/ic_harness.py:348) already guards against for the audit-dashboard view, floored via max(configured, registry total). Whatever the specific 'Insufficient' framing traces to (not found verbatim in the repo; may be UI copy for the null-DSR case rather than committed data), the undercount itself was real and reproducible.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P4-edgar-pit-growth-reconstruction-feasibility",
+    "declared_at": "2026-08-23T21:45:00+00:00",
+    "hypothesis": "Round 10 found the backtest panel's growth leg at 0.0% coverage (0 of 51,600 ticker-periods), root-caused to Yahoo's quarterly statement history rarely reaching the two full trailing-twelve-month windows year-over-year growth needs. The EDGAR PIT fundamentals store already collected (pipeline/data/pit/fundamentals/, 4.78M+ as-filed observations with filed timestamps back to 2009-08) should be able to reconstruct historical TTM revenue growth without look-ahead risk, since pipeline/edgar_enrichment.py's edgar_ttm_statements(symbol, as_of) already enforces filed<=as_of for the live enrichment path -- this round asks whether it can also cover the backtest reconstruction path, which never reads from this store today.",
+    "holdout_start": "2024-09-03 through 2026-08-03, 19 symbols x 24 months = 456 ticker-periods",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P4-2-edgar-pit-wired-into-backtest-historical",
+    "declared_at": "2026-08-23T22:00:00+00:00",
+    "hypothesis": "R11-P4-edgar-pit-growth-reconstruction-feasibility's follow-up: wire the same filed<=as_of EDGAR PIT reconstruction into pipeline/backtest_historical.py's production build_snapshot() path (not just the standalone pilot script), covering both revenue_growth and earnings_growth, gated for the insurance profile ambiguity AGO surfaced, so the next live re-run of the backtest panel picks up real growth-leg coverage instead of the 0% Round 10 diagnosed.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P3-2-trial-count-logs-are-not-actually-fragmented",
+    "declared_at": "2026-08-23T22:15:00+00:00",
+    "hypothesis": "R11-P3 flagged 'a third, disconnected trial-count source' -- pipeline/validation/hypothesis_log.jsonl (8 entries) alongside experiment_registry.py (55->61) and pipeline/validation/harness_freeze.json (50) -- as fragmentation needing reconciliation, based on only having read harness_freeze.json's trial_count_for_deflated_statistics block in isolation. Reading the full file (291 lines, not the ~15-line fragment) to actually attempt that reconciliation, as directed.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P5-swing-domain-and-auto-search",
+    "declared_at": "2026-08-23T22:30:00+00:00",
+    "hypothesis": "optimization_harness.py only ever tested the 8 fundamental/behavioral legs, and every candidate had to be hand-picked one at a time. User request: extend the same harness to technical/momentum (swing) leg weighting, and add a bounded automatic candidate-generation mode so a human-in-the-loop round-trip (run locally, hand results back, get the next round's candidates) doesn't require hand-authoring every weight vector.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P6-coverage-weighted-formula-and-elo-tournament",
+    "declared_at": "2026-08-24T01:30:00+00:00",
+    "hypothesis": "User request, after a live human-in-the-loop search session against a real 10-year panel (run on the user's own machine, network-connected) found the same conclusion three independent ways -- thin-sample PBO, well-powered PBO, and cross-window train-IC instability -- that no hand-picked weight vector beats champion reliably: (1) turn the session's own coverage-vs-weight mismatch finding (profitability weighted at 20.3% on 7.5% coverage; growth still weighted at 8.6% despite R11-P4's fix taking its coverage to 95.4%) into an actual formula rather than a one-off observation, and (2) build a repeated-comparison mechanism ('like chess Elo') so an edge's robustness across resamples is visible as accumulating rating separation, rather than a single closable split verdict.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P7-edgar-pit-statement-fallback-beyond-growth",
+    "declared_at": "2026-08-24T06:00:00+00:00",
+    "hypothesis": "The user's own real 10-year panel + --sector-breakdown run traced a root cause for a finding that looked at first like a fresh-fetch flake: every sector's sector_weight_report only ever showed growth and market_behavior, never valuation/profitability/financial_health/capital_allocation/accounting_quality. Reproduced locally against a real cached ticker (AAPL) plus this repo's own committed EDGAR PIT store: for an as_of outside Yahoo's ~2-year cached quarterly window, build_snapshot's start_idx comes back None and income_ttm/balance_now/cashflow_ttm were left as *empty* statements outright -- not just missing growth, the R11-P4 fix's own scope -- so every ratio basic_ratios()/derive_extended() compute from them went to None too. For a 5-10 year backtest that's most of the window. edgar_ttm_statements() (edgar_enrichment.py) already returns full income/balance/cashflow dicts in build_ttm_statements' exact shape, so hypothesis: substitute it directly for the empty-statement branch, the same 'reuse the existing adapter, don't rebuild it' move R11-P4 made for growth specifically.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P8-metric-level-sector-breakdown",
+    "declared_at": "2026-08-24T06:45:00+00:00",
+    "hypothesis": "User request: extend R11-P7's --sector-breakdown from the 6-8 rolled-up legs (valuation, profitability, ...) to every individual metric the methodology currently computes (trailing P/E, ROE, Piotroski F, Altman Z, buyback yield, and so on) -- which specific metric carries signal in which sector, not only which category. build_research's row already carries every one of these as **snapshot-spread top-level keys (confirmed by reading advisor_engine.py directly); the panel builder just never extracted them. Hypothesis: capture them alongside the existing leg_scores, then reuse -- not reimplement -- every existing leg-level function (leg_coverage, formula_weights, sector_weight_report) by substituting metric_scores for leg_scores, since none of those functions know or care whether a 'leg' name is a rolled-up category or an individual metric.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P9-sector-candidate-validation-check",
+    "declared_at": "2026-08-24T15:30:00+00:00",
+    "hypothesis": "User's own real R11-P7/P8 run found genuinely different per-sector leg/metric patterns (Utilities favoring leverage/size metrics, Technology favoring margin/quality metrics, Energy showing six legs with positive train-slice IC) -- but formula_weights() is explicitly train-slice-only by its own contract, so none of that is yet evidence the pattern generalizes rather than being fit to noise in a sector-restricted, thinner-than-full-universe sample. User's explicit request: 'validate the finding' -- test each sector's train-fitted formula on that SAME sector's own validation slice, the direct out-of-sample check, before trusting any of R11-P8's per-sector numbers.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P10-sector-verdict-gates-and-growth-quality-focus",
+    "declared_at": "2026-08-24T16:30:00+00:00",
+    "hypothesis": "User, before running R11-P9's --sector-candidate-check on real data: 'make sure its rigorous testing though and make sure the score is focused on high growth good companies'. Two distinct gaps in R11-P9 as shipped. (1) Rigor: it reported a single comparison per sector (sector_formula vs champion validation IC), the weakest possible reading -- beating champion in one sector is equally consistent with champion simply being miscalibrated there, and searching 11 sectors for a winner is 11 chances to find one in noise while grading each against the bar a single pre-registered hypothesis would face. (2) Objective: the harness optimizes for predicting forward returns across the WHOLE ~910-name universe, which is not the same question as ranking high-growth, good-quality companies well -- and the latter is what the score exists to do.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P11-per-sector-weight-search",
+    "declared_at": "2026-08-24T18:00:00+00:00",
+    "hypothesis": "User request after both real R11-P9/P10 runs came back 0-1 sectors REAL: audit the methodology, then rewrite the test to actually DIAL IN weights per sector ('technology shouldn't have the same capital allocation as real estate'). The audit found the gap: sector_candidate_report grades exactly ONE fitted candidate per sector -- formula_weights, whose max(0, train-IC) construction collapses to 1-2 legs whenever most legs' train ICs are negative, which is precisely the state of the real panel's train era (champion train IC negative in nearly every sector). The observed real output confirms it: sector formulas of {growth: 1.0}, {valuation: 1.0}, {capital_allocation: 1.0}. A sector failing that test shows one brittle guess failed, not that no sector-specific weighting exists. Hypothesis: a bounded per-sector SEARCH with selection kept inside the train slice can answer the user's actual question without weakening any gate.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P12-fama-macbeth-ridge-candidates",
+    "declared_at": "2026-08-24T18:45:00+00:00",
+    "hypothesis": "User asked whether ML ('unsupervised learning or something') could improve the weight search. Honest triage first: gradient boosting / neural nets on ~60 monthly training observations per sector would memorize noise and the existing gates would correctly reject them -- not built. The one ML method actually sized for this data is regularized cross-sectional regression (Fama-MacBeth-style ridge), and it targets a real, identified blind spot: formula_weights scores each leg STANDALONE, so two correlated legs (profitability and financial_health co-move by construction) each collect full credit for the same information. A joint regression splits credit between correlated legs instead of double-counting.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P13-regime-diagnosis",
+    "declared_at": "2026-08-24T19:30:00+00:00",
+    "hypothesis": "The user's two real 500-wide sector searches (full universe and growth-quality) both returned 0 of 11 sectors REAL, and their select-slice columns exposed the deeper pattern: in several sectors the best of ~505 candidates had NEGATIVE select-era IC that flipped positive in validation (Basic Materials -0.009->+0.096, Consumer Defensive -0.034->+0.006), while others flipped the opposite way (Communication Services +0.146->-0.038). The instability is in the signal across TIME, not the weights across sectors -- no static weight vector survives a signal that points backwards for half its history. Three hypotheses with distinct fingerprints: a real regime break at a market event; a data-source artifact at the boundary where statements stop being Yahoo-native and become the R11-P7 EDGAR reconstruction; or diffuse noise with no single break at all.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P14-rolling-ic-monitor-and-regime-docs",
+    "declared_at": "2026-08-24T20:30:00+00:00",
+    "hypothesis": "Follow-through on the real R11-P13 outcome (REGIME_BREAK at 2021-03, permutation p=0.019, champion IC -0.023 before / +0.038 after, 47 months from the computed data seam), on explicit user go-ahead for both halves: (1) the production system had no artifact that would surface a future sign flip -- it would be discovered in a later backtest, years after the fact; (2) the published model documentation (docs/MODEL-CARD.md, docs/LIMITATIONS.md -- CI-scanned by validate_documentation_claims.py) did not state that the score anti-predicted for ~3 of its 10 backtest years, that every full-panel statistic mixes the two regimes, or that the sector question was settled negatively.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P15-gzip-panel-io",
+    "declared_at": "2026-08-24T21:15:00+00:00",
+    "hypothesis": "The user's 10-year panel with R11-P8 metric_scores is 174MB -- past GitHub's hard 100MB file limit, so the panel of record cannot be committed raw (their push was rejected), and an uncommitted panel means refresh-advisor.yml -> signal_metrics.py computes the R11-P14 rolling-IC regime monitor against whatever stale panel is in the tree. The same repetition that makes the file huge (metric key names repeated per ticker-period) makes it compress on the order of 10x.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

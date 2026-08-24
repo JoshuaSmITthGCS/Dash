@@ -1,8 +1,11 @@
 import json
 
-from shadow_portfolios import (aligned_period_keys, append_payload, build_report,
-                               matched_returns, price_session, selections_from_payload,
-                               turnover_components, weighted_turnover)
+import pytest
+
+from shadow_portfolios import (STRATEGY_ACTIVATION_DATES, aligned_period_keys, append_payload,
+                               assert_candidate_capacity, build_report, matched_returns,
+                               price_session, research_candidate_strategies,
+                               selections_from_payload, turnover_components, weighted_turnover)
 
 
 def snapshot(as_of, session, rows):
@@ -332,3 +335,32 @@ def test_a_mid_contract_strategy_collects_nothing_before_its_registration_date(t
     later_advisor["research"][0]["components"] = {"market_behavior": 60}
     later = append_payload(later_advisor, later_benchmark, {}, store_root=str(tmp_path))
     assert "reweighted_composite_a" in later["appended"]
+
+
+def test_the_live_registry_is_within_its_own_cap():
+    # The guard already ran once at import time; re-running it against the live dict must
+    # still pass, or the module itself would have failed to import.
+    assert_candidate_capacity()
+
+
+def test_research_candidates_excludes_permanent_sleeves_and_baselines():
+    candidates = research_candidate_strategies()
+    assert "reweighted_composite_a" in candidates
+    for permanent in ("production", "SPY", "momentum", "eligible_universe_equal_weight"):
+        assert permanent not in candidates
+
+
+def test_a_sixth_concurrent_candidate_is_refused():
+    over_cap = {**STRATEGY_ACTIVATION_DATES,
+               "b": "2026-08-01", "c": "2026-08-02", "d": "2026-08-03", "e": "2026-08-04"}
+    assert len(over_cap) == 5  # exactly at the cap: must still pass
+    assert_candidate_capacity(over_cap)
+
+    over_cap["f"] = "2026-08-05"
+    with pytest.raises(ValueError, match="over the 5-candidate cap"):
+        assert_candidate_capacity(over_cap)
+
+
+def test_the_cap_can_be_tightened_by_the_caller():
+    with pytest.raises(ValueError, match="over the 1-candidate cap"):
+        assert_candidate_capacity({"a": "2026-08-01", "b": "2026-08-02"}, limit=1)

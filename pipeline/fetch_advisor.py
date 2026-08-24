@@ -11,7 +11,7 @@ from advisor_engine import (RANKING_WEIGHTS, build_research, cross_sectional_cha
                             normalized_metric_scores, signal_correction_variants)
 from alpha_vantage import AlphaVantageClient, AlphaVantageError, load_local_env
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
-from canonical_metrics import Observation
+from canonical_metrics import Observation, classify_profile
 from data_coverage import data_coverage_components, run_source_reliability
 from data_health import publication_gate, statement_health
 from price_archive import archive_health
@@ -75,6 +75,21 @@ CHALLENGER_ENRICH_LIMIT = 5
 # this the enrichment queue is a closed loop over the previous run's leaders and the model
 # can only rediscover names it already liked - see enrichment_rotation.
 ENRICHMENT_ROTATION_SIZE = max(0, int(os.getenv("ADVISOR_ENRICHMENT_ROTATION_SIZE", "20")))
+# A dedicated, sector-filtered top-up on top of the plain rotation above: bank, insurer, and
+# REIT profiles carry structurally different metric sets (Round 8 found JPM's financial_health
+# null even fully enriched - not a defect, just a bank balance sheet not mapping to standard
+# ratios), so a sector-agnostic rotation slot spent there doesn't grow "usable, comparable
+# fundamentals coverage" at the same rate as one spent on a general/industrial/tech/healthcare
+# name. This queue only ever draws from profiles outside EXCLUDED_EXPANSION_PROFILES.
+ENRICHMENT_EXPANSION_SIZE = max(0, int(os.getenv("ADVISOR_ENRICHMENT_EXPANSION_SIZE", "140")))
+EXCLUDED_EXPANSION_PROFILES = {"bank", "life_insurer", "property_casualty_insurer",
+                               "diversified_insurer", "reit"}
+# Deliberately sized close to the full financial/real-estate population in the committed
+# universe (reit 50 + bank 42 + property_casualty_insurer 15 + diversified_insurer 12 +
+# life_insurer 7 = 126), not left to the small, unfiltered general rotation - see
+# enrichment_expansion_financial_real_estate.
+ENRICHMENT_EXPANSION_FINANCIAL_REAL_ESTATE_SIZE = max(
+    0, int(os.getenv("ADVISOR_ENRICHMENT_EXPANSION_FINANCIAL_REAL_ESTATE_SIZE", "130")))
 NEWS_DISCOVERY_LIMIT = 75
 # Research-mode override (A3): the production enrichment queue seeds itself with the prior
 # refresh's top 20 and admits only 5 new challengers, which means statement-derived metrics
@@ -1361,6 +1376,27 @@ def previous_top_symbols(payload, limit):
     return tuple(previous_rows_by_ticker(payload).keys())[:limit]
 
 
+def rank_publishable(research, publish_limit):
+    """The top ``publish_limit`` rows eligible for the ranked leaderboard, and their tickers.
+
+    ``research`` must already be sorted by ``score`` descending. A row failing
+    ``publication_gate`` must never occupy a ranked slot regardless of its raw score -- the
+    gate's own docstring promises "its champion score is not published as a ranked stance"
+    (docs/AUDIT-ROUND-4-FINDINGS.md, Task 6) -- but slicing ``research[:publish_limit]``
+    directly only ever changed the row's displayed ``stance`` label, never its ranking
+    eligibility. A name with zero usable fundamentals (an all-momentum score, renormalized
+    away from the unavailable fundamentals leg) could still out-rank names with real
+    coverage and land an INSUFFICIENT DATA row inside the published top ``publish_limit`` --
+    caught by validate_data.py's "ranked company lacks a fundamental score" check. Excluded
+    rows are not deleted: the caller is expected to route every row not in the returned
+    ticker set into ``screen_universe`` (by ticker membership, not a positional slice, since
+    a gate-failing row can sit anywhere in the score order), so they keep their diagnostics
+    and challenger scores exactly as the gate's docstring promises.
+    """
+    ranked = [row for row in research if row["publication_gate"]["published"]][:publish_limit]
+    return ranked, {row["ticker"] for row in ranked}
+
+
 def carry_forward_rows(research, symbols, previous_payload):
     """Previous-run rows for symbols a fast refresh didn't poll this cycle.
 
@@ -1453,9 +1489,79 @@ def enrichment_rotation(preliminary_symbols, already_selected, previous_payload,
     return tuple(candidates[:size])
 
 
+def _never_enriched_matching(preliminary_symbols, already_selected, previous_payload, size, admit_profile):
+    """Never-enriched names whose classified profile satisfies ``admit_profile``, theme-flagged first.
+
+    Shared by ``enrichment_expansion`` (non-financial/non-real-estate) and
+    ``enrichment_expansion_financial_real_estate`` (the reverse set) -- same ordering as
+    ``enrichment_rotation`` (never-enriched before already-enriched, theme-flagged jumping
+    the queue), except this never falls back to already-enriched names once never-enriched
+    candidates run out: both expansion queues exist to grow *new* usable coverage, not to
+    re-touch names already covered, so they return fewer than ``size`` rather than admitting
+    a mover a rotation-priority test elsewhere already relies on excluding (see
+    ``test_select_enrichment_priority_also_skips_a_mover_already_enriched``).
+
+    A candidate is only eligible if it has a previous row to classify at all -- a symbol
+    never polled has an unknown profile and is left out of both targeted queues rather than
+    guessed at; it can still be picked up by the untargeted ``enrichment_rotation`` slot.
+    """
+    if size <= 0:
+        return ()
+    previous_rows = previous_rows_by_ticker(previous_payload)
+    def never_enriched_and_eligible(symbol):
+        row = previous_rows.get(symbol)
+        if row is None or (row.get("fundamental_detail") or {}).get("raw_score"):
+            return None
+        if not admit_profile(classify_profile(row)):
+            return None
+        return (0 if row.get("theme_exposure") else 1, "", symbol)
+    candidates = [(symbol, key) for symbol in preliminary_symbols if symbol not in already_selected
+                 for key in [never_enriched_and_eligible(symbol)] if key is not None]
+    candidates.sort(key=lambda item: item[1])
+    return tuple(symbol for symbol, _ in candidates[:size])
+
+
+def enrichment_expansion(preliminary_symbols, already_selected, previous_payload, size,
+                         excluded_profiles=EXCLUDED_EXPANSION_PROFILES):
+    """Never-enriched, non-financial/non-real-estate names, theme-flagged first.
+
+    Every name this admits is a name we already know isn't in a profile whose metric set is
+    structurally different (Round 8: JPM's financial_health stayed null even fully enriched,
+    a bank balance sheet not mapping to standard ratios, not a fetch failure) -- that is what
+    keeps this expansion's yield directly "usable" the moment it lands. See
+    ``enrichment_expansion_financial_real_estate`` for the deliberate, separately-sized
+    counterpart that covers exactly the profiles this one skips.
+    """
+    return _never_enriched_matching(preliminary_symbols, already_selected, previous_payload, size,
+                                    lambda profile: profile not in excluded_profiles)
+
+
+def enrichment_expansion_financial_real_estate(preliminary_symbols, already_selected, previous_payload, size,
+                                               included_profiles=EXCLUDED_EXPANSION_PROFILES):
+    """Never-enriched bank/insurer/REIT names, theme-flagged first.
+
+    ``enrichment_expansion`` deliberately skips these profiles because their metric set is
+    structurally different, not because they don't matter -- a bank or REIT still deserves
+    the same growth in statement coverage, just not folded into a queue sized and reasoned
+    about in terms of the general fundamentals set. Sized independently
+    (``ADVISOR_ENRICHMENT_EXPANSION_FINANCIAL_REAL_ESTATE_SIZE``) so financial/real-estate
+    coverage grows on its own deliberate schedule rather than competing for slots against
+    everything else, or being left to whatever the small, unfiltered ``enrichment_rotation``
+    happens to reach. Defaults to roughly the full financial/real-estate population
+    (~126 names: reit 50, bank 42, property_casualty_insurer 15, diversified_insurer 12,
+    life_insurer 7, as classified in the committed universe), so it isn't a token gesture --
+    the whole subclass can cycle through in a small number of refreshes.
+    """
+    return _never_enriched_matching(preliminary_symbols, already_selected, previous_payload, size,
+                                    lambda profile: profile in included_profiles)
+
+
 def select_enrichment_priority(previous_top, preliminary_symbols, available, portfolio_symbols=(),
                                full_universe_research=False, previous_payload=None,
-                               rotation_size=ENRICHMENT_ROTATION_SIZE, focus_symbols=()):
+                               rotation_size=ENRICHMENT_ROTATION_SIZE,
+                               expansion_size=ENRICHMENT_EXPANSION_SIZE,
+                               financial_real_estate_expansion_size=ENRICHMENT_EXPANSION_FINANCIAL_REAL_ESTATE_SIZE,
+                               focus_symbols=()):
     """Prior leaders, the best outsiders, a rotation of statement-starved names, then holdings.
 
     ``focus_symbols`` (a re-ranking request for one named set) goes to the front of the queue.
@@ -1489,8 +1595,14 @@ def select_enrichment_priority(previous_top, preliminary_symbols, available, por
     selected = incumbent_set | set(challengers) | set(portfolio_symbols) | set(focused)
     rotation = enrichment_rotation(preliminary_symbols, selected, previous_payload or {},
                                    rotation_size)
+    expansion = enrichment_expansion(preliminary_symbols, selected | set(rotation),
+                                     previous_payload or {}, expansion_size)
+    financial_real_estate_expansion = enrichment_expansion_financial_real_estate(
+        preliminary_symbols, selected | set(rotation) | set(expansion),
+        previous_payload or {}, financial_real_estate_expansion_size)
     priority = tuple(dict.fromkeys(
-        (*focused, *incumbents, *challengers, *rotation, *portfolio_symbols)))
+        (*focused, *incumbents, *challengers, *rotation, *expansion,
+         *financial_real_estate_expansion, *portfolio_symbols)))
     return incumbents, challengers, priority
 
 
@@ -1592,7 +1704,13 @@ def run():
     # rather than only when a full sweep happens to run.
     fast_rotation_size = max(0, int(os.getenv("ADVISOR_FAST_ROTATION_SIZE", "120")))
     alpha_enabled = os.getenv("ALPHA_DISABLE", "").lower() not in {"1", "true", "yes"}
-    alpha_limit = max(0, min(5, int(os.getenv("ALPHA_ENRICH_LIMIT", "5")))) if alpha_enabled else 0
+    # 25 is Alpha Vantage's real free-tier daily cap, not an arbitrary code-side ceiling -
+    # weekday runs default ALPHA_ENRICH_LIMIT to 5 (conservative, since the same quota also
+    # has to last the day's other intraday refreshes), while the once-daily weekend run
+    # can safely ask for the full 25 since nothing else on a non-trading day competes for it.
+    # ALPHA_VANTAGE_CALL_DELAY must be raised alongside a higher limit to stay under the
+    # 5-calls-per-minute sub-limit (12s/call minimum for 25/day) - the workflow sets both together.
+    alpha_limit = max(0, min(25, int(os.getenv("ALPHA_ENRICH_LIMIT", "5")))) if alpha_enabled else 0
     previous_top = previous_ranked_symbols()
     requested_enrichment = tuple(s.strip().upper() for s in os.getenv("ALPHA_ENRICH_SYMBOLS", "").split(",") if s.strip())
     enrichment_order = requested_enrichment or previous_top or symbols
@@ -1961,8 +2079,7 @@ def run():
     # year -- see research/audit/CURRENT_MODEL_AUDIT.md section 3.
     assert_layers_vary(research, PUBLISHED_LAYERS)
 
-    ranked = research[:publish_limit]
-    ranked_tickers = {row["ticker"] for row in ranked}
+    ranked, ranked_tickers = rank_publishable(research, publish_limit)
 
     # The trend-exposure layer runs as its own screen, deliberately outside the score. It
     # is scored on the published leaders, every configured holding, and a bounded set of
@@ -1982,8 +2099,11 @@ def run():
     # composite score, so a strong screen candidate can rank outside the published leaderboard.
     # technical_detail and fundamental_categories are populated for the whole scored universe
     # (see technical_factors' closes-based 52-week fallback above), so publish a lightweight,
-    # history-free slice of the rest of the universe for those screens to scan.
-    screen_universe = [_screen_row(row) for row in research[publish_limit:]]
+    # history-free slice of the rest of the universe for those screens to scan. Filtered by
+    # ticker membership, not a `research[publish_limit:]` positional slice: `ranked` above
+    # already skips publication-gate-failing rows regardless of their score-sorted position,
+    # so a positional slice here would silently drop exactly those rows from both lists.
+    screen_universe = [_screen_row(row) for row in research if row["ticker"] not in ranked_tickers]
     if universe_mode == "fast":
         # Carried-forward rows only ever join the lightweight screen tail, never the
         # published `research`/`ranked` list - a stale row is never promoted to "top pick"
@@ -2089,11 +2209,19 @@ def run():
             "previous_top": list(incumbents),
             "challengers": list(challengers),
             "rotation_size": ENRICHMENT_ROTATION_SIZE,
+            "expansion_size": ENRICHMENT_EXPANSION_SIZE,
+            "expansion_excluded_profiles": sorted(EXCLUDED_EXPANSION_PROFILES),
+            "financial_real_estate_expansion_size": ENRICHMENT_EXPANSION_FINANCIAL_REAL_ESTATE_SIZE,
+            "financial_real_estate_expansion_profiles": sorted(EXCLUDED_EXPANSION_PROFILES),
             "priority_count": len(statement_priority),
             "note": "Statement enrichment previously covered only the prior run's top 20 "
                     "plus five challengers, so a name outside that set could never acquire "
                     "the metrics that would let it out-rank an incumbent. A rotation of "
-                    "statement-starved names now joins every refresh.",
+                    "statement-starved names now joins every refresh, plus two dedicated "
+                    "expansion queues sized independently: one for non-financial/non-real-"
+                    "estate names, one for bank/insurer/REIT names -- so financial and real-"
+                    "estate coverage grows on its own deliberate schedule instead of being "
+                    "left to whatever the small, unfiltered rotation happens to reach.",
         },
         "enrichment_diagnostics": enrichment_diagnostics,
         "normalization_distributions": {
@@ -2298,7 +2426,8 @@ def run():
         "source_status": {
             "alpha_vantage": {"status": "disabled_for_intraday_refresh" if not client else
                               ("healthy" if not alpha_failures else "degraded"), "failed_symbols": alpha_failures,
-                              "enriched_symbols": sorted(alpha_symbols), "quota_strategy": "up to five symbols per refresh"},
+                              "enriched_symbols": sorted(alpha_symbols),
+                              "quota_strategy": f"up to {alpha_limit} symbol(s) this refresh (ALPHA_ENRICH_LIMIT, capped at Alpha Vantage's 25/day free-tier ceiling)"},
             "marketaux": {
                 "status": "unavailable" if not marketaux_client else ("degraded" if marketaux_failures else "healthy"),
                 "failed_symbols": marketaux_failures,

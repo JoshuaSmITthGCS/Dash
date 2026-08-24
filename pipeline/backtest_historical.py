@@ -24,13 +24,36 @@ production pipeline treats missing data too. What IS reconstructed point-in-time
 historical data: trailing valuation multiples (P/S, P/B, a trailing-P/E used in place of forward
 P/E, an approximate PEG), ROE/ROIC, margins, debt/coverage ratios, Altman Z, Piotroski F,
 accruals, capital allocation, growth, and the full price/volume-based technical score. News
-sentiment defaults to neutral (50) for historical weeks, same as it does live when no articles
-are found for a ticker.
+sentiment has no historical article archive to replay (rank_week always passes an empty news
+list), so it is correctly absent (None) for every historical week, not defaulted to neutral --
+same as live production has reported it since A1-NEWS-NEUTRAL (2026-08-07).
 
 Quarterly statement history from yfinance typically only reaches back ~2 years (about 8
-quarters), so year-over-year growth figures thin out for the earliest weeks in a long lookback
-window -- this is a real data-availability limit, not a bug, and the scorer already reweights
-around it.
+quarters), so year-over-year revenue/earnings growth built from Yahoo alone thins out for the
+earliest weeks in a long lookback window. Since Round 11 Priority 4, ``build_snapshot`` falls
+back to the EDGAR point-in-time fundamentals store (``pipeline/data/pit/fundamentals/``, filed
+timestamps back to 2009) for whichever of the two Yahoo's quarters can't reach, via
+``edgar_pit_growth_fallback`` -- filed<=as_of enforced, no look-ahead. Revenue growth is
+skipped for bank/insurer/REIT profiles (see ``REVENUE_GROWTH_EXCLUDED_PROFILES``); a name with
+no resolvable CIK, or with EDGAR history that also doesn't reach back far enough, still shows
+``None``, which is a real data-availability limit rather than a bug, and the scorer already
+reweights around it. Set ``DISABLE_EDGAR_PIT_BACKTEST_GROWTH=1`` to reproduce the pre-Round-11
+Yahoo-only behavior.
+
+Growth wasn't the only casualty of that ~2-year window, just the one first diagnosed: for an
+as_of date entirely outside it, Yahoo's cached quarters resolve *no* known statement date at
+all (``build_ttm_statements`` never runs), so valuation, profitability, financial_health,
+capital_allocation, and accounting_quality were silently left at ``None`` too -- everywhere
+older than roughly the trailing 1.5-2 years of a multi-year backtest, which for a 5-10 year
+window is most of it. Round 11 Priority 7 closes this the same way: ``edgar_ttm_statements``
+already returns full income/balance/cashflow dicts in the shape ``build_ttm_statements``
+produces, so ``edgar_pit_statement_fallback`` substitutes them directly for that empty
+window rather than reconstructing just two numbers. EDGAR's balance mapping carries no
+shares-outstanding concept, so market-cap-dependent ratios there fall back further, to
+diluted (then basic) weighted-average shares from the income statement -- a standard,
+disclosed stand-in, not a precise point-in-time float count. Set
+``DISABLE_EDGAR_PIT_BACKTEST_STATEMENTS=1`` to reproduce the pre-Priority-7 behavior (only
+growth filled, every other ratio empty outside Yahoo's window).
 
 Needs real network access + yfinance (this script is meant to be run locally, not in a sandboxed
 agent session): `python3 pipeline/backtest_historical.py --help`
@@ -48,6 +71,8 @@ sys.path.insert(0, HERE)
 
 from common import LOG, load_json  # noqa: E402
 from advisor_engine import build_research  # noqa: E402
+from canonical_metrics import classify_profile  # noqa: E402
+from edgar_enrichment import edgar_ttm_statements  # noqa: E402
 from fundamentals_extended import at, derive_extended, line, statement_series  # noqa: E402
 from market_history import sector_percentiles  # noqa: E402
 from policy_backtest import compare_policies  # noqa: E402
@@ -55,6 +80,104 @@ from scorer import valuation_score  # noqa: E402
 
 REPORT_LAG_DAYS_DEFAULT = 45
 QUARTERS_NEEDED_FOR_TTM = 4
+# Round 11 Priority 4: Yahoo's quarterly statement history typically reaches back only ~8
+# quarters, so this reconstruction's own year-over-year growth (below) frequently can't find
+# a prior TTM window -- the panel-wide 0% growth-leg coverage Round 10 diagnosed. The EDGAR
+# PIT fundamentals store already collected (pipeline/data/pit/fundamentals/, filed timestamps
+# back to 2009) can reach much further; edgar_ttm_statements() already enforces filed<=as_of,
+# the same no-look-ahead guarantee this file's own report_lag_days approximation is for.
+# Revenue growth specifically is skipped for bank/insurer/REIT profiles: the generic
+# "Revenues" XBRL concept nets premiums/losses/interest oddly for those (Round 11's pilot
+# found this exact pattern on AGO), the same reason EXCLUDED_EXPANSION_PROFILES in
+# fetch_advisor.py already special-cases them. Earnings growth (net income) doesn't share
+# that ambiguity and is not excluded.
+REVENUE_GROWTH_EXCLUDED_PROFILES = {
+    "bank", "life_insurer", "property_casualty_insurer", "diversified_insurer", "reit",
+}
+DISABLE_EDGAR_PIT_BACKTEST_GROWTH = os.getenv("DISABLE_EDGAR_PIT_BACKTEST_GROWTH", "").lower() in {
+    "1", "true", "yes",
+}
+# Round 11 Priority 7: edgar_pit_growth_fallback (above) only ever fills the two YoY growth
+# figures -- for an as_of date entirely outside Yahoo's ~2-year quarterly window (start_idx
+# None below), income_ttm/balance_now/cashflow_ttm themselves were left as *empty* statements,
+# not just growth. Every ratio basic_ratios()/derive_extended() compute from them --
+# valuation, profitability, financial_health, capital_allocation, accounting_quality --
+# silently went to None for that whole stretch, while growth (via the fallback above) and
+# market_behavior (pure price/volume) kept working. A 5-10 year backtest is mostly older than
+# Yahoo's window, so this was near-total: five of eight research-score legs carried almost no
+# real signal outside the most recent ~1.5 years. edgar_ttm_statements() already returns full
+# income/balance/cashflow dicts in the exact shape build_ttm_statements() produces, so this
+# reuses it directly as those statements' fallback, not just a source for two numbers.
+DISABLE_EDGAR_PIT_BACKTEST_STATEMENTS = os.getenv(
+    "DISABLE_EDGAR_PIT_BACKTEST_STATEMENTS", "").lower() in {"1", "true", "yes"}
+
+
+def _edgar_ttm_line(symbol, as_of_str, label):
+    try:
+        statements = edgar_ttm_statements(symbol, as_of_str)
+    except Exception:  # noqa: BLE001 - a PIT-store read must never sink the backtest
+        return None
+    if not statements:
+        return None
+    rows = statements.get("income", {}).get("rows", {}).get(label)
+    return rows[0] if rows else None
+
+
+def edgar_pit_growth_fallback(ticker_data, as_of, *, need_revenue, need_earnings):
+    """Reconstruct whichever of revenue/earnings TTM YoY growth Yahoo's history couldn't.
+
+    Returns ``(revenue_growth, earnings_growth)``, each ``None`` if not needed, not
+    available, or (for revenue) excluded for this business profile. Never raises: a PIT-store
+    miss for one ticker must not sink the run, matching edgar_enrichment.merge_edgar_fallback's
+    own contract for the live pipeline.
+    """
+    if DISABLE_EDGAR_PIT_BACKTEST_GROWTH or not (need_revenue or need_earnings):
+        return None, None
+    as_of_str = as_of.isoformat()
+    prior_str = (as_of - timedelta(days=365)).isoformat()
+
+    revenue_growth = None
+    if need_revenue:
+        profile = classify_profile({"sector": ticker_data.get("sector"),
+                                    "industry": ticker_data.get("industry"),
+                                    "is_etf": ticker_data.get("is_etf"),
+                                    "ticker": ticker_data.get("symbol")})
+        if profile not in REVENUE_GROWTH_EXCLUDED_PROFILES:
+            now = _edgar_ttm_line(ticker_data["symbol"], as_of_str, "Total Revenue")
+            prior = _edgar_ttm_line(ticker_data["symbol"], prior_str, "Total Revenue")
+            if now is not None and prior and prior > 0:
+                revenue_growth = round(now / prior - 1, 4)
+
+    earnings_growth = None
+    if need_earnings:
+        now = _edgar_ttm_line(ticker_data["symbol"], as_of_str, "Net Income")
+        prior = _edgar_ttm_line(ticker_data["symbol"], prior_str, "Net Income")
+        if now is not None and prior not in (None, 0):
+            earnings_growth = round(now / prior - 1, 4)
+
+    return revenue_growth, earnings_growth
+
+
+def edgar_pit_statement_fallback(ticker_data, as_of):
+    """Full (income, balance, cashflow) TTM statements from the EDGAR PIT store, for an
+    as_of date entirely outside Yahoo's cached quarterly window.
+
+    Returns ``(None, None, None)`` if disabled, the ticker has no resolvable CIK, or EDGAR
+    history doesn't reach back far enough either -- callers fall back to the pre-existing
+    empty-statement behavior in that case. Never raises, matching
+    edgar_pit_growth_fallback's own contract: a PIT-store read must never sink the backtest.
+    """
+    if DISABLE_EDGAR_PIT_BACKTEST_STATEMENTS:
+        return None, None, None
+    try:
+        statements = edgar_ttm_statements(ticker_data["symbol"], as_of.isoformat())
+    except Exception:  # noqa: BLE001 - a PIT-store read must never sink the backtest
+        return None, None, None
+    if not statements:
+        return None, None, None
+    empty = {"periods": [], "rows": {}}
+    return (statements.get("income") or empty, statements.get("balance") or empty,
+           statements.get("cashflow") or empty)
 
 
 # ---------------- data collection ----------------
@@ -101,6 +224,7 @@ def fetch_ticker_data(yf, symbol, delay, history_period="2y", include_current_me
         "symbol": symbol,
         "name": info.get("shortName") or info.get("longName") or symbol,
         "sector": info.get("sector"),
+        "industry": info.get("industry"),
         "is_etf": info.get("quoteType") == "ETF",
         "current_shares_outstanding": info.get("sharesOutstanding"),
         "dates": dates,
@@ -265,8 +389,10 @@ def build_snapshot(ticker_data, as_of, report_lag_days, allow_current_shares=Tru
         return None
 
     if start_idx is None:
-        empty = {"periods": [], "rows": {}}
-        income_ttm, balance_now, cashflow_ttm = empty, empty, empty
+        income_ttm, balance_now, cashflow_ttm = edgar_pit_statement_fallback(ticker_data, as_of)
+        if income_ttm is None:
+            empty = {"periods": [], "rows": {}}
+            income_ttm, balance_now, cashflow_ttm = empty, empty, empty
     else:
         income_ttm, balance_now, cashflow_ttm = build_ttm_statements(ticker_data, start_idx)
     raw_closes = ticker_data.get("raw_closes") or ticker_data["closes"]
@@ -277,6 +403,15 @@ def build_snapshot(ticker_data, as_of, report_lag_days, allow_current_shares=Tru
     balance_shares = at(line(balance_now, "shares_outstanding"))
     if balance_shares:
         shares = balance_shares
+    elif not shares:
+        # Neither a live share count (blocked by allow_current_shares for point-in-time
+        # correctness) nor a balance-sheet share count resolved -- EDGAR's balance mapping
+        # carries no shares-outstanding concept at all (edgar_enrichment.BALANCE_ROWS), so
+        # its statements never populate ``balance_shares`` above. Diluted/basic weighted
+        # average shares from the income statement is not the same figure, but it's a
+        # standard, disclosed practical stand-in for market cap here, and strictly better
+        # than leaving every market-cap-dependent valuation ratio at None for this stretch.
+        shares = at(line(income_ttm, "diluted_shares"))
     market_cap = price * shares if shares else None
 
     revenue_now = at(line(income_ttm, "revenue"), 0)
@@ -286,6 +421,15 @@ def build_snapshot(ticker_data, as_of, report_lag_days, allow_current_shares=Tru
     net_income_prior = at(line(income_ttm, "net_income"), 1)
     earnings_growth = (net_income_now / net_income_prior - 1) if (
         net_income_now is not None and net_income_prior not in (None, 0)) else None
+
+    if revenue_growth is None or earnings_growth is None:
+        edgar_revenue_growth, edgar_earnings_growth = edgar_pit_growth_fallback(
+            ticker_data, as_of, need_revenue=revenue_growth is None,
+            need_earnings=earnings_growth is None)
+        if revenue_growth is None:
+            revenue_growth = edgar_revenue_growth
+        if earnings_growth is None:
+            earnings_growth = edgar_earnings_growth
 
     ttm_for_ratios = {"periods": income_ttm["periods"][:1], "rows": {k: v[:1] for k, v in income_ttm["rows"].items()}}
     balance_for_ratios = {"periods": balance_now["periods"][:1], "rows": {k: v[:1] for k, v in balance_now["rows"].items()}}

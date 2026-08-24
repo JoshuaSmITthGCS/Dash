@@ -62,6 +62,49 @@ ACTIVATION_DATE = "2026-08-02"
 STRATEGY_ACTIVATION_DATES = {
     "reweighted_composite_a": "2026-08-21",
 }
+# Round 11 Priority 2 -- a concurrent shadow-portfolio registry, capped. Every strategy in
+# STRATEGY_ACTIVATION_DATES is a research candidate on its own prospective clock, subject to
+# an eventual PROMOTE/KEEP_AS_CHALLENGER/ABANDON decision (see experiment_registry.py) -- as
+# opposed to the permanent product sleeves and baselines in STRATEGIES (production, SPY,
+# momentum, and so on) that have run unconditionally since ACTIVATION_DATE and never go
+# through a promotion decision at all. Each concurrent candidate taxes the deflated Sharpe
+# correction charged against every other one (more trials, harder for any of them to clear
+# 0.95), so the cap is enforced here in code -- not left to a reviewer to remember to check.
+#
+# Raised from 4 to 5 on explicit user request (Round 11 Priority 7) to make room for a
+# top-N shortlist selected from optimization_harness.py's --top-n-from-elo output. This is
+# a real widening of the concurrent-candidate tax, not a silent one -- R11-P2's original
+# entry in experiment_registry.py is left as-is (it accurately records what was true when
+# the cap was first enforced at 4); this comment is the live record of the current value.
+MAX_CONCURRENT_RESEARCH_CANDIDATES = 5
+
+
+def research_candidate_strategies(activation_dates=None):
+    """Strategy ids with their own activation date: research candidates on the prospective
+    clock, as distinct from ``STRATEGIES``' permanent sleeves and baselines.
+    """
+    return dict(activation_dates if activation_dates is not None else STRATEGY_ACTIVATION_DATES)
+
+
+def assert_candidate_capacity(activation_dates=None, *, limit=MAX_CONCURRENT_RESEARCH_CANDIDATES):
+    """Refuse to exceed the concurrent research-candidate cap.
+
+    Called at import time below against the live ``STRATEGY_ACTIVATION_DATES``, so a future
+    change that registers a fifth concurrent candidate without first concluding one of the
+    existing ones (promoted or abandoned, per the experiment registry's decision vocabulary)
+    fails immediately rather than silently taxing every running candidate's deflated Sharpe.
+    """
+    current = research_candidate_strategies(activation_dates)
+    if len(current) > limit:
+        raise ValueError(
+            f"{len(current)} research-candidate shadow strategies are registered "
+            f"({sorted(current)}) -- over the {limit}-candidate cap. Conclude one "
+            "(PROMOTE or ABANDON it in experiment_registry.py, per Round 11 Priority 2) "
+            "before registering another.")
+
+
+assert_candidate_capacity()
+
 PERIODS_PER_YEAR = 252
 MINIMUM_ANNUALIZED_OBSERVATIONS = 20
 # Portfolio weight that may be carried at a stale price for one session before the period
@@ -146,6 +189,16 @@ REWEIGHTED_A_WEIGHTS = {
     "profitability": 0.2824,
     "financial_health": 0.1629,
     "market_behavior": 0.2506,
+}
+
+# Round 11: an explicit strategy_id -> leg-weight-vector map for the research candidates
+# that are a simple linear blend (pipeline/optimization_harness.py and
+# pipeline/run_backtest_suite.py's default candidate set read this rather than guessing an
+# attribute name from the strategy id). A candidate whose selection logic isn't a weight
+# vector (none exist today) has no entry here and must be tested with an explicit
+# --candidates argument instead.
+RESEARCH_CANDIDATE_WEIGHTS = {
+    "reweighted_composite_a": REWEIGHTED_A_WEIGHTS,
 }
 
 

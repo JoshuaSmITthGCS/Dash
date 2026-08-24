@@ -37,6 +37,8 @@ from backtest_historical import (  # noqa: E402
 from common import LOG, load_json  # noqa: E402
 from costs import estimate_cost_bps  # noqa: E402
 from portfolio_construction import apply_controls  # noqa: E402
+from panel_io import save_panel  # noqa: E402
+from screen_inputs import universe_rows  # noqa: E402
 
 COST_MODELS = ("flat", "tiered")
 
@@ -166,6 +168,19 @@ def panel_leg_weights(settings):
     return weights
 
 
+def current_sector_map():
+    """{ticker: sector} from the live advisor snapshot.
+
+    Same approximation ``backtest_swing.py``'s ``current_sector_map`` already discloses:
+    the backtest cache carries no point-in-time sector history, so this is the CURRENT
+    GICS sector applied retroactively to every historical period. It is the only sector
+    data that exists anywhere in this repository. Good enough to ask "how would each leg
+    have scored on today's tech names historically", not point-in-time-accurate for names
+    that changed sector classification along the way.
+    """
+    return {row["ticker"]: row.get("sector") for row in universe_rows() if row.get("ticker")}
+
+
 def panel_scores(rows):
     """Composite score and every leg score for one ranked cross-section."""
     scores, legs = {}, {}
@@ -183,6 +198,41 @@ def panel_scores(rows):
         scores[ticker] = score
         legs[ticker] = leg_scores
     return scores, legs
+
+
+# build_research (advisor_engine.py) returns {**snapshot, ...these keys}. Everything in a row
+# that is NOT one of these, and not a bare identity field, is an individual raw metric
+# snap/build_snapshot computed -- P/E, ROE, Piotroski F, Altman Z, buyback yield, and so on --
+# not a rolled-up category. Kept as an explicit set (rather than inferring numeric-vs-not
+# alone) so a future field added to build_research's own return dict doesn't silently get
+# mistaken for a scoring input.
+_ROW_NON_METRIC_KEYS = {
+    "ticker", "name", "sector", "is_etf", "score", "base_score", "raw_score", "stance",
+    "data_coverage", "components", "fundamental_categories", "fundamental_detail",
+    "technical_detail", "sentiment_detail", "modifiers", "news_available",
+    "sector_valuation_percentile", "recommendation", "strengths", "risks", "analysis_v2",
+    "recommendation_v2", "action",
+}
+
+
+def panel_metric_scores(rows):
+    """Every individual numeric metric the methodology currently computes, per ticker --
+    not just the 6-8 rolled-up legs panel_scores() captures. Lets sector-level analysis
+    (optimization_harness.as_metric_periods + sector_weight_report) test which specific
+    metric (trailing P/E, ROE, Piotroski F, ...) carries signal in which sector, rather than
+    only which category.
+    """
+    metrics = {}
+    for row in rows:
+        ticker = row.get("ticker")
+        if not ticker:
+            continue
+        metrics[ticker] = {
+            key: value for key, value in row.items()
+            if key not in _ROW_NON_METRIC_KEYS and isinstance(value, (int, float))
+            and not isinstance(value, bool)
+        }
+    return metrics
 
 
 def panel_forward_returns(universe_data, execution_date, tickers):
@@ -601,6 +651,7 @@ def main():
 
     plans, panel_periods = [], []
     leg_weights = panel_leg_weights(load_json("settings.json", from_config=True) or {})
+    sectors = current_sector_map()
     holdings, held_months, previous_scores = [], {}, {}
     for index, (signal_date, execution_date) in enumerate(calendar, 1):
         spy_idx = price_index(benchmark["dates"], signal_date)
@@ -632,6 +683,7 @@ def main():
             "picks": picks,
         })
         scores, leg_scores = panel_scores(rows)
+        metric_scores = panel_metric_scores(rows)
         forwards = panel_forward_returns(universe_data, execution_date.isoformat(), scores)
         panel_periods.append({
             "date": execution_date.isoformat(),
@@ -639,6 +691,8 @@ def main():
             "names": len(scores),
             "scores": scores,
             "leg_scores": leg_scores,
+            "metric_scores": metric_scores,
+            "sectors": {ticker: sectors.get(ticker) for ticker in scores if sectors.get(ticker)},
             "forward_returns_by_horizon": forwards,
             "forward_returns": forwards[PANEL_PRIMARY_HORIZON],
         })
@@ -730,8 +784,7 @@ def main():
     with open(args.out, "w", encoding="utf-8") as handle:
         json.dump(result, handle, indent=2)
     if args.panel_out:
-        with open(args.panel_out, "w", encoding="utf-8") as handle:
-            json.dump(build_panel(panel_periods, universe_data, leg_weights), handle, indent=2)
+        save_panel(args.panel_out, build_panel(panel_periods, universe_data, leg_weights))
         graded = sum(1 for period in panel_periods if period["forward_returns"])
         print(f"Wrote {args.panel_out}: {len(panel_periods)} scored cross-sections, "
               f"{graded} with {PANEL_PRIMARY_HORIZON} forward returns")

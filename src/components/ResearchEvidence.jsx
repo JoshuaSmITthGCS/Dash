@@ -101,7 +101,9 @@ export function BenchmarkPanel({ panel }) {
         rowClassName={(row) => (row.isSelf ? 'evidence-row-self' : undefined)}
       />
     </div>
-    <p className="evidence-note">{panel.summary?.verdict}</p>
+    <p className="evidence-note evidence-disclosure">
+      {panel.summary?.honesty_disclosure || panel.summary?.verdict}
+    </p>
   </section>
 }
 

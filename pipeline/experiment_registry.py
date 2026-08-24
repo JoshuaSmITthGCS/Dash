@@ -367,6 +367,1143 @@ REGISTRY = [
                    "prospective clock, not this panel, decides. B is deliberately NOT registered as a shadow - "
                    "carrying both would spend a second trial on the same idea."),
     },
+    {
+        "id": "R8-evidence-confidence-gate",
+        "declared_at": "2026-08-23T00:00:00+00:00",
+        "hypothesis": ("Every ticker on the live v2 validation dashboard (HIG, JPM, O, NEE, BSX, MSFT, XOM, "
+                       "MRNA, VTI, TLT) reporting company evidence confidence below 0.40, a 0-of-0 peer sample, "
+                       "and 0% profile confidence -- including for large, liquid, well-covered names like MSFT "
+                       "and JPM -- is a wiring/data-join defect in pipeline/live_v2_validation.py, not a "
+                       "genuine data-coverage gap."),
+        "category": "data_integrity",
+        "configuration": {
+            "files": ["pipeline/live_v2_validation.py", "pipeline/tests/test_live_v2_validation.py"],
+            "change": (
+                "Two independent stub defects, confirmed by direct source read. (1) "
+                "`classification` was a hardcoded literal (total_peer_count: 0, valid_peer_count: 0, "
+                "percentile_status: INSUFFICIENT_VALID_PEERS) for every ticker on every run -- never a "
+                "call into peer_groups.canonical_percentiles(), the module fetch_advisor.py and "
+                "migrate_advisor_v2.py already use for the real peer computation. Now calls it for real "
+                "against the validated batch. (2) validate_live() built canonical observations from "
+                "canonical_metrics.yahoo_observations(info) alone -- ~11 quote-level Yahoo .info fields -- "
+                "and never called the statement-enrichment step (fetch_advisor.yahoo_extended / "
+                "fundamentals_extended.extended_observations) fetch_advisor.py's enrich() runs for its "
+                "shortlist, so every statement-derived metric (ROIC, EV/EBITDA, Piotroski F, interest "
+                "coverage, accruals ratio, ...) reported missing for every ticker regardless of real "
+                "coverage. Now wired in, mirroring enrich() exactly. Both stages instrumented with "
+                "LOG.info non-null/null observation counts per ticker, matching the WO-1/WO-2 direct-read "
+                "diagnostic pattern."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {
+            "before_structural_confidence": 0.21, "after_structural_confidence": 0.41,
+            "before_structural_coverage": 0.30, "after_structural_coverage": 0.56,
+            "before_company_action": "insufficient_evidence", "after_company_action": "watch",
+            "before_peer_sample": "0 / 0 (hardcoded, every ticker, every run)",
+            "after_peer_sample": "3 / 3 (real batch count; still INSUFFICIENT_VALID_PEERS, correctly, "
+                                 "since peer_groups.MINIMUM_VALID_PEERS=30)",
+            "production_reference_hig_data_coverage": 0.82,
+            "pre_fix_committed_validation_hig_coverage": 0.35,
+        },
+        "number_of_variants_tested": 1,
+        "result": (
+            "Confirmed a split root cause. (a) Peer sample was a pure stub -- a hardcoded literal, not a "
+            "computation -- category (a)/broken-join, not data scarcity. (b) Structural/profile confidence "
+            "was genuinely low GIVEN the inputs validate_live() gathered, but the reason those inputs were "
+            "incomplete is itself a wiring gap: the script never invoked the enrichment stage production "
+            "uses. Confirmed against production: public/data/advisor.json shows HIG at data_coverage 0.82 "
+            "the same week this view published structural.coverage 0.35 for the identical company -- the "
+            "gap is the validation harness's scope, not HIG's real-world coverage. Regression test "
+            "(test_live_v2_validation.py) shows wiring the same yahoo_extended() call production already "
+            "uses raises a synthetic company's structural confidence from 0.21 to 0.41, crossing the "
+            "action gate from insufficient_evidence to watch, with identical quote data on both sides -- "
+            "isolating the enrichment step as the swing factor. (c) The timeliness layer's effective_score: "
+            "None is a separate, correctly-reported, already-documented gap (scoring_v2.py's own "
+            "unavailable_reason string: no free provider supplies broad forward-estimate revisions, "
+            "earnings-surprise collection is opt-in) and is deliberately left untouched."),
+        "decision": "PROMOTE",
+        "reason": ("Two wiring defects fixed at the source (pipeline/live_v2_validation.py), not a display-"
+                   "only patch: peer sample now calls peer_groups.canonical_percentiles() over the real "
+                   "validated batch, and statement enrichment now runs identically to fetch_advisor.enrich(). "
+                   "Locked by pipeline/tests/test_live_v2_validation.py (3 tests: peer sample computed not "
+                   "hardcoded, enrichment wired in and raises confidence, a genuinely statement-starved "
+                   "company still correctly gates low). A live re-run of pipeline/live_v2_validation.py to "
+                   "refresh the committed public/data/validation/live_v2_validation.json artifact with real "
+                   "Yahoo data is blocked_network_policy in this environment, same as A3-FULL-UNIVERSE-"
+                   "ENRICHMENT -- the fix is verified against a controlled fixture and against the committed "
+                   "production advisor.json, not yet against a fresh live pull for this exact artifact."),
+    },
+    {
+        "id": "R8-2-publication-gate-not-enforced",
+        "declared_at": "2026-08-23T20:00:00+00:00",
+        "hypothesis": ("A recurring pipeline/validate_data.py CI failure -- 'ranked company lacks a "
+                       "fundamental score' / 'low resolved evidence weight must classify as insufficient "
+                       "evidence', hitting a different research row index on 2026-08-22T00:05 (run #190, "
+                       "research.38) and 2026-08-23T19:47 (run #192, research.36) -- is downstream of the "
+                       "same confidence-gate defect class as R8-evidence-confidence-gate, and NOT an "
+                       "enrichment-coverage gap: the enrichment status check for this same round confirmed "
+                       "MSFT and JPM (the Round 8 P1 sample's large-caps) both resolve real statement-"
+                       "derived fundamental_categories in production advisor.json, so enrichment reaching "
+                       "a name was never the question here."),
+        "category": "data_integrity",
+        "configuration": {
+            "files": ["pipeline/fetch_advisor.py", "pipeline/tests/test_fetch_advisor.py"],
+            "change": ("Extracted rank_publishable(research, publish_limit): ranked = research[:publish_limit] "
+                       "sliced strictly by publication_gate['published'] before score, instead of by raw score "
+                       "alone. screen_universe changed from a `research[publish_limit:]` positional slice to a "
+                       "ranked_tickers membership filter, since a gate-failing row can sit anywhere in the "
+                       "score order and a positional slice would silently drop it from both lists."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {
+            "run_190_failing_row": "research.38", "run_192_failing_row": "research.36",
+            "gate_floor": 0.35,
+            "msft_capital_allocation_category": 52.4, "msft_accounting_quality_category": 62.0,
+            "jpm_capital_allocation_category": 93.3, "jpm_accounting_quality_category": 55.0,
+        },
+        "number_of_variants_tested": 1,
+        "result": (
+            "Defect confirmed by direct source read, not an enrichment gap. data_health.publication_gate's "
+            "own docstring: 'Names failing the gate keep their diagnostics and challenger output; only the "
+            "ranked champion score is withheld' -- and docs/AUDIT-ROUND-4-FINDINGS.md Task 6: a name below "
+            "the 0.35 floor 'publishes as INSUFFICIENT DATA, not as a ranked stance.' The call site only ever "
+            "set row['stance'] = 'INSUFFICIENT DATA'; nothing excluded the row from `research.sort(key=score)` "
+            "/ `research[:publish_limit]`. A company with zero usable fundamentals but a high momentum-only "
+            "score (renormalized fully onto market_behavior once fundamentals coverage hits 0) could still "
+            "out-rank real-coverage names into the published top publish_limit, contradicting the product's "
+            "own fundamentals-first framing (CLAUDE.md) and tripping validate_data.py's schema/invariant "
+            "checks on every run where this occurred. Enrichment itself was never the cause: production's "
+            "select_enrichment_priority already reaches MSFT (via ADVISOR_PORTFOLIO_SYMBOLS + "
+            "ADVISOR_FOCUS_SYMBOLS, both force-included every run) and JPM (via incumbents/challengers/"
+            "rotation) alike, and both show real statement-derived category scores in the current committed "
+            "advisor.json -- confirming this is a downstream ranking-eligibility defect, not an upstream "
+            "enrichment-coverage one."),
+        "decision": "PROMOTE",
+        "reason": ("One-function fix restoring an already-documented, already-committed contract "
+                   "(publication_gate's docstring, AUDIT-ROUND-4-FINDINGS.md) that the ranking slice never "
+                   "actually enforced -- not a change to confidence.py, valuation_score, blend_research_"
+                   "components, or any scoring weight. Locked with 4 new tests in test_fetch_advisor.py: a "
+                   "gate-failing row never takes a ranked slot even at the highest score, every row lands in "
+                   "ranked or is excluded (none silently dropped, the screen_universe positional-slice bug "
+                   "this also fixes), filtering preserves the caller's sort order rather than re-deriving one, "
+                   "and a low-coverage run with fewer than publish_limit gate-passing rows shrinks the "
+                   "leaderboard instead of backfilling with gate-failures. Full pipeline suite (2239 tests) "
+                   "and validate_data.py both green after the change."),
+    },
+    {
+        "id": "R11-P1-optimization-harness",
+        "declared_at": "2026-08-23T21:00:00+00:00",
+        "hypothesis": ("A reusable parameter-search harness that enforces train/validation/holdout "
+                       "splitting in code (not a process doc), gated by walk-forward efficiency, PBO via "
+                       "CSCV, and deflated Sharpe against the real cumulative trial count, would reproduce "
+                       "Round 10's finding that champion and the reweighted_composite_a shadow proposal "
+                       "(R7-leg-reweighting) are statistically indistinguishable in this panel -- and would "
+                       "show neither clears the promotion bar on backtest evidence alone, consistent with "
+                       "reweighted_composite_a still only running on the prospective clock, not promoted."),
+        "category": "infrastructure",
+        "configuration": {
+            "file": "pipeline/optimization_harness.py",
+            "change": ("New Panel (immutable chronological train/validation/holdout split, never "
+                       "shuffled), OptimizationSession (evaluate() only ever touches train+validation, "
+                       "never .holdout; deflated-Sharpe trials floored at experiment_registry."
+                       "total_variants_tested()), and classify() (walk-forward + search-wide PBO + "
+                       "deflated Sharpe gates, suggesting PROMOTE/KEEP_AS_CHALLENGER/ABANDON). Applied to "
+                       "pipeline/backtest_signal_panel.json (60 periods, 50/25/25 train/validation/holdout "
+                       "split) comparing champion's published leg_weights against reweighted_composite_a's "
+                       "REWEIGHTED_A_WEIGHTS (pipeline/shadow_portfolios.py). C4-turnover-controls' own "
+                       "re-run (Priority 1 item 4) is not repeated here: C7-turnover-walkforward already "
+                       "applied this exact rigor (split-half walk-forward, CSCV PBO at 6 and 8 splits, "
+                       "deflated Sharpe against 47 trials) to that specific question and reached ABANDON -- "
+                       "re-simulating it through this harness would require backtest_monthly.py-style "
+                       "monthly NAV series, a different data shape than the composite-score panel this "
+                       "harness consumes, and would not change C7's already-rigorous answer."),
+        },
+        "train_period": "backtest_signal_panel.json periods[0:30] (2021-09..2024-02)",
+        "validation_period": "backtest_signal_panel.json periods[30:45] (2024-03..2025-05)",
+        "test_period": "backtest_signal_panel.json periods[45:60] (2025-06..2026-08), informational holdout only, never used for selection",
+        "metrics": {
+            "trial_count_at_run": 55,
+            "champion_train_mean_ic": 0.0263, "champion_validation_mean_ic": 0.0518,
+            "proposal_a_train_mean_ic": 0.0263, "proposal_a_validation_mean_ic": 0.0518,
+            "walk_forward_efficiency": 1.9696,
+            "deflated_sharpe_probability": 0.2077,
+            "clears_multiple_testing_bar": False,
+            "search_wide_pbo_8_splits": 0.0,
+            "holdout_mean_ic_informational_only": 0.036, "holdout_t_stat_informational_only": 0.952,
+        },
+        "number_of_variants_tested": 2,
+        "result": ("champion and proposal_a produced byte-identical validation-period IC series (0.0518 "
+                   "mean IC both), confirming Round 10's finding under a genuinely split, gated protocol "
+                   "rather than R7's original un-split full-panel script: growth and news_sentiment "
+                   "contribute exactly 0% of the composite in this panel and capital_allocation/"
+                   "accounting_quality contribute only 6.5-6.7%, so zeroing them (proposal_a) versus "
+                   "keeping them (champion) is arithmetically indistinguishable here. Search-wide PBO of "
+                   "0.0 follows trivially from the two configurations being identical, not from either one "
+                   "being genuinely dominant. Neither configuration ships: deflated Sharpe probability "
+                   "0.2077 is well under the 0.95 bar even before this comparison's own selection is "
+                   "charged against it, and validation IC's t-statistic does not clear 3.0. Walk-forward "
+                   "efficiency of 1.97 (validation IC exceeding train IC) is itself a caution sign worth "
+                   "naming, not a good sign -- a ratio that far from 1.0 in either direction on a short, "
+                   "30/15-period split reads as small-sample noise, not evidence the signal generalizes "
+                   "unusually well out-of-sample."),
+        "decision": "KEEP_AS_CHALLENGER",
+        "reason": ("Matches R7-leg-reweighting's own standing decision and does not change it: "
+                   "reweighted_composite_a continues on the prospective clock (started 2026-08-21) exactly "
+                   "as before, this round supplies an independent, more rigorous backtest-side "
+                   "confirmation that neither backtest alone would have promoted it, so the prospective "
+                   "clock remains the only path to a promotion decision here. No production weight or "
+                   "composite construction changed. The harness itself (not this one comparison) is what "
+                   "ships: locked with 12 tests in pipeline/tests/test_optimization_harness.py covering "
+                   "split disjointness/chronology, holdout non-access, registry-floored trial count, PBO "
+                   "on synthetic noise vs. a genuinely dominant configuration, and classification's "
+                   "search-wide-overfit-abandons-everything rule. Full pipeline suite green after the "
+                   "change (2267 tests)."),
+    },
+    {
+        "id": "R11-P2-shadow-portfolio-registry-cap",
+        "declared_at": "2026-08-23T21:15:00+00:00",
+        "hypothesis": ("pipeline/shadow_portfolios.py already runs multiple strategies concurrently, but "
+                       "nothing distinguished permanent product sleeves/baselines (production, SPY, "
+                       "momentum, and so on -- always live since ACTIVATION_DATE, never subject to a "
+                       "promotion decision) from genuine research-candidate shadows (strategies with their "
+                       "own later activation date, like reweighted_composite_a, each one taxing the "
+                       "deflated Sharpe correction charged against every other concurrent candidate), and "
+                       "nothing enforced the brief's stated 3-4 concurrent-candidate cap in code."),
+        "category": "infrastructure",
+        "configuration": {
+            "file": "pipeline/shadow_portfolios.py",
+            "change": ("Added research_candidate_strategies() (returns STRATEGY_ACTIVATION_DATES -- the "
+                       "existing, already-correct definition of 'has its own activation date, distinct "
+                       "from the permanent STRATEGIES sleeves'), MAX_CONCURRENT_RESEARCH_CANDIDATES=4, and "
+                       "assert_candidate_capacity(), called once at import time against the live registry "
+                       "so a future change registering a fifth concurrent candidate without concluding one "
+                       "of the existing ones fails immediately at import/test time rather than silently."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"research_candidates_currently_registered": 1, "cap": 4},
+        "number_of_variants_tested": 1,
+        "result": ("Exactly one research-candidate shadow (reweighted_composite_a) is currently "
+                   "registered, well under the cap; this round's optimization-harness run (R11-P1) found "
+                   "no new candidate that cleared the promotion bar with enough margin to warrant "
+                   "registering a second one, so the cap-enforcement scaffolding ships without a new "
+                   "candidate behind it -- adding one that does not deserve to exist yet, just to "
+                   "demonstrate the plumbing, would itself be the kind of dishonest bookkeeping this "
+                   "registry exists to prevent."),
+        "decision": "PROMOTE",
+        "reason": ("Structural, in-code cap enforcement matching the brief's explicit 'not a process doc' "
+                   "requirement, at effectively zero risk: the guard only ever fails a future violation, "
+                   "and the live registry already passes it. Locked with 5 tests in "
+                   "test_shadow_portfolios.py covering the live registry passing its own guard, permanent "
+                   "sleeves being correctly excluded from the candidate count, a cap violation being "
+                   "refused, an at-cap registry still passing, and a caller-supplied tighter limit being "
+                   "honored."),
+    },
+    {
+        "id": "R11-P3-deflated-sharpe-trial-count-undercount",
+        "declared_at": "2026-08-23T21:30:00+00:00",
+        "hypothesis": ("Round 9 found the tear-sheet's Deflated Sharpe reads 'Insufficient, variance of "
+                       "Sharpes across registered trials is not recorded' on one view while another shows "
+                       "0.238 -- the brief attributed this to no single complete trial log existing. Direct "
+                       "source read found the sharper, more specific defect: signal_metrics.py's "
+                       "honesty_metrics() computed its own trials count from just the currently-loaded "
+                       "backtest's optimizer sweep categories (falling back to 1 if none), never reading "
+                       "experiment_registry.total_variants_tested() at all -- the exact undercount "
+                       "ic_harness.py's research_trial_count() (validation/ic_harness.py:348) already "
+                       "guards against for the audit-dashboard view, floored via max(configured, registry "
+                       "total). Whatever the specific 'Insufficient' framing traces to (not found verbatim "
+                       "in the repo; may be UI copy for the null-DSR case rather than committed data), the "
+                       "undercount itself was real and reproducible."),
+        "category": "data_integrity",
+        "configuration": {
+            "files": ["pipeline/signal_metrics.py", "pipeline/tests/test_signal_metrics.py"],
+            "change": ("trials = len(sweep categories) or 1 changed to trials = max(sweep_trials, "
+                       "experiment_registry.total_variants_tested()), mirroring ic_harness.py's existing "
+                       "research_trial_count() floor pattern exactly rather than inventing a second one."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {
+            "registry_total_variants_tested_at_fix_time": 55,
+            "committed_signal_metrics_json_trials_before_fix": 201,
+            "note": ("201 > 55, so this specific already-committed artifact's published 0.238 value does "
+                     "not change until the next refresh recomputes it -- the undercount's exposure is any "
+                     "backtest run whose own optimizer sweep is shallower than the registry total (a "
+                     "single-category or no-sweep run would previously have reported trials=1), not "
+                     "necessarily today's published number."),
+        },
+        "number_of_variants_tested": 1,
+        "result": ("Confirmed by direct source read (pipeline/signal_metrics.py honesty_metrics, trials "
+                   "line) and reproduced with a regression test: a synthetic one-category optimizer sweep "
+                   "now reports trials equal to the live registry total (55, and asserted > 1), not 1."),
+        "decision": "PROMOTE",
+        "reason": ("One-line fix restoring the same floor discipline ic_harness.py already enforces "
+                   "elsewhere, closing the gap Round 9 flagged between the tear-sheet and audit-dashboard "
+                   "Deflated Sharpe views without inventing a third calculation or touching evaluation.py's "
+                   "math. backtest_swing.py's separate DSR_TRIALS=3 was investigated and deliberately left "
+                   "unchanged: its comment and pipeline/validation/harness_freeze.json both document it as "
+                   "the swing-reversal family's own registered trial count (a narrower, family-scoped "
+                   "denominator, not a forgotten repo-wide count), a different and defensible design this "
+                   "round did not have grounds to override. Full signal_metrics test suite green (57 "
+                   "tests, 1 new) after the change."),
+    },
+    {
+        "id": "R11-P4-edgar-pit-growth-reconstruction-feasibility",
+        "declared_at": "2026-08-23T21:45:00+00:00",
+        "hypothesis": ("Round 10 found the backtest panel's growth leg at 0.0% coverage (0 of 51,600 "
+                       "ticker-periods), root-caused to Yahoo's quarterly statement history rarely reaching "
+                       "the two full trailing-twelve-month windows year-over-year growth needs. The EDGAR "
+                       "PIT fundamentals store already collected (pipeline/data/pit/fundamentals/, 4.78M+ "
+                       "as-filed observations with filed timestamps back to 2009-08) should be able to "
+                       "reconstruct historical TTM revenue growth without look-ahead risk, since "
+                       "pipeline/edgar_enrichment.py's edgar_ttm_statements(symbol, as_of) already enforces "
+                       "filed<=as_of for the live enrichment path -- this round asks whether it can also "
+                       "cover the backtest reconstruction path, which never reads from this store today."),
+        "category": "data_availability",
+        "configuration": {
+            "file": "research/audit/round11/edgar_pit_growth_pilot.py",
+            "method": ("Bounded pilot, no network access used or needed (PIT store and the SEC ticker->CIK "
+                       "entity map are both already-committed local data): revenue_growth(symbol, as_of) = "
+                       "(TTM revenue as of as_of - TTM revenue as of as_of-365d) / abs(prior), for the 19 "
+                       "of advisor_universe.json's 21 portfolio_symbols with a resolvable CIK (VOO, VGT are "
+                       "ETFs, correctly excluded -- no XBRL financials to fetch), over the most recent 24 "
+                       "monthly dates already in pipeline/backtest_signal_panel.json (2024-09..2026-08). "
+                       "Scope is deliberately narrower than the brief's assumed '45 names': the live "
+                       "portfolio_symbols list has 21, not 45."),
+        },
+        "train_period": None, "validation_period": None,
+        "test_period": "2024-09-03 through 2026-08-03, 19 symbols x 24 months = 456 ticker-periods",
+        "metrics": {
+            "ticker_periods_attempted": 456, "ticker_periods_covered": 447, "coverage_pct": 98.0,
+            "baseline_coverage_pct_yahoo_quarterly_path": 0.0,
+            "sanity_check_symbols_with_a_published_growth_score_to_compare": 6,
+            "sanity_check_directionally_consistent": 5,
+            "sanity_check_outlier": "AGO (financial guarantor): reconstructed revenue TTM growth -184.0%, published growth score 50.0",
+        },
+        "number_of_variants_tested": 1,
+        "result": ("Feasible, decisively: 98.0% coverage (447 of 456 ticker-periods) versus the existing "
+                   "path's 0.0%, using data already collected and committed -- no new network access "
+                   "required to prove this. Directional sanity check against live production's published "
+                   "growth score agreed for 5 of 6 comparable tickers (EOG, COP, BAC, ADBE, CRUS); AGO (an "
+                   "insurer/financial guarantor) was the one outlier, most likely because the generic "
+                   "'Revenues' XBRL concept nets premiums/losses oddly for insurance profiles -- the same "
+                   "reason this session's enrichment-expansion work and EXCLUDED_EXPANSION_PROFILES "
+                   "already special-case financial/insurance names elsewhere in this codebase, not a flaw "
+                   "in the filed<=as_of reconstruction method itself. This pilot measured revenue TTM "
+                   "growth only, a narrower, deliberately bounded proxy for the full multi-input production "
+                   "growth score, not a re-derivation of it."),
+        "decision": "PROMOTE",
+        "reason": ("The feasibility finding and the pilot script both ship: results are reproducible from "
+                   "committed data alone (research/audit/round11/edgar_pit_growth_pilot_results.json). "
+                   "Wiring this into pipeline/backtest_historical.py's production reconstruction path -- "
+                   "extending it to earnings_growth alongside revenue, handling the financial/insurance "
+                   "concept-mapping caveat AGO surfaced, and re-running Round 10's full leg diagnosis with "
+                   "real growth coverage restored -- is real follow-up engineering this pilot deliberately "
+                   "did not attempt, consistent with the brief's own 'bounded pilot... before trusting it "
+                   "for calibration' framing and this session's standing constraint against touching "
+                   "scoring/composite construction without separate authorization."),
+    },
+    {
+        "id": "R11-P4-2-edgar-pit-wired-into-backtest-historical",
+        "declared_at": "2026-08-23T22:00:00+00:00",
+        "hypothesis": ("R11-P4-edgar-pit-growth-reconstruction-feasibility's follow-up: wire the same "
+                       "filed<=as_of EDGAR PIT reconstruction into pipeline/backtest_historical.py's "
+                       "production build_snapshot() path (not just the standalone pilot script), covering "
+                       "both revenue_growth and earnings_growth, gated for the insurance profile ambiguity "
+                       "AGO surfaced, so the next live re-run of the backtest panel picks up real growth-"
+                       "leg coverage instead of the 0% Round 10 diagnosed."),
+        "category": "data_availability",
+        "configuration": {
+            "files": ["pipeline/backtest_historical.py", "pipeline/tests/test_backtest_historical.py",
+                     "pipeline/run_backtest_suite.py"],
+            "change": ("edgar_pit_growth_fallback(ticker_data, as_of, need_revenue, need_earnings): fills "
+                       "whichever of revenue_growth/earnings_growth Yahoo's ~8-quarter-deep quarterly "
+                       "history left None, via edgar_enrichment.edgar_ttm_statements at as_of and "
+                       "as_of-365d -- never overwrites a Yahoo-resolved value. Revenue growth skipped for "
+                       "REVENUE_GROWTH_EXCLUDED_PROFILES (bank/life_insurer/property_casualty_insurer/"
+                       "diversified_insurer/reit, matching fetch_advisor.py's "
+                       "EXCLUDED_EXPANSION_PROFILES) via canonical_metrics.classify_profile; earnings "
+                       "growth (net income) is not excluded -- the netting ambiguity R11-P4 found was "
+                       "specific to the generic 'Revenues' XBRL concept. Added ticker_data['industry'] "
+                       "(previously only 'sector' was captured) since classify_profile needs both to "
+                       "distinguish insurer sub-types. DISABLE_EDGAR_PIT_BACKTEST_GROWTH=1 reproduces the "
+                       "pre-this-round Yahoo-only behavior for comparison. Also wrote "
+                       "pipeline/run_backtest_suite.py, a single CLI sequencing panel rebuild -> Round 10's "
+                       "leg_diagnosis.py -> the Round 11 optimization harness against the registered shadow "
+                       "candidate(s) (shadow_portfolios.RESEARCH_CANDIDATE_WEIGHTS, an explicit map added "
+                       "so this doesn't guess an attribute name from a strategy id), so a future round "
+                       "doesn't have to remember which of three scripts to run in which order."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 9},
+        "number_of_variants_tested": 1,
+        "result": ("Wiring correctness verified with 7 new tests in test_backtest_historical.py (mocked "
+                   "edgar_ttm_statements -- no network/PIT-store dependency in the test itself): fills both "
+                   "growth figures when Yahoo's history is short, skips revenue (not earnings) growth for "
+                   "an excluded profile, respects the disable flag, never calls out when nothing is needed, "
+                   "never raises on a PIT-store read failure, and -- the regression that matters most -- "
+                   "never overwrites a growth figure Yahoo already resolved. run_backtest_suite.py's "
+                   "diagnosis+harness stages were run end-to-end against the existing (pre-this-change) "
+                   "committed panel (--skip-panel, no network needed for those two stages) and reproduced "
+                   "R11-P1's exact numbers, confirming the CLI itself is correct. What is NOT yet done: the "
+                   "panel itself has not been regenerated with this fallback live -- rebuilding "
+                   "pipeline/backtest_signal_panel.json needs backtest_monthly.py's real yfinance network "
+                   "access across ~860 tickers x 60 periods, which is blocked_network_policy in this "
+                   "environment, the same constraint every prior round's live-data work in this repository "
+                   "has hit. Round 10's leg diagnosis therefore still reads 0% growth coverage in the "
+                   "currently-committed panel -- that number only changes after a real "
+                   "`python3 pipeline/run_backtest_suite.py --years 5` run somewhere with network access."),
+        "decision": "PROMOTE",
+        "reason": ("The wiring, its tests, and the CLI all ship -- they're correct and ready for the next "
+                   "real backtest re-run to exercise, and DISABLE_EDGAR_PIT_BACKTEST_GROWTH=1 preserves an "
+                   "exact way to reproduce the old baseline for comparison once that re-run happens. Not "
+                   "marked INCONCLUSIVE: the open item here isn't methodological uncertainty (R11-P4 "
+                   "already established the method works, at 98% coverage on real data), it's purely "
+                   "the standing network-access constraint on regenerating the full panel, which is "
+                   "environmental, not a question this round's evidence leaves open. Full pipeline suite "
+                   "green (2276 tests) after the change."),
+    },
+    {
+        "id": "R11-P3-2-trial-count-logs-are-not-actually-fragmented",
+        "declared_at": "2026-08-23T22:15:00+00:00",
+        "hypothesis": ("R11-P3 flagged 'a third, disconnected trial-count source' -- "
+                       "pipeline/validation/hypothesis_log.jsonl (8 entries) alongside experiment_registry.py "
+                       "(55->61) and pipeline/validation/harness_freeze.json (50) -- as fragmentation needing "
+                       "reconciliation, based on only having read harness_freeze.json's "
+                       "trial_count_for_deflated_statistics block in isolation. Reading the full file (291 "
+                       "lines, not the ~15-line fragment) to actually attempt that reconciliation, as directed."),
+        "category": "data_integrity",
+        "configuration": {
+            "file": "pipeline/validation/harness_freeze_evaluator.py (new)",
+            "finding": ("harness_freeze.json's dsr_trial_count_used=50 is a FROZEN promotion-criteria "
+                       "constant, declared 2026-08-11/12 for four specific named prospective clocks "
+                       "(champion, swing-v1.1.0, swing_reversal-A/B/C, entry_timing_overlay), and is not "
+                       "read by any production code -- confirmed by grep: the only other reference to it "
+                       "is a comment in backtest_swing.py, which uses its OWN family-scoped count (3), not "
+                       "this 50. experiment_registry.py's total_variants_tested() is a SEPARATE, "
+                       "continuously-growing count consumed by ic_harness.py/signal_metrics.py for live "
+                       "dashboard statistics not tied to any one frozen clock. hypothesis_log.jsonl's 8 "
+                       "entries are not a third system: they are the literal machine-readable source "
+                       "harness_freeze.json's own note says its 2026-08-12 swing_reversal(3)+"
+                       "entry_timing_overlay(5)=8 subtotal was read from -- a component of the 50, not a "
+                       "competitor to it. Merging these into one number would be a category error: it "
+                       "would either move the goalposts on an already-started frozen clock (if the dynamic "
+                       "registry total were substituted in) or wrongly narrow the live dashboard's "
+                       "deflation to a stale August snapshot (if the frozen 50 were substituted there). "
+                       "Separately found while reading the full file: pipeline/validation/deflated_sharpe.py "
+                       "(233 lines, its own tested DSR + PBO implementation, explicitly named as the "
+                       "required implementation in entry_timing_overlay.statistical_requirements) had zero "
+                       "production callers -- a real, different gap from what R11-P3 flagged."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {
+            "harness_freeze_pre_freeze_categories_unresolved": 6,
+            "note": ("Whether experiment_registry.py's WO-1..C7 entries (16 entries, dated 2026-08-07..10, "
+                     "before the 2026-08-11 freeze) overlap with harness_freeze.json's six OTHER pre-freeze "
+                     "categories (backtest_variants_r3/r4/r5, turnover_control_sweep_pre_r3, "
+                     "scoring_variants, regression_constructions, survivorship_reconstruction_runs, "
+                     "pre_freeze_construction_runs -- 42 combined) could not be established: neither file "
+                     "documents which source script or commit each of those six category counts traces to. "
+                     "Left unresolved rather than guessed -- see decision/reason."),
+        },
+        "number_of_variants_tested": 1,
+        "result": ("The three-way fragmentation R11-P3 reported does not exist in the form described: two "
+                   "of the three are correctly separate by design (a frozen promotion gate vs. a live "
+                   "dashboard statistic), and the third is a documented subset of one of them, not an "
+                   "independent system. What DOES remain unresolved, honestly: whether 6 of harness_freeze."
+                   "json's 8 pre-freeze category labels correspond to any work also recorded in "
+                   "experiment_registry.py under a different name. Built and tested (16 tests) the actual "
+                   "missing piece instead: harness_freeze_evaluator.py implements "
+                   "evaluate_against_promotion_criteria() (the frozen ICIR/t-stat/deflated-Sharpe/PBO gates, "
+                   "using pipeline/validation/deflated_sharpe.py per harness_freeze.json's own citation) and "
+                   "evaluate_entry_timing_overlay_variant() (its distinct relative-improvement-over-baseline "
+                   "acceptance rule). Both return insufficient_periods today, correctly, since every clock "
+                   "this freeze covers is still at 0 of its required periods (harness_start_date "
+                   "2026-09-01) -- there is nothing to evaluate yet, only machinery made ready for when "
+                   "there is. Locked with 9 tests in test_harness_freeze_evaluator.py."),
+        "decision": "PROMOTE",
+        "reason": ("Corrects the record rather than leaving R11-P3's overstated 'fragmentation' claim "
+                   "standing uncontested in the registry, which would itself be a research-integrity lapse "
+                   "in an apparatus whose entire purpose is honest bookkeeping. Ships a real evaluator for "
+                   "a criteria set that had been declared in writing but never wired to any code, using the "
+                   "exact implementation (pipeline/validation/deflated_sharpe.py) the freeze document "
+                   "itself names, rather than inventing a sixth deflated-Sharpe variant. Does not attempt "
+                   "the six-category overlap question: guessing an overlap correction either way would be "
+                   "a new, unaudited fabrication layered on top of an already-frozen document, which is "
+                   "worse than leaving it explicitly open. 9 new tests in "
+                   "test_harness_freeze_evaluator.py. Full pipeline suite green (2285 tests) after the "
+                   "change."),
+    },
+    {
+        "id": "R11-P5-swing-domain-and-auto-search",
+        "declared_at": "2026-08-23T22:30:00+00:00",
+        "hypothesis": ("optimization_harness.py only ever tested the 8 fundamental/behavioral legs, "
+                       "and every candidate had to be hand-picked one at a time. User request: extend "
+                       "the same harness to technical/momentum (swing) leg weighting, and add a bounded "
+                       "automatic candidate-generation mode so a human-in-the-loop round-trip (run "
+                       "locally, hand results back, get the next round's candidates) doesn't require "
+                       "hand-authoring every weight vector."),
+        "category": "infrastructure",
+        "configuration": {
+            "files": ["pipeline/backtest_swing.py", "pipeline/run_backtest_suite.py",
+                     "pipeline/tests/test_backtest_swing.py", "pipeline/tests/test_run_backtest_suite.py"],
+            "change": ("backtest_swing.py: new build_swing_signal_panel() + "
+                       "run_backtest(..., collect_signal_panel=True) capture variant A's (the frozen "
+                       "baseline's) per-ticker leg_scores for the 5 swing legs (pead_drift, "
+                       "analyst_revision, high_volume_premium, high_52w_proximity, short_term_reversal) "
+                       "into the same {date, leg_scores, forward_returns} shape "
+                       "backtest_signal_panel.json already uses -- optimization_harness.py needed zero "
+                       "changes to read it, since it was already leg-name-agnostic. New --panel-out CLI "
+                       "flag, written to a separate file (never embedded in the committed "
+                       "backtest_swing_results.json). Explicitly never touches "
+                       "swing_signals.SWING_WEIGHTS or the swing-v1.1.0 prospective clock (harness_freeze."
+                       "json's changes_that_reset_this_clock) -- this is a research/backtest panel only. "
+                       "run_backtest_suite.py: added --domain {fundamentals,swing} (selects panel path, "
+                       "build command, and default candidates -- swing-reversal-B's exact registered "
+                       "weights for swing, transcribed from harness_freeze.json rather than re-derived); "
+                       "diagnosis stage auto-skips for --domain swing since leg_diagnosis.py's leg names "
+                       "are fundamentals-specific. Added --auto-search N: N randomly perturbed neighbors "
+                       "of the champion/baseline weights (random_neighbor(): each leg scaled by a factor "
+                       "in [1-perturbation, 1+perturbation], each leg independently droppable at "
+                       "drop_probability to explore leg-removal hypotheses, renormalized to the champion's "
+                       "total weight mass), generated from --search-seed for exact reproducibility. Every "
+                       "candidate in one invocation still shares one Panel split and one shared "
+                       "classify() call (one PBO across the whole batch), so nothing about the split-then-"
+                       "search or search-wide-PBO discipline built in R11-P1 was loosened. Report output "
+                       "now includes each candidate's actual weights (needed for a human to read the "
+                       "result and propose the next round) and is sorted PROMOTE > KEEP_AS_CHALLENGER > "
+                       "ABANDON, then by validation IC within a tier."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 10},
+        "number_of_variants_tested": 1,
+        "result": ("Verified end-to-end with a synthetic scratch swing panel (deleted, not committed) "
+                   "and against the real committed fundamentals panel: --domain swing --auto-search 5 "
+                   "and --domain fundamentals --auto-search 4 both ran the full split/PBO/deflated-Sharpe "
+                   "gate sequence, correctly ranked results, and correctly reported a degenerate all-"
+                   "zero-coverage-leg candidate (a real edge case a random drop can produce) as "
+                   "ABANDON with mean_ic=None rather than crashing. Locked with 10 new tests (1 in "
+                   "test_backtest_swing.py covering the new panel's shape, 9 in "
+                   "test_run_backtest_suite.py covering the swing default candidate, random-neighbor "
+                   "generation, and rank-key ordering)."),
+        "decision": "PROMOTE",
+        "reason": ("Pure tooling: no production weight, panel, or promotion decision changed. "
+                   "optimization_harness.py itself needed no changes at all -- it was already generic "
+                   "over leg names, which is what made this extension small. Auto-search stays within "
+                   "this round's own stated discipline: bounded (N is a required, explicit argument, "
+                   "never inferred), reproducible (seeded), and gated by the same PBO-across-the-batch "
+                   "and registry-floored deflated-Sharpe machinery every other candidate in this "
+                   "repository goes through -- it is a faster way to generate honestly-gated candidates "
+                   "for a human to review, not a shortcut around the gates themselves. Full pipeline "
+                   "suite green (2295 tests) after the change."),
+    },
+    {
+        "id": "R11-P6-coverage-weighted-formula-and-elo-tournament",
+        "declared_at": "2026-08-24T01:30:00+00:00",
+        "hypothesis": ("User request, after a live human-in-the-loop search session against a real "
+                       "10-year panel (run on the user's own machine, network-connected) found the "
+                       "same conclusion three independent ways -- thin-sample PBO, well-powered PBO, "
+                       "and cross-window train-IC instability -- that no hand-picked weight vector "
+                       "beats champion reliably: (1) turn the session's own coverage-vs-weight "
+                       "mismatch finding (profitability weighted at 20.3% on 7.5% coverage; growth "
+                       "still weighted at 8.6% despite R11-P4's fix taking its coverage to 95.4%) "
+                       "into an actual formula rather than a one-off observation, and (2) build a "
+                       "repeated-comparison mechanism ('like chess Elo') so an edge's robustness "
+                       "across resamples is visible as accumulating rating separation, rather than a "
+                       "single closable split verdict."),
+        "category": "infrastructure",
+        "configuration": {
+            "files": ["pipeline/optimization_harness.py", "pipeline/elo_tournament.py",
+                     "pipeline/run_backtest_suite.py", "pipeline/tests/test_optimization_harness.py",
+                     "pipeline/tests/test_elo_tournament.py"],
+            "change": ("optimization_harness.formula_weights(periods): weight_leg proportional to "
+                       "coverage_leg * max(0, standalone_ic_leg) (per_leg_ic(), already existing in "
+                       "evaluation.py), normalized to sum to 1. A leg with broad coverage but no "
+                       "measured predictive power is driven toward zero exactly as surely as a leg "
+                       "with strong IC but almost no coverage. Computed only from a caller-supplied "
+                       "train slice -- calling it on validation/holdout would reintroduce the exact "
+                       "search-then-split mistake this whole harness exists to prevent. New "
+                       "pipeline/elo_tournament.py: run_tournament(periods, candidates, rounds, seed, "
+                       "k, sample_size) draws one bootstrap resample (with replacement, default size "
+                       "= pool) of period indices per round, computes every candidate's mean rank IC "
+                       "on that identical resample, plays a full round-robin among candidates with "
+                       "standard logistic Elo updates, and repeats for `rounds` rounds. Wired into "
+                       "run_backtest_suite.py as a fourth, opt-in stage (--elo-rounds N, "
+                       "--include-formula to enter a formula_weights() candidate derived from the "
+                       "harness's own Panel.train), sharing the same train/validation split the "
+                       "harness stage uses."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 19},
+        "number_of_variants_tested": 1,
+        "result": ("Verified with 19 new tests (18 in test_optimization_harness.py including the new "
+                   "leg_coverage/formula_weights coverage, 13 in test_elo_tournament.py -- note some "
+                   "overlap in touched files with R11-P5's count) and a live smoke test against this "
+                   "sandbox's own (stale, pre-10-year-rebuild) committed panel: a genuinely predictive "
+                   "synthetic leg reliably out-rates a noise leg over 100 rounds (Elo separates "
+                   "cleanly), two candidates that are actually identical stay locked at the same "
+                   "rating for 150 rounds rather than one drifting ahead by chance, and -- the case "
+                   "worth stating plainly -- on this sandbox's stale panel, formula_weights() itself "
+                   "collapsed to {market_behavior: 1.0} and tied champion and reweighted_composite_a "
+                   "on every single round (100/100), because on that specific panel those three "
+                   "candidates produce byte-identical per-ticker scores (the same coverage-collapse "
+                   "dynamic R11-P1 already found: most tickers only ever resolve market_behavior). "
+                   "That is the tool working correctly, not a bug: three functionally-identical "
+                   "candidates showing zero rating separation across 100 independent resamples is "
+                   "exactly the honest answer, not a failure to find one."),
+        "decision": "PROMOTE",
+        "reason": ("Ships as tooling only -- no production weight, panel, or promotion decision "
+                   "changed, and formula_weights()'s own docstring states plainly it must never be "
+                   "computed on validation/holdout data. Explicitly scoped as a complement to, not a "
+                   "replacement for, the existing PBO/deflated-Sharpe gates: bootstrap resampling "
+                   "cannot manufacture statistical power beyond what a panel's real period count "
+                   "already contains, and the tournament is designed to show that honestly (ratings "
+                   "staying close) rather than obscure it. The genuinely informative next test is "
+                   "against a real, network-fetched, EDGAR-refreshed panel outside this sandbox, not "
+                   "available in this environment -- flagged rather than faked. Full pipeline suite "
+                   "green (2314 tests) after the change."),
+    },
+    {
+        "id": "R11-P7-edgar-pit-statement-fallback-beyond-growth",
+        "declared_at": "2026-08-24T06:00:00+00:00",
+        "hypothesis": ("The user's own real 10-year panel + --sector-breakdown run traced a root cause "
+                       "for a finding that looked at first like a fresh-fetch flake: every sector's "
+                       "sector_weight_report only ever showed growth and market_behavior, never "
+                       "valuation/profitability/financial_health/capital_allocation/accounting_quality. "
+                       "Reproduced locally against a real cached ticker (AAPL) plus this repo's own "
+                       "committed EDGAR PIT store: for an as_of outside Yahoo's ~2-year cached quarterly "
+                       "window, build_snapshot's start_idx comes back None and income_ttm/balance_now/"
+                       "cashflow_ttm were left as *empty* statements outright -- not just missing growth, "
+                       "the R11-P4 fix's own scope -- so every ratio basic_ratios()/derive_extended() "
+                       "compute from them went to None too. For a 5-10 year backtest that's most of the "
+                       "window. edgar_ttm_statements() (edgar_enrichment.py) already returns full "
+                       "income/balance/cashflow dicts in build_ttm_statements' exact shape, so hypothesis: "
+                       "substitute it directly for the empty-statement branch, the same 'reuse the "
+                       "existing adapter, don't rebuild it' move R11-P4 made for growth specifically."),
+        "category": "data_availability",
+        "configuration": {
+            "files": ["pipeline/backtest_historical.py", "pipeline/tests/test_backtest_historical.py"],
+            "change": ("edgar_pit_statement_fallback(ticker_data, as_of): returns "
+                       "(income, balance, cashflow) from edgar_ttm_statements(), or (None, None, None) "
+                       "if disabled (DISABLE_EDGAR_PIT_BACKTEST_STATEMENTS=1), no resolvable CIK, EDGAR "
+                       "history that also doesn't reach back far enough, or a PIT-store read failure -- "
+                       "never raises, same contract as edgar_pit_growth_fallback. Wired into "
+                       "build_snapshot()'s start_idx-is-None branch ahead of the pre-existing "
+                       "empty-statement fallback, which now only fires when EDGAR has nothing either. "
+                       "Growth still resolves correctly through the normal revenue_now/revenue_prior "
+                       "path once income_ttm is EDGAR's real data -- edgar_pit_growth_fallback is no "
+                       "longer even called in that case, since revenue_growth/earnings_growth aren't "
+                       "None anymore. Also: edgar_enrichment.BALANCE_ROWS has no shares-outstanding "
+                       "concept, so market_cap (and every ratio needing it) would still be None even "
+                       "with real EDGAR statements; added a further fallback to diluted (then basic) "
+                       "weighted-average shares from the income statement via the existing "
+                       "fundamentals_extended 'diluted_shares' alias -- a standard, disclosed stand-in "
+                       "for a precise point-in-time float count, only used when neither a live share "
+                       "count (blocked by allow_current_shares for point-in-time correctness) nor a "
+                       "balance-sheet share count resolved."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 8},
+        "number_of_variants_tested": 1,
+        "result": ("8 new tests (4 for edgar_pit_statement_fallback in isolation, 4 for build_snapshot's "
+                   "wiring, mocked edgar_ttm_statements -- no network/PIT-store dependency in the test "
+                   "itself). Also reproduced end-to-end against real data in this sandbox: this repo "
+                   "carries both a real cached AAPL ticker file and the real committed EDGAR PIT store "
+                   "(pipeline/data/pit/fundamentals/), so build_snapshot(AAPL, 2024-06-30) was called "
+                   "directly before and after the change. Before: only revenue_growth, earnings_growth, "
+                   "and price/volume technicals were non-None (extended_coverage=0.0). After: "
+                   "extended_coverage=1.0 and every category resolves real values -- price_to_sales=8.52, "
+                   "return_on_equity=1.3531, current_ratio=1.04, debt_to_equity=1.38, altman_z=2.78, "
+                   "piotroski_f=7.9, ev_to_ebitda=25.61, gross_buyback_yield=0.0252, market_cap resolved "
+                   "via the diluted-shares fallback -- not a synthetic test, the actual production "
+                   "function called against the actual committed data. Full pipeline suite green "
+                   "(2356 tests, 448 subtests) after the change."),
+        "decision": "PROMOTE",
+        "reason": ("Same shape as R11-P4-2: correct, tested, and backtest-reconstruction-only -- "
+                   "build_snapshot is not on the live scoring path (advisor_engine/scorer.py), so no "
+                   "production score, weight, or promotion decision changes. What this does change is "
+                   "the honesty of every backtest result already produced this round: R11-P1 through "
+                   "R11-P6's harness/Elo/holdout comparisons were run against a panel where 5 of 8 legs "
+                   "had almost no real coverage outside the most recent ~1.5 years, so their apparent "
+                   "agreement (growth + market_behavior dominating, other legs collapsing toward "
+                   "identical or near-zero contribution) was this bug's signature, not a settled finding "
+                   "about those legs' true predictive power. The panel has NOT yet been regenerated with "
+                   "this fix live -- that needs backtest_monthly.py's real yfinance network access across "
+                   "the full universe, the same standing constraint on this sandbox every prior round's "
+                   "live-data work has hit. Every harness/Elo/holdout number produced before this fix "
+                   "regenerates the panel should be treated as measuring growth+market_behavior's edge "
+                   "specifically, not the full 8-leg blend the weight vectors nominally describe."),
+    },
+    {
+        "id": "R11-P8-metric-level-sector-breakdown",
+        "declared_at": "2026-08-24T06:45:00+00:00",
+        "hypothesis": ("User request: extend R11-P7's --sector-breakdown from the 6-8 rolled-up legs "
+                       "(valuation, profitability, ...) to every individual metric the methodology "
+                       "currently computes (trailing P/E, ROE, Piotroski F, Altman Z, buyback yield, "
+                       "and so on) -- which specific metric carries signal in which sector, not only "
+                       "which category. build_research's row already carries every one of these as "
+                       "**snapshot-spread top-level keys (confirmed by reading advisor_engine.py "
+                       "directly); the panel builder just never extracted them. Hypothesis: capture "
+                       "them alongside the existing leg_scores, then reuse -- not reimplement -- every "
+                       "existing leg-level function (leg_coverage, formula_weights, "
+                       "sector_weight_report) by substituting metric_scores for leg_scores, since none "
+                       "of those functions know or care whether a 'leg' name is a rolled-up category "
+                       "or an individual metric."),
+        "category": "infrastructure",
+        "configuration": {
+            "files": ["pipeline/backtest_monthly.py", "pipeline/optimization_harness.py",
+                     "pipeline/run_backtest_suite.py", "pipeline/tests/test_backtest_monthly.py",
+                     "pipeline/tests/test_optimization_harness.py"],
+            "change": ("backtest_monthly.panel_metric_scores(rows): every key in a scored row that is "
+                       "numeric, not a bool, and not one of build_research's own added output keys "
+                       "(score, base_score, components, fundamental_categories, recommendation, "
+                       "analysis_v2, ... -- an explicit exclusion set, not inferred, so a future field "
+                       "added to build_research's return dict can't silently be mistaken for a scoring "
+                       "input) -- captures trailing_pe, return_on_equity, piotroski_f, altman_z, "
+                       "ev_to_ebitda, gross_buyback_yield, and everything else build_snapshot computes. "
+                       "Wired alongside leg_scores in each panel period as metric_scores. "
+                       "optimization_harness.as_metric_periods(periods) returns periods with "
+                       "metric_scores standing in for leg_scores -- the substitution that lets "
+                       "sector_weight_report (and everything it calls) run unchanged at the metric "
+                       "level. run_backtest_suite.py: new --metric-sector-breakdown flag "
+                       "(fundamentals-only, composes with --sector-breakdown), console output "
+                       "truncated to the top 5 metrics per sector by formula weight -- the full list "
+                       "still goes to --harness-out -- learned from this same round's earlier "
+                       "console-flooding fix (R11-P7's neighbor, _drop_series)."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 8},
+        "number_of_variants_tested": 1,
+        "result": ("8 new tests (2 for panel_metric_scores' extraction/exclusion rules, 3 for "
+                   "as_metric_periods' substitution and graceful-degradation on a pre-metric panel, "
+                   "3 confirming sector_weight_report produces a correct per-sector breakdown when "
+                   "fed remapped metric periods with no metric-specific code path at all). Full "
+                   "pipeline suite green after the change. Sanity-checked panel_metric_scores directly "
+                   "against a realistic row shape (AAPL-like: price_to_sales, return_on_equity, "
+                   "piotroski_f, altman_z, market_cap) -- extracted exactly those four numeric fields, "
+                   "correctly excluded sector/is_etf/fundamental_categories/components/recommendation."),
+        "decision": "PROMOTE",
+        "reason": ("Ships as tooling only -- no production weight, panel, or promotion decision "
+                   "changed, same scope discipline as every other harness addition this round. Reuses "
+                   "existing leg-level machinery rather than duplicating it, so this doesn't grow the "
+                   "surface area that needs independent correctness verification. Requires a panel "
+                   "rebuild (backtest_monthly.py, real network access) before metric_scores exists to "
+                   "analyze -- not run against real data in this environment, same standing constraint "
+                   "as R11-P7's own statement fallback."),
+    },
+    {
+        "id": "R11-P9-sector-candidate-validation-check",
+        "declared_at": "2026-08-24T15:30:00+00:00",
+        "hypothesis": ("User's own real R11-P7/P8 run found genuinely different per-sector "
+                       "leg/metric patterns (Utilities favoring leverage/size metrics, Technology "
+                       "favoring margin/quality metrics, Energy showing six legs with positive train-"
+                       "slice IC) -- but formula_weights() is explicitly train-slice-only by its own "
+                       "contract, so none of that is yet evidence the pattern generalizes rather than "
+                       "being fit to noise in a sector-restricted, thinner-than-full-universe sample. "
+                       "User's explicit request: 'validate the finding' -- test each sector's train-"
+                       "fitted formula on that SAME sector's own validation slice, the direct "
+                       "out-of-sample check, before trusting any of R11-P8's per-sector numbers."),
+        "category": "infrastructure",
+        "configuration": {
+            "files": ["pipeline/optimization_harness.py", "pipeline/run_backtest_suite.py",
+                     "pipeline/tests/test_optimization_harness.py"],
+            "change": ("optimization_harness.sector_candidate_report(panel, champion_weights, "
+                       "trial_count=None, minimum_periods=6, extra_candidates=None): per sector, "
+                       "fits formula_weights() on that sector's own Panel.train slice (filtered via "
+                       "the existing filter_periods_by_sector), then evaluates it -- alongside "
+                       "champion and an equal_weight control, plus any extra_candidates -- purely on "
+                       "that SAME sector's Panel.validation slice, through the identical "
+                       "walk_forward/evaluate_candidate apparatus (deflated Sharpe, same trial count) "
+                       "every other candidate this round has been graded through. Never reads "
+                       "panel.holdout. A sector with fewer than minimum_periods usable periods in "
+                       "either its train or validation slice reports candidates: None rather than a "
+                       "comparison built on too few names. New run_backtest_suite.py "
+                       "--sector-candidate-check flag (fundamentals-only, composes with "
+                       "--sector-breakdown/--metric-sector-breakdown in the same invocation), console "
+                       "output one line per sector (champion vs sector_formula validation IC, "
+                       "walk-forward efficiency, BEATS/does-not-beat verdict) -- full detail in "
+                       "--harness-out."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 5},
+        "number_of_variants_tested": 1,
+        "result": ("5 new tests: holdout never touched (mirrors OptimizationSession's own "
+                   "test), a genuinely stable synthetic sector pattern (same relationship in both "
+                   "train and validation) beats a deliberately mismatched champion on validation IC, "
+                   "the minimum-period floor gates a thin sector to candidates: None, results sort "
+                   "by validation IC descending, and extra_candidates flow through alongside champion "
+                   "and the sector formula. Also ran the actual CLI end-to-end (not just the isolated "
+                   "function) against a small fabricated panel with two sectors, each driven by a "
+                   "different, deliberately-planted leg: --sector-candidate-check correctly reported "
+                   "'Energy val_ic=0.2783 -> sector_formula val_ic=0.2912 -> BEATS champion' and "
+                   "'Technology val_ic=0.0881 -> sector_formula val_ic=0.2886 -> BEATS champion', "
+                   "matching the planted ground truth exactly -- confirming the flag wiring itself, "
+                   "not just the underlying function in isolation. Full pipeline suite green after "
+                   "the change."),
+        "decision": "PROMOTE",
+        "reason": ("Ships as tooling only -- same scope discipline as every other harness addition "
+                   "this round, no production weight or promotion decision changed. This is the "
+                   "actual answer to 'is R11-P8's per-sector finding noise': a sector where "
+                   "sector_formula's validation-slice IC collapses relative to its train-slice IC "
+                   "(walk_forward_efficiency near zero or negative) is the overfitting signature; "
+                   "one where it holds up is real, generalizing evidence. Needs a real, "
+                   "network-fetched panel rebuild (same standing constraint as R11-P7/P8) to run "
+                   "against the user's actual per-sector findings -- not run against that real data "
+                   "in this sandbox, only against synthetic ground-truth and a small fabricated "
+                   "smoke-test panel."),
+    },
+    {
+        "id": "R11-P10-sector-verdict-gates-and-growth-quality-focus",
+        "declared_at": "2026-08-24T16:30:00+00:00",
+        "hypothesis": ("User, before running R11-P9's --sector-candidate-check on real data: "
+                       "'make sure its rigorous testing though and make sure the score is focused "
+                       "on high growth good companies'. Two distinct gaps in R11-P9 as shipped. "
+                       "(1) Rigor: it reported a single comparison per sector (sector_formula vs "
+                       "champion validation IC), the weakest possible reading -- beating champion "
+                       "in one sector is equally consistent with champion simply being "
+                       "miscalibrated there, and searching 11 sectors for a winner is 11 chances "
+                       "to find one in noise while grading each against the bar a single "
+                       "pre-registered hypothesis would face. (2) Objective: the harness optimizes "
+                       "for predicting forward returns across the WHOLE ~910-name universe, which "
+                       "is not the same question as ranking high-growth, good-quality companies "
+                       "well -- and the latter is what the score exists to do."),
+        "category": "methodology",
+        "configuration": {
+            "files": ["pipeline/optimization_harness.py", "pipeline/run_backtest_suite.py",
+                     "pipeline/tests/test_optimization_harness.py"],
+            "change": ("Rigor: sector_verdict(candidates, significance_threshold, "
+                       "efficiency_floor) grades a sector REAL only on a conjunction of four "
+                       "gates -- beats champion, ALSO beats the equal-weight no-opinion control "
+                       "(separating 'this sector wants these weights' from 'champion is "
+                       "miscalibrated here'), keeps >=50% of its train IC on validation "
+                       "(SECTOR_EFFICIENCY_FLOOR; a collapse is the overfitting signature), and "
+                       "clears sector_significance_threshold(): a Bonferroni-adjusted |t| bar "
+                       "computed from the number of sectors actually searched, floored at the "
+                       "repo's own standing |t| >= 3. Anything short of all four reads "
+                       "NOT_ESTABLISHED with the failed gates named, never a weaker yes. "
+                       "Objective: filter_periods_by_quality_gates(periods, gates) restricts each "
+                       "period to names clearing GROWTH_QUALITY_GATES -- growth >= 70th "
+                       "percentile, and profitability+financial_health AVERAGED >= 50th -- ranked "
+                       "within that period's own cross-section, so qualification is point-in-time "
+                       "and never uses a threshold derived from later data. Panel.from_slices() "
+                       "applies that filter to already-split slices without re-deriving the "
+                       "train/validation boundary (re-splitting filtered data would silently move "
+                       "the line, the exact leakage Panel.__init__ exists to prevent). Wired as "
+                       "--growth-quality-focus on --sector-candidate-check, which prints surviving "
+                       "retention so a too-thin cross-section is visible rather than silent."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 16},
+        "number_of_variants_tested": 1,
+        "result": ("16 new tests (2 Panel.from_slices, 6 quality-gate filtering, 2 significance "
+                   "threshold, 5 verdict gates, 1 retention). Two design findings came out of "
+                   "running it rather than reasoning about it. First: the initial draft used three "
+                   "independent floors (growth 0.70, profitability 0.50, financial_health 0.50); a "
+                   "smoke run showed those compound multiplicatively to ~7.5% retention, which on "
+                   "a per-sector slice of the real panel (~80 names/sector) leaves ~6 names per "
+                   "period -- below the harness's own >=5-names usable-period floor, i.e. an "
+                   "unmeasurable slice. Rebuilt as two gates with profitability+financial_health "
+                   "averaged into one 'quality' concept (they measure the same thing; two floors "
+                   "double-counted it), giving ~15% retention, verified at 14.9% on a "
+                   "realistic-width synthetic panel. Second: end-to-end CLI runs against a "
+                   "160-name/90-period synthetic panel with a deliberately planted leg per sector "
+                   "showed the gates discriminating correctly -- on the full universe both planted "
+                   "sectors read REAL (t=29.4, t=22.0); with --growth-quality-focus narrowing to "
+                   "15% of names, Energy stayed REAL (t=10.9) while Technology correctly fell to "
+                   "NOT_ESTABLISHED, naming all three gates it failed (beats_champion, "
+                   "beats_equal_weight, clears_sector_adjusted_significance; t dropped to 2.33). A "
+                   "narrower universe producing a weaker verdict is the honest result, not a "
+                   "regression."),
+        "decision": "PROMOTE",
+        "reason": ("Ships as tooling only -- no production weight, panel, or promotion decision "
+                   "changed. Both additions make the standing R11-P9 check strictly harder to "
+                   "pass, never easier: the verdict gates can only downgrade a sector a bare IC "
+                   "comparison would have called a winner, and the growth-quality focus asks a "
+                   "narrower question on less data. Bonferroni at 11 sectors (~2.84) is looser "
+                   "than the repo's existing |t| >= 3, so the floor binds at today's sector count "
+                   "and the adjustment only starts mattering above ~50 -- stated here rather than "
+                   "left as a silent no-op. Not yet run against the user's real panel: that is the "
+                   "next step, and the per-sector findings from R11-P8/P9 remain unvalidated until "
+                   "it happens."),
+    },
+    {
+        "id": "R11-P11-per-sector-weight-search",
+        "declared_at": "2026-08-24T18:00:00+00:00",
+        "hypothesis": ("User request after both real R11-P9/P10 runs came back 0-1 sectors REAL: "
+                       "audit the methodology, then rewrite the test to actually DIAL IN weights "
+                       "per sector ('technology shouldn't have the same capital allocation as real "
+                       "estate'). The audit found the gap: sector_candidate_report grades exactly "
+                       "ONE fitted candidate per sector -- formula_weights, whose max(0, train-IC) "
+                       "construction collapses to 1-2 legs whenever most legs' train ICs are "
+                       "negative, which is precisely the state of the real panel's train era "
+                       "(champion train IC negative in nearly every sector). The observed real "
+                       "output confirms it: sector formulas of {growth: 1.0}, {valuation: 1.0}, "
+                       "{capital_allocation: 1.0}. A sector failing that test shows one brittle "
+                       "guess failed, not that no sector-specific weighting exists. Hypothesis: a "
+                       "bounded per-sector SEARCH with selection kept inside the train slice can "
+                       "answer the user's actual question without weakening any gate."),
+        "category": "methodology",
+        "configuration": {
+            "files": ["pipeline/optimization_harness.py", "pipeline/run_backtest_suite.py",
+                     "pipeline/tests/test_optimization_harness.py"],
+            "change": ("optimization_harness.sector_weight_search(panel, champion_weights, count, "
+                       "seed, ...): per sector, (1) the sector's train slice is split "
+                       "chronologically into fit (60%) and select (40%); (2) a pool of count "
+                       "random weight vectors over the sector's own leg universe, plus structured "
+                       "entries -- formula_weights(fit), that formula shrunk toward equal weight "
+                       "at 25/50/75% (regularizing its known mono-leg collapse), and equal weight "
+                       "-- is ranked by mean IC on the select slice; (3) CSCV search_pbo across "
+                       "the whole pool on the full train slice reports when a winner is just the "
+                       "luckiest of N; (4) ONLY the winner reaches the sector's validation slice, "
+                       "with evaluate_candidate trials charged as registry_count + pool_size -- "
+                       "the honest deflation price of the search; (5) the same four sector_verdict "
+                       "gates apply (formula_name parameterized), Bonferroni across sectors. "
+                       "Validation is never consulted during selection; holdout is never touched. "
+                       "CLI: --sector-search N / --sector-search-seed, composes with "
+                       "--growth-quality-focus (panel transform factored out and shared). Console "
+                       "prints winner weights per sector so Technology-vs-Real-Estate differences "
+                       "are explicit."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 7},
+        "number_of_variants_tested": 1,
+        "result": ("7 new tests: the search recovers a DIFFERENT dominant leg per sector on a "
+                   "planted two-sector panel (Technology->growth, Energy->valuation), planted "
+                   "patterns read REAL under all four gates, holdout untouched, same seed "
+                   "reproduces the same winners, deflation verified as trial_count + pool_size, "
+                   "thin sectors report a reason, search_pbo present per sector. End-to-end CLI "
+                   "run against a 160-name/90-period synthetic panel (--harness-out under /tmp, "
+                   "after twice clobbering the committed real results file with smoke output): "
+                   "Energy winner valuation=0.95, Technology winner growth=0.99, both REAL, "
+                   "search_pbo 0.0 -- the planted ground truth recovered independently per "
+                   "sector, which is exactly the capability the user asked for. Full pipeline "
+                   "suite green after the change."),
+        "decision": "PROMOTE",
+        "reason": ("Ships as tooling only; no production weight changed. The search widens what "
+                   "can be FOUND while keeping every gate that decides what can be BELIEVED: "
+                   "selection inside train, per-sector PBO, pool-width deflation, the four "
+                   "verdict gates, Bonferroni across sectors. If the real panel still returns "
+                   "few or no REAL sectors under an actual search, that is strong evidence the "
+                   "uniform champion is genuinely adequate per sector -- a much stronger "
+                   "conclusion than R11-P9/P10 could support with one guess per sector. The "
+                   "train-era sign instability (champion negative train IC, positive validation "
+                   "IC across most sectors) remains the bigger open question and caps how much "
+                   "any per-sector result should be trusted until it is explained."),
+    },
+    {
+        "id": "R11-P12-fama-macbeth-ridge-candidates",
+        "declared_at": "2026-08-24T18:45:00+00:00",
+        "hypothesis": ("User asked whether ML ('unsupervised learning or something') could improve "
+                       "the weight search. Honest triage first: gradient boosting / neural nets on "
+                       "~60 monthly training observations per sector would memorize noise and the "
+                       "existing gates would correctly reject them -- not built. The one ML method "
+                       "actually sized for this data is regularized cross-sectional regression "
+                       "(Fama-MacBeth-style ridge), and it targets a real, identified blind spot: "
+                       "formula_weights scores each leg STANDALONE, so two correlated legs "
+                       "(profitability and financial_health co-move by construction) each collect "
+                       "full credit for the same information. A joint regression splits credit "
+                       "between correlated legs instead of double-counting."),
+        "category": "methodology",
+        "configuration": {
+            "files": ["pipeline/optimization_harness.py",
+                     "pipeline/tests/test_optimization_harness.py"],
+            "change": ("optimization_harness.ridge_weights(periods, legs, lam): per period, "
+                       "z-score every leg within that period's own cross-section (missing values "
+                       "imputed at the cross-sectional mean -- absence carries no information, "
+                       "matching composite_score's renormalize-around-missing contract), regress "
+                       "demeaned forward returns on all legs jointly with ridge penalty "
+                       "lam * n_names on the Gram diagonal, average coefficients across periods "
+                       "(Fama-MacBeth), clip negatives to zero (production weights are long-only "
+                       "shares; a leg whose best joint use is as a short signal is a separate "
+                       "finding, not a negative weight composite_score would renormalize "
+                       "incoherently), renormalize to sum 1. Pure stdlib -- an 8x8 Gaussian "
+                       "elimination (_solve_linear_system), no numpy, matching the pipeline's "
+                       "existing zero-dependency arithmetic. Wired into _sector_search_pool as "
+                       "three candidates (ridge_0.1 / ridge_1 / ridge_10) alongside formula, "
+                       "shrunk blends, equal weight, and the random sweep -- graded through "
+                       "exactly the same select-slice selection, pool-width deflation, "
+                       "search_pbo, and four verdict gates as every other pool member. Periods "
+                       "with fewer than max(5, legs+2) names are skipped rather than fit."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 9},
+        "number_of_variants_tested": 1,
+        "result": ("9 new tests. The one that matters: on a planted panel where 'half' is a "
+                   "corrupted copy of 'good' (correlated, strictly less informative), ridge "
+                   "concentrates weight on 'good' more sharply than formula_weights does "
+                   "(measured 0.709/0.291 vs 0.608/0.392 -- a real but modest gap on that "
+                   "synthetic, asserted as a ratio inequality rather than magic constants). "
+                   "Also: anti-predictive legs clip to zero, weights sum to 1, deterministic, "
+                   "degenerate inputs return {} rather than raising, and all three ridge "
+                   "candidates appear in the sector-search pool. End-to-end CLI smoke on the "
+                   "planted two-sector panel: ridge_0.1 WON the Energy sector's search outright "
+                   "(valuation=0.93, REAL, search_pbo 0.0) while formula kept Technology -- the "
+                   "pool picking different structured candidates per sector is the mechanism "
+                   "working as designed. Full pipeline suite green after the change."),
+        "decision": "PROMOTE",
+        "reason": ("Ships as three more pool candidates behind the existing gates -- nothing about "
+                   "selection honesty changes, deflation already charges for pool width, and a "
+                   "ridge candidate that wins a sector still has to clear select-slice selection, "
+                   "validation grading, search_pbo, and all four verdict gates. Deliberately NOT "
+                   "built: boosting/NN (sample size), and unsupervised pseudo-sector clustering "
+                   "(interesting but a large new multiple-testing surface; noted as possible "
+                   "future work, not smuggled in)."),
+    },
+    {
+        "id": "R11-P13-regime-diagnosis",
+        "declared_at": "2026-08-24T19:30:00+00:00",
+        "hypothesis": ("The user's two real 500-wide sector searches (full universe and "
+                       "growth-quality) both returned 0 of 11 sectors REAL, and their select-slice "
+                       "columns exposed the deeper pattern: in several sectors the best of ~505 "
+                       "candidates had NEGATIVE select-era IC that flipped positive in validation "
+                       "(Basic Materials -0.009->+0.096, Consumer Defensive -0.034->+0.006), while "
+                       "others flipped the opposite way (Communication Services +0.146->-0.038). "
+                       "The instability is in the signal across TIME, not the weights across "
+                       "sectors -- no static weight vector survives a signal that points backwards "
+                       "for half its history. Three hypotheses with distinct fingerprints: a real "
+                       "regime break at a market event; a data-source artifact at the boundary "
+                       "where statements stop being Yahoo-native and become the R11-P7 EDGAR "
+                       "reconstruction; or diffuse noise with no single break at all."),
+        "category": "methodology",
+        "configuration": {
+            "files": ["pipeline/regime_diagnosis.py", "pipeline/tests/test_regime_diagnosis.py"],
+            "change": ("New standalone pipeline/regime_diagnosis.py (reads the committed panel and "
+                       "cache, no network, changes nothing): per-year champion IC table with hit "
+                       "rates; single-break scan maximizing Welch's t between before/after "
+                       "segments (min 24 periods each); permutation test on the MAXIMUM |t| over "
+                       "all breakpoints, so scanning every break location is priced into the "
+                       "p-value rather than quietly inflating significance; the Yahoo-native/EDGAR "
+                       "data-source boundary COMPUTED from the actual cache (median over tickers "
+                       "of oldest quarterly income period + 45d reporting lag) rather than "
+                       "assumed; per-leg before/after IC table to show whether a break is "
+                       "composite-wide or leg-specific. Verdict is an explicit trichotomy: "
+                       "DATA_ARTIFACT_SUSPECTED when a significant break sits within 3 months of "
+                       "the computed boundary, REGIME_BREAK when significant and far from it, "
+                       "NO_SIGNIFICANT_BREAK otherwise -- with the honest reading attached to "
+                       "each (diffuse instability reads 'no stable edge at this horizon', not "
+                       "'an edge with one bad patch')."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 13},
+        "number_of_variants_tested": 1,
+        "result": ("13 new tests: a planted sign-flip at period 60 is located within 3 periods "
+                   "and reads significant; a steady signal is NOT declared a break (permutation "
+                   "p > 0.05); the same planted flip reads REGIME_BREAK when the fabricated cache "
+                   "boundary is years away and DATA_ARTIFACT_SUSPECTED when the boundary is "
+                   "placed at the flip; the boundary median is computed correctly from fabricated "
+                   "cache files; degenerate inputs error rather than guess. End-to-end CLI run "
+                   "against this sandbox's real committed (stale, 5-year, 60-period) panel and "
+                   "real cache: computed boundary 2025-02-14 from 860 tickers, strongest break "
+                   "2024-01 at permutation p=0.432 -> NO_SIGNIFICANT_BREAK -- mechanics verified "
+                   "on real data, though this stale panel is NOT the user's 10-year panel and "
+                   "its verdict says nothing about theirs."),
+        "decision": "PROMOTE",
+        "reason": ("Pure diagnosis: reads committed data, selects nothing, promotes nothing, "
+                   "touches no holdout semantics. This is the decision instrument for the round's "
+                   "biggest open question -- whether R11's every backtest number is history or "
+                   "measurement. Its three verdicts have different consequences: "
+                   "DATA_ARTIFACT_SUSPECTED redirects effort to the EDGAR reconstruction's "
+                   "fidelity; REGIME_BREAK means any weights validated on one side are untested "
+                   "on the other and regime-conditioning becomes the research question; "
+                   "NO_SIGNIFICANT_BREAK means the monthly-horizon edge claim itself, not its "
+                   "weighting, is what lacks support. Awaits the user's real 10-year run."),
+    },
+    {
+        "id": "R11-P14-rolling-ic-monitor-and-regime-docs",
+        "declared_at": "2026-08-24T20:30:00+00:00",
+        "hypothesis": ("Follow-through on the real R11-P13 outcome (REGIME_BREAK at 2021-03, "
+                       "permutation p=0.019, champion IC -0.023 before / +0.038 after, 47 months "
+                       "from the computed data seam), on explicit user go-ahead for both halves: "
+                       "(1) the production system had no artifact that would surface a future "
+                       "sign flip -- it would be discovered in a later backtest, years after the "
+                       "fact; (2) the published model documentation (docs/MODEL-CARD.md, "
+                       "docs/LIMITATIONS.md -- CI-scanned by validate_documentation_claims.py) "
+                       "did not state that the score anti-predicted for ~3 of its 10 backtest "
+                       "years, that every full-panel statistic mixes the two regimes, or that "
+                       "the sector question was settled negatively."),
+        "category": "monitoring",
+        "configuration": {
+            "files": ["pipeline/signal_metrics.py", "pipeline/tests/test_signal_metrics.py",
+                     "docs/MODEL-CARD.md", "docs/LIMITATIONS.md"],
+            "change": ("signal_metrics.py: new rolling_ic_regime metric in the panel-computable "
+                       "group (requires_live_sample False) -- trailing 12-period mean of the "
+                       "published composite's per-period rank IC at the graded horizon, dated "
+                       "series in detail, breach condition 'rolling mean < 0' (the signature of "
+                       "the pre-2021 regime returning), negative_windows / last_negative_date "
+                       "for history, R11-P13 reference embedded so the artifact explains its own "
+                       "threshold. Pending states for no-panel and <12 resolved periods. "
+                       "Docs: MODEL-CARD 'Validation state' and LIMITATIONS 'Validation' now "
+                       "state the 2021-03 IC sign break with its statistics, that the break is "
+                       "47 months from the computed Yahoo/EDGAR statement seam (market history, "
+                       "not data construction), that the post-2021 read is post hoc and n=1 (no "
+                       "falsifiable regime model can be built from one transition), that any "
+                       "edge is conditional on the current regime persisting, and that two "
+                       "500-per-sector searches settled the sector-weighting question 0-of-11 "
+                       "negatively. Worded as caveats throughout."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 5},
+        "number_of_variants_tested": 1,
+        "result": ("5 new tests: a predictive panel reads positive/unbreached with a dated "
+                   "19-point rolling series from 30 periods; a globally anti-predictive panel "
+                   "breaches; a panel whose first 18 periods anti-predict but whose last 12 "
+                   "predict reads POSITIVE at the headline (the latest window covers only the "
+                   "good era) while negative_windows/last_negative_date preserve the bad era -- "
+                   "recency is the entire point of a rolling monitor, asserted directly; "
+                   "too-few-periods and no-panel read awaiting_input. First test run caught a "
+                   "wrong assumption about the metric status vocabulary (asserted 'ok'/'pending' "
+                   "where the module publishes 'ready'/'awaiting_input') -- tests corrected to "
+                   "the real contract. validate_documentation_claims.py green over 116 files "
+                   "after the doc edits. Full pipeline suite green."),
+        "decision": "PROMOTE",
+        "reason": ("The monitor is additive, panel-computable, and self-documenting; its breach "
+                   "line (rolling mean < 0) is the empirically observed signature of the one "
+                   "known bad regime rather than an arbitrary threshold. The doc changes only "
+                   "narrow published claims, never widen them -- they add the strongest known "
+                   "caveat about the score's history to the two files whose whole job is "
+                   "carrying such caveats, and the CI claim scanner confirms nothing now claims "
+                   "validation the repository cannot support."),
+    },
+    {
+        "id": "R11-P15-gzip-panel-io",
+        "declared_at": "2026-08-24T21:15:00+00:00",
+        "hypothesis": ("The user's 10-year panel with R11-P8 metric_scores is 174MB -- past "
+                       "GitHub's hard 100MB file limit, so the panel of record cannot be "
+                       "committed raw (their push was rejected), and an uncommitted panel means "
+                       "refresh-advisor.yml -> signal_metrics.py computes the R11-P14 rolling-IC "
+                       "regime monitor against whatever stale panel is in the tree. The same "
+                       "repetition that makes the file huge (metric key names repeated per "
+                       "ticker-period) makes it compress on the order of 10x."),
+        "category": "infrastructure",
+        "configuration": {
+            "files": ["pipeline/panel_io.py", "pipeline/tests/test_panel_io.py",
+                     "pipeline/backtest_monthly.py", "pipeline/backtest_swing.py",
+                     "pipeline/run_backtest_suite.py", "pipeline/signal_metrics.py",
+                     "pipeline/regime_diagnosis.py", "pipeline/elo_tournament.py",
+                     "research/audit/round10/leg_diagnosis.py"],
+            "change": ("New panel_io.load_panel(path)/save_panel(path, data): save gzips when "
+                       "the path ends .gz (compact separators either way -- indent was a third "
+                       "of the raw size); load reads the given path, falls back to path+'.gz', "
+                       "returns None if neither exists, so a fresh local .json rebuild always "
+                       "wins over the committed compressed copy. Every panel reader (suite "
+                       "harness+elo stages, signal_metrics, regime_diagnosis, elo CLI, round10 "
+                       "leg_diagnosis) and both writers (backtest_monthly, backtest_swing) "
+                       "wired through it."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 5},
+        "number_of_variants_tested": 1,
+        "result": ("5 tests (round trips both formats, .json->.gz fallback, fresh-json-beats-"
+                   "stale-gz precedence, missing-file None). Real end-to-end: this sandbox's "
+                   "committed panel round-trips through gzip at 15.2MB -> 3.6MB and loads via "
+                   "the .json-path fallback with period counts intact. A first patch of "
+                   "leg_diagnosis.py referenced a REPO name that doesn't exist in that script's "
+                   "scope -- caught by re-reading the file, fixed before commit. Full pipeline "
+                   "suite green."),
+        "decision": "PROMOTE",
+        "reason": ("Pure IO plumbing with an explicit precedence contract; no statistic, "
+                   "weight, or artifact shape changes. Unblocks committing the 10-year panel "
+                   "of record (as .json.gz) so the scheduled refresh publishes the regime "
+                   "monitor against real history instead of a stale panel."),
+    },
 ]
 
 

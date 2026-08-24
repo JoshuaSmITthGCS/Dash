@@ -71,7 +71,7 @@ import math
 import os
 import sys
 from bisect import bisect_right
-from datetime import timedelta
+from datetime import datetime, timedelta
 from statistics import mean, stdev
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -79,6 +79,7 @@ sys.path.insert(0, HERE)
 
 from build_swing_screen import resolve_sue  # noqa: E402
 from common import LOG, STORE_DIR  # noqa: E402
+from panel_io import save_panel  # noqa: E402
 from costs import estimate_cost_bps  # noqa: E402
 from evaluation import deflated_sharpe_ratio, probability_of_backtest_overfitting, walk_forward  # noqa: E402
 from screen_inputs import BACKTEST_CACHE, median_dollar_volume, universe_rows  # noqa: E402
@@ -298,8 +299,36 @@ def estimates_coverage_note():
 # Walk-forward driver
 # ---------------------------------------------------------------------------
 
+def build_swing_signal_panel(periods, *, vertical_sessions):
+    """Assemble the leg-level artifact pipeline/optimization_harness.py reads to search over
+    technical/momentum leg weights, the same way it already reads
+    pipeline/backtest_signal_panel.json for the fundamental/behavioral legs.
+
+    ``periods`` carry variant A's (the frozen baseline's) full 5-leg standardized cross-
+    section as ``leg_scores`` -- before any weight is applied -- so any candidate weight
+    vector over these 5 legs, including ones that omit a leg entirely (variant B's style) or
+    substitute a residualized version of one (variant C's style, which needs its own
+    subfactor computed separately and is not represented here), can be tested against it
+    without a new panel shape. Testing a candidate through this panel never touches
+    ``swing_signals.SWING_WEIGHTS`` and does not reset the swing-v1.1.0 prospective clock --
+    see harness_freeze.json's ``changes_that_reset_this_clock``.
+    """
+    return {
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "model": "swing-v1.1.0",
+        "primary_horizon_sessions": vertical_sessions,
+        "leg_weights": dict(swing_signals.SWING_WEIGHTS),
+        "note": ("Research/backtest panel only. Feeds pipeline/optimization_harness.py "
+                 "candidate searches; does not feed, tune, or promote anything in production "
+                 "swing_signals.py. See harness_freeze.json for the swing-v1.1.0 prospective "
+                 "clock, which is the sole promotion authority for this model."),
+        "periods": periods,
+    }
+
+
 def run_backtest(*, years=2, universe_limit=0, cadence_sessions=CADENCE_SESSIONS_DEFAULT,
-                 vertical_sessions=VERTICAL_SESSIONS_DEFAULT, quantiles=QUANTILES_DEFAULT):
+                 vertical_sessions=VERTICAL_SESSIONS_DEFAULT, quantiles=QUANTILES_DEFAULT,
+                 collect_signal_panel=False):
     calendar = default_calendar()
     universe = load_universe(universe_limit)
     sectors = current_sector_map()
@@ -312,6 +341,7 @@ def run_backtest(*, years=2, universe_limit=0, cadence_sessions=CADENCE_SESSIONS
     current_members = {variant: {} for variant in VARIANTS}
     leg_hits = {variant: {leg: 0 for leg in swing_signals.SWING_WEIGHTS} for variant in VARIANTS}
     leg_totals = {variant: 0 for variant in VARIANTS}
+    signal_panel_periods = [] if collect_signal_panel else None
 
     periods_scanned = periods_used = 0
     for session in dates:
@@ -355,6 +385,13 @@ def run_backtest(*, years=2, universe_limit=0, cadence_sessions=CADENCE_SESSIONS
                     "date": as_of, "scores": scores, "forward_returns": forward_returns,
                     "liquidity": liquidity,
                 })
+                if collect_signal_panel and variant == swing_signals.BASELINE_VARIANT:
+                    leg_scores = {row["ticker"]: row["leg_scores"] for row in eligible
+                                 if row["ticker"] in forward_returns}
+                    signal_panel_periods.append({
+                        "date": as_of, "leg_scores": leg_scores,
+                        "forward_returns": forward_returns,
+                    })
             book = {row["ticker"] for row in swing_signals.book_rows(scored, config)}
             weekly_books[variant].append(book)
 
@@ -477,6 +514,9 @@ def run_backtest(*, years=2, universe_limit=0, cadence_sessions=CADENCE_SESSIONS
                         "promotion authority. No new variant is introduced and no weight is "
                         "tuned on these numbers.",
         },
+        "signal_panel": (build_swing_signal_panel(signal_panel_periods,
+                                                  vertical_sessions=vertical_sessions)
+                         if collect_signal_panel else None),
     }
 
 
@@ -489,11 +529,17 @@ def main(argv=None):
     parser.add_argument("--vertical-sessions", type=int, default=VERTICAL_SESSIONS_DEFAULT)
     parser.add_argument("--quantiles", type=int, default=QUANTILES_DEFAULT)
     parser.add_argument("--out", default=OUTPUT)
+    parser.add_argument("--panel-out", default="",
+                        help="Optional path to write the technical/momentum leg-level signal "
+                             "panel pipeline/optimization_harness.py can search over. Empty "
+                             "(default) skips it.")
     args = parser.parse_args(argv)
 
     result = run_backtest(years=args.years, universe_limit=args.universe_limit,
                           cadence_sessions=args.cadence_sessions,
-                          vertical_sessions=args.vertical_sessions, quantiles=args.quantiles)
+                          vertical_sessions=args.vertical_sessions, quantiles=args.quantiles,
+                          collect_signal_panel=bool(args.panel_out))
+    signal_panel = result.pop("signal_panel", None)
     with open(args.out, "w") as handle:
         json.dump(result, handle, indent=2)
     for variant in VARIANTS:
@@ -503,6 +549,10 @@ def main(argv=None):
                  f"net spread {summary['mean_quantile_spread_net_of_cost']}, "
                  f"deflated Sharpe {summary['deflated_sharpe_probability_net_of_cost']}")
     LOG.info(f"backtest_swing: wrote {args.out}")
+    if args.panel_out and signal_panel:
+        save_panel(args.panel_out, signal_panel)
+        LOG.info(f"backtest_swing: wrote {args.panel_out}: "
+                 f"{len(signal_panel['periods'])} scored cross-sections")
     return 0
 
 
