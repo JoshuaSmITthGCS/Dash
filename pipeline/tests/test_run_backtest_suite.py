@@ -163,5 +163,62 @@ class RankKeyTests(unittest.TestCase):
         self.assertEqual([c["validation_mean_ic"] for c in candidates], [-0.02, None])
 
 
+def synthetic_leg_periods(count, *, names=60, seed=11, noise=0.05,
+                          predictive_legs=("good",), dead_legs=("bad",)):
+    generator = random.Random(seed)
+    periods = []
+    for index in range(count):
+        leg_scores, forwards = {}, {}
+        for position in range(names):
+            ticker = f"T{position}"
+            true_score = generator.uniform(0, 100)
+            forward = (true_score - 50) / 50 * 0.02 + generator.gauss(0, noise)
+            legs = {}
+            for leg in predictive_legs:
+                legs[leg] = true_score
+            for leg in dead_legs:
+                legs[leg] = generator.uniform(0, 100)
+            leg_scores[ticker] = legs
+            forwards[ticker] = forward
+        periods.append({"date": f"2026-{index + 1:02d}", "leg_scores": leg_scores,
+                        "forward_returns": forwards})
+    return periods
+
+
+class HoldoutCheckTests(unittest.TestCase):
+    def test_evaluates_only_the_holdout_slice_not_train_or_validation(self):
+        import optimization_harness as harness
+        periods = synthetic_leg_periods(60, names=80, predictive_legs=("good",),
+                                        dead_legs=("bad",), noise=0.03, seed=1)
+        panel = harness.Panel(periods, train_fraction=0.5, validation_fraction=0.3)
+        candidates = [("champion", {"good": 0.5, "bad": 0.5}), ("winner", {"good": 1.0})]
+        results = suite.holdout_check(panel, candidates, trial_count=1)
+        names = [row["name"] for row in results]
+        self.assertEqual(names, ["champion", "winner"])
+        for row in results:
+            self.assertLessEqual(row["holdout_periods"], len(panel.holdout))
+
+    def test_a_genuinely_predictive_candidate_reads_a_higher_holdout_ic(self):
+        periods = synthetic_leg_periods(60, names=80, predictive_legs=("good",),
+                                        dead_legs=("bad",), noise=0.02, seed=2)
+        import optimization_harness as harness
+        panel = harness.Panel(periods, train_fraction=0.5, validation_fraction=0.3)
+        candidates = [("good_only", {"good": 1.0}), ("bad_only", {"bad": 1.0})]
+        results = suite.holdout_check(panel, candidates, trial_count=1)
+        by_name = {row["name"]: row for row in results}
+        self.assertGreater(by_name["good_only"]["holdout_mean_ic"] or 0,
+                           by_name["bad_only"]["holdout_mean_ic"] or 0)
+
+    def test_each_row_carries_a_deflated_sharpe_and_ship_verdict(self):
+        import optimization_harness as harness
+        periods = synthetic_leg_periods(60, names=80, predictive_legs=("good",),
+                                        dead_legs=("bad",), noise=0.03, seed=3)
+        panel = harness.Panel(periods, train_fraction=0.5, validation_fraction=0.3)
+        results = suite.holdout_check(panel, [("champion", {"good": 1.0})], trial_count=5)
+        row = results[0]
+        self.assertIn("deflated_sharpe_probability", row)
+        self.assertIn("ship", row)
+
+
 if __name__ == "__main__":
     unittest.main()

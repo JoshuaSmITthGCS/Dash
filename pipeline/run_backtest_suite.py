@@ -222,6 +222,33 @@ def rank_key(candidate):
            -(candidate["validation_mean_ic"] or float("-inf")))
 
 
+def holdout_check(panel, candidates, *, trial_count, quantiles=5, periods_per_year=12):
+    """A single, one-time evaluation on ``panel.holdout`` -- periods no other stage in this
+    file ever reads (``OptimizationSession.evaluate()`` structurally cannot reach them; this
+    function is the only place in the whole CLI that does).
+
+    Call this ONLY once you already have a specific, small shortlist you believe in from the
+    validation-side search. Running it repeatedly, or calling it before you have a shortlist,
+    turns holdout into more validation data and defeats the entire reason it was kept
+    separate. There is no flag anywhere that runs this automatically as part of a normal
+    search loop -- --holdout-check must be passed explicitly, every time, by a human who has
+    decided this is the moment to spend it.
+    """
+    import optimization_harness as harness
+    results = []
+    for name, weights in candidates:
+        scored = harness.score_with_weights(panel.holdout, weights)
+        verdict = harness.evaluate_candidate(scored, trials=trial_count, quantiles=quantiles,
+                                             periods_per_year=periods_per_year)
+        results.append({
+            "name": name, "weights": weights,
+            "holdout_mean_ic": verdict["ic"]["mean_ic"], "holdout_periods": verdict["ic"]["periods"],
+            "deflated_sharpe_probability": verdict["deflated_sharpe_probability"],
+            "ship": verdict["ship"], "ship_blockers": verdict.get("ship_blockers"),
+        })
+    return results
+
+
 def run_harness_stage(args):
     import optimization_harness as harness
 
@@ -282,6 +309,21 @@ def run_harness_stage(args):
                        if args.auto_search else None),
         "candidates": ranked_candidates,
     }
+
+    if args.holdout_check:
+        print("\n" + "=" * 70)
+        print("[holdout] ONE-TIME CHECK -- spending the holdout slice now.")
+        print("[holdout] These periods have never been read by any other stage. Don't pass")
+        print("[holdout] --holdout-check again to keep searching on this same panel -- doing")
+        print("[holdout] so turns holdout into more validation data and defeats the point.")
+        print("=" * 70)
+        holdout_results = holdout_check(panel, candidates, trial_count=session.trial_count)
+        summary["holdout_check"] = holdout_results
+        for row in holdout_results:
+            print(f"  {row['name']:<28} holdout_mean_ic={row['holdout_mean_ic']} "
+                 f"periods={row['holdout_periods']} "
+                 f"deflated_sharpe={row['deflated_sharpe_probability']} ship={row['ship']}")
+
     os.makedirs(os.path.dirname(args.harness_out), exist_ok=True)
     with open(args.harness_out, "w") as handle:
         json.dump(summary, handle, indent=2)
@@ -385,6 +427,11 @@ def main():
     parser.add_argument("--validation-fraction", type=float, default=0.25)
     parser.add_argument("--pbo-splits", type=int, default=8)
     parser.add_argument("--harness-out", default=DEFAULT_HARNESS_OUT)
+    parser.add_argument("--holdout-check", action="store_true",
+                        help="Spend the one-time holdout evaluation on this run's candidates. "
+                             "Only pass this once you have a specific shortlist you already "
+                             "believe in from validation-side search -- see holdout_check()'s "
+                             "own docstring for why this must never become routine.")
     # Elo-stage. Opt-in: only runs when --elo-rounds is set above 0.
     parser.add_argument("--elo-rounds", type=int, default=0, metavar="N",
                         help="Run pipeline/elo_tournament.py for N bootstrap rounds over the "
