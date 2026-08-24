@@ -1558,6 +1558,71 @@ REGISTRY = [
                    "logic. Unblocks the user from running the real sector-search and regime-"
                    "diagnosis checks against their own swing history without writing new tooling."),
     },
+    {
+        "id": "R11-P17-swing-real-sector-search-and-regime-diagnosis",
+        "declared_at": "2026-08-24T20:20:00+00:00",
+        "hypothesis": ("Following R11-P16's wiring, the user ran the swing sector search and "
+                       "regime diagnosis for real: python pipeline/backtest_swing.py --years 10 "
+                       "--panel-out ...; python pipeline/run_backtest_suite.py --domain swing "
+                       "--skip-panel --sector-search 500 --sector-candidate-check "
+                       "--sector-breakdown; python pipeline/regime_diagnosis.py --panel "
+                       "pipeline/backtest_swing_signal_panel.json, against their own machine's "
+                       "cached price history (772-861 names across the walk, current-universe "
+                       "survivorship bias per backtest_swing.py's own disclosed limitation)."),
+        "category": "signal_validation",
+        "configuration": {
+            "files": ["research/audit/round11/swing_harness_run_results.json",
+                     "research/audit/round11/swing_regime_diagnosis.json"],
+            "change": "No code change -- a real measurement run using R11-P16's wiring.",
+        },
+        "train_period": "2017-03 to roughly 2021 (225 of 450 periods)",
+        "validation_period": "roughly 2021 to roughly 2023-24 (112 periods)",
+        "test_period": "holdout, unspent (113 periods)",
+        "metrics": {
+            "variant_a_mean_rank_ic": -0.0, "variant_b_mean_rank_ic": -0.0003,
+            "variant_c_mean_rank_ic": -0.001, "champion_validation_mean_ic": 0.0063,
+            "champion_deflated_sharpe_probability": 0.055,
+            "reversal_b_validation_mean_ic": -0.003,
+            "regime_break_candidate_t": 1.375, "regime_break_permutation_p": 0.91,
+        },
+        "number_of_variants_tested": 74,
+        "result": ("74 is the top-level harness's own reported trial_count (champion vs "
+                   "swing-reversal-B); the sector search separately charges each sector its own "
+                   "500-plus-structured-pool trial count internally, priced into that sector's "
+                   "own Bonferroni-adjusted significance threshold via sector_verdict, not "
+                   "folded into this field. 450 periods scored, 225 graded per variant over the full 2017-2026 walk. "
+                   "All three registered variants graded to mean rank IC indistinguishable from "
+                   "zero (A -0.0000, B -0.0003, C -0.0010) -- weaker than the fundamentals "
+                   "champion's post-2021 read, not stronger. On the harness validation slice: "
+                   "champion +0.0063 (deflated-Sharpe probability 0.055, below ship bar, "
+                   "suggested_decision KEEP_AS_CHALLENGER), reversal-B -0.0030 "
+                   "(suggested_decision ABANDON). Sector work (500 random + structured pool per "
+                   "sector, same sector_verdict gates as the fundamentals search): 0 of 11 "
+                   "sectors cleared every gate on sector_candidate_report, 0 of 11 on the real "
+                   "search -- every sector failed clears_sector_adjusted_significance at "
+                   "minimum, several sector-search winners carried search_pbo above 0.5 "
+                   "(luckiest-of-pool territory). Regime scan found no significant single break: "
+                   "strongest candidate 2025-12-11, Welch t=1.375, permutation p=0.91 over 2000 "
+                   "shuffles (nowhere near the fundamentals break's p=0.019) -- 10 months from "
+                   "the computed data-source boundary, so not a data-artifact case either, just "
+                   "genuinely no break. The yearly IC table shows why: +0.0042, +0.0044, "
+                   "+0.0016, -0.0069, -0.0014, +0.0386, -0.0263, +0.0153, -0.0151, +0.0220 "
+                   "(2017-2026) -- noise oscillating around zero with no persistent sign, unlike "
+                   "the fundamentals score's clean pre/post-2021 split."),
+        "decision": "ABANDON",
+        "reason": ("The swing model, measured the same way and with the same rigor as the "
+                   "fundamentals score (real 10-year panel, real sector search, real regime "
+                   "scan), shows no measurable predictive edge: near-zero IC in every variant, "
+                   "0/11 sectors, no regime structure to exploit either. This is a validation "
+                   "reading, not a code change -- swing_signals.py's production weights and the "
+                   "swing-reversal variants' existing 2026-09-01 prospective clock "
+                   "(harness_freeze.json) are untouched, per backtest_swing.py's own disclosed "
+                   "'Supplementary... does not replace... the prospective clock' authority "
+                   "note. Recorded ABANDON here because the sector/regime reweighting "
+                   "hypotheses this round tested found nothing to promote -- the prospective "
+                   "clock remains the live, forward-looking test of the three registered "
+                   "variants themselves."),
+    },
 ]
 
 

@@ -601,6 +601,54 @@ pipeline/backtest_swing_signal_panel.json`, then `python pipeline/run_backtest_s
 --domain swing --skip-panel --sector-search 500 --sector-candidate-check --sector-breakdown`
 and `python pipeline/regime_diagnosis.py --panel pipeline/backtest_swing_signal_panel.json`.
 
+## Priority 17 — Swing model: real sector search and regime diagnosis (`R11-P17` in the registry)
+
+The user ran R11-P16's wiring for real, on their own machine, against a genuine 10-year walk
+over `pipeline/data/backtest_cache` (772 names at the start of the walk, growing to 861 as
+history accumulates — the same current-constituent survivorship bias `backtest_swing.py`
+already discloses):
+
+```
+python pipeline/backtest_swing.py --years 10 --panel-out pipeline/backtest_swing_signal_panel.json
+python pipeline/run_backtest_suite.py --domain swing --skip-panel --sector-search 500 \
+  --sector-candidate-check --sector-breakdown
+python pipeline/regime_diagnosis.py --panel pipeline/backtest_swing_signal_panel.json
+```
+
+**The swing model shows no measurable predictive edge over this decade, in any of the three
+ways it was tested.** 450 periods scored, 225 graded per variant. All three registered
+reversal variants graded to mean rank IC indistinguishable from zero: A −0.0000, B −0.0003,
+C −0.0010 (compare to the fundamentals champion's post-2021 read of roughly +0.02 to +0.04).
+On the harness's out-of-sample validation slice the champion reads +0.0063 (deflated-Sharpe
+probability 0.055, below the ship bar, `suggested_decision: KEEP_AS_CHALLENGER`) and the
+registered reversal-B variant reads −0.0030 (`suggested_decision: ABANDON`).
+
+The sector work — the same 500-random-plus-structured-pool search and `sector_verdict` gates
+used on the fundamentals score — found **0 of 11 sectors clearing every gate**, both on
+`sector_candidate_report` (one fitted guess per sector) and the real search. Every sector
+failed `clears_sector_adjusted_significance` at minimum; several sector-search winners carried
+`search_pbo` above 0.5, meaning they're most likely the luckiest draw of the pool rather than a
+real edge.
+
+The regime scan found **no significant break at all** — not "found one and it's a data
+artifact," genuinely none: strongest candidate 2025-12-11, Welch t = 1.375, permutation
+p = 0.91 over 2000 shuffles (compare to the fundamentals break's p = 0.019), 10 months from
+the computed data-source boundary. The yearly IC table shows why a single breakpoint can't
+capture this: +0.0042, +0.0044, +0.0016, −0.0069, −0.0014, +0.0386, −0.0263, +0.0153, −0.0151,
++0.0220 (2017 through 2026) — noise oscillating around zero with no persistent sign, unlike
+the fundamentals score's clean pre-/post-2021 split. Full output:
+`research/audit/round11/swing_harness_run_results.json`,
+`research/audit/round11/swing_regime_diagnosis.json`.
+
+**This is a validation reading, not a code or weight change.** `swing_signals.SWING_WEIGHTS`,
+the three registered swing-reversal variants, and their existing 2026-09-01 prospective clock
+(`harness_freeze.json`) are untouched — consistent with, not a contradiction of,
+`backtest_swing.py`'s own disclosed `limitations.authority` note that this measurement is
+"[s]upplementary... does not replace... the prospective clock, which remains the sole
+promotion authority." What it does establish: unlike the fundamentals score, there is no
+hidden-regime story to tell about swing — ten years of real data show a signal centered on
+zero throughout, not a good era masked by a bad one.
+
 ## What NOT done, per the brief and this session's standing constraints
 
 No production leg weights, composite construction, or ranking logic changed. No shadow variant
