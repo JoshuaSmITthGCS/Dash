@@ -558,5 +558,72 @@ class SectorCandidateReportTests(unittest.TestCase):
             self.assertIn("reweighted_composite_a", names, sector)
 
 
+class SectorWeightSearchTests(unittest.TestCase):
+    """The actual per-sector search: many candidates per sector, selection inside train,
+    only the winner graded on validation, deflation charged for the whole pool.
+    """
+
+    def _panel(self, seed=71):
+        periods = synthetic_sector_periods(90, names_per_sector=25, noise=0.02, seed=seed)
+        return harness.Panel(periods, train_fraction=0.4, validation_fraction=0.4)
+
+    CHAMPION = {"growth": 0.5, "valuation": 0.5}
+
+    def test_recovers_a_different_dominant_leg_per_sector(self):
+        # The user's core claim, planted as ground truth: Technology is driven by growth,
+        # Energy by valuation. A real search must find DIFFERENT weights per sector.
+        report = harness.sector_weight_search(
+            self._panel(), champion_weights=self.CHAMPION, count=40, seed=1, trial_count=10)
+        tech = {c["name"]: c for c in report["Technology"]["candidates"]}["search_winner"]
+        energy = {c["name"]: c for c in report["Energy"]["candidates"]}["search_winner"]
+        self.assertEqual(max(tech["weights"], key=tech["weights"].get), "growth")
+        self.assertEqual(max(energy["weights"], key=energy["weights"].get), "valuation")
+
+    def test_a_genuinely_planted_pattern_reads_real_under_all_four_gates(self):
+        report = harness.sector_weight_search(
+            self._panel(), champion_weights=self.CHAMPION, count=40, seed=1, trial_count=10)
+        for sector in ("Technology", "Energy"):
+            self.assertEqual(report[sector]["verdict"]["verdict"], "REAL", sector)
+
+    def test_never_touches_the_holdout_slice(self):
+        panel = self._panel()
+        original_holdout = panel.holdout
+        harness.sector_weight_search(panel, champion_weights=self.CHAMPION, count=10,
+                                     seed=0, trial_count=10)
+        self.assertEqual(panel.holdout, original_holdout)
+
+    def test_the_same_seed_reproduces_the_same_winner(self):
+        first = harness.sector_weight_search(
+            self._panel(), champion_weights=self.CHAMPION, count=15, seed=9, trial_count=10)
+        second = harness.sector_weight_search(
+            self._panel(), champion_weights=self.CHAMPION, count=15, seed=9, trial_count=10)
+        for sector in first:
+            self.assertEqual(
+                {c["name"]: c["weights"] for c in first[sector]["candidates"]},
+                {c["name"]: c["weights"] for c in second[sector]["candidates"]}, sector)
+
+    def test_deflation_is_charged_for_the_whole_pool_not_one_trial(self):
+        report = harness.sector_weight_search(
+            self._panel(), champion_weights=self.CHAMPION, count=25, seed=2, trial_count=10)
+        row = report["Technology"]
+        winner = {c["name"]: c for c in row["candidates"]}["search_winner"]
+        self.assertGreaterEqual(row["pool_size"], 26)  # 25 random + at least equal_weight
+        self.assertEqual(winner["trials_considered"], 10 + row["pool_size"])
+
+    def test_a_thin_sector_reports_a_reason_rather_than_searching_noise(self):
+        report = harness.sector_weight_search(
+            self._panel(), champion_weights=self.CHAMPION, count=10, seed=0,
+            trial_count=10, minimum_periods=1000)
+        for sector, row in report.items():
+            self.assertIsNone(row["candidates"], sector)
+            self.assertIn("reason", row)
+
+    def test_search_pbo_is_reported_per_sector(self):
+        report = harness.sector_weight_search(
+            self._panel(), champion_weights=self.CHAMPION, count=20, seed=3, trial_count=10)
+        for sector, row in report.items():
+            self.assertIn("search_pbo", row, sector)
+
+
 if __name__ == "__main__":
     unittest.main()

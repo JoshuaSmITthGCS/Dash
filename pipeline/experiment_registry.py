@@ -1224,6 +1224,70 @@ REGISTRY = [
                    "next step, and the per-sector findings from R11-P8/P9 remain unvalidated until "
                    "it happens."),
     },
+    {
+        "id": "R11-P11-per-sector-weight-search",
+        "declared_at": "2026-08-24T18:00:00+00:00",
+        "hypothesis": ("User request after both real R11-P9/P10 runs came back 0-1 sectors REAL: "
+                       "audit the methodology, then rewrite the test to actually DIAL IN weights "
+                       "per sector ('technology shouldn't have the same capital allocation as real "
+                       "estate'). The audit found the gap: sector_candidate_report grades exactly "
+                       "ONE fitted candidate per sector -- formula_weights, whose max(0, train-IC) "
+                       "construction collapses to 1-2 legs whenever most legs' train ICs are "
+                       "negative, which is precisely the state of the real panel's train era "
+                       "(champion train IC negative in nearly every sector). The observed real "
+                       "output confirms it: sector formulas of {growth: 1.0}, {valuation: 1.0}, "
+                       "{capital_allocation: 1.0}. A sector failing that test shows one brittle "
+                       "guess failed, not that no sector-specific weighting exists. Hypothesis: a "
+                       "bounded per-sector SEARCH with selection kept inside the train slice can "
+                       "answer the user's actual question without weakening any gate."),
+        "category": "methodology",
+        "configuration": {
+            "files": ["pipeline/optimization_harness.py", "pipeline/run_backtest_suite.py",
+                     "pipeline/tests/test_optimization_harness.py"],
+            "change": ("optimization_harness.sector_weight_search(panel, champion_weights, count, "
+                       "seed, ...): per sector, (1) the sector's train slice is split "
+                       "chronologically into fit (60%) and select (40%); (2) a pool of count "
+                       "random weight vectors over the sector's own leg universe, plus structured "
+                       "entries -- formula_weights(fit), that formula shrunk toward equal weight "
+                       "at 25/50/75% (regularizing its known mono-leg collapse), and equal weight "
+                       "-- is ranked by mean IC on the select slice; (3) CSCV search_pbo across "
+                       "the whole pool on the full train slice reports when a winner is just the "
+                       "luckiest of N; (4) ONLY the winner reaches the sector's validation slice, "
+                       "with evaluate_candidate trials charged as registry_count + pool_size -- "
+                       "the honest deflation price of the search; (5) the same four sector_verdict "
+                       "gates apply (formula_name parameterized), Bonferroni across sectors. "
+                       "Validation is never consulted during selection; holdout is never touched. "
+                       "CLI: --sector-search N / --sector-search-seed, composes with "
+                       "--growth-quality-focus (panel transform factored out and shared). Console "
+                       "prints winner weights per sector so Technology-vs-Real-Estate differences "
+                       "are explicit."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 7},
+        "number_of_variants_tested": 1,
+        "result": ("7 new tests: the search recovers a DIFFERENT dominant leg per sector on a "
+                   "planted two-sector panel (Technology->growth, Energy->valuation), planted "
+                   "patterns read REAL under all four gates, holdout untouched, same seed "
+                   "reproduces the same winners, deflation verified as trial_count + pool_size, "
+                   "thin sectors report a reason, search_pbo present per sector. End-to-end CLI "
+                   "run against a 160-name/90-period synthetic panel (--harness-out under /tmp, "
+                   "after twice clobbering the committed real results file with smoke output): "
+                   "Energy winner valuation=0.95, Technology winner growth=0.99, both REAL, "
+                   "search_pbo 0.0 -- the planted ground truth recovered independently per "
+                   "sector, which is exactly the capability the user asked for. Full pipeline "
+                   "suite green after the change."),
+        "decision": "PROMOTE",
+        "reason": ("Ships as tooling only; no production weight changed. The search widens what "
+                   "can be FOUND while keeping every gate that decides what can be BELIEVED: "
+                   "selection inside train, per-sector PBO, pool-width deflation, the four "
+                   "verdict gates, Bonferroni across sectors. If the real panel still returns "
+                   "few or no REAL sectors under an actual search, that is strong evidence the "
+                   "uniform champion is genuinely adequate per sector -- a much stronger "
+                   "conclusion than R11-P9/P10 could support with one guess per sector. The "
+                   "train-era sign instability (champion negative train IC, positive validation "
+                   "IC across most sectors) remains the bigger open question and caps how much "
+                   "any per-sector result should be trusted until it is explained."),
+    },
 ]
 
 

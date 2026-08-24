@@ -230,5 +230,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P11-per-sector-weight-search",
+    "declared_at": "2026-08-24T18:00:00+00:00",
+    "hypothesis": "User request after both real R11-P9/P10 runs came back 0-1 sectors REAL: audit the methodology, then rewrite the test to actually DIAL IN weights per sector ('technology shouldn't have the same capital allocation as real estate'). The audit found the gap: sector_candidate_report grades exactly ONE fitted candidate per sector -- formula_weights, whose max(0, train-IC) construction collapses to 1-2 legs whenever most legs' train ICs are negative, which is precisely the state of the real panel's train era (champion train IC negative in nearly every sector). The observed real output confirms it: sector formulas of {growth: 1.0}, {valuation: 1.0}, {capital_allocation: 1.0}. A sector failing that test shows one brittle guess failed, not that no sector-specific weighting exists. Hypothesis: a bounded per-sector SEARCH with selection kept inside the train slice can answer the user's actual question without weakening any gate.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

@@ -17,6 +17,8 @@ own docstring); this module supplies the honest, gated numbers a human then tran
 into a new registry entry, the same way Round 7 and Round 10's findings were written up.
 """
 
+import random
+
 from evaluation import (
     composite_score,
     evaluate_candidate,
@@ -380,7 +382,7 @@ def sector_significance_threshold(sector_count, *, family_alpha=0.05, floor=3.0)
 
 
 def sector_verdict(candidates, *, significance_threshold,
-                   efficiency_floor=SECTOR_EFFICIENCY_FLOOR):
+                   efficiency_floor=SECTOR_EFFICIENCY_FLOOR, formula_name="sector_formula"):
     """Whether one sector's fitted formula is real evidence or noise, as an explicit
     conjunction of gates rather than a single IC comparison.
 
@@ -392,7 +394,7 @@ def sector_verdict(candidates, *, significance_threshold,
     sectors were searched.
     """
     by_name = {row["name"]: row for row in candidates}
-    formula = by_name.get("sector_formula")
+    formula = by_name.get(formula_name)
     if formula is None:
         return {"verdict": "NO_FORMULA", "gates": {},
                 "reason": "formula_weights() produced nothing usable on this sector's train slice"}
@@ -404,8 +406,8 @@ def sector_verdict(candidates, *, significance_threshold,
     efficiency = formula.get("walk_forward_efficiency")
     t_stat = ((formula.get("validation_ic") or {}).get("t_stat"))
     gates = {
-        "beats_champion": ic("sector_formula") > ic("champion"),
-        "beats_equal_weight": ic("sector_formula") > ic("equal_weight"),
+        "beats_champion": ic(formula_name) > ic("champion"),
+        "beats_equal_weight": ic(formula_name) > ic("equal_weight"),
         "efficiency_holds": efficiency is not None and efficiency >= efficiency_floor,
         # Directional on purpose, not abs(): a strongly NEGATIVE t is a significant result
         # that the weights rank backwards, which must never read as evidence for them. The
@@ -513,6 +515,165 @@ def sector_candidate_report(panel, *, champion_weights, periods_per_year=12, qua
     for row in report.values():
         if row.get("candidates"):
             row["verdict"] = sector_verdict(row["candidates"], significance_threshold=threshold)
+    return report
+
+
+def _mean_ic(periods, weights):
+    """Plain mean of the per-period rank ICs for one weight vector, and how many resolved."""
+    series = [value for value in _configuration_ic_series(periods, weights) if value is not None]
+    if not series:
+        return None, 0
+    return sum(series) / len(series), len(series)
+
+
+def _sector_search_pool(fit_periods, legs, *, count, seed):
+    """The candidate pool one sector's search draws from -- every entry derived from the
+    sector's own fit slice or from pure randomness, never from selection or validation data.
+
+    Deliberate mix rather than random-only: ``formula`` is the coverage-x-IC point estimate;
+    the ``shrunk_*`` entries pull it toward equal weight (its known failure mode is
+    collapsing to one or two legs when most train ICs are negative -- shrinkage keeps the
+    idea while restoring breadth); ``equal_weight`` anchors the no-opinion baseline; the
+    range-sampled remainder covers weight space the structured guesses don't.
+    """
+    pool = [("equal_weight", equal_weight_candidate(legs))]
+    fitted = formula_weights(fit_periods, legs=legs)
+    if fitted:
+        pool.append(("formula", fitted))
+        for share in (0.25, 0.5, 0.75):
+            blended = blended_full_coverage_candidate(fitted, legs, blend=share)
+            if blended:
+                pool.append((f"shrunk_{int(share * 100)}", blended))
+    rng = random.Random(seed)
+    for index in range(count):
+        raw = {leg: rng.uniform(0.0, 1.0) for leg in legs}
+        total = sum(raw.values()) or 1.0
+        pool.append((f"random_{index:03d}",
+                     {leg: round(value / total, 6) for leg, value in raw.items()}))
+    return pool
+
+
+def sector_weight_search(panel, *, champion_weights, count=200, seed=0, periods_per_year=12,
+                         quantiles=5, trial_count=None, minimum_periods=6,
+                         fit_fraction=0.6, pbo_splits=DEFAULT_PBO_SPLITS):
+    """An actual per-sector weight SEARCH, not one guess per sector.
+
+    ``sector_candidate_report`` grades exactly one fitted candidate per sector
+    (``formula_weights``), whose max(0, train-IC) construction collapses to one or two legs
+    whenever most legs' train ICs are negative -- the observed failure on the real panel.
+    A sector failing that test shows one brittle guess failed, not that no sector-specific
+    weighting exists. This searches properly, with the selection step itself kept inside the
+    train slice so validation stays a genuine out-of-sample grade:
+
+    1. The sector's train slice is split chronologically into fit (``fit_fraction``) and
+       select (the rest). Candidates are built from fit only (see ``_sector_search_pool``).
+    2. Every candidate is ranked by mean IC on the select slice. The winner is chosen there
+       -- validation is never consulted for selection.
+    3. PBO (CSCV) is computed across the whole pool on the full train slice, so a sector
+       whose "winner" is just the luckiest of ``count`` coin flips announces itself.
+    4. Only the winner (plus champion and equal_weight as references) is graded on the
+       sector's validation slice, with the deflated-Sharpe trial count charged for the FULL
+       pool searched in that sector, not one -- the honest price of searching.
+    5. The same four ``sector_verdict`` gates apply, with the Bonferroni threshold set by
+       how many sectors were searched. Never touches ``panel.holdout``.
+    """
+    trial_count = trial_count if trial_count is not None else total_variants_tested()
+    report = {}
+    for sector in sectors_in_panel(panel.train):
+        sector_train = filter_periods_by_sector(panel.train, sector)
+        sector_validation = filter_periods_by_sector(panel.validation, sector)
+        usable_train = sum(1 for period in sector_train
+                           if len(period.get("leg_scores") or {}) >= 5)
+        usable_validation = sum(1 for period in sector_validation
+                                if len(period.get("leg_scores") or {}) >= 5)
+        fit_end = int(len(sector_train) * fit_fraction)
+        fit_periods, select_periods = sector_train[:fit_end], sector_train[fit_end:]
+        usable_select = sum(1 for period in select_periods
+                            if len(period.get("leg_scores") or {}) >= 5)
+        if usable_train < minimum_periods or usable_validation < minimum_periods \
+                or usable_select < minimum_periods:
+            report[sector] = {
+                "usable_train_periods": usable_train,
+                "usable_select_periods": usable_select,
+                "usable_validation_periods": usable_validation,
+                "candidates": None,
+                "reason": f"fewer than {minimum_periods} usable periods in this sector's "
+                         "fit, select, or validation slice",
+            }
+            continue
+
+        legs = sorted({leg for period in sector_train
+                       for scores in (period.get("leg_scores") or {}).values()
+                       for leg in scores})
+        pool = _sector_search_pool(fit_periods, legs, count=count, seed=seed)
+
+        ranked = []
+        for name, weights in pool:
+            select_ic, select_observations = _mean_ic(select_periods, weights)
+            if select_ic is not None and select_observations >= 5:
+                ranked.append((select_ic, name, weights))
+        if not ranked:
+            report[sector] = {
+                "usable_train_periods": usable_train,
+                "usable_select_periods": usable_select,
+                "usable_validation_periods": usable_validation,
+                "candidates": None,
+                "reason": "no pool candidate produced 5+ scoreable select periods",
+            }
+            continue
+        ranked.sort(key=lambda row: (-row[0], row[1]))
+        winner_select_ic, winner_name, winner_weights = ranked[0]
+
+        performance_matrix = []
+        series_by_candidate = [_configuration_ic_series(sector_train, weights)
+                               for _name, weights in pool]
+        for period_index in range(len(sector_train)):
+            row = [series[period_index] for series in series_by_candidate]
+            if all(value is not None for value in row):
+                performance_matrix.append(row)
+        search_pbo = probability_of_backtest_overfitting(performance_matrix, splits=pbo_splits)
+
+        # The search's own price: this sector tried len(pool) configurations before this
+        # one candidate ever reached validation, on top of the programme-wide count.
+        sector_trials = trial_count + len(pool)
+        results = []
+        for name, weights, select_ic in (
+                ("search_winner", winner_weights, winner_select_ic),
+                ("champion", champion_weights, None),
+                ("equal_weight", equal_weight_candidate(legs), None)):
+            verdict = evaluate_candidate(
+                score_with_weights(sector_validation, weights), trials=sector_trials,
+                quantiles=quantiles, periods_per_year=periods_per_year)
+            validation_ic = verdict["ic"]["mean_ic"]
+            efficiency = (round(validation_ic / select_ic, 4)
+                          if select_ic and validation_ic is not None else None)
+            results.append({
+                "name": name, "weights": weights,
+                "picked_as": winner_name if name == "search_winner" else None,
+                "select_mean_ic": round(select_ic, 4) if select_ic is not None else None,
+                "validation_mean_ic": validation_ic,
+                "walk_forward_efficiency": efficiency,
+                "validation_ic": verdict["ic"],
+                "deflated_sharpe_probability": verdict["deflated_sharpe_probability"],
+                "trials_considered": sector_trials,
+                "ship": verdict["ship"],
+            })
+        report[sector] = {
+            "usable_train_periods": usable_train,
+            "usable_select_periods": usable_select,
+            "usable_validation_periods": usable_validation,
+            "pool_size": len(pool),
+            "search_pbo": search_pbo,
+            "legs": legs,
+            "candidates": results,
+        }
+
+    threshold = sector_significance_threshold(
+        sum(1 for row in report.values() if row.get("candidates")))
+    for row in report.values():
+        if row.get("candidates"):
+            row["verdict"] = sector_verdict(row["candidates"], significance_threshold=threshold,
+                                            formula_name="search_winner")
     return report
 
 

@@ -428,6 +428,44 @@ Two things only came out by running it, not by reasoning about it:
 Still not run against the real panel — the per-sector findings from Priorities 9 and 10 remain
 unvalidated until that happens.
 
+## Priority 12 — Per-sector weight search (`R11-P11` in the registry)
+
+A methodology audit, requested before trusting the 0-and-1-of-11 REAL results from
+Priorities 10-11, found the structure sound (split-once, renormalization over present legs,
+directional t, Bonferroni, equal-weight control) but the *search* missing:
+`sector_candidate_report` grades exactly **one** fitted candidate per sector, and
+`formula_weights`' `max(0, train-IC)` construction collapses to 1-2 legs whenever most legs'
+train ICs are negative — which is precisely the real panel's train era. The real runs show it:
+sector formulas of `{growth: 1.0}`, `{valuation: 1.0}`, `{capital_allocation: 1.0}`. A sector
+failing that test shows one brittle guess failed, not that no sector-specific weighting
+exists.
+
+`sector_weight_search()` / `--sector-search N` is the fix — an actual bounded search per
+sector, with nothing about the honesty model weakened:
+
+1. Each sector's train slice splits chronologically into fit (60%) / select (40%).
+2. The pool: N random weight vectors over the sector's own legs, plus `formula_weights(fit)`,
+   that formula shrunk toward equal weight at 25/50/75% (regularizing the mono-leg collapse),
+   and equal weight.
+3. Winner chosen by mean IC on the select slice — **validation is never consulted for
+   selection**, holdout never touched.
+4. Per-sector CSCV `search_pbo` across the whole pool on the full train slice: a sector whose
+   winner is just the luckiest of N announces itself.
+5. Only the winner reaches validation, with the deflated-Sharpe trial count charged for the
+   whole pool it beat. Same four verdict gates, Bonferroni across sectors.
+
+Verified on a planted two-sector panel (Technology driven by growth, Energy by valuation):
+the search recovered **different dominant legs per sector** — Energy winner valuation=0.95,
+Technology winner growth=0.99, both REAL, search_pbo 0.0. That per-sector divergence is
+exactly the capability the round's user question ("technology shouldn't have the same capital
+allocation as real estate") requires, demonstrated on ground truth before touching real data.
+7 new tests.
+
+If the real panel still returns few or no REAL sectors under this search, that is *strong*
+evidence the uniform champion is genuinely adequate per sector — a much stronger conclusion
+than one-guess-per-sector could support. The train-era sign instability (champion IC negative
+in train, positive in validation, across most sectors) remains the bigger open question.
+
 ## What NOT done, per the brief and this session's standing constraints
 
 No production leg weights, composite construction, or ranking logic changed. No shadow variant

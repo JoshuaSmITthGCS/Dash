@@ -83,6 +83,13 @@ Cross-stage candidate flags (harness AND elo stages):
   through the same walk_forward/evaluate_candidate apparatus every other candidate this
   session has been graded through. Tells a real, generalizing per-sector pattern apart from a
   formula fit to noise in a thin, sector-restricted train sample. Never touches holdout.
+- --sector-search N (harness stage, fundamentals-only): the step past the single-guess check
+  above -- an actual bounded weight search PER SECTOR (N random vectors + formula + shrunk
+  blends + equal weight), so each sector's weights are dialed independently. Selection
+  happens inside each sector's train slice (fit/select sub-split), only the winner reaches
+  validation, deflation is charged for the whole pool, and a per-sector CSCV search_pbo
+  reports when a "winner" is just the luckiest of N. Same four verdict gates, Bonferroni
+  across sectors. Composes with --growth-quality-focus.
 - --top-n-from-elo N --elo-results-in PATH (harness stage): pulls the top N names off a
   previous elo run's leaderboard and adds them as harness (and, with --holdout-check,
   holdout) candidates -- "test the top N" without retyping weight vectors.
@@ -465,26 +472,30 @@ def run_harness_stage(args):
                         print(f"  {sector:<28} ({row['usable_periods']} periods, "
                              f"{len(row['formula_weights'])} metrics scored) top5: {weights}")
 
+    sector_panel = panel
+    if args.growth_quality_focus and args.domain == "fundamentals" and (
+            args.sector_candidate_check or args.sector_search):
+        sector_panel = harness.Panel.from_slices(
+            harness.filter_periods_by_quality_gates(panel.train),
+            harness.filter_periods_by_quality_gates(panel.validation),
+            panel.holdout)
+        gates = ", ".join(
+            f"{label}(={'+'.join(gate['legs'])})>={int(gate['floor'] * 100)}th pct"
+            for label, gate in harness.GROWTH_QUALITY_GATES.items())
+        kept = sum(len(p.get("leg_scores") or {}) for p in sector_panel.train)
+        before = sum(len(p.get("leg_scores") or {}) for p in panel.train)
+        retention = f"{kept}/{before} train ticker-periods kept" + (
+            f", {kept / before * 100:.1f}%" if before else "")
+        print(f"\n[sector] growth-quality focus ON: each period restricted to "
+             f"names clearing {gates} within that period's own cross-section "
+             f"({retention})")
+        summary["growth_quality_focus"] = harness.GROWTH_QUALITY_GATES
+
     if args.sector_candidate_check:
         if args.domain != "fundamentals":
             print("[sector-check] --sector-candidate-check is fundamentals-only, skipping")
         else:
-            check_panel = panel
-            if args.growth_quality_focus:
-                check_panel = harness.Panel.from_slices(
-                    harness.filter_periods_by_quality_gates(panel.train),
-                    harness.filter_periods_by_quality_gates(panel.validation),
-                    panel.holdout)
-                gates = ", ".join(
-                    f"{label}(={'+'.join(gate['legs'])})>={int(gate['floor'] * 100)}th pct"
-                    for label, gate in harness.GROWTH_QUALITY_GATES.items())
-                kept = sum(len(p.get("leg_scores") or {}) for p in check_panel.train)
-                before = sum(len(p.get("leg_scores") or {}) for p in panel.train)
-                retention = f"{kept}/{before} train ticker-periods kept" + (
-                    f", {kept / before * 100:.1f}%" if before else "")
-                print(f"\n[sector-check] growth-quality focus ON: each period restricted to "
-                     f"names clearing {gates} within that period's own cross-section "
-                     f"({retention})")
+            check_panel = sector_panel
             candidate_report = harness.sector_candidate_report(
                 check_panel, champion_weights=champion_weights, trial_count=session.trial_count)
             if not candidate_report:
@@ -492,8 +503,6 @@ def run_harness_stage(args):
                      "the current backtest_monthly.py to pick up sector tagging")
             else:
                 summary["sector_candidate_check"] = candidate_report
-                summary["growth_quality_focus"] = (harness.GROWTH_QUALITY_GATES
-                                                   if args.growth_quality_focus else None)
                 print("\n[sector-check] sector_formula (fit on that sector's train slice) vs "
                      "champion AND an equal-weight control, evaluated on that SAME sector's "
                      "validation slice -- data the formula never saw. REAL requires all four "
@@ -523,6 +532,49 @@ def run_harness_stage(args):
                 print(f"\n[sector-check] {len(real)} of {len(candidate_report)} sectors cleared "
                      f"every gate (|t| bar {threshold}, Bonferroni-adjusted for the number of "
                      f"sectors searched): {real or 'none'}")
+
+    if args.sector_search:
+        if args.domain != "fundamentals":
+            print("[sector-search] --sector-search is fundamentals-only, skipping")
+        else:
+            print(f"\n[sector-search] searching {args.sector_search} random candidates plus "
+                 "the structured pool (formula, shrunk blends, equal weight) PER SECTOR. "
+                 "Selection happens inside each sector's train slice (fit 60% / select 40%); "
+                 "only each sector's winner is graded on validation, deflated for the full "
+                 "pool it beat. This can take a while -- that's the cost of an actual search.")
+            search_report = harness.sector_weight_search(
+                sector_panel, champion_weights=champion_weights, count=args.sector_search,
+                seed=args.sector_search_seed, trial_count=session.trial_count)
+            if not search_report:
+                print("[sector-search] no sector labels found in this panel -- rebuild it "
+                     "with the current backtest_monthly.py to pick up sector tagging")
+            else:
+                summary["sector_weight_search"] = search_report
+                for sector, row in search_report.items():
+                    if row["candidates"] is None:
+                        print(f"  {sector:<24} {row['reason']}")
+                        continue
+                    by_name = {c["name"]: c for c in row["candidates"]}
+                    winner = by_name["search_winner"]
+                    champ = by_name.get("champion", {})
+                    verdict = row.get("verdict") or {}
+                    top = sorted(winner["weights"].items(), key=lambda kv: -kv[1])[:3]
+                    top_txt = ", ".join(f"{leg}={weight:.2f}" for leg, weight in top)
+                    print(f"  {sector:<24} winner[{winner['picked_as']}]: {top_txt}")
+                    print(f"  {'':<24} select_ic={winner['select_mean_ic']} -> "
+                         f"val_ic={winner['validation_mean_ic']} "
+                         f"(champ={champ.get('validation_mean_ic')}) "
+                         f"eff={winner['walk_forward_efficiency']} "
+                         f"t={(winner.get('validation_ic') or {}).get('t_stat')} "
+                         f"pbo={row['search_pbo']} -> {verdict.get('verdict')}"
+                         + (f" (failed: {', '.join(verdict['failed_gates'])})"
+                            if verdict.get("failed_gates") else ""))
+                real = [s for s, r in search_report.items()
+                       if (r.get("verdict") or {}).get("verdict") == "REAL"]
+                print(f"\n[sector-search] {len(real)} of {len(search_report)} sectors cleared "
+                     f"every gate after a real search: {real or 'none'}. A high search_pbo "
+                     "(>0.5) in a sector means its winner is likely the luckiest of the pool, "
+                     "whatever its validation number says.")
 
     if args.holdout_check:
         print("\n" + "=" * 70)
@@ -687,6 +739,20 @@ def main():
                              "formula fit to noise in a thin, sector-restricted train sample. "
                              "Never touches holdout. Requires a panel rebuilt with sector "
                              "tagging (current backtest_monthly.py).")
+    parser.add_argument("--sector-search", type=int, default=0, metavar="N",
+                        help="Fundamentals-only. An actual per-sector weight SEARCH: N "
+                             "random weight vectors plus the structured pool (formula, "
+                             "shrunk-toward-equal blends, equal weight) tried independently "
+                             "in every sector, so Technology's capital_allocation weight is "
+                             "free to differ from Real Estate's. Selection happens inside "
+                             "each sector's train slice (fit/select sub-split); only each "
+                             "sector's winner is graded on validation, with the deflated-"
+                             "Sharpe trial count charged for the whole pool searched. "
+                             "search_pbo reports whether a sector's winner is just the "
+                             "luckiest of N. Composes with --growth-quality-focus. N is "
+                             "required, no default -- state the search width up front.")
+    parser.add_argument("--sector-search-seed", type=int, default=0,
+                        help="Reproducible: the same seed regenerates the same random pool")
     parser.add_argument("--growth-quality-focus", action="store_true",
                         help="Restrict --sector-candidate-check to high-growth, good-quality "
                              "companies: each period keeps only names clearing "
