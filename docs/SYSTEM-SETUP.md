@@ -151,9 +151,14 @@ a different effective model than the documented one.
 | `data-only` | 12:00 and 15:00 ET weekdays | Prior top 100 + portfolio/watchlist symbols; other names carried forward |
 | `rescore-only` | Manual | Re-runs scoring over the last `advisor.json` with zero network calls |
 
-Cron fires at UTC times covering both EDT and EST, then gates on `America/New_York` so DST does not
-shift the local schedule. Concurrency group `scheduled-data-push-main`, three push retries,
-90-minute timeout. Authenticated users can dispatch a `data-only` run from the Overview page via
+Six separate cron entries cover both EDT and EST, and the gate maps the entry that fired
+(`github.event.schedule`) to `America/New_York` so DST does not shift the local schedule. It reads
+the *scheduled* hour, never the wall clock: Actions has started these runs 25–60 minutes behind
+their cron minute, and only 53 minutes separate `:07` from the next Eastern hour, so a wall-clock
+gate could classify a delayed 07:00 ET firing as 08:00 and silently drop the day's only full sweep.
+Each run names its selected window in the job summary, so a deliberate no-op is distinguishable
+from a missed sweep without opening the logs. Concurrency group `scheduled-data-push-main`, three
+push retries, 90-minute timeout. Authenticated users can dispatch a `data-only` run from the Overview page via
 `netlify/functions/refresh-data.mjs`, which verifies a Firebase ID token server-side and refuses
 duplicate runs.
 
