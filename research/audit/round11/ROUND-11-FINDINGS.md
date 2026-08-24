@@ -244,6 +244,42 @@ Wired into `run_backtest_suite.py` as a fourth, opt-in stage: `--elo-rounds N
 --include-formula`. 19 new tests. The genuinely informative next run is against a real,
 network-fetched, EDGAR-refreshed panel — not available in this sandbox.
 
+## Priority 7 — Equal-weight/blend candidates, sector-partitioned weighting, top-N-from-elo
+
+Three more additive, opt-in tools, all still backtest-only:
+
+- **`optimization_harness.equal_weight_candidate(legs)`**: the 1/N-per-leg no-opinion control
+  every weighting scheme should beat. Wired into both the harness and elo stages via
+  `--include-equal-weight`.
+- **`optimization_harness.blended_full_coverage_candidate(recommended, legs, blend=0.5)`**:
+  averages a recommended candidate (`reweighted_composite_a`, if registered) with
+  `equal_weight_candidate`, guaranteeing every leg keeps a nonzero share — `reweighted_composite_a`
+  alone drops `growth`/`capital_allocation`/`accounting_quality`/`news_sentiment` entirely, which
+  is a deliberate finding but also means it never gets tested with every leg still contributing
+  something. `--include-blend` / `--blend-ratio` in both stages.
+- **`optimization_harness.sector_weight_report(periods)`** / `--sector-breakdown`:
+  `backtest_monthly.py` now tags each panel period with each ticker's *current* GICS sector
+  (`current_sector_map()`, the same current-sector-applied-retroactively approximation
+  `backtest_swing.py` already discloses — panels carry no point-in-time sector history), so
+  `formula_weights()` can be computed independently per sector on the train slice. Answers
+  whether, say, tech genuinely warrants a different leg weighting than one champion vector
+  applied uniformly, rather than assuming it. Verified live against this repo's own committed
+  `advisor.json`: resolves a sector for 879/910 tickers with no network needed. A panel built
+  before this change reports no sector data and the flag skips gracefully rather than erroring.
+- **`run_backtest_suite.top_candidates_from_elo(path, n)`** / `--top-n-from-elo N
+  --elo-results-in PATH`: pulls the top N names off a previously-written elo leaderboard
+  straight into a fresh harness (and, with `--holdout-check`, holdout) pass — "test the top N"
+  without hand-retyping weight vectors off a printed leaderboard.
+
+`shadow_portfolios.MAX_CONCURRENT_RESEARCH_CANDIDATES` was raised from 4 to 5 on explicit user
+request, to make room for a shortlist selected via `--top-n-from-elo` once a real run produces
+one. This is a real widening of the concurrent-candidate tax on deflated Sharpe, done
+deliberately rather than silently; no candidate has actually been registered against the new
+capacity yet — that step still needs a real, network-fetched panel run and a specific,
+human-reviewed shortlist, per this round's own standing "no fabricated results" rule. 25 new
+tests (12 in `test_optimization_harness.py`, 12 in `test_run_backtest_suite.py`, 1 updated in
+`test_shadow_portfolios.py` for the new cap).
+
 ## What NOT done, per the brief and this session's standing constraints
 
 No production leg weights, composite construction, or ranking logic changed. No shadow variant
@@ -254,4 +290,6 @@ reconstruction was piloted and found feasible, not shipped into production. The 
 reported "three-way trial-registry fragmentation" was investigated in full and turned out to
 be a misdiagnosis (see Priority 3's follow-up above) — corrected rather than left standing;
 one real gap (six pre-freeze category labels with no traceable source) remains genuinely open
-and was not guessed at.
+and was not guessed at. The concurrent-candidate cap was raised (4 → 5, Priority 7) but no new
+shadow strategy was registered against it — that still requires a real top-N shortlist from the
+user's own machine, not a fabricated one.

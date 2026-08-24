@@ -350,14 +350,14 @@ def test_research_candidates_excludes_permanent_sleeves_and_baselines():
         assert permanent not in candidates
 
 
-def test_a_fifth_concurrent_candidate_is_refused():
+def test_a_sixth_concurrent_candidate_is_refused():
     over_cap = {**STRATEGY_ACTIVATION_DATES,
-               "b": "2026-08-01", "c": "2026-08-02", "d": "2026-08-03"}
-    assert len(over_cap) == 4  # exactly at the cap: must still pass
+               "b": "2026-08-01", "c": "2026-08-02", "d": "2026-08-03", "e": "2026-08-04"}
+    assert len(over_cap) == 5  # exactly at the cap: must still pass
     assert_candidate_capacity(over_cap)
 
-    over_cap["e"] = "2026-08-04"
-    with pytest.raises(ValueError, match="over the 4-candidate cap"):
+    over_cap["f"] = "2026-08-05"
+    with pytest.raises(ValueError, match="over the 5-candidate cap"):
         assert_candidate_capacity(over_cap)
 
 

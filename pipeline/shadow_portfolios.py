@@ -70,7 +70,13 @@ STRATEGY_ACTIVATION_DATES = {
 # through a promotion decision at all. Each concurrent candidate taxes the deflated Sharpe
 # correction charged against every other one (more trials, harder for any of them to clear
 # 0.95), so the cap is enforced here in code -- not left to a reviewer to remember to check.
-MAX_CONCURRENT_RESEARCH_CANDIDATES = 4
+#
+# Raised from 4 to 5 on explicit user request (Round 11 Priority 7) to make room for a
+# top-N shortlist selected from optimization_harness.py's --top-n-from-elo output. This is
+# a real widening of the concurrent-candidate tax, not a silent one -- R11-P2's original
+# entry in experiment_registry.py is left as-is (it accurately records what was true when
+# the cap was first enforced at 4); this comment is the live record of the current value.
+MAX_CONCURRENT_RESEARCH_CANDIDATES = 5
 
 
 def research_candidate_strategies(activation_dates=None):
