@@ -1,0 +1,123 @@
+{
+  "panel_periods": 450,
+  "resolved_periods": 450,
+  "champion_weights": {
+    "pead_drift": 0.3,
+    "analyst_revision": 0.25,
+    "high_volume_premium": 0.2,
+    "high_52w_proximity": 0.15,
+    "short_term_reversal": 0.1
+  },
+  "yearly": [
+    {
+      "year": "2017",
+      "periods": 20,
+      "mean_ic": 0.0042,
+      "hit_rate": 0.5
+    },
+    {
+      "year": "2018",
+      "periods": 50,
+      "mean_ic": 0.0044,
+      "hit_rate": 0.54
+    },
+    {
+      "year": "2019",
+      "periods": 51,
+      "mean_ic": 0.0016,
+      "hit_rate": 0.51
+    },
+    {
+      "year": "2020",
+      "periods": 50,
+      "mean_ic": -0.0069,
+      "hit_rate": 0.5
+    },
+    {
+      "year": "2021",
+      "periods": 51,
+      "mean_ic": -0.0014,
+      "hit_rate": 0.451
+    },
+    {
+      "year": "2022",
+      "periods": 50,
+      "mean_ic": 0.0386,
+      "hit_rate": 0.64
+    },
+    {
+      "year": "2023",
+      "periods": 50,
+      "mean_ic": -0.0263,
+      "hit_rate": 0.4
+    },
+    {
+      "year": "2024",
+      "periods": 50,
+      "mean_ic": 0.0153,
+      "hit_rate": 0.6
+    },
+    {
+      "year": "2025",
+      "periods": 50,
+      "mean_ic": -0.0151,
+      "hit_rate": 0.42
+    },
+    {
+      "year": "2026",
+      "periods": 28,
+      "mean_ic": 0.022,
+      "hit_rate": 0.607
+    }
+  ],
+  "break": {
+    "date": "2025-12-11",
+    "index": 419,
+    "welch_t": 1.375,
+    "permutation_p_value": 0.91,
+    "permutations": 2000,
+    "min_segment": 24,
+    "mean_ic_before": 0.0009,
+    "mean_ic_after": 0.0261
+  },
+  "data_source_boundary": {
+    "yahoo_native_start_median": "2025-02-14",
+    "tickers_measured": 861,
+    "months_from_break": 10,
+    "alignment_window_months": 3
+  },
+  "per_leg_at_break": {
+    "analyst_revision": {
+      "mean_ic_before": null,
+      "mean_ic_after": null,
+      "periods_before": 0,
+      "periods_after": 0
+    },
+    "high_52w_proximity": {
+      "mean_ic_before": -0.0129,
+      "mean_ic_after": 0.0158,
+      "periods_before": 419,
+      "periods_after": 31
+    },
+    "high_volume_premium": {
+      "mean_ic_before": 0.0068,
+      "mean_ic_after": 0.0211,
+      "periods_before": 419,
+      "periods_after": 31
+    },
+    "pead_drift": {
+      "mean_ic_before": 0.0048,
+      "mean_ic_after": 0.0155,
+      "periods_before": 419,
+      "periods_after": 31
+    },
+    "short_term_reversal": {
+      "mean_ic_before": 0.0084,
+      "mean_ic_after": 0.0133,
+      "periods_before": 419,
+      "periods_after": 31
+    }
+  },
+  "verdict": "NO_SIGNIFICANT_BREAK",
+  "reading": "no single breakpoint survives a permutation test that prices in having scanned every location -- the instability is diffuse, and the honest summary is 'no stable edge at this horizon', not 'an edge with one bad patch'"
+}
