@@ -150,5 +150,58 @@ class ClassifyTests(unittest.TestCase):
         self.assertIn(winner["suggested_decision"], ("PROMOTE", "KEEP_AS_CHALLENGER"))
 
 
+class LegCoverageTests(unittest.TestCase):
+    def test_coverage_is_present_over_total_ticker_periods(self):
+        periods = [
+            {"leg_scores": {"A": {"x": 1.0}, "B": {"x": None}, "C": {}}},
+            {"leg_scores": {"A": {"x": 2.0}, "B": {"x": 3.0}}},
+        ]
+        coverage = harness.leg_coverage(periods, ["x"])
+        # present: period1 A only (B is None, C absent) = 1; period2 A and B = 2; total 5.
+        self.assertAlmostEqual(coverage["x"], 3 / 5)
+
+    def test_a_leg_that_never_appears_has_zero_coverage(self):
+        periods = [{"leg_scores": {"A": {"x": 1.0}}}]
+        coverage = harness.leg_coverage(periods, ["never_present"])
+        self.assertEqual(coverage["never_present"], 0.0)
+
+
+class FormulaWeightsTests(unittest.TestCase):
+    def test_weight_concentrates_on_the_leg_that_is_both_covered_and_predictive(self):
+        periods = synthetic_leg_periods(60, names=80, predictive_legs=("good",),
+                                        dead_legs=("bad",), noise=0.03, seed=21)
+        weights = harness.formula_weights(periods)
+        self.assertGreater(weights.get("good", 0), weights.get("bad", 0))
+        self.assertGreater(weights.get("good", 0), 0.8)
+
+    def test_a_leg_with_zero_coverage_gets_zero_weight_regardless_of_hypothetical_ic(self):
+        periods = synthetic_leg_periods(40, names=60, predictive_legs=("good",),
+                                        dead_legs=(), noise=0.03, seed=22)
+        # Add a leg that's declared in `legs=` but never actually present in any row --
+        # mirrors news_sentiment's real 0%-coverage shape in the production panel.
+        weights = harness.formula_weights(periods, legs=["good", "never_covered"])
+        self.assertNotIn("never_covered", weights)
+
+    def test_weights_sum_to_one_when_nonempty(self):
+        periods = synthetic_leg_periods(60, names=80, predictive_legs=("good",),
+                                        dead_legs=("bad",), noise=0.03, seed=23)
+        weights = harness.formula_weights(periods)
+        self.assertAlmostEqual(sum(weights.values()), 1.0, places=4)
+
+    def test_pure_noise_still_returns_a_valid_normalized_result_without_raising(self):
+        # Every leg here is pure noise with no relationship to forward returns. With only
+        # two candidate legs, one can still end up with nearly all the weight by chance --
+        # the formula isn't psychic, and a small sample can look decisive on noise alone,
+        # the same small-sample-noise property this session's real backtests kept surfacing.
+        # What must hold regardless: it never raises, and whatever it returns is a valid,
+        # normalized weight dict (or empty).
+        periods = synthetic_leg_periods(40, names=60, predictive_legs=(),
+                                        dead_legs=("a", "b"), noise=0.03, seed=24)
+        weights = harness.formula_weights(periods)
+        if weights:
+            self.assertAlmostEqual(sum(weights.values()), 1.0, places=4)
+            self.assertTrue(all(weight > 0 for weight in weights.values()))
+
+
 if __name__ == "__main__":
     unittest.main()

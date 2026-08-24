@@ -20,6 +20,7 @@ into a new registry entry, the same way Round 7 and Round 10's findings were wri
 from evaluation import (
     composite_score,
     evaluate_candidate,
+    per_leg_ic,
     probability_of_backtest_overfitting,
     rank_ic,
     walk_forward,
@@ -88,6 +89,56 @@ def _configuration_ic_series(periods, weights):
         ic = rank_ic([pair[0] for pair in pairs], [pair[1] for pair in pairs]) if len(pairs) >= 5 else None
         series.append(ic)
     return series
+
+
+def leg_coverage(periods, legs):
+    """Fraction of ticker-periods where a leg resolved a real number, per leg.
+
+    Same shape as research/audit/round10/leg_diagnosis.py's own leg_coverage() (present /
+    total), so a formula_weights() candidate can be sanity-checked directly against that
+    report's numbers rather than trusting a second, silently-diverged implementation.
+    """
+    coverage = {}
+    for leg in legs:
+        present = total = 0
+        for period in periods:
+            for scores in (period.get("leg_scores") or {}).values():
+                total += 1
+                if isinstance(scores.get(leg), (int, float)):
+                    present += 1
+        coverage[leg] = present / total if total else 0.0
+    return coverage
+
+
+def formula_weights(periods, *, legs=None, periods_per_year=12):
+    """A coverage-and-signal-weighted candidate: weight_leg proportional to
+    coverage_leg * max(0, standalone_ic_leg).
+
+    Directly operationalizes the mismatch a hand-authored weight vector accumulates over
+    time: a leg's declared weight should track how often it actually resolves AND how
+    predictive it is when it does, not stay fixed at whatever was set when the leg's
+    real-world coverage was different. (Concrete case this catches: growth's coverage went
+    from near-zero to 95%+ after Round 11 Priority 4's EDGAR PIT fix, but its declared weight
+    was never revisited.) A leg with broad coverage but no measured predictive power is
+    driven toward zero here just as surely as a leg with strong IC but almost no coverage --
+    neither alone earns weight; a leg needs both to matter.
+
+    Compute this ONLY from a train slice, never from validation or holdout -- calling it on
+    data a candidate will later be graded against reintroduces exactly the search-then-split
+    mistake this whole harness exists to prevent. Returns {} if every leg's coverage-weighted
+    IC is zero or negative (nothing here to build a candidate from).
+    """
+    legs = list(legs or sorted({leg for period in periods
+                                for scores in (period.get("leg_scores") or {}).values()
+                                for leg in scores}))
+    coverage = leg_coverage(periods, legs)
+    standalone_ic = per_leg_ic(periods, legs, periods_per_year=periods_per_year)
+    raw = {leg: coverage.get(leg, 0.0) * max(0.0, standalone_ic.get(leg, {}).get("mean_ic") or 0.0)
+          for leg in legs}
+    total = sum(raw.values())
+    if not total:
+        return {}
+    return {leg: round(weight / total, 6) for leg, weight in raw.items() if weight}
 
 
 class OptimizationSession:

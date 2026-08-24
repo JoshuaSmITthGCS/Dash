@@ -204,6 +204,46 @@ committed fundamentals panel — both domains correctly run the full gate sequen
 report a degenerate all-zero-coverage-leg candidate (a real edge case a random leg-drop can
 produce) as `ABANDON` rather than crashing. 10 new tests.
 
+## Priority 6 — A live search session, a coverage-weighted formula, and a bootstrap Elo tournament
+
+A live, human-in-the-loop search session against a real, network-fetched panel (run on the
+user's own machine) reached the same conclusion three independent ways: a thin-sample PBO
+reading (17 candidates, 15 validation periods), a well-powered PBO reading after fixing the
+sample-size and block-conditioning problems (5 candidates, 48 validation periods, 8 balanced
+CSCV blocks), and cross-window train-IC instability (positive on a 5-year window, negative on
+a 10-year window, for nearly every candidate including champion itself). Extending the panel
+from 5 to 10 years — now feasible for `growth` specifically because of this round's own EDGAR
+PIT fix — made the "don't trust this ranking" signal *more* credible, not less. Session
+detail: `champion`'s current weights mismatch coverage badly for three legs (`profitability`
+weighted 20.3% on 7.5% real coverage; `capital_allocation`/`accounting_quality` together 15.6%
+on 6.5–6.7% coverage each), while `growth`'s weight (8.6%) has not been revisited since its
+coverage jumped from near-zero to 95.4%.
+
+Two follow-up tools operationalize what that session found, both opt-in and additive to the
+existing harness rather than a replacement for it:
+
+- **`optimization_harness.formula_weights(periods)`**: `weight_leg ∝ coverage_leg × max(0,
+  standalone_ic_leg)`, computed only from a train slice. Directly targets the coverage/weight
+  mismatch above — a leg with broad coverage but no measured predictive power is driven
+  toward zero exactly as surely as a leg with strong IC but almost no coverage.
+- **`pipeline/elo_tournament.py`**: instead of one closable train/validation comparison, runs
+  many bootstrap resamples of the validation slice and lets candidates play a full
+  round-robin each round with standard logistic Elo updates. This is explicitly *not* a way
+  around the panel's data-power limit — bootstrap resampling cannot manufacture information
+  beyond what the sampled periods already contain. What it buys is visibility into whether an
+  apparent edge is *robust* across resamples of the same data (rating separation that grows
+  and holds) versus a lucky single split (ratings that never separate). A smoke test against
+  this sandbox's own stale panel confirmed the honesty property directly: `formula_weights()`
+  collapsed to `{market_behavior: 1.0}` on that panel and tied `champion` and
+  `reweighted_composite_a` for all 100 rounds — because on that specific panel those three
+  candidates produce byte-identical scores (the coverage-collapse dynamic Priority 1 already
+  found). Three functionally-identical candidates showing zero separation across 100
+  independent resamples is the tool working correctly, not failing to find a winner.
+
+Wired into `run_backtest_suite.py` as a fourth, opt-in stage: `--elo-rounds N
+--include-formula`. 19 new tests. The genuinely informative next run is against a real,
+network-fetched, EDGAR-refreshed panel — not available in this sandbox.
+
 ## What NOT done, per the brief and this session's standing constraints
 
 No production leg weights, composite construction, or ranking logic changed. No shadow variant

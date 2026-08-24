@@ -37,6 +37,18 @@ Stages, each independently skippable:
    Every candidate in one invocation shares the same train/validation/holdout split and one
    shared PBO computation across the whole batch, matching optimization_harness.classify()'s
    contract. No network needed.
+4. **elo** -- pipeline/elo_tournament.py, opt-in via --elo-rounds N. A single split answers
+   "who wins on this one comparison"; this instead runs many bootstrap resamples of the
+   validation slice and lets ratings accumulate, revealing whether an apparent edge between
+   candidates is robust across resamples of the SAME data, not a way to manufacture more
+   information than the panel actually has -- if the panel can't distinguish two candidates
+   (as harness stage PBO readings can already tell you), their Elo ratings will stay close
+   together round after round rather than one falsely pulling ahead. --include-formula adds
+   a coverage-and-signal-derived candidate (optimization_harness.formula_weights(), computed
+   from the train slice only): weight_leg proportional to coverage_leg * max(0,
+   standalone_ic_leg), directly correcting the common drift where a leg's hand-set weight
+   stops tracking its real, currently-measured coverage and predictive power. No network
+   needed.
 
 Usage:
     python3 pipeline/run_backtest_suite.py --years 5 --cache-only
@@ -44,6 +56,8 @@ Usage:
     python3 pipeline/run_backtest_suite.py --skip-panel --domain swing --auto-search 8
     python3 pipeline/run_backtest_suite.py --skip-panel --skip-diagnosis \
         --candidates '{"my_candidate": {"valuation": 0.5, "profitability": 0.5}}'
+    python3 pipeline/run_backtest_suite.py --skip-panel --skip-diagnosis --skip-harness \
+        --elo-rounds 300 --include-formula
 """
 
 import argparse
@@ -60,6 +74,8 @@ sys.path.insert(0, HERE)
 
 LEG_DIAGNOSIS_SCRIPT = os.path.join(REPO, "research", "audit", "round10", "leg_diagnosis.py")
 DEFAULT_HARNESS_OUT = os.path.join(REPO, "research", "audit", "round11", "harness_run_results.json")
+DEFAULT_ELO_OUT = os.path.join(REPO, "research", "audit", "round11", "elo_tournament_results.json")
+DEFAULT_ELO_K = 24.0
 
 DOMAINS = {
     "fundamentals": {
@@ -236,6 +252,54 @@ def run_harness_stage(args):
     print(json.dumps(summary, indent=2))
 
 
+def run_elo_stage(args):
+    import elo_tournament
+    import optimization_harness as harness
+
+    panel_path = panel_path_for(args.domain)
+    panel_data = json.load(open(panel_path))
+    periods = panel_data["periods"]
+    champion_weights = panel_data["leg_weights"]
+
+    panel = harness.Panel(periods, train_fraction=args.train_fraction,
+                          validation_fraction=args.validation_fraction)
+
+    candidates = [("champion", champion_weights)]
+    if args.candidates:
+        candidates += list(json.loads(args.candidates).items())
+    else:
+        candidates += default_candidates(args.domain)
+    if args.include_formula:
+        formula = harness.formula_weights(panel.train)
+        if formula:
+            candidates.append(("formula", formula))
+        else:
+            print("[elo] formula_weights() returned nothing usable on the train slice, "
+                 "skipping that candidate")
+
+    if len(candidates) < 2:
+        print("[elo] no candidates beyond champion (pass --candidates or --include-formula), "
+             "skipping")
+        return
+
+    result = elo_tournament.run_tournament(
+        panel.validation, candidates, rounds=args.elo_rounds, seed=args.elo_seed,
+        k=args.elo_k, sample_size=args.elo_sample_size or None)
+    result["generated_at"] = datetime.now(timezone.utc).isoformat()
+    result["domain"] = args.domain
+    result["panel_path"] = panel_path
+    result["candidates"] = {name: weights for name, weights in candidates}
+
+    os.makedirs(os.path.dirname(args.elo_out), exist_ok=True)
+    with open(args.elo_out, "w") as handle:
+        json.dump(result, handle, indent=2)
+    print(f"[elo] wrote {args.elo_out}")
+    print(f"[elo] leaderboard after {args.elo_rounds} rounds "
+         f"(pool={result['pool_size']} validation periods, sample={result['sample_size']}):")
+    for row in result["leaderboard"]:
+        print(f"  {row['elo']:>7.1f}  {row['name']}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -272,6 +336,18 @@ def main():
     parser.add_argument("--validation-fraction", type=float, default=0.25)
     parser.add_argument("--pbo-splits", type=int, default=8)
     parser.add_argument("--harness-out", default=DEFAULT_HARNESS_OUT)
+    # Elo-stage. Opt-in: only runs when --elo-rounds is set above 0.
+    parser.add_argument("--elo-rounds", type=int, default=0, metavar="N",
+                        help="Run pipeline/elo_tournament.py for N bootstrap rounds over the "
+                             "same candidates as the harness stage. 0 (default) skips it.")
+    parser.add_argument("--elo-seed", type=int, default=0)
+    parser.add_argument("--elo-k", type=float, default=DEFAULT_ELO_K)
+    parser.add_argument("--elo-sample-size", type=int, default=0,
+                        help="0 = same as the validation pool size (standard bootstrap)")
+    parser.add_argument("--include-formula", action="store_true",
+                        help="Also enter optimization_harness.formula_weights() (derived "
+                             "from the train slice) as a candidate in the Elo tournament.")
+    parser.add_argument("--elo-out", default=DEFAULT_ELO_OUT)
     args = parser.parse_args()
 
     if not args.skip_panel:
@@ -288,6 +364,11 @@ def main():
         run_harness_stage(args)
     else:
         print("[harness] skipped")
+
+    if args.elo_rounds:
+        run_elo_stage(args)
+    else:
+        print("[elo] skipped (pass --elo-rounds N to run)")
 
     return 0
 

@@ -190,5 +190,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P6-coverage-weighted-formula-and-elo-tournament",
+    "declared_at": "2026-08-24T01:30:00+00:00",
+    "hypothesis": "User request, after a live human-in-the-loop search session against a real 10-year panel (run on the user's own machine, network-connected) found the same conclusion three independent ways -- thin-sample PBO, well-powered PBO, and cross-window train-IC instability -- that no hand-picked weight vector beats champion reliably: (1) turn the session's own coverage-vs-weight mismatch finding (profitability weighted at 20.3% on 7.5% coverage; growth still weighted at 8.6% despite R11-P4's fix taking its coverage to 95.4%) into an actual formula rather than a one-off observation, and (2) build a repeated-comparison mechanism ('like chess Elo') so an edge's robustness across resamples is visible as accumulating rating separation, rather than a single closable split verdict.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

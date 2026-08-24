@@ -895,6 +895,72 @@ REGISTRY = [
                    "for a human to review, not a shortcut around the gates themselves. Full pipeline "
                    "suite green (2295 tests) after the change."),
     },
+    {
+        "id": "R11-P6-coverage-weighted-formula-and-elo-tournament",
+        "declared_at": "2026-08-24T01:30:00+00:00",
+        "hypothesis": ("User request, after a live human-in-the-loop search session against a real "
+                       "10-year panel (run on the user's own machine, network-connected) found the "
+                       "same conclusion three independent ways -- thin-sample PBO, well-powered PBO, "
+                       "and cross-window train-IC instability -- that no hand-picked weight vector "
+                       "beats champion reliably: (1) turn the session's own coverage-vs-weight "
+                       "mismatch finding (profitability weighted at 20.3% on 7.5% coverage; growth "
+                       "still weighted at 8.6% despite R11-P4's fix taking its coverage to 95.4%) "
+                       "into an actual formula rather than a one-off observation, and (2) build a "
+                       "repeated-comparison mechanism ('like chess Elo') so an edge's robustness "
+                       "across resamples is visible as accumulating rating separation, rather than a "
+                       "single closable split verdict."),
+        "category": "infrastructure",
+        "configuration": {
+            "files": ["pipeline/optimization_harness.py", "pipeline/elo_tournament.py",
+                     "pipeline/run_backtest_suite.py", "pipeline/tests/test_optimization_harness.py",
+                     "pipeline/tests/test_elo_tournament.py"],
+            "change": ("optimization_harness.formula_weights(periods): weight_leg proportional to "
+                       "coverage_leg * max(0, standalone_ic_leg) (per_leg_ic(), already existing in "
+                       "evaluation.py), normalized to sum to 1. A leg with broad coverage but no "
+                       "measured predictive power is driven toward zero exactly as surely as a leg "
+                       "with strong IC but almost no coverage. Computed only from a caller-supplied "
+                       "train slice -- calling it on validation/holdout would reintroduce the exact "
+                       "search-then-split mistake this whole harness exists to prevent. New "
+                       "pipeline/elo_tournament.py: run_tournament(periods, candidates, rounds, seed, "
+                       "k, sample_size) draws one bootstrap resample (with replacement, default size "
+                       "= pool) of period indices per round, computes every candidate's mean rank IC "
+                       "on that identical resample, plays a full round-robin among candidates with "
+                       "standard logistic Elo updates, and repeats for `rounds` rounds. Wired into "
+                       "run_backtest_suite.py as a fourth, opt-in stage (--elo-rounds N, "
+                       "--include-formula to enter a formula_weights() candidate derived from the "
+                       "harness's own Panel.train), sharing the same train/validation split the "
+                       "harness stage uses."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 19},
+        "number_of_variants_tested": 1,
+        "result": ("Verified with 19 new tests (18 in test_optimization_harness.py including the new "
+                   "leg_coverage/formula_weights coverage, 13 in test_elo_tournament.py -- note some "
+                   "overlap in touched files with R11-P5's count) and a live smoke test against this "
+                   "sandbox's own (stale, pre-10-year-rebuild) committed panel: a genuinely predictive "
+                   "synthetic leg reliably out-rates a noise leg over 100 rounds (Elo separates "
+                   "cleanly), two candidates that are actually identical stay locked at the same "
+                   "rating for 150 rounds rather than one drifting ahead by chance, and -- the case "
+                   "worth stating plainly -- on this sandbox's stale panel, formula_weights() itself "
+                   "collapsed to {market_behavior: 1.0} and tied champion and reweighted_composite_a "
+                   "on every single round (100/100), because on that specific panel those three "
+                   "candidates produce byte-identical per-ticker scores (the same coverage-collapse "
+                   "dynamic R11-P1 already found: most tickers only ever resolve market_behavior). "
+                   "That is the tool working correctly, not a bug: three functionally-identical "
+                   "candidates showing zero rating separation across 100 independent resamples is "
+                   "exactly the honest answer, not a failure to find one."),
+        "decision": "PROMOTE",
+        "reason": ("Ships as tooling only -- no production weight, panel, or promotion decision "
+                   "changed, and formula_weights()'s own docstring states plainly it must never be "
+                   "computed on validation/holdout data. Explicitly scoped as a complement to, not a "
+                   "replacement for, the existing PBO/deflated-Sharpe gates: bootstrap resampling "
+                   "cannot manufacture statistical power beyond what a panel's real period count "
+                   "already contains, and the tournament is designed to show that honestly (ratings "
+                   "staying close) rather than obscure it. The genuinely informative next test is "
+                   "against a real, network-fetched, EDGAR-refreshed panel outside this sandbox, not "
+                   "available in this environment -- flagged rather than faked. Full pipeline suite "
+                   "green (2314 tests) after the change."),
+    },
 ]
 
 

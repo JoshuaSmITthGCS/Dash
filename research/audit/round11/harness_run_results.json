@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T22:52:33.801866+00:00",
+  "generated_at": "2026-08-24T01:55:12.068841+00:00",
   "domain": "fundamentals",
   "panel_path": "/home/user/Dash/pipeline/backtest_signal_panel.json",
   "panel_periods": 60,
@@ -8,7 +8,7 @@
     "validation": 15,
     "holdout": 15
   },
-  "trial_count": 63,
+  "trial_count": 64,
   "search_overfitting": {
     "names": [
       "champion",
@@ -34,10 +34,10 @@
       "train_mean_ic": 0.0263,
       "validation_mean_ic": 0.0518,
       "walk_forward_efficiency": 1.9696,
-      "deflated_sharpe_probability": 0.1943,
+      "deflated_sharpe_probability": 0.1928,
       "ship": false,
       "suggested_decision": "KEEP_AS_CHALLENGER",
-      "reason": "some validation-period signal but does not clear every gate: t-statistic below 3, the bar appropriate after multiple testing; deflated Sharpe probability 0.1943 does not survive 63 trials of selection"
+      "reason": "some validation-period signal but does not clear every gate: t-statistic below 3, the bar appropriate after multiple testing; deflated Sharpe probability 0.1928 does not survive 64 trials of selection"
     },
     {
       "name": "reweighted_composite_a",
@@ -50,10 +50,10 @@
       "train_mean_ic": 0.0263,
       "validation_mean_ic": 0.0518,
       "walk_forward_efficiency": 1.9696,
-      "deflated_sharpe_probability": 0.1943,
+      "deflated_sharpe_probability": 0.1928,
       "ship": false,
       "suggested_decision": "KEEP_AS_CHALLENGER",
-      "reason": "some validation-period signal but does not clear every gate: t-statistic below 3, the bar appropriate after multiple testing; deflated Sharpe probability 0.1943 does not survive 63 trials of selection"
+      "reason": "some validation-period signal but does not clear every gate: t-statistic below 3, the bar appropriate after multiple testing; deflated Sharpe probability 0.1928 does not survive 64 trials of selection"
     }
   ]
 }
