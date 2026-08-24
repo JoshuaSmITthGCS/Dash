@@ -569,6 +569,38 @@ Follow-through on the real regime-break finding, on explicit user go-ahead for b
   the sector-weighting question was settled 0-of-11 negatively. Claims narrowed, never
   widened; `validate_documentation_claims.py` green over 116 files after the edits.
 
+## Priority 16 — Swing sector-search and regime-diagnosis wiring (`R11-P16` in the registry)
+
+User request: apply the same rigor from Priorities 10–14 (per-sector out-of-sample search,
+`sector_verdict()`'s four-gate conjunction, regime-break diagnosis) to the swing model next.
+The harness machinery (`Panel`, `sector_weight_search`, `sector_candidate_report`,
+`regime_diagnosis.diagnose`) was already leg-name-agnostic — it derives legs from the panel
+itself and reads champion weights from the panel's own `leg_weights` field — so nothing about
+it is fundamentals-specific except one missing input: `build_swing_signal_panel()` never
+carried a `sectors` map, so every sector-aware function hit its "no sector labels found"
+fallback on a swing panel. Sector was already resolved per row (`current_sector_map()`); it
+just wasn't threaded into the panel's per-period output. Fixed in `backtest_swing.py`, and
+`run_backtest_suite.py`'s hardcoded `--sector-breakdown`/`--sector-candidate-check`/
+`--sector-search` domain==fundamentals guards removed as redundant now that swing panels carry
+sectors too (the pre-existing "no sector labels" fallback already covered a panel that
+genuinely lacks them). `--metric-sector-breakdown` and `--growth-quality-focus` stay
+fundamentals-only — both name concepts (metric-registry decomposition, growth/profitability/
+financial_health legs) with no swing analogue.
+
+Smoke-tested end-to-end on a 3-year/150-name swing panel built from this sandbox's own cached
+price history (not a real finding — too short a window and too small a universe to mean
+anything): the panel resolved 11 distinct sectors, and `--sector-search 20`,
+`--sector-candidate-check`, `--sector-breakdown`, and `regime_diagnosis.py` all ran to
+completion with no wiring errors. On that small sample, 0 of 11 sectors cleared every
+`sector_verdict()` gate and the regime scan found `NO_SIGNIFICANT_BREAK` — consistent with
+what the mechanics should do, not evidence about the real swing model, the same distinction
+Priority 14 drew for its own synthetic smoke run before the user's real 10-year panel produced
+the actual `REGIME_BREAK` finding. The real swing-domain question is still open and needs the
+user's own full-history swing panel: `python pipeline/backtest_swing.py --years N --panel-out
+pipeline/backtest_swing_signal_panel.json`, then `python pipeline/run_backtest_suite.py
+--domain swing --skip-panel --sector-search 500 --sector-candidate-check --sector-breakdown`
+and `python pipeline/regime_diagnosis.py --panel pipeline/backtest_swing_signal_panel.json`.
+
 ## What NOT done, per the brief and this session's standing constraints
 
 No production leg weights, composite construction, or ranking logic changed. No shadow variant

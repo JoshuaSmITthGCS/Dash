@@ -13,14 +13,14 @@
     "decision",
     "reason"
   ],
-  "total_experiments": 34,
+  "total_experiments": 35,
   "by_decision": {
     "ABANDON": 5,
     "INCONCLUSIVE": 2,
     "KEEP_AS_CHALLENGER": 4,
-    "PROMOTE": 23
+    "PROMOTE": 24
   },
-  "total_variants_tested": 73,
+  "total_variants_tested": 74,
   "experiments": [
     {
       "id": "WO-1",
@@ -927,6 +927,31 @@
       "result": "5 tests (round trips both formats, .json->.gz fallback, fresh-json-beats-stale-gz precedence, missing-file None). Real end-to-end: this sandbox's committed panel round-trips through gzip at 15.2MB -> 3.6MB and loads via the .json-path fallback with period counts intact. A first patch of leg_diagnosis.py referenced a REPO name that doesn't exist in that script's scope -- caught by re-reading the file, fixed before commit. Full pipeline suite green.",
       "decision": "PROMOTE",
       "reason": "Pure IO plumbing with an explicit precedence contract; no statistic, weight, or artifact shape changes. Unblocks committing the 10-year panel of record (as .json.gz) so the scheduled refresh publishes the regime monitor against real history instead of a stale panel."
+    },
+    {
+      "id": "R11-P16-swing-sector-search-and-regime-diagnosis-wiring",
+      "declared_at": "2026-08-24T19:40:00+00:00",
+      "hypothesis": "User request: apply the same rigor built for the main research score in R11-P9 through R11-P13 -- per-sector out-of-sample weight search, sector_verdict()'s four-gate conjunction, and the regime-break diagnostic -- to the swing model. The infrastructure (Panel, sector_weight_search, sector_candidate_report, regime_diagnosis.diagnose) is leg-name-agnostic and already reads champion_weights from the panel's own leg_weights field, so it should work unchanged on swing's 5 legs (pead_drift, analyst_revision, high_volume_premium, high_52w_proximity, short_term_reversal) once the panel actually carries sector labels -- which build_swing_signal_panel() never did.",
+      "category": "infrastructure",
+      "configuration": {
+        "files": [
+          "pipeline/backtest_swing.py",
+          "pipeline/run_backtest_suite.py",
+          "pipeline/tests/test_backtest_swing.py"
+        ],
+        "change": "backtest_swing.py: build_swing_signal_panel()'s per-period entries now carry a sectors: {ticker: sector} map (sector already resolved per-row via current_sector_map(), just never threaded into signal_panel_periods), the same key optimization_harness.period_sectors() already reads for the fundamentals panel. run_backtest_suite.py: removed the hardcoded domain == 'fundamentals' guard on --sector-breakdown, --sector-candidate-check, and --sector-search -- they're leg-name-agnostic and already fall back gracefully ('no sector labels found in this panel') when a panel lacks sectors, so the domain check was pure redundancy once swing panels carry sectors too. Left --metric-sector-breakdown and --growth-quality-focus gated to fundamentals: both name concepts (metric_registry decomposition, growth/profitability/financial_health legs) that don't exist in swing's 5-leg model. regime_diagnosis.py needed no change -- diagnose() already reads panel_data['periods']/['leg_weights'] generically and both models share the same price cache directory for the data-source-boundary check."
+      },
+      "train_period": null,
+      "validation_period": null,
+      "test_period": null,
+      "metrics": {
+        "tests_added": 0,
+        "tests_extended": 1
+      },
+      "number_of_variants_tested": 1,
+      "result": "Smoke-tested end-to-end (not a real finding -- this sandbox only has a short cached history) against a 3-year/150-name swing panel built from this sandbox's cached price data: the panel resolved 11 distinct sectors, and --sector-search 20/--sector-candidate-check/--sector-breakdown/regime_diagnosis.py all ran to completion against it with no wiring errors. Full pipeline suite green (2437 passed) after the change. The real question -- does any swing sector beat champion out-of-sample, and is there a swing-specific regime break -- needs the user's own full-history run, the same way R11-P11's and R11-P13's real findings (0/11 sectors, REGIME_BREAK at 2021-03) required their real 10-year panel, not this sandbox's.",
+      "decision": "PROMOTE",
+      "reason": "Pure plumbing generalization: threads an already-computed field into an existing panel shape and removes a now-stale domain restriction, with no change to swing_signals.py's production scoring, weights, or promotion logic. Unblocks the user from running the real sector-search and regime-diagnosis checks against their own swing history without writing new tooling."
     }
   ]
 }

@@ -270,5 +270,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P16-swing-sector-search-and-regime-diagnosis-wiring",
+    "declared_at": "2026-08-24T19:40:00+00:00",
+    "hypothesis": "User request: apply the same rigor built for the main research score in R11-P9 through R11-P13 -- per-sector out-of-sample weight search, sector_verdict()'s four-gate conjunction, and the regime-break diagnostic -- to the swing model. The infrastructure (Panel, sector_weight_search, sector_candidate_report, regime_diagnosis.diagnose) is leg-name-agnostic and already reads champion_weights from the panel's own leg_weights field, so it should work unchanged on swing's 5 legs (pead_drift, analyst_revision, high_volume_premium, high_52w_proximity, short_term_reversal) once the panel actually carries sector labels -- which build_swing_signal_panel() never did.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]
