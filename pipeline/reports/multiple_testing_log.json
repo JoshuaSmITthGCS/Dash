@@ -278,5 +278,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P17-swing-real-sector-search-and-regime-diagnosis",
+    "declared_at": "2026-08-24T20:20:00+00:00",
+    "hypothesis": "Following R11-P16's wiring, the user ran the swing sector search and regime diagnosis for real: python pipeline/backtest_swing.py --years 10 --panel-out ...; python pipeline/run_backtest_suite.py --domain swing --skip-panel --sector-search 500 --sector-candidate-check --sector-breakdown; python pipeline/regime_diagnosis.py --panel pipeline/backtest_swing_signal_panel.json, against their own machine's cached price history (772-861 names across the walk, current-universe survivorship bias per backtest_swing.py's own disclosed limitation).",
+    "holdout_start": "holdout, unspent (113 periods)",
+    "number_of_variants_tested": 74,
+    "decision": "ABANDON"
   }
 ]

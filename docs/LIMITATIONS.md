@@ -68,6 +68,18 @@ more depth.
   returned 0 of 11 sectors clearing pre-registered gates (Round 11,
   `research/audit/round11/`). This is evidence the uniform weighting is adequate per sector
   on the available data — not evidence that sector economics are identical.
+- **The swing screen (`/screens/swing`) shows no measurable predictive edge over a real
+  10-year backtest.** All three registered reversal variants graded to mean rank IC
+  indistinguishable from zero across 225 graded periods (2017–2026, 772–861-name universe):
+  A −0.0000, B −0.0003, C −0.0010. A 500-candidate-per-sector search found 0 of 11 sectors
+  clearing the same gates used above, and a regime-break scan found no significant break at
+  all (strongest candidate permutation p = 0.91, versus the fundamentals score's p = 0.019) —
+  unlike the fundamentals score, there is no hidden good era behind a bad one; the signal
+  centers on zero throughout (Round 11 Priority 17,
+  `research/audit/round11/swing_harness_run_results.json`,
+  `research/audit/round11/swing_regime_diagnosis.json`). This measurement does not change
+  `swing_signals.py`'s production weights or its three registered variants' existing
+  prospective clock (`harness_freeze.json`), which remains the sole promotion authority.
 
 *Closed in this pass:* the sector-residual, trading-session forecast target is now implemented
 (`docs/RESEARCH-CONTRACT.md` §2), as are purge/embargo controls.
