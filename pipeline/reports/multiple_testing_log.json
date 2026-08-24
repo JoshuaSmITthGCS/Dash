@@ -206,5 +206,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P8-metric-level-sector-breakdown",
+    "declared_at": "2026-08-24T06:45:00+00:00",
+    "hypothesis": "User request: extend R11-P7's --sector-breakdown from the 6-8 rolled-up legs (valuation, profitability, ...) to every individual metric the methodology currently computes (trailing P/E, ROE, Piotroski F, Altman Z, buyback yield, and so on) -- which specific metric carries signal in which sector, not only which category. build_research's row already carries every one of these as **snapshot-spread top-level keys (confirmed by reading advisor_engine.py directly); the panel builder just never extracted them. Hypothesis: capture them alongside the existing leg_scores, then reuse -- not reimplement -- every existing leg-level function (leg_coverage, formula_weights, sector_weight_report) by substituting metric_scores for leg_scores, since none of those functions know or care whether a 'leg' name is a rolled-up category or an individual metric.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

@@ -325,6 +325,35 @@ NOT yet been regenerated with this fix live; that still needs a real network-fet
 should be treated as measuring growth+market_behavior's edge specifically, not the full 8-leg
 blend the weight vectors nominally describe.
 
+## Priority 9 — Metric-level sector breakdown (`R11-P8` in the registry)
+
+Extends Priority 8's per-sector `formula_weights()` from the 6-8 rolled-up legs to every
+individual metric the methodology currently computes — trailing P/E, ROE, Piotroski F,
+Altman Z, buyback yield, EV/EBITDA, and everything else `build_snapshot()` produces — so
+sector analysis can answer "which specific metric carries signal in which sector", not only
+"which category."
+
+`advisor_engine.build_research()`'s row is `{**snapshot, ...}` — every individual metric was
+already a top-level key on each scored row, just never extracted into the panel.
+`backtest_monthly.panel_metric_scores(rows)` now captures all of them (numeric, non-boolean,
+excluding an explicit set of `build_research`'s own output keys like `score`,
+`fundamental_categories`, `recommendation`), stored as `metric_scores` alongside the existing
+`leg_scores` on each panel period.
+
+The reuse move: `optimization_harness.as_metric_periods(periods)` returns periods with
+`metric_scores` substituted for `leg_scores`. Every existing leg-level function —
+`leg_coverage`, `formula_weights`, `sector_weight_report` — has no idea whether a "leg" name is
+a rolled-up category or an individual metric, so this one substitution is enough to run all of
+them at the metric level with zero metric-specific reimplementation. New
+`--metric-sector-breakdown` flag on `run_backtest_suite.py` (fundamentals-only, composes with
+`--sector-breakdown` in the same run); console output shows the top 5 metrics per sector by
+formula weight, full list still written to `--harness-out` — learned from this same round's own
+console-flooding lesson (Priority 7's `_drop_series` fix).
+
+8 new tests. Like the sector breakdown itself, this needs a panel rebuilt with the current
+`backtest_monthly.py` before `metric_scores` exists to analyze — not run against real data in
+this sandbox.
+
 ## What NOT done, per the brief and this session's standing constraints
 
 No production leg weights, composite construction, or ranking logic changed. No shadow variant

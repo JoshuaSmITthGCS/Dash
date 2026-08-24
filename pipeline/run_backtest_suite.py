@@ -68,6 +68,15 @@ Cross-stage candidate flags (harness AND elo stages):
   retroactively (same disclosed approximation as backtest_swing.py's current_sector_map) --
   answers whether e.g. tech warrants a different leg weighting than the champion vector
   applies uniformly. Requires a panel rebuilt with sector tagging.
+- --metric-sector-breakdown (harness stage, fundamentals-only): the same per-sector
+  formula_weights() analysis, but over every individual metric build_snapshot currently
+  computes (trailing P/E, ROE, Piotroski F, Altman Z, buyback yield, and so on -- everything
+  backtest_monthly.py's panel_metric_scores() captures from a scored row, not just the 6-8
+  rolled-up legs). optimization_harness.as_metric_periods() substitutes metric_scores for
+  leg_scores so every leg-level function (leg_coverage, formula_weights, sector_weight_report)
+  runs unchanged at the metric level -- one implementation, not two. Requires a panel rebuilt
+  with per-metric tagging (current backtest_monthly.py); composes with --sector-breakdown in
+  the same invocation.
 - --top-n-from-elo N --elo-results-in PATH (harness stage): pulls the top N names off a
   previous elo run's leaderboard and adds them as harness (and, with --holdout-check,
   holdout) candidates -- "test the top N" without retyping weight vectors.
@@ -444,6 +453,29 @@ def run_harness_stage(args):
                                                   key=lambda item: -item[1]))
                         print(f"  {sector:<28} ({row['usable_periods']} periods) {weights}")
 
+    if args.metric_sector_breakdown:
+        if args.domain != "fundamentals":
+            print("[metric-sector] --metric-sector-breakdown is fundamentals-only, skipping")
+        else:
+            metric_periods = harness.as_metric_periods(panel.train)
+            if not any(period.get("leg_scores") for period in metric_periods):
+                print("[metric-sector] no metric_scores found in this panel -- rebuild it with "
+                     "the current backtest_monthly.py to pick up per-metric tagging")
+            else:
+                metric_report = harness.sector_weight_report(metric_periods)
+                summary["metric_sector_breakdown"] = metric_report
+                print("\n[metric-sector] per-sector formula_weights() over every individual "
+                     "metric (not just the 6-8 legs), train slice only -- top 5 shown per "
+                     "sector, full list in the output file:")
+                for sector, row in metric_report.items():
+                    if row["formula_weights"] is None:
+                        print(f"  {sector:<28} {row['reason']}")
+                    else:
+                        top = sorted(row["formula_weights"].items(), key=lambda item: -item[1])[:5]
+                        weights = ", ".join(f"{metric}={weight}" for metric, weight in top)
+                        print(f"  {sector:<28} ({row['usable_periods']} periods, "
+                             f"{len(row['formula_weights'])} metrics scored) top5: {weights}")
+
     if args.holdout_check:
         print("\n" + "=" * 70)
         print("[holdout] ONE-TIME CHECK -- spending the holdout slice now.")
@@ -576,6 +608,15 @@ def main():
                              "say, warrants a different leg weighting than the champion "
                              "vector applies uniformly. Requires a panel rebuilt with sector "
                              "tagging (current backtest_monthly.py).")
+    parser.add_argument("--metric-sector-breakdown", action="store_true",
+                        help="Fundamentals-only. Same as --sector-breakdown but over every "
+                             "individual metric the methodology currently computes (trailing "
+                             "P/E, ROE, Piotroski F, Altman Z, buyback yield, ...), not just "
+                             "the 6-8 rolled-up legs -- which specific metric carries signal "
+                             "in which sector, not only which category. Console output shows "
+                             "the top 5 metrics per sector; the full list is in --harness-out. "
+                             "Requires a panel rebuilt with per-metric tagging (current "
+                             "backtest_monthly.py).")
     parser.add_argument("--top-n-from-elo", type=int, default=0, metavar="N",
                         help="Pull the top N names off a previous elo run's leaderboard "
                              "(--elo-results-in PATH) and add them as harness candidates -- "

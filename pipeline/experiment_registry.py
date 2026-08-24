@@ -1032,6 +1032,63 @@ REGISTRY = [
                    "regenerates the panel should be treated as measuring growth+market_behavior's edge "
                    "specifically, not the full 8-leg blend the weight vectors nominally describe."),
     },
+    {
+        "id": "R11-P8-metric-level-sector-breakdown",
+        "declared_at": "2026-08-24T06:45:00+00:00",
+        "hypothesis": ("User request: extend R11-P7's --sector-breakdown from the 6-8 rolled-up legs "
+                       "(valuation, profitability, ...) to every individual metric the methodology "
+                       "currently computes (trailing P/E, ROE, Piotroski F, Altman Z, buyback yield, "
+                       "and so on) -- which specific metric carries signal in which sector, not only "
+                       "which category. build_research's row already carries every one of these as "
+                       "**snapshot-spread top-level keys (confirmed by reading advisor_engine.py "
+                       "directly); the panel builder just never extracted them. Hypothesis: capture "
+                       "them alongside the existing leg_scores, then reuse -- not reimplement -- every "
+                       "existing leg-level function (leg_coverage, formula_weights, "
+                       "sector_weight_report) by substituting metric_scores for leg_scores, since none "
+                       "of those functions know or care whether a 'leg' name is a rolled-up category "
+                       "or an individual metric."),
+        "category": "infrastructure",
+        "configuration": {
+            "files": ["pipeline/backtest_monthly.py", "pipeline/optimization_harness.py",
+                     "pipeline/run_backtest_suite.py", "pipeline/tests/test_backtest_monthly.py",
+                     "pipeline/tests/test_optimization_harness.py"],
+            "change": ("backtest_monthly.panel_metric_scores(rows): every key in a scored row that is "
+                       "numeric, not a bool, and not one of build_research's own added output keys "
+                       "(score, base_score, components, fundamental_categories, recommendation, "
+                       "analysis_v2, ... -- an explicit exclusion set, not inferred, so a future field "
+                       "added to build_research's return dict can't silently be mistaken for a scoring "
+                       "input) -- captures trailing_pe, return_on_equity, piotroski_f, altman_z, "
+                       "ev_to_ebitda, gross_buyback_yield, and everything else build_snapshot computes. "
+                       "Wired alongside leg_scores in each panel period as metric_scores. "
+                       "optimization_harness.as_metric_periods(periods) returns periods with "
+                       "metric_scores standing in for leg_scores -- the substitution that lets "
+                       "sector_weight_report (and everything it calls) run unchanged at the metric "
+                       "level. run_backtest_suite.py: new --metric-sector-breakdown flag "
+                       "(fundamentals-only, composes with --sector-breakdown), console output "
+                       "truncated to the top 5 metrics per sector by formula weight -- the full list "
+                       "still goes to --harness-out -- learned from this same round's earlier "
+                       "console-flooding fix (R11-P7's neighbor, _drop_series)."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 8},
+        "number_of_variants_tested": 1,
+        "result": ("8 new tests (2 for panel_metric_scores' extraction/exclusion rules, 3 for "
+                   "as_metric_periods' substitution and graceful-degradation on a pre-metric panel, "
+                   "3 confirming sector_weight_report produces a correct per-sector breakdown when "
+                   "fed remapped metric periods with no metric-specific code path at all). Full "
+                   "pipeline suite green after the change. Sanity-checked panel_metric_scores directly "
+                   "against a realistic row shape (AAPL-like: price_to_sales, return_on_equity, "
+                   "piotroski_f, altman_z, market_cap) -- extracted exactly those four numeric fields, "
+                   "correctly excluded sector/is_etf/fundamental_categories/components/recommendation."),
+        "decision": "PROMOTE",
+        "reason": ("Ships as tooling only -- no production weight, panel, or promotion decision "
+                   "changed, same scope discipline as every other harness addition this round. Reuses "
+                   "existing leg-level machinery rather than duplicating it, so this doesn't grow the "
+                   "surface area that needs independent correctness verification. Requires a panel "
+                   "rebuild (backtest_monthly.py, real network access) before metric_scores exists to "
+                   "analyze -- not run against real data in this environment, same standing constraint "
+                   "as R11-P7's own statement fallback."),
+    },
 ]
 
 

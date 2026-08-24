@@ -213,6 +213,21 @@ def filter_periods_by_sector(periods, sector):
     return filtered
 
 
+def as_metric_periods(periods):
+    """Periods with ``metric_scores`` standing in for ``leg_scores``.
+
+    Every leg-level function here (``leg_coverage``, ``formula_weights``, ``per_leg_ic``,
+    ``sector_weight_report``) reads ``period.get("leg_scores")`` and has no idea what a "leg"
+    actually is beyond a named number per ticker -- an individual metric (trailing P/E, ROE,
+    Piotroski F, ...) fits that shape exactly as well as a rolled-up category does. This lets
+    every one of them run over ``backtest_monthly.py``'s ``metric_scores`` unchanged, so
+    metric-level and leg-level sector analysis share one implementation rather than two. A
+    panel built before ``metric_scores`` existed contributes an empty dict per period here,
+    the same graceful-degradation shape ``period_sectors`` already uses for pre-sector panels.
+    """
+    return [{**period, "leg_scores": period.get("metric_scores") or {}} for period in periods]
+
+
 def sector_weight_report(periods, *, legs=None, periods_per_year=12, minimum_periods=6):
     """formula_weights(), leg_coverage(), and standalone IC computed independently per
     sector -- answers whether different sectors warrant different leg weightings (a tech

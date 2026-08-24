@@ -296,6 +296,35 @@ def synthetic_sector_periods(count, *, names_per_sector=20, seed=31, noise=0.03)
     return periods
 
 
+class AsMetricPeriodsTests(unittest.TestCase):
+    def test_metric_scores_stand_in_for_leg_scores(self):
+        periods = [{
+            "date": "2026-01", "leg_scores": {"AAPL": {"valuation": 60.0}},
+            "metric_scores": {"AAPL": {"trailing_pe": 32.38, "return_on_equity": 1.35}},
+            "forward_returns": {"AAPL": 0.02},
+        }]
+        remapped = harness.as_metric_periods(periods)
+        self.assertEqual(remapped[0]["leg_scores"], {"AAPL": {"trailing_pe": 32.38,
+                                                              "return_on_equity": 1.35}})
+        # Everything else -- forward_returns, date -- passes through untouched.
+        self.assertEqual(remapped[0]["forward_returns"], {"AAPL": 0.02})
+        self.assertEqual(remapped[0]["date"], "2026-01")
+
+    def test_a_panel_built_before_metric_scores_existed_contributes_empty_dicts(self):
+        periods = [{"leg_scores": {"AAPL": {"valuation": 60.0}}}]
+        remapped = harness.as_metric_periods(periods)
+        self.assertEqual(remapped[0]["leg_scores"], {})
+
+    def test_downstream_leg_level_functions_run_unchanged_over_metrics(self):
+        # The whole point: no metric-specific reimplementation of leg_coverage/formula_weights
+        # is needed -- as_metric_periods() alone is enough to reuse them.
+        periods = synthetic_sector_periods(60, names_per_sector=25, noise=0.02, seed=51)
+        metric_periods = [{**period, "metric_scores": period["leg_scores"]} for period in periods]
+        remapped = harness.as_metric_periods(metric_periods)
+        report = harness.sector_weight_report(remapped, minimum_periods=6)
+        self.assertEqual(set(report), {"Technology", "Energy"})
+
+
 class SectorWeightReportTests(unittest.TestCase):
     def test_each_sector_concentrates_on_its_own_predictive_leg(self):
         periods = synthetic_sector_periods(60, names_per_sector=25, noise=0.02, seed=41)
