@@ -525,6 +525,30 @@ fabricated cache boundary is placed). End-to-end verified against this sandbox's
 NO_SIGNIFICANT_BREAK — which validates the mechanics and says nothing about the user's
 10-year panel, whose run is the one that matters.
 
+**Real-run outcome (user's 10-year, 120-period panel, 2026-08-24): `REGIME_BREAK` at
+2021-03-01.** Welch t = 3.221, permutation p = 0.019 over 2000 shuffles — significant even
+after pricing in the scan over every breakpoint. Champion mean IC −0.0231 before the break,
++0.0375 after. The computed data-source boundary (median Yahoo-native statement start across
+861 cached tickers) is 2025-02-14, **47 months from the break** — the EDGAR seam is
+exonerated; this is market history, not measurement. The yearly table shows the shape
+plainly: 2018–2020 all negative (hit rates 25–42%), every year from 2021 on positive, hit
+rates rising to 75–83% by 2024–2025. The date is economically coherent: early 2021 is the
+documented rotation out of the 2018–2020 speculative-growth regime (in which a
+fundamentals-first score anti-predicts) into the rates-rising, fundamentals-matter regime
+that has held since.
+
+What this re-frames: the train-era negative ICs that every search kept hitting were not a
+broken score — they were a hostile regime occupying most of the train window. The panel's
+validation AND holdout slices both sit entirely post-break, so this round's validation-side
+numbers (champion ≈ +0.038, the earlier one-time holdout read of +0.0489) are already the
+current-regime numbers — modest, consistently positive, still short of the formal
+deflated-Sharpe ship bar at 30-period sample sizes. And the sector searches failing on those
+same post-break slices now means something sharper: **even inside the favorable regime, no
+reweighting — sector-level, searched, or ML-derived — beats the uniform champion.** The
+standing caveats: one observed regime transition is n=1 (no falsifiable regime-switching
+model can be built from it), the era-conditioned read is post hoc by construction, and
+nothing in the production system currently detects a regime turning again.
+
 ## What NOT done, per the brief and this session's standing constraints
 
 No production leg weights, composite construction, or ranking logic changed. No shadow variant
