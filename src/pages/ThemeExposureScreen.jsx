@@ -408,6 +408,13 @@ function GroupCount({ shown, total }) {
 
 export default function ThemeExposureScreen() {
   const { data, loading, error, reload } = useData('advisor.json')
+  // The sector-connected tier, re-ranked across the whole peer pool by the separate
+  // theme-peers workflow. advisor.json can only afford themes.TOTAL_SECTOR_PEER_BUDGET
+  // (120 peers shared across every theme), so its own connected rows are a slice of what
+  // is connected; this file scores all ~330. Optional by design: it is published on its
+  // own schedule and may legitimately not exist yet, in which case every read below falls
+  // back to the peer rows advisor.json already carries.
+  const { data: peerScreen } = useData('theme-peers.json')
   const [selectedStock, setSelectedStock] = useState(null)
   const [hideHoldings, setHideHoldings] = useState(false)
   const { positions } = useFirebasePortfolio()
@@ -577,7 +584,18 @@ export default function ThemeExposureScreen() {
         // exposure. Ordering leaders by raw exposure alone left the top of the table decided by
         // ties, since a saturated signal puts many names at exactly 100.
         const leaders = visible(rankThemeExposure(leaderTheme, leaderTheme.rows.length))
-        const connectedTheme = { ...theme, rows: rows.filter((row) => row.candidate_source === 'sector_peer') }
+        // Prefer the wider re-rank when it has rows for this theme. Merged through byTicker
+        // the same way the leaders are, so a peer row picks up the research fields the table
+        // renders; `row` wins on conflict because its exposure and eligibility were scored
+        // against the theme, not carried from the research snapshot.
+        const widePeers = (peerScreen?.themes || []).find((entry) => entry.id === theme.id)
+        const peerRows = (widePeers?.rows || []).map((row) => ({ ...byTicker.get(row.ticker), ...row }))
+        const connectedRows = peerRows.length
+          ? peerRows
+          : rows.filter((row) => row.candidate_source === 'sector_peer')
+        const connectedTheme = { ...theme, rows: connectedRows, group_counts: widePeers
+          ? { ...theme.group_counts, connected: widePeers.group_counts?.connected }
+          : theme.group_counts }
         const connected = visible(rankThemeExposure(connectedTheme, connectedTheme.rows.length))
 
         return <section className="card theme-exposure-panel" id={`theme-${theme.id}`} key={theme.id}>
@@ -653,7 +671,7 @@ export default function ThemeExposureScreen() {
               )}
             </>}
 
-          <h3>Connected, not yet re-rated <GroupCount shown={connected.length} total={theme.group_counts?.connected} />
+          <h3>Connected, not yet re-rated <GroupCount shown={connected.length} total={connectedTheme.group_counts?.connected} />
             <InfoTag label="Connected, not yet re-rated">
               <strong>Connected, not yet re-rated</strong>
               <p>Sector/peer-group neighbours of this theme's anchor companies that are not already a
