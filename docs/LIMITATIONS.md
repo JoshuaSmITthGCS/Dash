@@ -50,6 +50,24 @@ more depth.
 - **The strategy's returns are regime-dependent.** Strongly positive in falling rates and
   drawdowns, negative in rising rates (−6.7pp annualized against SPY). Full-sample
   statistics average over a split this wide.
+- **The score's predictive sign flipped with the March 2021 market rotation, and only one
+  such transition has ever been observed.** The Round 11 regime diagnosis
+  (`pipeline/regime_diagnosis.py`; `research/audit/round11/regime_diagnosis.json`) found a
+  significant break in the champion's monthly rank IC at 2021-03 (permutation p = 0.019,
+  scan-adjusted): mean IC −0.023 before, +0.038 after; anti-predictive every year 2018–2020.
+  Consequences stated plainly: (a) every full-panel backtest statistic in this repository
+  mixes an era where the score worked backwards with one where it worked, (b) the
+  post-2021 positive read is post hoc — the era was identified in the same data it is
+  measured on, (c) with n = 1 regime transition, no regime-switching or regime-detection
+  model can be built falsifiably from this history, and (d) the edge, such as it is, is
+  conditional on the current regime persisting. The `rolling_ic_regime` metric in
+  `public/data/validation/signal_metrics.json` is the monitoring line for a future turn; it
+  is a detector of decay after the fact, not a predictor of it.
+- **No sector-specific weighting beats the uniform champion weights on this panel.** Two
+  500-candidate-per-sector out-of-sample searches (full universe and growth/quality-filtered)
+  returned 0 of 11 sectors clearing pre-registered gates (Round 11,
+  `research/audit/round11/`). This is evidence the uniform weighting is adequate per sector
+  on the available data — not evidence that sector economics are identical.
 
 *Closed in this pass:* the sector-residual, trading-session forecast target is now implemented
 (`docs/RESEARCH-CONTRACT.md` §2), as are purge/embargo controls.

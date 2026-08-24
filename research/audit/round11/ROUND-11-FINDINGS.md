@@ -549,6 +549,26 @@ standing caveats: one observed regime transition is n=1 (no falsifiable regime-s
 model can be built from it), the era-conditioned read is post hoc by construction, and
 nothing in the production system currently detects a regime turning again.
 
+## Priority 15 — Rolling IC monitor and regime documentation (`R11-P14` in the registry)
+
+Follow-through on the real regime-break finding, on explicit user go-ahead for both halves:
+
+- **`rolling_ic_regime`** in `pipeline/signal_metrics.py` (published to
+  `public/data/validation/signal_metrics.json`): trailing 12-period mean of the published
+  composite's per-period rank IC, dated series in detail, breach condition **rolling mean
+  < 0** — the empirically observed signature of the pre-2021 regime, not an arbitrary
+  threshold. A future sign flip now surfaces in the committed artifacts within months
+  instead of in a later backtest. 5 new tests, including the one that matters for a rolling
+  monitor: a panel whose early periods anti-predict but whose trailing year predicts reads
+  positive at the headline while `negative_windows`/`last_negative_date` preserve the bad
+  era.
+- **`docs/MODEL-CARD.md` and `docs/LIMITATIONS.md`** now state the 2021-03 IC sign break
+  with its statistics, that it sits 47 months from the computed data seam (market history,
+  not data construction), that the post-2021 positive read is post hoc and rests on n=1
+  regime transition, that any edge is conditional on the current regime persisting, and that
+  the sector-weighting question was settled 0-of-11 negatively. Claims narrowed, never
+  widened; `validate_documentation_claims.py` green over 116 files after the edits.
+
 ## What NOT done, per the brief and this session's standing constraints
 
 No production leg weights, composite construction, or ranking logic changed. No shadow variant

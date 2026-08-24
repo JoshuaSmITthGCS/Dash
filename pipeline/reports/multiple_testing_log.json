@@ -254,5 +254,13 @@
     "holdout_start": "not_applicable",
     "number_of_variants_tested": 1,
     "decision": "PROMOTE"
+  },
+  {
+    "test_id": "R11-P14-rolling-ic-monitor-and-regime-docs",
+    "declared_at": "2026-08-24T20:30:00+00:00",
+    "hypothesis": "Follow-through on the real R11-P13 outcome (REGIME_BREAK at 2021-03, permutation p=0.019, champion IC -0.023 before / +0.038 after, 47 months from the computed data seam), on explicit user go-ahead for both halves: (1) the production system had no artifact that would surface a future sign flip -- it would be discovered in a later backtest, years after the fact; (2) the published model documentation (docs/MODEL-CARD.md, docs/LIMITATIONS.md -- CI-scanned by validate_documentation_claims.py) did not state that the score anti-predicted for ~3 of its 10 backtest years, that every full-panel statistic mixes the two regimes, or that the sector question was settled negatively.",
+    "holdout_start": "not_applicable",
+    "number_of_variants_tested": 1,
+    "decision": "PROMOTE"
   }
 ]

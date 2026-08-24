@@ -168,6 +168,57 @@ def _price_curve_with_beta_regime_shift():
     return curve(portfolio_returns), curve(benchmark_returns)
 
 
+class RollingIcRegimeTests(unittest.TestCase):
+    """The regime-turn alarm R11-P13 showed was missing from the published artifacts."""
+
+    def test_a_predictive_panel_reads_positive_and_unbreached(self):
+        rows = metrics_by_id(sm.signal_metrics(synthetic_panel(periods=30)))
+        row = rows["rolling_ic_regime"]
+        self.assertEqual(row["status"], "ready")
+        self.assertGreater(row["value"], 0)
+        self.assertFalse(row["breached"])
+        # 30 resolved periods, window 12 -> 19 rolling points, each dated.
+        self.assertEqual(len(row["detail"]["series"]), 19)
+        self.assertTrue(all(point["date"] for point in row["detail"]["series"]))
+
+    def test_an_anti_predictive_panel_breaches_the_alarm(self):
+        panel = synthetic_panel(periods=30)
+        for period in panel["periods"]:
+            for horizon in period["forward_returns_by_horizon"].values():
+                for ticker in horizon:
+                    horizon[ticker] = -horizon[ticker]
+            period["forward_returns"] = period["forward_returns_by_horizon"]["21d"]
+        row = metrics_by_id(sm.signal_metrics(panel))["rolling_ic_regime"]
+        self.assertLess(row["value"], 0)
+        self.assertTrue(row["breached"])
+        self.assertGreater(row["detail"]["negative_windows"], 0)
+
+    def test_a_flip_inside_the_panel_shows_in_the_series_tail_not_just_the_mean(self):
+        # First 18 periods anti-predict, last 12 predict: the LATEST rolling window covers
+        # only the good era, so the headline must read positive even though the full-panel
+        # mean is dragged down -- that recency is the entire point of a rolling monitor.
+        panel = synthetic_panel(periods=30)
+        for period in panel["periods"][:18]:
+            for horizon in period["forward_returns_by_horizon"].values():
+                for ticker in horizon:
+                    horizon[ticker] = -horizon[ticker]
+            period["forward_returns"] = period["forward_returns_by_horizon"]["21d"]
+        row = metrics_by_id(sm.signal_metrics(panel))["rolling_ic_regime"]
+        self.assertGreater(row["value"], 0)
+        self.assertFalse(row["breached"])
+        self.assertGreater(row["detail"]["negative_windows"], 0)
+        self.assertIsNotNone(row["detail"]["last_negative_date"])
+
+    def test_too_few_periods_reads_pending_with_the_count(self):
+        row = metrics_by_id(sm.signal_metrics(synthetic_panel(periods=8, names=30)))[
+            "rolling_ic_regime"]
+        self.assertEqual(row["status"], "awaiting_input")
+
+    def test_pending_without_a_panel_at_all(self):
+        row = metrics_by_id(sm.signal_metrics(None))["rolling_ic_regime"]
+        self.assertEqual(row["status"], "awaiting_input")
+
+
 class RollingBetaSwingTests(unittest.TestCase):
     def test_swing_gets_its_own_metric_matching_the_point_estimate_breach(self):
         # rolling_beta_60d's value (a point beta, ~1) and its own kill_threshold (a swing,

@@ -350,6 +350,10 @@ def signal_metrics(panel):
             _pending("score_autocorrelation", "signal", "Score autocorrelation", message,
                      reads="Turnover implied by the signal before a single trade.",
                      cadence="Weekly"),
+            _pending("rolling_ic_regime", "signal", "Rolling 12-period IC (regime monitor)", message,
+                     reads="Trailing-year mean rank IC. The regime-turn alarm.",
+                     kill_threshold="Rolling 12-period mean IC < 0",
+                     kill_threshold_value=0, comparison="lt", cadence="Weekly"),
         ]
 
     periods = panel.get("periods") or []
@@ -474,7 +478,76 @@ def signal_metrics(panel):
                        reads="Turnover the signal implies before a single trade is placed.",
                        detail=autocorrelation, observations=autocorrelation["periods"],
                        cadence="Weekly", source="backtest panel"))
+
+    rolling = _rolling_ic_regime(periods, graded)
+    if rolling["series"]:
+        latest = rolling["series"][-1]
+        rows.append(metric(
+            "rolling_ic_regime", "signal", "Rolling 12-period IC (regime monitor)",
+            value=latest["rolling_mean_ic"],
+            display=f"{latest['rolling_mean_ic']:+.4f} trailing {rolling['window']} periods "
+                    f"as of {latest['date']}",
+            reads="Trailing-year mean rank IC of the published composite. The regime-turn "
+                  "alarm: R11-P13's regime diagnosis found the score anti-predicted through "
+                  "the 2018-2020 regime and flipped positive at the 2021-03 rotation -- a "
+                  "sustained negative reading here is the signature of that regime returning, "
+                  "visible within months instead of in a future backtest.",
+            kill_threshold="Rolling 12-period mean IC < 0",
+            kill_threshold_value=0, comparison="lt",
+            breached=(latest["rolling_mean_ic"] is not None
+                      and latest["rolling_mean_ic"] < 0),
+            detail=rolling, observations=rolling["resolved_periods"],
+            cadence="Weekly", source="backtest panel"))
+    else:
+        rows.append(_pending(
+            "rolling_ic_regime", "signal", "Rolling 12-period IC (regime monitor)",
+            f"Needs at least {rolling['window']} resolved periods at the {graded} horizon; "
+            f"{rolling['resolved_periods']} available.",
+            reads="Trailing-year mean rank IC. The regime-turn alarm.",
+            kill_threshold="Rolling 12-period mean IC < 0",
+            kill_threshold_value=0, comparison="lt", cadence="Weekly"))
     return rows
+
+
+def _rolling_ic_regime(periods, horizon, window=12):
+    """Rolling mean of the per-period composite rank IC, dated, over the whole panel.
+
+    The one monitoring read the regime diagnosis (R11-P13) showed was missing: the score's
+    predictive sign flipped with the 2021-03 market rotation, and nothing in the published
+    artifacts would surface a future flip until someone re-ran a backtest. Each point is the
+    trailing ``window``-period mean of the panel's own per-period IC (the published composite
+    ``scores`` against forward returns at the graded horizon), so the newest point answers
+    "has the score predicted, on net, over the trailing year" -- and a sustained negative
+    reading is the alarm, distinct from one noisy month.
+    """
+    points = []
+    for period in periods:
+        scores = period.get("scores") or {}
+        forwards = ((period.get("forward_returns_by_horizon") or {}).get(horizon)
+                    or period.get("forward_returns") or {})
+        pairs = [(scores[ticker], forward) for ticker, forward in forwards.items()
+                 if ticker in scores and scores[ticker] is not None and forward is not None]
+        if len(pairs) < 5:
+            continue
+        ic = evaluation.rank_ic([pair[0] for pair in pairs], [pair[1] for pair in pairs])
+        if ic is not None:
+            points.append((period.get("date"), ic))
+    series = []
+    for index in range(window - 1, len(points)):
+        chunk = [ic for _date, ic in points[index - window + 1:index + 1]]
+        series.append({"date": points[index][0],
+                       "rolling_mean_ic": round(sum(chunk) / len(chunk), 4)})
+    negative = [row for row in series if row["rolling_mean_ic"] < 0]
+    return {
+        "window": window,
+        "horizon": horizon,
+        "resolved_periods": len(points),
+        "series": series,
+        "negative_windows": len(negative),
+        "last_negative_date": negative[-1]["date"] if negative else None,
+        "regime_reference": ("R11-P13 regime diagnosis: break at 2021-03 (permutation "
+                             "p=0.019); champion mean IC -0.023 before, +0.038 after"),
+    }
 
 
 def _quantile_spread(periods, horizon, quantiles=5):

@@ -1406,6 +1406,62 @@ REGISTRY = [
                    "NO_SIGNIFICANT_BREAK means the monthly-horizon edge claim itself, not its "
                    "weighting, is what lacks support. Awaits the user's real 10-year run."),
     },
+    {
+        "id": "R11-P14-rolling-ic-monitor-and-regime-docs",
+        "declared_at": "2026-08-24T20:30:00+00:00",
+        "hypothesis": ("Follow-through on the real R11-P13 outcome (REGIME_BREAK at 2021-03, "
+                       "permutation p=0.019, champion IC -0.023 before / +0.038 after, 47 months "
+                       "from the computed data seam), on explicit user go-ahead for both halves: "
+                       "(1) the production system had no artifact that would surface a future "
+                       "sign flip -- it would be discovered in a later backtest, years after the "
+                       "fact; (2) the published model documentation (docs/MODEL-CARD.md, "
+                       "docs/LIMITATIONS.md -- CI-scanned by validate_documentation_claims.py) "
+                       "did not state that the score anti-predicted for ~3 of its 10 backtest "
+                       "years, that every full-panel statistic mixes the two regimes, or that "
+                       "the sector question was settled negatively."),
+        "category": "monitoring",
+        "configuration": {
+            "files": ["pipeline/signal_metrics.py", "pipeline/tests/test_signal_metrics.py",
+                     "docs/MODEL-CARD.md", "docs/LIMITATIONS.md"],
+            "change": ("signal_metrics.py: new rolling_ic_regime metric in the panel-computable "
+                       "group (requires_live_sample False) -- trailing 12-period mean of the "
+                       "published composite's per-period rank IC at the graded horizon, dated "
+                       "series in detail, breach condition 'rolling mean < 0' (the signature of "
+                       "the pre-2021 regime returning), negative_windows / last_negative_date "
+                       "for history, R11-P13 reference embedded so the artifact explains its own "
+                       "threshold. Pending states for no-panel and <12 resolved periods. "
+                       "Docs: MODEL-CARD 'Validation state' and LIMITATIONS 'Validation' now "
+                       "state the 2021-03 IC sign break with its statistics, that the break is "
+                       "47 months from the computed Yahoo/EDGAR statement seam (market history, "
+                       "not data construction), that the post-2021 read is post hoc and n=1 (no "
+                       "falsifiable regime model can be built from one transition), that any "
+                       "edge is conditional on the current regime persisting, and that two "
+                       "500-per-sector searches settled the sector-weighting question 0-of-11 "
+                       "negatively. Worded as caveats throughout."),
+        },
+        "train_period": None, "validation_period": None, "test_period": None,
+        "metrics": {"tests_added": 5},
+        "number_of_variants_tested": 1,
+        "result": ("5 new tests: a predictive panel reads positive/unbreached with a dated "
+                   "19-point rolling series from 30 periods; a globally anti-predictive panel "
+                   "breaches; a panel whose first 18 periods anti-predict but whose last 12 "
+                   "predict reads POSITIVE at the headline (the latest window covers only the "
+                   "good era) while negative_windows/last_negative_date preserve the bad era -- "
+                   "recency is the entire point of a rolling monitor, asserted directly; "
+                   "too-few-periods and no-panel read awaiting_input. First test run caught a "
+                   "wrong assumption about the metric status vocabulary (asserted 'ok'/'pending' "
+                   "where the module publishes 'ready'/'awaiting_input') -- tests corrected to "
+                   "the real contract. validate_documentation_claims.py green over 116 files "
+                   "after the doc edits. Full pipeline suite green."),
+        "decision": "PROMOTE",
+        "reason": ("The monitor is additive, panel-computable, and self-documenting; its breach "
+                   "line (rolling mean < 0) is the empirically observed signature of the one "
+                   "known bad regime rather than an arbitrary threshold. The doc changes only "
+                   "narrow published claims, never widen them -- they add the strongest known "
+                   "caveat about the score's history to the two files whose whole job is "
+                   "carrying such caveats, and the CI claim scanner confirms nothing now claims "
+                   "validation the repository cannot support."),
+    },
 ]
 
 

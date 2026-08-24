@@ -89,6 +89,27 @@ numbers come from `pipeline/reports/{factor_regression_p0,benchmark_alpha_regres
 - Regime-dependent: **+11.1pp** annualized against SPY in bear markets, **+9.6pp** in falling
   rates, and **−6.7pp** in rising rates.
 
+**The score's predictive sign is itself regime-dependent** (Round 11 regime diagnosis,
+`pipeline/regime_diagnosis.py`, results in `research/audit/round11/regime_diagnosis.json`):
+on the 10-year monthly backtest panel (2016–2026, 119 resolved periods), the champion
+composite's mean monthly rank IC breaks at **2021-03** — **−0.023 before, +0.038 after**
+(Welch t = 3.221; permutation p = 0.019, computed against the maximum statistic over every
+candidate breakpoint, so scanning for the break is priced into the p-value). The break sits
+47 months from the computed Yahoo-native/EDGAR statement-source boundary, so it is market
+history, not a data-construction artifact. Concretely: the score **anti-predicted through
+2018–2020** (yearly hit rates 25–42%) and has been positive every year since 2021. Any
+forward-looking read of the score's usefulness is therefore conditional on the post-2021
+regime persisting; nothing in this repository demonstrates the score works across regimes.
+A rolling 12-period IC monitor (`rolling_ic_regime` in
+`public/data/validation/signal_metrics.json`) exists so a future sign flip surfaces in the
+published artifacts within months rather than in a later backtest.
+
+Round 11 also settled the per-sector weighting question negatively: two 500-candidate-per-
+sector searches (full universe and a growth/quality-filtered universe), graded out-of-sample
+under pre-registered gates, found **0 of 11 sectors** where any sector-specific weighting
+beat the uniform champion weights (`research/audit/round11/harness_run_results.json`,
+`sector_search_growth_quality.json`).
+
 **Current classification: B — a transparent factor tilt with no demonstrated residual alpha**,
 carrying a real Verdict D caveat because the contract's own target has never been measured.
 Do not present SPY outperformance as this model's objective.
