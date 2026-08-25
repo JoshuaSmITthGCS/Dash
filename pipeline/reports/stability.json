@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 75,
+  "refreshes_observed": 76,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -16136,6 +16136,116 @@
           ],
           "score_delta": 2.0,
           "confidence_delta": 0.04
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-25T12:25:00.765680+00:00",
+      "current_refresh": "advisor-2026-08-25T17:25:48.992392+00:00",
+      "shared_tickers": 879,
+      "rank_turnover": {
+        "top_40": 0.2,
+        "top_100": 0.2
+      },
+      "tickers_with_availability_driven_change": 12,
+      "tickers_with_availability_driven_change_pct": 0.014,
+      "mean_abs_score_delta": 0.46,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 5.4,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "MU",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 4.1,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "GAP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -3.3,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "DAL",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -3.1,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "NEM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -2.7,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "BBY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -2.6,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 2.4,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "AZO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 2.2,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "WDC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -2.2,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "SNX",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -2.0,
+          "confidence_delta": -0.03
         }
       ]
     }
