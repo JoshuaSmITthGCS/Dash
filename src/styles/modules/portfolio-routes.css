@@ -144,14 +144,14 @@
 .gauge-readout strong { display: block; font: var(--fw-bold) var(--fs-2xl)/1 var(--font-mono); }
 .gauge-readout > span { display: block; margin-top: var(--sp-0-5); color: var(--text-tertiary); font: var(--fw-bold) var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .05em; }
 .gauge-readout .provisional-badge { margin-top: var(--sp-1); }
-.report-score-card { display: grid; gap: var(--sp-2); justify-items: center; text-align: center; }
+/* One divided instrument row per score, gauge at left — the compact row this used to
+   reserve for mobile is now the only layout, at every width, since three scores share
+   one thin strip rather than three tall stacked cards. */
+.report-score-card { display: grid; grid-template-columns: 80px minmax(0, 1fr); justify-items: start; text-align: left; gap: var(--sp-2); }
 .report-score-card h3 { font-size: var(--fs-sm); }
 .report-score-card p { color: var(--text-secondary); font-size: var(--fs-2xs); line-height: 1.5; }
-@media (max-width: 620px) {
-  .report-score-card { grid-template-columns: 80px minmax(0, 1fr); justify-items: start; text-align: left; }
-  .score-gauge-svg { max-width: 72px; }
-  .gauge-readout strong { font-size: var(--fs-xl); }
-}
+.score-gauge-svg { max-width: 72px; }
+.gauge-readout strong { font-size: var(--fs-xl); }
 
 /* ============================================================
    Visual upgrade: market sentiment strip

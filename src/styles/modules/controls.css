@@ -215,8 +215,16 @@
 }
 
 @media (prefers-reduced-motion: reduce) { .mobile-sheet { animation: none; }.alert-rule-toggle span { transition: none; } .modal-overlay, .modal { animation: none; } }
-.dashboard-widget-stack { display: flex; flex-direction: column; }
-.dashboard-widget { min-width: 0; order: var(--widget-order, 0); }
+/* An asymmetric brief section, not a column of matching cards: the allocation and
+   watchlist widgets (each carrying a real figure — a donut, a sparkline row) take two
+   columns, top-signal and action-needed take one, so the row reads as varied briefs
+   rather than four identical boxes. Reordering a widget keeps its own span, since the
+   span is keyed to the widget's identity class, not its position. */
+.dashboard-widget-stack { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--section-gap); align-items: start; }
+.dashboard-widget { min-width: 0; order: var(--widget-order, 0); grid-column: span 1; }
+.dashboard-widget-metric-grid { grid-column: 1 / -1; }
+.dashboard-widget-allocation, .dashboard-widget-watchlist-preview { grid-column: span 2; }
+@media (max-width: 900px) { .dashboard-widget-stack { grid-template-columns: 1fr; } .dashboard-widget, .dashboard-widget-allocation, .dashboard-widget-watchlist-preview { grid-column: 1 / -1; } }
 .sector-allocation-widget > div { display: grid; gap: var(--sp-2-5); }.sector-allocation-widget article { display: grid; grid-template-columns: minmax(130px, 1fr) minmax(120px, 2fr) auto; align-items: center; gap: var(--sp-3); }.sector-allocation-widget article > div { display: flex; justify-content: space-between; gap: var(--sp-2); }.sector-allocation-widget article > div span, .sector-allocation-widget article small { color: var(--text-faint); font: var(--fs-2xs) var(--font-mono); }.sector-allocation-widget article > i { height: 8px; overflow: hidden; border-radius: 999px; background: var(--bg-elev); }.sector-allocation-widget article > i span { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
 @media (max-width: 620px) { .sector-allocation-widget article { grid-template-columns: 1fr auto; }.sector-allocation-widget article > i { grid-column: 1 / -1; grid-row: 2; }.sector-allocation-widget article small { grid-column: 2; grid-row: 1; }.sector-allocation-widget article > div span { display: none; } }
 

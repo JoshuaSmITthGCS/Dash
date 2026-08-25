@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, useCallback } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
@@ -173,37 +173,21 @@ function ProfilePanel() {
 
   return (
     <div className="profile-panel">
-      <div className="avatar" aria-hidden="true">
-        {(userProfile?.displayName || 'J').slice(0, 1).toUpperCase()}
-      </div>
       <div className="profile-copy">
         <strong>{userProfile?.displayName || 'Josh'}</strong>
         <span>ValueSignal member</span>
       </div>
-      <NavLink className="icon-button" to="/settings" aria-label="Interface settings"><Icon name="settings" /></NavLink>
+      <div className="avatar" aria-hidden="true">
+        {(userProfile?.displayName || 'J').slice(0, 1).toUpperCase()}
+      </div>
     </div>
   )
-}
-
-function useSidebarCollapsed() {
-  const [collapsed, setCollapsed] = useState(() => {
-    try { return localStorage.getItem('vs-sidebar-collapsed') === '1' } catch { return false }
-  })
-  const toggle = useCallback(() => {
-    setCollapsed(prev => {
-      const next = !prev
-      try { localStorage.setItem('vs-sidebar-collapsed', next ? '1' : '0') } catch { /* storage unavailable */ }
-      return next
-    })
-  }, [])
-  return [collapsed, toggle]
 }
 
 function AppContent() {
   const { currentUser, loading, authError, retryAuth, userProfile } = useAuth()
   const { preferences, updatePreferences } = usePreferences()
   const { pathname, search } = useLocation()
-  const [sidebarCollapsed, toggleSidebar] = useSidebarCollapsed()
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const portfolioPreview = import.meta.env.DEV && new URLSearchParams(search).get('portfolioPreview') === '1'
 
@@ -227,35 +211,39 @@ function AppContent() {
     : currentUser || (portfolioPreview && feature.startsWith('Portfolio')) ? page : <CloudDataUnavailable feature={feature} />
 
   return (
-    <div className={`shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}`} data-auth-resolving={loading ? 'true' : 'false'}>
+    <div className="gazette-shell" data-auth-resolving={loading ? 'true' : 'false'}>
       <a className="skip-link" href="#main-content">Skip to content</a>
-      <aside className="rail" aria-label="Primary navigation">
-        <div className="rail-top">
+      <header className="masthead">
+        <div className="masthead-bar">
           <NavLink to="/" className="brand-lockup" aria-label="ValueSignal overview">
             <span className="brand-mark">V</span>
-            {!sidebarCollapsed && <span><span className="brand">Value<em>Signal</em></span></span>}
+            <span>
+              <span className="brand">Value<em>Signal</em></span>
+              <span className="masthead-tagline">Fundamentals first. Evidence, not hype.</span>
+            </span>
           </NavLink>
-          <button className="sidebar-toggle" onClick={toggleSidebar} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-            <Icon name="chevron" size={14} />
-          </button>
+          <div className="masthead-utility">
+            {currentUser && <AlertBadge />}
+            <button className="icon-button" onClick={() => updatePreferences({ privacyMode: !preferences.privacyMode })}
+              aria-pressed={preferences.privacyMode} aria-label={preferences.privacyMode ? 'Show balances' : 'Hide balances'}>
+              <Icon name={preferences.privacyMode ? 'eye-off' : 'eye'} />
+            </button>
+            <ProfilePanel />
+            <NavLink className="icon-button" to="/settings" aria-label="Interface settings"><Icon name="settings" /></NavLink>
+          </div>
         </div>
-        <nav className="desktop-nav">
-          <NavLink to="/" end className={({ isActive }) => `navlink${isActive ? ' active' : ''}`} title={sidebarCollapsed ? 'Home' : undefined}><Icon name="overview" size={18} />{!sidebarCollapsed && <span>Home</span>}</NavLink>
-          {!sidebarCollapsed && NAV_GROUPS.map((group) => {
+        <nav className="masthead-sections" aria-label="Primary navigation">
+          <NavLink to="/" end className={({ isActive }) => `masthead-link${isActive ? ' active' : ''}`}>Home</NavLink>
+          {NAV_GROUPS.map((group) => {
             const active = group.items.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
-            return <details className={`nav-group${active ? ' active' : ''}`} key={group.label} open={active || undefined}>
-              <summary><Icon name={group.icon} size={18} /><span>{group.label}</span><Icon name="chevron" size={13} className="nav-group-chevron" /></summary>
-              <div>{group.items.map((item) => <NavLink key={item.to} to={item.to} onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)} className={({ isActive }) => `nav-sublink${isActive ? ' active' : ''}`}><Icon name={item.icon} size={15} /><span>{item.label}</span></NavLink>)}</div>
+            return <details className={`masthead-group${active ? ' active' : ''}`} key={group.label}>
+              <summary>{group.label}<Icon name="chevron" size={12} className="masthead-group-chevron" /></summary>
+              <div className="masthead-dropdown">{group.items.map((item) => <NavLink key={item.to} to={item.to} onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)} className={({ isActive }) => `masthead-dropdown-link${isActive ? ' active' : ''}`}><Icon name={item.icon} size={15} /><span>{item.label}</span></NavLink>)}</div>
             </details>
           })}
-          {NAV_AFTER_GROUPS.map((item) => <NavLink key={item.to} to={item.to} onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)} className={({ isActive }) => `navlink${isActive ? ' active' : ''}`} title={sidebarCollapsed ? item.label : undefined}><Icon name={item.icon} size={18} />{!sidebarCollapsed && <span>{item.label}</span>}</NavLink>)}
+          {NAV_AFTER_GROUPS.map((item) => <NavLink key={item.to} to={item.to} onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)} className={({ isActive }) => `masthead-link${isActive ? ' active' : ''}`}>{item.label}</NavLink>)}
         </nav>
-        {!sidebarCollapsed && <div className="rail-note">
-          <span>Research framework</span>
-          Fundamentals first. Evidence, not hype.
-        </div>}
-        {!sidebarCollapsed && <ProfilePanel />}
-      </aside>
+      </header>
 
       <main id="main-content" className="content" tabIndex="-1">
         <header className="mobile-header">

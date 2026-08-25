@@ -46,6 +46,19 @@ to complete in this sandbox — same known local-Firebase-offline limitation rec
 elsewhere in this file, not a new regression). Screenshotted home, research (table), a
 settings page (new accent swatches), and mobile home in both the dev and preview builds.
 
+**Same day, follow-up: the skin-only pass wasn't enough.** Shown the result, the user said
+it still read as the same vibe as before — not the palette, the composition: the left
+icon-rail nav and the uniform "boxes in a grid" card layout survived the whole token
+rewrite untouched. Given explicit license for "total reinvention, few constraints,"
+`App.jsx`'s sidebar became a horizontal masthead (nameplate, utility row, section strip;
+Research/Figures as dropdowns), and Dashboard's card grid was rebuilt around three
+registers — divided instrument strips, rule-only briefs, and real cases — with asymmetric
+spans replacing uniform tiles. All presentation-only: no data, route, or accessibility
+logic changed. Full rationale and the `.report-score-card` layout-conflict bug found along
+the way are in `design/direction-approved-v2.md`'s "2026-08-25, later the same day"
+section; `DESIGN.md` gained a "Layout & navigation" section. Verified again: lint/1067
+tests/build green, `a11ycheck.mjs` clean, `typefloor.mjs` 0 violations, detector clean.
+
 ---
 
 ## 0. Read this before touching anything

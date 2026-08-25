@@ -52,9 +52,12 @@
 .home-sell-notification strong, .portfolio-sell-alert strong { font-size: var(--fs-xs); }
 .home-sell-notification small, .portfolio-sell-alert small { margin-top: var(--sp-0-5); color: var(--text-secondary); font-size: var(--fs-2xs); }
 
-.home-primary-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: var(--section-gap); align-items: stretch; margin-bottom: var(--sp-5); }
+/* Chart and holdings sit asymmetrically, not as two matching boxes: the chart keeps a
+   frame (it's the lead figure this section is about), the holdings list runs alongside
+   it as a plain rail, separated by a rule rather than a second card border. */
+.home-primary-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: var(--sp-6); align-items: stretch; margin-bottom: var(--sp-5); }
 .home-performance-card, .home-top-holdings { min-width: 0; }
-.home-top-holdings { border: 1px solid var(--surface-card-border); border-radius: var(--card-radius); background: var(--surface-card-bg); box-shadow: var(--surface-shadow); }
+.home-top-holdings { border: 0; border-left: 1px solid var(--border-default); border-radius: 0; background: none; box-shadow: none; padding-left: var(--sp-5); }
 .home-performance-card { overflow: hidden; }
 .home-performance-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-5); padding: var(--sp-3) var(--sp-4) var(--sp-1); }
 .home-performance-head > label { display: grid; gap: var(--sp-1); color: var(--text-tertiary); font: var(--fw-semibold) var(--fs-2xs) var(--font-mono); text-transform: uppercase; letter-spacing: .08em; }
@@ -179,7 +182,7 @@
 
 @media (max-width: 1100px) {
   .home-market-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }.home-market-summary > a { border-top: 1px solid var(--border-subtle); }
-  .home-primary-grid { grid-template-columns: 1fr; }.home-top-holdings > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }.home-top-holdings article:nth-child(odd) { border-right: 1px solid var(--border-subtle); }
+  .home-primary-grid { grid-template-columns: 1fr; }.home-top-holdings { border-left: 0; border-top: 1px solid var(--border-default); padding-left: 0; padding-top: var(--sp-4); }.home-top-holdings > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }.home-top-holdings article:nth-child(odd) { border-right: 1px solid var(--border-subtle); }
   .market-stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 760px) {

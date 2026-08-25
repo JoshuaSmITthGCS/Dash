@@ -1,7 +1,7 @@
 ---
-version: 1.0.0
+version: 1.1.0
 name: ValueSignal — The Study
-description: Design language for the ValueSignal research surface — a naturalist's study at night, specimens lit from within. Warm graphite and antique brass, an engraved slab-serif nameplate for the figures that matter, a technical mono for every measured value, and a verdigris "specimen light" reserved for one honest signal: the pipeline is live right now.
+description: Design language for the ValueSignal research surface — a naturalist's study at night, specimens lit from within. Warm graphite and antique brass, an engraved slab-serif nameplate for the figures that matter, a technical mono for every measured value, a verdigris "specimen light" reserved for one honest signal (the pipeline is live right now), a masthead in place of a sidebar, and a composition of divided strips, rule-only briefs, and real cases rather than a uniform grid of tiles.
 colors:
   primary: "{colors.brand-primary}"
   surface-canvas: "#0f0d0b"
@@ -211,6 +211,40 @@ colored in.
 at two corners only — the scale a vitrine label actually uses, and sparingly, the same
 restraint principle the prior HUD draft stated and then didn't follow (scan-lines on every
 panel). One case in the whole app earns this; everything else is quieter.
+
+## Layout & navigation
+
+**A masthead, not a sidebar.** The first version of this direction kept the inherited
+left icon-rail nav and only changed its skin — which is exactly why it still read as "the
+same kind of vibe" after a full palette and material pass. The rail is gone. Primary
+navigation is now a horizontal masthead: a nameplate and tagline, a utility row, and a
+section strip below it (Research and Figures open as dropdowns; everything else is a
+plain link with a brass underline when active) — the register of a publication's front
+page, not an admin panel's icon column. Mobile is unchanged: the bottom tab bar and "More"
+sheet already worked and aren't part of what read as generic.
+
+**Not every section is a box.** A page built entirely from equal-weight bordered tiles —
+each one an eyebrow, a title, and a number — is the single most recognizable "AI dashboard"
+tell, regardless of what palette sits on top of it. This direction now uses three
+deliberately different registers, chosen per section by what the content actually is:
+
+- **Divided instrument strips** for a handful of related readings that belong together at
+  a glance (market summary, macro pulse, the three portfolio-score gauges) — one bordered
+  shelf, internal hairline dividers, no per-item card.
+- **Rule-only briefs** for short, secondary items (research leader, holdings to review) —
+  a top rule stands in for the card border and shadow, so the item reads as a short
+  section, not a floating tile.
+- **Real cases** reserved for what actually deserves one: the lead performance chart, the
+  sector-allocation donut, list-shaped content (top holdings, buying-the-dip rows, the
+  focused-screen lists) — content with enough internal structure that a frame earns its
+  keep.
+
+**Asymmetric grids over uniform ones.** Where several items of unequal importance used to
+render as identical-size tiles, spans now vary: the allocation and watchlist widgets take
+two grid columns (they carry a real figure), the signal and action-needed briefs take one;
+the first "focused breakdown" screen runs full width with more rows shown, the remaining
+five sit three-up below it as a tighter set of briefs. A user's own widget reordering still
+works — the span is keyed to the widget's identity, not its position in the stack.
 
 ## Motion
 

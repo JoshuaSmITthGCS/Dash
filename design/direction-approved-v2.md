@@ -107,3 +107,47 @@ plaque bracket, and the confidence ring's gauge bezel.
 This decision governs `src/`, `index.html`, and `public/manifest.webmanifest` only. No
 pipeline, schema, or `public/data/*` change. Chart color science (series/diverging/sector
 palettes) is explicitly out of scope for this pass — see above.
+
+## 2026-08-25, later the same day — structural follow-up
+
+The user reviewed the shipped result and said it still read as "the same kind of vibe as
+the other one." Asked what specifically was repeating: not the palette — the composition.
+Every version so far (the shipped Studio green, this pass's first cut) kept the same left
+icon-rail nav and the same "boxes in a grid, each an eyebrow + title + number" structure
+underneath a new skin, which is why a full token-and-material rewrite still read as
+generic once the novelty of the color wore off. Asked how much license to change: "total
+reinvention, few constraints" — explicitly including the navigation model and page
+structure, not just colors.
+
+Two structural changes followed, both presentation-only (no data, logic, route, or
+accessibility-infrastructure change):
+
+1. **The app shell's left sidebar (`.rail`, `.desktop-nav`, `.sidebar-toggle`) is gone,
+   replaced by a horizontal masthead** (`App.jsx`, `base.css`) — nameplate, utility row,
+   and a section strip below it, Research/Figures as dropdowns. The sidebar-collapse
+   preference (`localStorage['vs-sidebar-collapsed']`) is retired with it; a masthead has
+   nothing to collapse. Mobile's bottom tab bar and "More" sheet were already a different,
+   working pattern and are untouched.
+2. **Dashboard's uniform card grid is replaced by three deliberately different visual
+   registers** — divided instrument strips, rule-only briefs, and real cases — plus
+   asymmetric spans where a widget's importance now shows up as its size (allocation and
+   watchlist take two grid columns, signal/action-needed take one; the first
+   "focused breakdown" screen runs full width with five rows shown instead of three, the
+   rest sit three-up below it). See `DESIGN.md`'s new "Layout & navigation" section for
+   the full rationale.
+
+One real bug found while doing this: `.report-score-card`'s desktop layout was fighting
+itself — a rule in `report.css` set a 56px gauge column, a same-specificity, later-loaded
+rule in `portfolio-routes.css` set `justify-items: center; text-align: center` with no
+`grid-template-columns` of its own, so the two merged into a centered-text-in-a-wide-column
+layout neither rule intended. Fixed by making `portfolio-routes.css` (which already owned
+`ScoreGauge`'s own sizing) the single owner of the card's internal layout, reusing the
+already-proven 80px/72px row proportions that the prior design had reserved for mobile
+only, rather than inventing an untested 56px variant.
+
+Verified: `npm run lint && npm test && npm run build` green (1067 tests),
+`design/a11ycheck.mjs` clean, `design/typefloor.mjs` 0 violations (home/research/markets ×
+1440/390px — the full default sweep including the two Firebase-gated portfolio routes
+remains too slow to complete in this sandbox, same known limitation as the first pass),
+the impeccable design detector clean on every changed file. Screenshotted the masthead,
+the full home page in both the logged-out and `?portfolioPreview=1` states, and mobile.
