@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-25T17:25:48.992392+00:00",
+  "generated_at": "2026-08-25T18:35:20.927398+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "74d5586eb278f1299c6a536942bc1a6d00e74879",
+  "code_commit_hash": "674cb3483ff02558ecdfb417d7003d7a128f0281",
   "config_hash": "ae4d188f2c6d6808ee2edcf2da308b051842737c393d266691484a1203456902",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -879,7 +879,7 @@
             "total": 40
           },
           "financial_health": {
-            "scored": 28,
+            "scored": 29,
             "total": 40
           },
           "growth": {
@@ -891,7 +891,7 @@
             "total": 40
           },
           "valuation": {
-            "scored": 39,
+            "scored": 40,
             "total": 40
           }
         }
@@ -909,7 +909,7 @@
             "total": 839
           },
           "financial_health": {
-            "scored": 803,
+            "scored": 802,
             "total": 839
           },
           "growth": {
@@ -933,15 +933,15 @@
       "score": {
         "enriched": {
           "n": 876,
-          "mean": 63.58,
-          "median": 65.05,
-          "stdev": 11.24
+          "mean": 63.54,
+          "median": 64.9,
+          "stdev": 11.58
         },
         "non_enriched": {
           "n": 3,
-          "mean": 64.57,
-          "median": 69.4,
-          "stdev": 7.85
+          "mean": 63.7,
+          "median": 68.0,
+          "stdev": 7.39
         }
       },
       "sector_distribution": {
@@ -966,7 +966,7 @@
       },
       "market_cap_comparison": {
         "status": "not_measurable",
-        "rows_with_market_cap": 39,
+        "rows_with_market_cap": 40,
         "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
       },
       "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
@@ -976,8 +976,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "74d5586eb278f1299c6a536942bc1a6d00e74879",
+    "git_commit_sha": "674cb3483ff02558ecdfb417d7003d7a128f0281",
     "config_hash": "ae4d188f2c6d6808ee2edcf2da308b051842737c393d266691484a1203456902",
-    "generated_at": "2026-08-25T17:25:48.992392+00:00"
+    "generated_at": "2026-08-25T18:35:20.927398+00:00"
   }
 }

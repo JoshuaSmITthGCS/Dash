@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-25T17:29:33.264074+00:00",
+  "generated_at": "2026-08-25T18:41:26.093129+00:00",
   "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
   "coverage_by_collection": {
     "research": {
@@ -15,7 +15,7 @@
           "total": 40
         },
         "financial_health": {
-          "scored": 28,
+          "scored": 29,
           "total": 40
         },
         "growth": {
@@ -27,7 +27,7 @@
           "total": 40
         },
         "valuation": {
-          "scored": 39,
+          "scored": 40,
           "total": 40
         }
       }
@@ -45,7 +45,7 @@
           "total": 839
         },
         "financial_health": {
-          "scored": 803,
+          "scored": 802,
           "total": 839
         },
         "growth": {
@@ -69,15 +69,15 @@
     "score": {
       "enriched": {
         "n": 876,
-        "mean": 63.58,
-        "median": 65.05,
-        "stdev": 11.24
+        "mean": 63.54,
+        "median": 64.9,
+        "stdev": 11.58
       },
       "non_enriched": {
         "n": 3,
-        "mean": 64.57,
-        "median": 69.4,
-        "stdev": 7.85
+        "mean": 63.7,
+        "median": 68.0,
+        "stdev": 7.39
       }
     },
     "sector_distribution": {
@@ -102,7 +102,7 @@
     },
     "market_cap_comparison": {
       "status": "not_measurable",
-      "rows_with_market_cap": 39,
+      "rows_with_market_cap": 40,
       "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
     },
     "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
