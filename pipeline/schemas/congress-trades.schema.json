@@ -57,6 +57,31 @@
         }
       }
     },
+    "top_tickers": {
+      "type": "array",
+      "description": "top_ticker_aggregates() display-only per-stock leaderboard, rolling up every disclosed trade per symbol in the window - never an advisor_engine input, see build_congress_screen.py.",
+      "items": {
+        "type": "object",
+        "required": ["ticker", "trade_count", "buy_count", "sell_count", "unique_politicians",
+                    "disclosed_volume_midpoint", "flags", "rank_score", "rank"],
+        "properties": {
+          "ticker": {"type": "string"},
+          "asset_description": {"type": ["string", "null"]},
+          "trade_count": {"type": "integer", "minimum": 1},
+          "buy_count": {"type": "integer", "minimum": 0},
+          "sell_count": {"type": "integer", "minimum": 0},
+          "unique_politicians": {"type": "integer", "minimum": 1},
+          "politicians": {"type": "array", "items": {"type": "string"}},
+          "chambers": {"type": "array", "items": {"enum": ["house", "senate", "executive"]}},
+          "disclosed_volume_midpoint": {"type": "number", "minimum": 0},
+          "max_single_trade_amount_upper": {"type": ["number", "null"]},
+          "flags": {"type": "array", "items": {"type": "string"}},
+          "latest_disclosure_date": {"type": ["string", "null"]},
+          "rank_score": {"type": "number"},
+          "rank": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
     "results": {
       "type": "array",
       "items": {

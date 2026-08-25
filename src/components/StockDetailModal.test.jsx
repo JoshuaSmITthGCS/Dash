@@ -1,8 +1,8 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import {
-  CoverageScoreDial, InsideInformationView, mergeResearchStock, themeExposureName,
-  themeExposureScore,
+  CopyDataButton, CoverageScoreDial, InsideInformationView, mergeResearchStock,
+  themeExposureName, themeExposureScore,
 } from './StockDetailModal.jsx'
 
 describe('CoverageScoreDial', () => {
@@ -54,6 +54,44 @@ describe('theme exposure entries', () => {
 
   it('reports an absent score as not-a-number rather than zero exposure', () => {
     expect(Number.isFinite(themeExposureScore({ theme_id: 'x' }))).toBe(false)
+  })
+})
+
+describe('CopyDataButton', () => {
+  const stock = {
+    ticker: 'SAM', name: 'Boston Beer Company', score: 73, stance: 'hold', peg: 1.8,
+  }
+
+  it('copies the built export text to the clipboard on click', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.assign(navigator, { clipboard: { writeText } })
+
+    render(<CopyDataButton stock={stock} />)
+    fireEvent.click(screen.getByRole('button'))
+    await Promise.resolve()
+
+    expect(writeText).toHaveBeenCalledTimes(1)
+    const [copied] = writeText.mock.calls[0]
+    expect(copied).toContain('SAM — Boston Beer Company')
+    expect(copied).toContain('PEG: 1.80')
+  })
+
+  it('passes disclosed positioning through when supplied', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.assign(navigator, { clipboard: { writeText } })
+
+    render(<CopyDataButton stock={stock} insideInfo={{ congress_flags: ['CLUSTER_TRADE'] }} />)
+    fireEvent.click(screen.getByRole('button'))
+    await Promise.resolve()
+
+    expect(writeText.mock.calls[0][0]).toContain('3+ representatives, 14-day span')
+  })
+
+  it('does not throw when the clipboard API rejects', async () => {
+    Object.assign(navigator, { clipboard: { writeText: vi.fn().mockRejectedValue(new Error('denied')) } })
+
+    render(<CopyDataButton stock={stock} />)
+    expect(() => fireEvent.click(screen.getByRole('button'))).not.toThrow()
   })
 })
 

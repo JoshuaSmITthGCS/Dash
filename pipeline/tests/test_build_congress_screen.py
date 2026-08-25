@@ -605,6 +605,75 @@ def test_notable_signals_includes_executive_branch_rows_with_office_and_agency()
     assert signals[0]["chamber"] == "executive"
 
 
+def test_top_ticker_aggregates_rolls_up_every_trade_per_symbol():
+    rows = [
+        _classified(trade(representative="A", symbol="AAPL", amount="$15,001 - $50,000",
+                          disclosure_date="2026-08-20")),
+        _classified(trade(representative="B", symbol="AAPL", amount="$50,001 - $100,000",
+                          disclosure_date="2026-08-22")),
+        _classified(trade(representative="A", symbol="MSFT", amount="$1,001 - $15,000",
+                          disclosure_date="2026-08-20")),
+    ]
+    aggregates = module.top_ticker_aggregates(rows, as_of=date(2026, 8, 24))
+    by_ticker = {row["ticker"]: row for row in aggregates}
+
+    assert by_ticker["AAPL"]["trade_count"] == 2
+    assert by_ticker["AAPL"]["unique_politicians"] == 2
+    assert by_ticker["AAPL"]["politicians"] == ["A", "B"]
+    assert by_ticker["AAPL"]["disclosed_volume_midpoint"] == (15001 + 50000) / 2 + (50001 + 100000) / 2
+    assert by_ticker["AAPL"]["max_single_trade_amount_upper"] == 100000
+    assert by_ticker["MSFT"]["trade_count"] == 1
+    assert by_ticker["MSFT"]["unique_politicians"] == 1
+
+
+def test_top_ticker_aggregates_ranks_more_distinct_filers_above_one_repeat_trader():
+    clustered = [
+        _classified(trade(representative=name, symbol="WEIRD", amount="$15,001 - $50,000",
+                          disclosure_date="2026-08-20"))
+        for name in ("A", "B", "C")
+    ]
+    repeated = [
+        _classified(trade(representative="D", symbol="SOLO", amount="$15,001 - $50,000",
+                          disclosure_date="2026-08-20"))
+        for _ in range(3)
+    ]
+    aggregates = module.top_ticker_aggregates(clustered + repeated, as_of=date(2026, 8, 24))
+    tickers = [row["ticker"] for row in aggregates]
+    assert tickers.index("WEIRD") < tickers.index("SOLO")
+
+
+def test_top_ticker_aggregates_counts_a_present_flag_once_regardless_of_trade_count():
+    relational = {}
+    rows = [trade(representative=name, symbol="CLUST", transaction_date="2026-06-01",
+                  disclosure_date="2026-08-20")
+           for name in ("A", "B", "C")]
+    relational = module.relational_flags(rows)
+    classified = [module.classify(row, trade_counts={}, history_days=200, relational=relational)
+                 for row in rows]
+
+    aggregates = module.top_ticker_aggregates(classified, as_of=date(2026, 8, 24))
+    row = aggregates[0]
+    assert row["ticker"] == "CLUST"
+    assert "CLUSTER_TRADE" in row["flags"]
+    # Presence, not per-trade repetition: the same distinct flag appears once even though
+    # three separate rows carried it.
+    assert row["flags"].count("CLUSTER_TRADE") == 1
+
+
+def test_top_ticker_aggregates_excludes_symbol_less_rows_and_stale_disclosures():
+    no_symbol = _classified(trade(symbol=None, disclosure_date="2026-08-20"))
+    stale = _classified(trade(symbol="OLD", disclosure_date="2020-01-01"))
+    aggregates = module.top_ticker_aggregates([no_symbol, stale], as_of=date(2026, 8, 24))
+    assert aggregates == []
+
+
+def test_top_ticker_aggregates_respects_top_n():
+    rows = [_classified(trade(symbol=f"T{i}", disclosure_date="2026-08-20")) for i in range(15)]
+    aggregates = module.top_ticker_aggregates(rows, top_n=10, as_of=date(2026, 8, 24))
+    assert len(aggregates) == 10
+    assert [row["rank"] for row in aggregates] == list(range(1, 11))
+
+
 def test_run_with_previously_stored_disclosures_reports_partial_not_degraded(monkeypatch):
     saved = {}
     with TempStore():

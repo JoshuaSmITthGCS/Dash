@@ -123,6 +123,37 @@ SCREEN_TECHNICAL_FIELDS = (
     # corroboration gate - a 5d/20d pop inside a longer downtrend shouldn't pass as
     # genuine momentum. Keep in sync with src/lib/researchScreens.js.
     "return_60d", "return_252d",
+    # MetricSections.jsx's "Behaviour & tradability" section (@technical.* keys) reads all
+    # four of these directly off the row's own detail modal - without them here a tail name
+    # (anything outside the top publish_limit) opened the "All metrics" tab to a blank
+    # section no matter how current the refresh was, the same class of bug EXTENDED_METRIC_
+    # FIELDS below fixes for the rest of the panel.
+    "max_drawdown_252d", "sharpe_ratio", "sortino_ratio", "relative_acceleration",
+    "relative_acceleration_detail",
+)
+
+# Every scalar valuation/profitability/financial-health/accounting-quality/capital-allocation/
+# growth/ownership metric MetricSections.jsx (the "All metrics" detail panel) reads directly
+# off a row - kept in sync with that file's SECTIONS list. Published for the whole scored
+# universe, not just the top publish_limit: a client-side ranking model (rankingModels.js)
+# scores every one of these names on these inputs, so "why is this name ranked where it is"
+# has to be answerable from any screen, not only the leaderboard. Before this, opening a
+# tail name's stock detail sheet showed every one of these as a dash regardless of how
+# current the refresh was or how fully the pipeline had enriched it - the values existed on
+# the full advisor.json row, this projection just never carried them past it.
+EXTENDED_METRIC_FIELDS = (
+    "peg", "forward_pe", "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf", "ev_to_sales",
+    "price_to_sales", "price_to_book", "price_to_tangible_book", "dividend_yield",
+    "return_on_invested_capital", "gross_profits_to_assets", "return_on_equity",
+    "cash_conversion", "free_cash_flow_yield", "operating_margin", "operating_margin_trend",
+    "incremental_margin", "profit_margin", "interest_coverage", "net_debt_to_ebitda",
+    "debt_to_equity", "current_ratio", "altman_z", "piotroski_f", "accruals_ratio",
+    "days_sales_outstanding", "days_sales_outstanding_trend", "inventory_days",
+    "inventory_days_trend", "net_buyback_yield", "stock_comp_to_revenue",
+    "capex_to_depreciation", "asset_growth", "gross_buyback_yield", "revenue_growth",
+    "earnings_growth", "fcf_growth_3y", "institutional_ownership", "insider_ownership",
+    "beta", "average_dollar_volume", "implied_volatility", "realized_volatility_20d",
+    "implied_realized_vol_ratio",
 )
 
 # The Financial Report, Portfolio, and browseable Research list need prices, chart history,
@@ -141,6 +172,16 @@ REPORT_ROW_FIELDS = (
     "free_cash_flow_yield", "interest_coverage", "net_buyback_yield",
     "operating_margin", "operating_margin_trend", "short_percent_of_float",
     "days_to_cover", "is_etf",
+    # The full extended-metrics stack (MetricSections.jsx's "All metrics" panel) - see
+    # EXTENDED_METRIC_FIELDS's own docstring above. Appended rather than merged into the
+    # list above: several names overlap (e.g. debt_to_equity, revenue_growth) and a tuple
+    # used only to drive a `{key: row.get(key) ...}` comprehension in report_row() below
+    # tolerates that duplication for free, so there is no need to hand-dedupe two lists
+    # that already agree on the field name and would just have to be kept in sync twice.
+    # Without this, report.json's projection (report_row(), applied on top of
+    # advisor.json's already-lightweight screen_universe rows) stripped these metrics a
+    # second time even after _screen_row() started publishing them.
+    *EXTENDED_METRIC_FIELDS,
 )
 # Symbols withdrawn from the product entirely, with the reason each was retired - the reason
 # is published into the point-in-time universe store's churn note (see record_universe below)
@@ -399,6 +440,10 @@ def _screen_row(row):
         "fundamental_detail": {"raw_score": (row.get("fundamental_detail") or {}).get("raw_score")},
         "technical_detail": {key: detail.get(key) for key in SCREEN_TECHNICAL_FIELDS
                              if detail.get(key) is not None},
+        # The full valuation/profitability/financial-health/accounting-quality/capital-
+        # allocation/growth/ownership metric stack - see EXTENDED_METRIC_FIELDS above for
+        # why this is published for every scored row, not just the leaderboard.
+        **{key: row.get(key) for key in EXTENDED_METRIC_FIELDS if row.get(key) is not None},
         # Needed by the client-side strategy-lens sorts (rankCatalyst, rankAnalystConviction,
         # tailwind/theme opportunity) so those lenses can scan beyond the published
         # leaderboard - the same "scan more than the leaderboard" rationale as the

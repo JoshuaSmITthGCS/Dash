@@ -163,11 +163,25 @@ Treat the first weeks of post-change readings as the evidence for whether it hel
 
 ### 4.2 Refresh modes
 
-| Mode | Trigger | Scope |
+| Scheduled slot | Scope | Alpha Vantage |
 |---|---|---|
-| `full-alpha` | 07:00 ET weekdays | All 910 names, spends Alpha Vantage quota |
-| `data-only` | 12:00 and 15:00 ET weekdays | Prior top 100 + portfolio/watchlist symbols; other names carried forward |
-| `rescore-only` | Manual | Re-runs scoring over the last `advisor.json` with zero network calls |
+| 07:00 ET weekdays | Full sweep, all ~910 names | Enabled, enrich limit 5 |
+| 12:00 and 15:00 ET weekdays | Fast: prior top 100 + portfolio/watchlist symbols; rest carried forward | Disabled |
+| 07:00 ET weekends (once daily) | Full sweep, all ~910 names | Enabled, enrich limit 25 |
+
+07:00 ET is the one full sweep of the day. A fast refresh scores against the previously-published
+cross-sectional normalization fit (`CrossSectionalNormalizer.from_published`) rather than
+refitting one on its own narrower universe — see `fetch_advisor.py`'s `normalization_fit_source`
+(`"current_full_refresh"` for a full sweep, `"prior_full_refresh"` for a fast one) — so that basis
+only ever drifts within one intraday cadence before the next morning's full sweep refits it fresh.
+
+**Manual dispatches default to `fast`** (`workflow_dispatch`'s `universe_scope` input, and the
+site's own refresh button via `netlify/functions/refresh-data.mjs`): a manual reset is "get me
+current prices/rankings now," not a request to re-run statement enrichment across the whole
+universe, which already happens once every morning on schedule. Pick `universe_scope: full`
+explicitly (or the site's dedicated full-refresh control, which always sends `full` regardless of
+this default) to get a full sweep by hand. `rescore-only` re-runs scoring over the last
+`advisor.json` with zero network calls.
 
 Six separate cron entries cover both EDT and EST, and the gate maps the entry that fired
 (`github.event.schedule`) to `America/New_York` so DST does not shift the local schedule. It reads
@@ -176,9 +190,9 @@ their cron minute, and only 53 minutes separate `:07` from the next Eastern hour
 gate could classify a delayed 07:00 ET firing as 08:00 and silently drop the day's only full sweep.
 Each run names its selected window in the job summary, so a deliberate no-op is distinguishable
 from a missed sweep without opening the logs. Concurrency group `scheduled-data-push-main`, three
-push retries, 90-minute timeout. Authenticated users can dispatch a `data-only` run from the Overview page via
-`netlify/functions/refresh-data.mjs`, which verifies a Firebase ID token server-side and refuses
-duplicate runs.
+push retries, 120-minute timeout. Authenticated users can dispatch a `data-only` run from the
+Overview page via `netlify/functions/refresh-data.mjs`, which verifies a Firebase ID token
+server-side and refuses duplicate runs.
 
 ---
 

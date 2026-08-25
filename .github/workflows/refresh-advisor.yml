@@ -22,9 +22,16 @@ on:
         # whole dispatch with a 422 if a required one is missing. The site's refresh
         # button calls this via netlify/functions/refresh-data.mjs, which predates this
         # input - required:true here would break every button click until that function
-        # is updated to match. `inputs.universe_scope || 'full'` below covers the blank.
+        # is updated to match. `inputs.universe_scope || 'fast'` below covers the blank.
+        #
+        # Defaults to fast: a manual reset is a "get me current prices/rankings now"
+        # click, not a request to re-run statement enrichment across the whole universe -
+        # that already happens once every morning on schedule (see the schedule comment
+        # below). Anyone who deliberately wants a full sweep by hand still gets one by
+        # picking `full` here (or the site's own explicit full-refresh control, which
+        # already sends universe_scope: 'full' regardless of this default).
         required: false
-        default: full
+        default: fast
         type: choice
         options:
           - full
@@ -44,9 +51,20 @@ on:
         type: string
   schedule:
     # GitHub cron is UTC. Trigger both EDT/EST candidates, then gate on New York time.
-    # Weekdays: 07:00 ET is the one full sweep of the day (all ~900 stocks); 12:00 and
-    # 15:00 ET are fast refreshes limited to the prior top 100 plus portfolio holdings -
-    # see the "Select the Eastern-time refresh window" step below for how that's enforced.
+    # Weekdays: 07:00 ET is the one full sweep of the day (all ~900 stocks, statement
+    # enrichment included); 12:00 and 15:00 ET are fast refreshes limited to the prior
+    # top 100 plus portfolio holdings - see the "Select the Eastern-time refresh window"
+    # step below for how that's enforced. A fast refresh scores against
+    # CrossSectionalNormalizer.from_published's previously-published normalization fit
+    # rather than refitting one fresh (fit_source: "prior_full_refresh" vs a full
+    # sweep's "current_full_refresh" - see scorer.py/fetch_advisor.py); that basis only
+    # ever drifts within one intraday cadence before the next morning's full sweep
+    # refits it, which is why this stays a once-daily full sweep rather than running
+    # full on every slot. Manual dispatches (the site's refresh button, or a hand
+    # dispatch from the Actions tab) default to fast for the same reason a manual reset
+    # is "get me current prices now", not "re-run the whole enrichment pass" - pick
+    # `full` explicitly (or use the site's dedicated full-refresh control) to get one
+    # by hand.
     # Avoid minute zero, when GitHub documents that scheduled events are most likely to
     # be delayed or dropped under Actions load.
     #
@@ -164,7 +182,7 @@ jobs:
 
           if [[ "${{ github.event_name }}" != "schedule" ]]; then
             should_run=true
-            universe_mode="${{ inputs.universe_scope || 'full' }}"
+            universe_mode="${{ inputs.universe_scope || 'fast' }}"
             window="manual ${{ inputs.refresh_mode }} / ${universe_mode} universe"
             if [[ "${{ inputs.refresh_mode }}" == "full-alpha" ]]; then
               alpha_disable=0
