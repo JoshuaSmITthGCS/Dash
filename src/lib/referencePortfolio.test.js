@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { planReferencePortfolioSync, REFERENCE_PORTFOLIO } from './referencePortfolio'
+import {
+  planReferencePortfolioSync,
+  REFERENCE_PORTFOLIO,
+  REFERENCE_PORTFOLIO_RECORDED_AT,
+} from './referencePortfolio'
 
 describe('planReferencePortfolioSync', () => {
   it('treats the brokerage export as authoritative while preserving a known purchase date', () => {
@@ -75,6 +79,40 @@ describe('planReferencePortfolioSync', () => {
     expect(REFERENCE_PORTFOLIO
       .filter((position) => !restored.includes(position.ticker))
       .reduce((sum, position) => sum + position.costBasisTotal, 0)).toBeCloseTo(4550, 8)
+  })
+
+  // The export date says when these prices were observed, not when anything was bought.
+  // Fidelity's positions view carries no acquisition date at all, so the sync must leave
+  // purchaseDate alone -- writing the export date there would silently backdate or forward-
+  // date every holding and corrupt every since-purchase measure that reads it.
+  describe('never treats the export date as a purchase date', () => {
+    it('adds a holding undated rather than dating it from the export', () => {
+      const [operation] = planReferencePortfolioSync([], [{
+        ticker: 'AMZN', shares: 0.386, costBasis: 258.52,
+        snapshotPrice: 262.0725, snapshotRecordedAt: REFERENCE_PORTFOLIO_RECORDED_AT,
+      }])
+
+      expect(operation.kind).toBe('add')
+      expect(operation.record.purchaseDate).toBeUndefined()
+      expect(operation.record.snapshotRecordedAt).toBe(REFERENCE_PORTFOLIO_RECORDED_AT)
+    })
+
+    it('keeps a real purchase date while overwriting every other field', () => {
+      const [operation] = planReferencePortfolioSync([{
+        id: 'twlo-1', ticker: 'TWLO', shares: 0.5, costBasis: 180, purchaseDate: '2026-03-02',
+      }], [{ ticker: 'TWLO', shares: 0.906, costBasis: 220.63, snapshotPrice: 222.5828 }])
+
+      expect(operation.record.purchaseDate).toBe('2026-03-02')
+      expect(operation.record.shares).toBe(0.906)
+    })
+
+    it('carries no purchase date and no export date on any shipped holding', () => {
+      const exportDay = REFERENCE_PORTFOLIO_RECORDED_AT.slice(0, 10)
+      REFERENCE_PORTFOLIO.forEach((position) => {
+        expect(position.purchaseDate).toBeUndefined()
+        expect(Object.values(position)).not.toContain(exportDay)
+      })
+    })
   })
 
   // Fidelity's positions view reports quantity, cost and value but no previous close, so the

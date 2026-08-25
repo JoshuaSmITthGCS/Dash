@@ -2,6 +2,16 @@
 // Aug 25, 2026 at 7:55 a.m. ET. FZFXX (held in money market) and Pending activity are
 // deliberately absent: Dash tracks only invested holdings and their price movement.
 //
+// The export date is when these prices were observed. It is NOT when anything was bought,
+// and must never be written to a position's purchaseDate: Fidelity's positions view reports
+// what is held now, not when it was acquired. planReferencePortfolioSync below therefore
+// adds holdings with an empty purchaseDate and preserves any date already on an existing
+// holding, and the date this file carries lives only in snapshotRecordedAt (a price
+// timestamp). Every since-purchase measure -- money-weighted return, versus-benchmark since
+// purchase, holding-period risk, trader insights -- excludes an undated holding rather than
+// substituting this date, so an undated lot costs coverage but never reports a wrong number.
+// Real buy dates are entered per holding from the Purchased column or the Edit sheet.
+//
 // This export replaces the Aug 14 baseline, which had lost seven holdings -- AMP, AMZN,
 // DELL, ETN, MPC, THC and TWLO, together exactly $999.26 of cost basis. The 39 tickers
 // carried over from Aug 14 have identical share counts and cost bases here, so the only
@@ -76,13 +86,17 @@ export const REFERENCE_PORTFOLIO = [
   snapshotValue,
   snapshotPreviousClose: null,
   snapshotRecordedAt: REFERENCE_PORTFOLIO_RECORDED_AT,
-  snapshotSource: 'Fidelity positions export · Aug 25, 2026',
+  snapshotSource: 'Fidelity export price · Aug 25, 2026',
 }))
 
 /**
  * Reconciles the cloud holdings to the brokerage export. This import is intentionally
  * authoritative: quantities and exact total cost bases are refreshed, missing positions are
  * added, and holdings absent from the export are removed.
+ *
+ * purchaseDate is the one field the export cannot speak to and so is never taken from it --
+ * an added holding starts undated and an existing holding keeps whatever date it already
+ * had, even though every other field is overwritten.
  */
 export function planReferencePortfolioSync(positions, reference = REFERENCE_PORTFOLIO) {
   const normalizeTicker = (ticker = '') => String(ticker).trim().toUpperCase()
