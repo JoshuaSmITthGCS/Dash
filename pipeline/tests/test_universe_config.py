@@ -108,13 +108,19 @@ class ScreenPayloadTests(unittest.TestCase):
         # The unpublished remainder of a ~900-name universe is most of what the browser
         # downloads, so it must not quietly accumulate unread fields.
         fields = set(fetch_advisor.SCREEN_TECHNICAL_FIELDS)
-        # Both client-side readers of the slice: the screen rankers, and the ranking models
-        # that scan the same tail (rankingModels.js - the swing model's 52-week-high leg is
-        # the reason pct_from_52w_high is published to every row rather than the head).
-        root = os.path.join(os.path.dirname(PIPELINE_DIR), "src", "lib")
+        src_dir = os.path.join(os.path.dirname(PIPELINE_DIR), "src")
         source = ""
-        for reader in ("researchScreens.js", "rankingModels.js"):
-            with open(os.path.join(root, reader)) as handle:
+        # Every client-side reader of the slice: the screen rankers and the ranking models
+        # that scan the same tail (src/lib - the swing model's 52-week-high leg is the
+        # reason pct_from_52w_high is published to every row rather than the head), and the
+        # stock-detail "All metrics" panel and its modal (src/components - MetricSections.jsx
+        # reads the @technical.* keys declaratively, StockDetailModal.jsx reads a few more,
+        # like relative_acceleration_detail, directly for its own KPI tiles).
+        for root, reader in (
+            ("lib", "researchScreens.js"), ("lib", "rankingModels.js"),
+            ("components", "MetricSections.jsx"), ("components", "StockDetailModal.jsx"),
+        ):
+            with open(os.path.join(src_dir, root, reader)) as handle:
                 source += handle.read()
         for field in fields:
             with self.subTest(field=field):
@@ -122,11 +128,21 @@ class ScreenPayloadTests(unittest.TestCase):
                               f"'{field}' is published to every screen row but never read")
 
     def test_the_slice_is_materially_smaller_than_the_full_block(self):
-        full = {f"field_{index}": index for index in range(24)}
+        # Modeled on a real published technical_detail block (28 keys, ~1.2KB), not a flat
+        # guess: most fields are small floats, but technical_extended_detail is a nested
+        # dict an order of magnitude heavier than any scalar, and it's exactly the kind of
+        # field this projection excludes. A synthetic block of uniform scalar filler
+        # understates the real savings and made this assertion drift every time a
+        # well-justified field joined SCREEN_TECHNICAL_FIELDS, without the field itself
+        # getting any heavier - see the 2026-08-25 addition of max_drawdown_252d/
+        # sharpe_ratio/sortino_ratio/relative_acceleration(_detail) for MetricSections.jsx's
+        # "Behaviour & tradability" section.
+        full = {f"field_{index}": index for index in range(20)}
+        full["technical_extended_detail"] = {f"k{index}": index / 3 for index in range(12)}
         full.update({key: 1.0 for key in fetch_advisor.SCREEN_TECHNICAL_FIELDS})
         slimmed = {key: full.get(key) for key in fetch_advisor.SCREEN_TECHNICAL_FIELDS
                    if full.get(key) is not None}
-        self.assertLess(len(json.dumps(slimmed)), len(json.dumps(full)) / 1.8)
+        self.assertLess(len(json.dumps(slimmed)), len(json.dumps(full)) / 1.5)
 
 
 if __name__ == "__main__":

@@ -6,7 +6,8 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from fetch_advisor import (_evidence_summary, _screen_row, _sentiment_summary, build_portfolio_coverage,
+from fetch_advisor import (EXTENDED_METRIC_FIELDS, _evidence_summary, _screen_row, _sentiment_summary,
+                           build_portfolio_coverage,
                            carry_forward_missing_sessions, carry_forward_rows,
                            collect_insider_signals, compact_news,
                            curate_candidate_news, enrich, enrichment_expansion,
@@ -743,6 +744,53 @@ class ScreenRowProjectionTests(unittest.TestCase):
         self.assertNotIn("confidence", projected)
         self.assertNotIn("history", projected)
         self.assertFalse(projected["stale_carryforward"])
+
+    def test_the_screen_only_slice_carries_the_full_extended_metric_stack(self):
+        # MetricSections.jsx's "All metrics" detail panel (PEG, EV/EBITDA, ROIC, Piotroski
+        # F, ...) reads these directly off the row - before EXTENDED_METRIC_FIELDS, none of
+        # them survived this projection, so opening any name outside the top publish_limit
+        # showed every one of these as a dash no matter how current the refresh was.
+        full_row = {
+            "ticker": "SAM", "name": "Boston Beer", "sector": "Consumer Staples", "price": 250.0,
+            "score": 60, "stance": "hold", "components": {}, "fundamental_categories": {},
+            "technical_detail": {"sharpe_ratio": 1.1, "max_drawdown_252d": -18.0,
+                                 "relative_acceleration": 0.4},
+            "peg": 1.8, "forward_pe": 24.0, "ev_to_ebitda": 12.5, "price_to_book": 3.1,
+            "return_on_invested_capital": 0.14, "return_on_equity": 0.09,
+            "free_cash_flow_yield": 0.05, "debt_to_equity": 0.3, "current_ratio": 2.1,
+            "altman_z": 4.2, "piotroski_f": 6.0, "institutional_ownership": 0.72,
+            "insider_ownership": 0.03, "beta": 0.9,
+        }
+
+        projected = _screen_row(full_row)
+
+        self.assertEqual(projected["peg"], 1.8)
+        self.assertEqual(projected["forward_pe"], 24.0)
+        self.assertEqual(projected["ev_to_ebitda"], 12.5)
+        self.assertEqual(projected["price_to_book"], 3.1)
+        self.assertEqual(projected["return_on_invested_capital"], 0.14)
+        self.assertEqual(projected["return_on_equity"], 0.09)
+        self.assertEqual(projected["free_cash_flow_yield"], 0.05)
+        self.assertEqual(projected["debt_to_equity"], 0.3)
+        self.assertEqual(projected["current_ratio"], 2.1)
+        self.assertEqual(projected["altman_z"], 4.2)
+        self.assertEqual(projected["piotroski_f"], 6.0)
+        self.assertEqual(projected["institutional_ownership"], 0.72)
+        self.assertEqual(projected["insider_ownership"], 0.03)
+        self.assertEqual(projected["beta"], 0.9)
+        self.assertEqual(projected["technical_detail"]["sharpe_ratio"], 1.1)
+        self.assertEqual(projected["technical_detail"]["max_drawdown_252d"], -18.0)
+        self.assertEqual(projected["technical_detail"]["relative_acceleration"], 0.4)
+
+    def test_extended_metrics_absent_from_the_source_row_are_simply_omitted(self):
+        # A metric the pipeline never resolved for this name (no statement data, an
+        # inapplicable sector) must not appear as a published null - the frontend already
+        # treats "key absent" and "key present but None" the same way, but a smaller
+        # payload is a smaller payload.
+        projected = _screen_row({"ticker": "QUIET", "score": 40})
+
+        for key in EXTENDED_METRIC_FIELDS:
+            self.assertNotIn(key, projected)
 
     def test_the_screen_only_slice_still_carries_what_the_strategy_lenses_need(self):
         # The client-side sort lenses (rankCatalyst, rankAnalystConviction, the theme

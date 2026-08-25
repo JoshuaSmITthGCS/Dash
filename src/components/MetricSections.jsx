@@ -128,7 +128,7 @@ export const SECTIONS = [
   },
 ]
 
-function readValue(stock, key) {
+export function readValue(stock, key) {
   if (key.startsWith('@technical.')) return stock.technical_detail?.[key.slice(11)]
   return stock[key]
 }
@@ -154,10 +154,15 @@ function Metric({ label, value, format, why, thresholds }) {
   )
 }
 
-export default function MetricSections({ stock, sections = SECTIONS }) {
+const canonicalKey = (key) => ({ revenue_growth: 'trailing_revenue_growth', earnings_growth: 'trailing_eps_growth' }[key] || key)
+
+// The exact set of metrics this stock would actually render, section by section, applicability
+// exceptions and unresolved values already filtered out - the single source of truth both the
+// live "All metrics" panel and any other reader (the copy-to-clipboard export, for one) build
+// from, so the two can never quietly disagree about what "shown" means for this row.
+export function resolvedMetricSections(stock, sections = SECTIONS) {
   const status = stock.analysis_v2?.metric_status || {}
-  const canonicalKey = (key) => ({ revenue_growth: 'trailing_revenue_growth', earnings_growth: 'trailing_eps_growth' }[key] || key)
-  const rendered = sections
+  return sections
     .map((section) => ({
       ...section,
       resolved: section.metrics
@@ -171,6 +176,11 @@ export default function MetricSections({ stock, sections = SECTIONS }) {
         }),
     }))
     .filter((section) => section.resolved.length)
+}
+
+export default function MetricSections({ stock, sections = SECTIONS }) {
+  const status = stock.analysis_v2?.metric_status || {}
+  const rendered = resolvedMetricSections(stock, sections)
 
   if (!rendered.length) {
     return (

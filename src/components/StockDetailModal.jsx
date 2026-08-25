@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import { buildStockCopyText } from '../lib/stockCopyText.js'
 import { Link } from 'react-router-dom'
 import ActionGuidance from './ActionGuidance'
 import GrowthChart from './GrowthChart'
@@ -27,6 +28,33 @@ const TABS = [
   ['metrics', 'All metrics'],
   ['performance', 'Vs S&P 500'],
 ]
+
+// Plain-text export of everything this sheet shows for the company - metrics, insider
+// activity, disclosed positioning - in one click, for pasting somewhere else entirely (a
+// note, a spreadsheet, another tool). `insideInfo` is optional: most tickers never cleared
+// the Congress/institutional notability bar, and the export just omits that section for them,
+// same as InsideInformationView does on screen.
+export function CopyDataButton({ stock, insideInfo }) {
+  const [copied, setCopied] = useState(false)
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(buildStockCopyText(stock, insideInfo))
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard access can be denied (permissions, an insecure context) - there is
+      // nothing to recover into beyond leaving the button in its normal state.
+    }
+  }
+  return (
+    <button className="icon-button" onClick={handleCopy}
+      aria-label={`Copy ${stock.ticker} research data: metrics, insider activity, and disclosed positioning`}
+      title="Copy all data: metrics, insider activity, and disclosed positioning">
+      <Icon name="copy" />
+      <span className="sr-only" role="status">{copied ? 'Copied to clipboard' : ''}</span>
+    </button>
+  )
+}
 
 function Kpi({ label, value, note, color }) {
   return (
@@ -276,6 +304,7 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
       >
         <header className="stock-detail-head">
           <div><span className="eyebrow">Company research</span><h2 id={titleId}>{stock.ticker}</h2><p>{stock.name} · {stock.industry || stock.sector || 'Unclassified'}</p>{dataAsOf && <small>As of {String(dataAsOf).slice(0, 10)}</small>}</div>
+          <CopyDataButton stock={stock} insideInfo={insideInformation?.by_ticker?.[stock.ticker]} />
           <WatchlistToggleButton stock={stock} />
           <button className="icon-button" onClick={onClose} aria-label="Close stock research"><Icon name="close" /></button>
         </header>
