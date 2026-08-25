@@ -1,0 +1,47 @@
+/* ============================================================================
+   study-effects.css
+   Small, purposeful material touches for "The Study" direction — a specimen
+   case standing in a naturalist's study, lit from within. Nothing here is
+   decoration for its own sake: every rule answers a specific reading, and
+   each is scoped to the one or two places that reading actually applies.
+   See DESIGN.md "The Study" for the full material language.
+   ============================================================================ */
+
+/* The pipeline's live/fresh indicator gets its own hue — a specimen light,
+   not a verdict. --positive/--negative/--warning stay reserved for state
+   judgments (good/bad); this says "measuring, right now" and nothing else. */
+.data-status.live .status-indicator {
+  background: var(--instrument-glow);
+  box-shadow: 0 0 0 3px var(--instrument-glow-soft);
+  animation: instrument-pulse 2.4s ease-in-out infinite;
+}
+@keyframes instrument-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .55; }
+}
+
+/* Tier and rating marks read as engraved medallions — a fine inset ring
+   rather than a flat pill fill, so a tier reads as stamped, not colored in. */
+.rating-badge, .rank-badge {
+  box-shadow: inset 0 0 0 1px var(--medallion-ring);
+}
+.rating-badge-pos, .rating-badge-neg { box-shadow: inset 0 0 0 1px currentColor; }
+
+/* The hero specimen case: a plaque bracket at each corner, thin brass lines
+   at the scale a vitrine label actually uses. One panel only, per the
+   "use sparingly" rule — this is the page's single most important case. */
+.hero-research { position: relative; }
+.hero-research::before, .hero-research::after {
+  content: ''; position: absolute; width: 16px; height: 16px; pointer-events: none;
+  border: 1px solid var(--border-strong); opacity: .7;
+}
+.hero-research::before { top: var(--sp-2); left: var(--sp-2); border-right: 0; border-bottom: 0; }
+.hero-research::after { bottom: var(--sp-2); right: var(--sp-2); border-left: 0; border-top: 0; }
+
+/* The confidence gauge reads as an instrument dial: a fine bezel ring
+   around the case, not a flat circle floating on the card. */
+.confidence-ring { box-shadow: 0 0 0 1px var(--border-default), inset 0 1px 2px rgba(6, 4, 2, .4); }
+
+@media (prefers-reduced-motion: reduce) {
+  .data-status.live .status-indicator { animation: none; }
+}

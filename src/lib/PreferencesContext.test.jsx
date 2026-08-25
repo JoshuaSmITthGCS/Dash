@@ -14,7 +14,7 @@ function Harness() {
     <span data-testid="theme">{resolvedTheme}</span>
     <span data-testid="accent">{preferences.accentColor}</span>
     <span data-testid="visible">{preferences.widgets.filter((widget) => widget.visible).length}</span>
-    <button onClick={() => updatePreferences({ theme: 'dark', accentColor: 'blue', privacyMode: true })}>Update</button>
+    <button onClick={() => updatePreferences({ theme: 'dark', accentColor: 'steel', privacyMode: true })}>Update</button>
     <button onClick={() => setWidgets(preferences.widgets.map((widget) => widget.id === 'top-signal' ? { ...widget, visible: false } : widget).reverse())}>Widgets</button>
   </div>
 }
@@ -63,7 +63,7 @@ describe('interface preferences', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Update' }))
     act(() => changeSystemTheme(false))
     expect(screen.getByTestId('theme')).toHaveTextContent('dark')
-    expect(screen.getByTestId('accent')).toHaveTextContent('blue')
+    expect(screen.getByTestId('accent')).toHaveTextContent('steel')
     expect(JSON.parse(localStorage.getItem(PREFERENCES_KEY)).privacyMode).toBe(true)
   })
 

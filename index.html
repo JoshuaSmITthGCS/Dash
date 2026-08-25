@@ -24,7 +24,7 @@
 
     <!-- iPhone home-screen app behavior: full-screen standalone launch, matching status bar, real icon -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#0a0e14" id="theme-color-meta" />
+    <meta name="theme-color" content="#0f0d0b" id="theme-color-meta" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ValueSignal" />
@@ -33,8 +33,9 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-    <link href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/font.css" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@400;600;700&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   </head>
   <body>
     <script>
@@ -43,7 +44,7 @@
           const saved = JSON.parse(localStorage.getItem('valuesignal.ui-preferences.v1') || '{}')
           const dark = saved.theme === 'dark' || (saved.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
           document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-          document.querySelector('#theme-color-meta').content = '#0a0e14'
+          document.querySelector('#theme-color-meta').content = '#0f0d0b'
         } catch { document.documentElement.dataset.theme = 'light' }
       })()
     </script>

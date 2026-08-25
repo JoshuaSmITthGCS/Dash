@@ -1,25 +1,29 @@
 /* ============================================================================
-   ValueSignal design tokens
+   ValueSignal design tokens — "The Study"
    Governed by DESIGN.md at the repo root. Values here are normative; see
-   design/direction-approved.md for how the direction was chosen.
+   design/direction-approved.md and design/direction-approved-v2.md for how the
+   direction was chosen.
 
    Everything the interface renders resolves through these custom properties.
    Do not write a raw hex, px font-size, or px spacing value anywhere else.
 
-   Accent tokens (--brand-primary, --accent, --series-stock, --accent-ink) are
-   set INLINE on :root by src/lib/PreferencesContext.jsx, so a rule in this
-   file can never win against them. Change accents in ACCENTS there.
+   Accent tokens (--brand-primary, --accent, --accent-ink) are set INLINE on
+   :root by src/lib/PreferencesContext.jsx, so a rule in this file can never
+   win against them. Change accents in ACCENTS there. --brand-secondary,
+   --accent-dim and --series-stock derive from --brand-primary below via
+   color-mix, so a new accent needs one value per theme, not four.
    ============================================================================ */
 
 :root {
   color-scheme: dark;
 
-  /* --- surfaces: HUD aesthetic, near-black with subtle blue undertones ----- */
-  --surface-canvas-bg: #0a0e14;   /* the void — darkest background */
-  --surface-shelf-bg: #0f1419;    /* inset: control fills, row hover, tracks */
-  --surface-card-bg: #0f1419;     /* glass panel on the void */
-  --surface-raised-bg: #161c23;   /* elevated above panels */
-  --surface-sheet-bg: #1c242e;    /* modals, drawers, overlays */
+  /* --- surfaces: a naturalist's study at night — warm graphite, specimens lit
+     from within rather than the room lit outright ------------------------- */
+  --surface-canvas-bg: #0f0d0b;    /* the room — darkest background */
+  --surface-shelf-bg: #17130f;     /* inset: control fills, row hover, tracks */
+  --surface-card-bg: #1c1712;      /* the vitrine — a case standing in the room */
+  --surface-raised-bg: #241d16;    /* lifted above the case floor */
+  --surface-sheet-bg: #2c241b;     /* modals, drawers — brought to the desk */
 
   --surface-canvas-border: var(--border-subtle);
   --surface-shelf-border: var(--border-default);
@@ -27,34 +31,43 @@
   --surface-sheet-border: var(--border-strong);
 
   --app-background: var(--surface-canvas-bg);
-  --app-background-tint: #0c1116;
+  --app-background-tint: #110e0b;
   --surface-primary: var(--surface-card-bg);
   --surface-secondary: var(--surface-shelf-bg);
   --surface-tertiary: var(--surface-raised-bg);
 
-  /* --- ink: four levels, optimized for dark HUD ---------------------------- */
-  --text-primary: #e3e8ef;    /* high contrast on dark */
-  --text-secondary: #94a3b8;  /* readable secondary */
-  --text-tertiary: #64748b;   /* subdued tertiary */
-  --text-faint: #475569;      /* decorative only — never body, never alone */
+  /* --- ink: four levels, parchment-warm rather than clinical gray --------- */
+  --text-primary: #ece4d8;    /* high contrast — catalog copy, headline figures */
+  --text-secondary: #a89686;  /* readable secondary — captions, labels */
+  --text-tertiary: #87786a;   /* subdued tertiary — metadata, table headers */
+  --text-faint: #5a4f45;      /* decorative only — never body, never alone */
 
-  --border-subtle: rgba(100, 116, 139, 0.1);
-  --border-default: rgba(100, 116, 139, 0.2);
-  --border-strong: rgba(100, 116, 139, 0.35);
+  --border-subtle: rgba(201, 163, 95, 0.08);
+  --border-default: rgba(201, 163, 95, 0.16);
+  --border-strong: rgba(201, 163, 95, 0.30);
 
-  /* --- brand: cyan HUD glow. --brand-primary is overwritten inline. -------- */
-  --brand-primary: #00d4ff;
-  --brand-soft: rgba(0, 212, 255, 0.08);
-  --accent-ink: #0a0e14;
-  /* Data marks on dark: slightly darker to distinguish from accent used as ink */
-  --brand-secondary: #00b8e6;
+  /* --- brand: antique brass. --brand-primary is overwritten inline. ------- */
+  --brand-primary: #c9a35f;
+  --brand-soft: rgba(201, 163, 95, 0.12);
+  --accent-ink: #0a0806;
+  /* Derived, never hand-maintained: a new accent only needs --brand-primary. */
+  --brand-secondary: color-mix(in srgb, var(--brand-primary) 78%, black);
 
-  /* --- semantic: state, never series --------------------------------------- */
-  --positive: #10b981;  --positive-soft: rgba(16, 185, 129, 0.12);
-  --negative: #ef4444;  --negative-soft: rgba(239, 68, 68, 0.12);
-  --warning: #f59e0b;   --warning-soft: rgba(245, 158, 11, 0.12);
+  /* --- instrument accent: an oxidized verdigris, used only for live/status
+     indicators — a specimen light, not the room's dominant hue ------------ */
+  --instrument-glow: #6fae9c;
+  --instrument-glow-soft: rgba(111, 174, 156, 0.16);
 
-  /* --- chart series: fixed order, one hue per series ------------------------ */
+  /* --- semantic: state, never series ---------------------------------------- */
+  --positive: #7fae6e;  --positive-soft: rgba(127, 174, 110, 0.14);
+  --negative: #d1685a;  --negative-soft: rgba(209, 104, 90, 0.14);
+  --warning: #c99a3f;   --warning-soft: rgba(201, 154, 63, 0.14);
+
+  /* --- chart series: fixed order, one hue per series. Unchanged from the
+     prior pass on purpose — this set is CVD-validated (see
+     docs/REDESIGN-STATUS.md §3) and chart color is orthogonal to surface
+     skin; re-deriving it without re-running that validation would be a
+     silent accessibility regression. --------------------------------------- */
   --series-stock: var(--brand-secondary);
   --series-benchmark: #60a5fa;
   --series-benchmark-2: #fb923c;
@@ -62,16 +75,17 @@
   --series-cash: #fbbf24;
   --chart-grid: var(--border-subtle);
 
-  /* --- diverging: signed quantities, neutral midpoint at zero --------------- */
+  /* --- diverging: signed quantities, neutral midpoint at zero (unchanged,
+     CVD-validated) ------------------------------------------------------- */
   --diverging-neg-3: #06b6d4;
   --diverging-neg-2: #0891b2;
   --diverging-neg-1: #155e75;
-  --diverging-zero: #334155;
+  --diverging-zero: #4a4137;
   --diverging-pos-1: #78350f;
   --diverging-pos-2: #b45309;
   --diverging-pos-3: #f59e0b;
 
-  /* --- sector palette: HUD-optimized vibrant tones ------------------------- */
+  /* --- sector palette: unchanged from the prior pass (CVD-validated) ------ */
   --sector-tech: #ec4899;
   --sector-health: #22c55e;
   --sector-finance: #3b82f6;
@@ -112,9 +126,14 @@
   --tracking-tight: -.02em;
   --tracking-figure: -.03em;
 
-  --font-display: 'Geist Sans', system-ui, -apple-system, sans-serif;
-  --font-body: 'Geist Sans', system-ui, -apple-system, sans-serif;
-  --font-mono: 'Geist Mono', 'SFMono-Regular', ui-monospace, monospace;
+  /* Three voices: a slab serif for the specimen's own nameplate (page titles,
+     hero figures — short strings, large sizes, where a face with a point of
+     view earns its keep); a plain grotesque for the study's day-to-day
+     reading (body copy, dense table cells — legibility over expression,
+     per Operate mode); a technical mono for every measured value. */
+  --font-display: 'Bitter', Georgia, 'Times New Roman', serif;
+  --font-body: 'Source Sans 3', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace;
 
   /* --- SPACING SCALE --------------------------------------------------------
      4px grid, with half-steps below 12px where interface micro-spacing
@@ -141,45 +160,46 @@
   --section-gap: var(--sp-5);
   --row-height: 52px;
 
-  /* --- shape --------------------------------------------------------------- */
-  --r-sm: 8px;
-  --r-md: 10px;
-  --r-lg: 14px;
-  --r-xl: 18px;
+  /* --- shape: an instrument bezel, not a soft app card. Crisper corners than
+     the prior pass on purpose — a vitrine case and a gauge housing are cut
+     square, not rounded for friendliness. ----------------------------------- */
+  --r-sm: 3px;
+  --r-md: 5px;
+  --r-lg: 7px;
+  --r-xl: 9px;
   --r-full: 999px;
   --control-radius: var(--r-sm);
-  --card-radius: var(--r-xl);
+  --card-radius: var(--r-lg);
 
-  /* --- elevation: HUD glow and depth --------------------------------------- */
-  --shadow-1: 0 0 0 1px rgba(255, 255, 255, .03),
-              0 2px 8px rgba(0, 0, 0, .3);
-  --shadow-2: 0 0 0 1px rgba(255, 255, 255, .05),
-              0 8px 24px rgba(0, 0, 0, .4),
-              0 0 1px rgba(0, 212, 255, .2);
-  --ring: 0 0 0 1px rgba(255, 255, 255, .05);
+  /* --- elevation: a case standing in a dim room, lit from above, not a glow
+     effect. Shadows carry warmth (the room's own light), never pure black,
+     never a colored halo. ---------------------------------------------------- */
+  --shadow-1: inset 0 1px 0 rgba(255, 232, 196, .05),
+              0 1px 2px rgba(6, 4, 2, .5),
+              0 6px 16px rgba(6, 4, 2, .35);
+  --shadow-2: inset 0 1px 0 rgba(255, 232, 196, .08),
+              0 2px 4px rgba(6, 4, 2, .55),
+              0 18px 40px rgba(6, 4, 2, .45),
+              0 0 0 1px rgba(201, 163, 95, .12);
+  --ring: 0 0 0 1px rgba(255, 232, 196, .05);
   --surface-shadow: var(--shadow-1);
 
-  /* --- HUD effects ---------------------------------------------------------- */
-  --edge-glow: 0 0 1px rgba(0, 212, 255, 0.3),
-               inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --border-glow: rgba(0, 212, 255, 0.4);
-  --glass-blur: blur(12px) saturate(150%);
-  --glass-tint: rgba(15, 20, 25, 0.7);
-  --confidence-ring-center: #0f1a16;
+  --confidence-ring-center: #17130f;
+  --medallion-ring: rgba(255, 232, 196, .12);
 
   --outline-width: 1px;
   --outline-color: var(--border-default);
   --outline-color-hover: var(--border-strong);
   --outline-color-focus: var(--brand-primary);
   --navigation-background: color-mix(in srgb, var(--surface-canvas-bg) 90%, transparent);
-  --scrim: rgba(6, 10, 16, .88);
+  --scrim: rgba(8, 6, 4, .88);
 
-  /* --- motion -------------------------------------------------------------- */
+  /* --- motion: mechanical and precise — a needle settling, not a bounce ---- */
   --duration-fast: 150ms;
   --duration-normal: 220ms;
   --duration-slow: 350ms;
   --ease-default: cubic-bezier(.4, 0, .2, 1);
-  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
 
   /* --- shell layout -------------------------------------------------------- */
   --sidebar-width: 224px;
@@ -215,45 +235,51 @@
   --warn: var(--warning);
   --shadow: var(--surface-shadow);
   --pill-positive-bg: var(--positive);
-  --pill-positive-ink: #0a0e14;
-  --pill-positive-arrow-bg: #0a0e14;
-  --pill-positive-arrow-ink: #10b981;
+  --pill-positive-ink: #0a0806;
+  --pill-positive-arrow-bg: #0a0806;
+  --pill-positive-arrow-ink: #7fae6e;
   --pill-negative-bg: var(--negative);
-  --pill-negative-ink: #0a0e14;
-  --pill-negative-arrow-bg: #0a0e14;
-  --pill-negative-arrow-ink: #ef4444;
+  --pill-negative-ink: #0a0806;
+  --pill-negative-arrow-bg: #0a0806;
+  --pill-negative-arrow-ink: #d1685a;
 }
 
 /* ============================================================================
-   Dark theme — HUD aesthetic matches the default
+   Dark theme — the study's own lighting matches the default. (No separate
+   light palette is defined; the app renders one intentional world. See
+   DESIGN.md "Theme" for why data-theme="light" is a recorded no-op rather
+   than an unfinished feature.)
    ============================================================================ */
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --surface-canvas-bg: #0a0e14;
-  --surface-shelf-bg: #0f1419;
-  --surface-card-bg: #0f1419;
-  --surface-raised-bg: #161c23;
-  --surface-sheet-bg: #1c242e;
-  --app-background-tint: #0c1116;
+  --surface-canvas-bg: #0f0d0b;
+  --surface-shelf-bg: #17130f;
+  --surface-card-bg: #1c1712;
+  --surface-raised-bg: #241d16;
+  --surface-sheet-bg: #2c241b;
+  --app-background-tint: #110e0b;
 
-  --text-primary: #e3e8ef;
-  --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
-  --text-faint: #475569;
+  --text-primary: #ece4d8;
+  --text-secondary: #a89686;
+  --text-tertiary: #87786a;
+  --text-faint: #5a4f45;
 
-  --border-subtle: rgba(100, 116, 139, 0.1);
-  --border-default: rgba(100, 116, 139, 0.2);
-  --border-strong: rgba(100, 116, 139, 0.35);
+  --border-subtle: rgba(201, 163, 95, 0.08);
+  --border-default: rgba(201, 163, 95, 0.16);
+  --border-strong: rgba(201, 163, 95, 0.30);
 
-  --brand-primary: #00d4ff;
-  --brand-soft: rgba(0, 212, 255, 0.08);
-  --accent-ink: #0a0e14;
-  --brand-secondary: #00b8e6;
+  --brand-primary: #c9a35f;
+  --brand-soft: rgba(201, 163, 95, 0.12);
+  --accent-ink: #0a0806;
+  --brand-secondary: color-mix(in srgb, var(--brand-primary) 78%, black);
 
-  --positive: #10b981;  --positive-soft: rgba(16, 185, 129, 0.12);
-  --negative: #ef4444;  --negative-soft: rgba(239, 68, 68, 0.12);
-  --warning: #f59e0b;   --warning-soft: rgba(245, 158, 11, 0.12);
+  --instrument-glow: #6fae9c;
+  --instrument-glow-soft: rgba(111, 174, 156, 0.16);
+
+  --positive: #7fae6e;  --positive-soft: rgba(127, 174, 110, 0.14);
+  --negative: #d1685a;  --negative-soft: rgba(209, 104, 90, 0.14);
+  --warning: #c99a3f;   --warning-soft: rgba(201, 154, 63, 0.14);
 
   --series-benchmark: #60a5fa;
   --series-benchmark-2: #fb923c;
@@ -275,52 +301,51 @@
   --diverging-neg-3: #06b6d4;
   --diverging-neg-2: #0891b2;
   --diverging-neg-1: #155e75;
-  --diverging-zero: #334155;
+  --diverging-zero: #4a4137;
   --diverging-pos-1: #78350f;
   --diverging-pos-2: #b45309;
   --diverging-pos-3: #f59e0b;
 
-  --shadow-1: 0 0 0 1px rgba(255, 255, 255, .03), 0 2px 8px rgba(0, 0, 0, .3);
-  --shadow-2: 0 0 0 1px rgba(255, 255, 255, .05), 0 8px 24px rgba(0, 0, 0, .4), 0 0 1px rgba(0, 212, 255, .2);
-  --ring: 0 0 0 1px rgba(255, 255, 255, .05);
+  --shadow-1: inset 0 1px 0 rgba(255, 232, 196, .05), 0 1px 2px rgba(6, 4, 2, .5), 0 6px 16px rgba(6, 4, 2, .35);
+  --shadow-2: inset 0 1px 0 rgba(255, 232, 196, .08), 0 2px 4px rgba(6, 4, 2, .55), 0 18px 40px rgba(6, 4, 2, .45), 0 0 0 1px rgba(201, 163, 95, .12);
+  --ring: 0 0 0 1px rgba(255, 232, 196, .05);
 
-  --edge-glow: 0 0 1px rgba(0, 212, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --border-glow: rgba(0, 212, 255, 0.4);
-  --confidence-ring-center: #0f1a16;
-
-  --scrim: rgba(6, 10, 16, .88);
-  --pill-positive-ink: #0a0e14;
-  --pill-negative-ink: #0a0e14;
-  --pill-positive-arrow-bg: #0a0e14;
-  --pill-positive-arrow-ink: #10b981;
-  --pill-negative-arrow-bg: #0a0e14;
-  --pill-negative-arrow-ink: #ef4444;
+  --confidence-ring-center: #17130f;
+  --scrim: rgba(8, 6, 4, .88);
+  --pill-positive-ink: #0a0806;
+  --pill-negative-ink: #0a0806;
+  --pill-positive-arrow-bg: #0a0806;
+  --pill-positive-arrow-ink: #7fae6e;
+  --pill-negative-arrow-bg: #0a0806;
+  --pill-negative-arrow-ink: #d1685a;
 }
 
-/* Same HUD values for system-preference path, which carries no data-theme. */
+/* Same values for system-preference path, which carries no data-theme. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     color-scheme: dark;
-    --surface-canvas-bg: #0a0e14;
-    --surface-shelf-bg: #0f1419;
-    --surface-card-bg: #0f1419;
-    --surface-raised-bg: #161c23;
-    --surface-sheet-bg: #1c242e;
-    --app-background-tint: #0c1116;
-    --text-primary: #e3e8ef;
-    --text-secondary: #94a3b8;
-    --text-tertiary: #64748b;
-    --text-faint: #475569;
-    --border-subtle: rgba(100, 116, 139, 0.1);
-    --border-default: rgba(100, 116, 139, 0.2);
-    --border-strong: rgba(100, 116, 139, 0.35);
-    --brand-primary: #00d4ff;
-    --brand-soft: rgba(0, 212, 255, 0.08);
-    --accent-ink: #0a0e14;
-    --brand-secondary: #00b8e6;
-    --positive: #10b981;  --positive-soft: rgba(16, 185, 129, 0.12);
-    --negative: #ef4444;  --negative-soft: rgba(239, 68, 68, 0.12);
-    --warning: #f59e0b;   --warning-soft: rgba(245, 158, 11, 0.12);
+    --surface-canvas-bg: #0f0d0b;
+    --surface-shelf-bg: #17130f;
+    --surface-card-bg: #1c1712;
+    --surface-raised-bg: #241d16;
+    --surface-sheet-bg: #2c241b;
+    --app-background-tint: #110e0b;
+    --text-primary: #ece4d8;
+    --text-secondary: #a89686;
+    --text-tertiary: #87786a;
+    --text-faint: #5a4f45;
+    --border-subtle: rgba(201, 163, 95, 0.08);
+    --border-default: rgba(201, 163, 95, 0.16);
+    --border-strong: rgba(201, 163, 95, 0.30);
+    --brand-primary: #c9a35f;
+    --brand-soft: rgba(201, 163, 95, 0.12);
+    --accent-ink: #0a0806;
+    --brand-secondary: color-mix(in srgb, var(--brand-primary) 78%, black);
+    --instrument-glow: #6fae9c;
+    --instrument-glow-soft: rgba(111, 174, 156, 0.16);
+    --positive: #7fae6e;  --positive-soft: rgba(127, 174, 110, 0.14);
+    --negative: #d1685a;  --negative-soft: rgba(209, 104, 90, 0.14);
+    --warning: #c99a3f;   --warning-soft: rgba(201, 154, 63, 0.14);
     --series-benchmark: #60a5fa;
     --series-benchmark-2: #fb923c;
     --series-benchmark-3: #a78bfa;
@@ -328,31 +353,29 @@
     --diverging-neg-3: #06b6d4;
     --diverging-neg-2: #0891b2;
     --diverging-neg-1: #155e75;
-    --diverging-zero: #334155;
+    --diverging-zero: #4a4137;
     --diverging-pos-1: #78350f;
     --diverging-pos-2: #b45309;
     --diverging-pos-3: #f59e0b;
-    --shadow-1: 0 0 0 1px rgba(255, 255, 255, .03), 0 2px 8px rgba(0, 0, 0, .3);
-    --shadow-2: 0 0 0 1px rgba(255, 255, 255, .05), 0 8px 24px rgba(0, 0, 0, .4), 0 0 1px rgba(0, 212, 255, .2);
-    --ring: 0 0 0 1px rgba(255, 255, 255, .05);
-    --edge-glow: 0 0 1px rgba(0, 212, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    --border-glow: rgba(0, 212, 255, 0.4);
-    --confidence-ring-center: #0f1a16;
-    --scrim: rgba(6, 10, 16, .88);
-    --pill-positive-ink: #0a0e14;
-    --pill-negative-ink: #0a0e14;
-    --pill-positive-arrow-bg: #0a0e14;
-    --pill-positive-arrow-ink: #10b981;
-    --pill-negative-arrow-bg: #0a0e14;
-    --pill-negative-arrow-ink: #ef4444;
+    --shadow-1: inset 0 1px 0 rgba(255, 232, 196, .05), 0 1px 2px rgba(6, 4, 2, .5), 0 6px 16px rgba(6, 4, 2, .35);
+    --shadow-2: inset 0 1px 0 rgba(255, 232, 196, .08), 0 2px 4px rgba(6, 4, 2, .55), 0 18px 40px rgba(6, 4, 2, .45), 0 0 0 1px rgba(201, 163, 95, .12);
+    --ring: 0 0 0 1px rgba(255, 232, 196, .05);
+    --confidence-ring-center: #17130f;
+    --scrim: rgba(8, 6, 4, .88);
+    --pill-positive-ink: #0a0806;
+    --pill-negative-ink: #0a0806;
+    --pill-positive-arrow-bg: #0a0806;
+    --pill-positive-arrow-ink: #7fae6e;
+    --pill-negative-arrow-bg: #0a0806;
+    --pill-negative-arrow-ink: #d1685a;
   }
 }
 
 /* ============================================================================
    User preferences. Each one moves tokens, never per-site values.
    ============================================================================ */
-:root[data-corners="compact"] { --r-sm: 5px; --r-md: 6px; --r-lg: 8px; --r-xl: 10px; }
-:root[data-corners="extra-rounded"] { --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-xl: 24px; }
+:root[data-corners="compact"] { --r-sm: 2px; --r-md: 3px; --r-lg: 4px; --r-xl: 5px; }
+:root[data-corners="extra-rounded"] { --r-sm: 6px; --r-md: 9px; --r-lg: 12px; --r-xl: 16px; }
 
 :root[data-density="compact"] {
   --card-padding: var(--sp-3);

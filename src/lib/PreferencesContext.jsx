@@ -17,14 +17,14 @@ export const PREFERENCES_KEY = 'valuesignal.ui-preferences.v1'
  * value per theme, not three.
  */
 export const ACCENTS = {
-  valuesignal: { label: 'ValueSignal Green', value: '#17513c', dark: '#7fe3b0', ink: '#ffffff', inkDark: '#07130d' },
-  emerald: { label: 'Emerald', value: '#087f5b', dark: '#69dbb0', ink: '#ffffff', inkDark: '#04140e' },
-  blue: { label: 'Blue', value: '#2463a6', dark: '#82b7ed', ink: '#ffffff', inkDark: '#08131f' },
-  indigo: { label: 'Indigo', value: '#4b57a5', dark: '#aab3ff', ink: '#ffffff', inkDark: '#0d1024' },
-  violet: { label: 'Violet', value: '#73509b', dark: '#c8a8e8', ink: '#ffffff', inkDark: '#170f21' },
-  coral: { label: 'Coral', value: '#a94d45', dark: '#ffaaa2', ink: '#ffffff', inkDark: '#220b09' },
-  amber: { label: 'Amber', value: '#8a6518', dark: '#e9c56b', ink: '#ffffff', inkDark: '#1d1503' },
-  monochrome: { label: 'Monochrome', value: '#3f4942', dark: '#c7cec9', ink: '#ffffff', inkDark: '#10130f' },
+  valuesignal: { label: 'ValueSignal Brass', value: '#8a6a2e', dark: '#c9a35f', ink: '#ffffff', inkDark: '#0a0806' },
+  verdigris: { label: 'Verdigris', value: '#2f6e5c', dark: '#6fae9c', ink: '#ffffff', inkDark: '#071410' },
+  steel: { label: 'Steel Blue', value: '#3a5a78', dark: '#8fb4d6', ink: '#ffffff', inkDark: '#0a1218' },
+  slate: { label: 'Slate', value: '#4a4a68', dark: '#a8a8d0', ink: '#ffffff', inkDark: '#0e0e18' },
+  oxide: { label: 'Oxide', value: '#8a3d2a', dark: '#d1876a', ink: '#ffffff', inkDark: '#170a06' },
+  umber: { label: 'Umber', value: '#6b4a2e', dark: '#c9a074', ink: '#ffffff', inkDark: '#140d06' },
+  graphite: { label: 'Graphite', value: '#3f3a34', dark: '#b8ada0', ink: '#ffffff', inkDark: '#0c0a08' },
+  goldleaf: { label: 'Gold Leaf', value: '#8a6a1e', dark: '#e0be6a', ink: '#ffffff', inkDark: '#180f02' },
 }
 
 export const DEFAULT_WIDGETS = [
@@ -173,7 +173,7 @@ export function PreferencesProvider({ children }) {
     root.style.setProperty('--accent', isDark ? accent.dark : accent.value)
     root.style.setProperty('--accent-ink', isDark ? accent.inkDark : accent.ink)
     const themeMeta = document.getElementById('theme-color-meta')
-    themeMeta?.setAttribute('content', isDark ? '#0b100e' : '#eceff0')
+    themeMeta?.setAttribute('content', isDark ? '#0f0d0b' : '#ece4d8')
     try { localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences)) } catch { /* storage can be unavailable */ }
   }, [preferences, resolvedTheme])
 

@@ -13,6 +13,41 @@ which will break the build if followed literally.
 
 ---
 
+## 2026-08-25 update — visual direction superseded, "The Study"
+
+**Everything below this line describes the "Studio" (green, soft-depth) direction and
+the engineering built under it. The engineering still stands — `DataTable`, the token
+architecture, the accessibility work, the chart primitives, the coverage meter / evidence
+rail / score tape signatures, empty states, motion handling — none of it changed. Only the
+visual skin (`variables.css` tokens, `ACCENTS`, fonts, shape, materials) was replaced.**
+
+The user asked for a full redesign toward something "cooler, more techy, more artsy" than
+Studio's shipped look. The session also found, and removed, an unrelated problem: a second,
+undocumented visual lineage ("ValueSignal HUD," cyan-glass) had overwritten `DESIGN.md` and
+several `variables.css` tokens/comments without ever being wired into the live app —
+`CommandCenter.jsx` was unrouted, `/hud-demo` was dev-only, but `initAdvancedHUD()` in
+`src/main.jsx` *did* inject a live, unstyled cyan scan-line overlay into every page via raw
+DOM manipulation outside React's tree. That entire lineage (`CommandCenter.jsx`,
+`HUDDemo.jsx`, `hudAdvanced.jsx`, `hudUltra.jsx`, `hudEffects.js`, three `hud-*.css`
+modules, the `/hud-demo` route, the `initAdvancedHUD()` call) is now deleted.
+
+New direction: **"The Study"** — a naturalist's study at night (specimen cases, brass
+instruments, engraved plaques) rather than a trading terminal or a generic SaaS dark mode.
+Full rationale, the direction-dice process, and the corrected `--brand-secondary`
+color-mix bug found along the way are in `design/direction-approved-v2.md`. `DESIGN.md` is
+rewritten for the new system; `direction-approved.md` (Studio) stays as history, superseded
+rather than deleted.
+
+Verified this pass: `npm run lint && npm test && npm run build` green (1067 tests),
+`design/a11ycheck.mjs` clean (0 unnamed controls, modal focus trap/escape verified live),
+`design/typefloor.mjs` 0 violations on home/research/markets at 1440px and 390px (the
+full default route set, which also hits two Firebase-gated portfolio routes, was too slow
+to complete in this sandbox — same known local-Firebase-offline limitation recorded
+elsewhere in this file, not a new regression). Screenshotted home, research (table), a
+settings page (new accent swatches), and mobile home in both the dev and preview builds.
+
+---
+
 ## 0. Read this before touching anything
 
 ### The Phase 0 gate is closed. Do not re-run it.

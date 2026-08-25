@@ -42,7 +42,6 @@ const Diversification = lazy(() => import('./pages/Diversification.jsx'))
 const Insights = lazy(() => import('./pages/Insights.jsx'))
 const Alerts = lazy(() => import('./pages/Alerts.jsx'))
 const Markets = lazy(() => import('./pages/Markets.jsx'))
-const HUDDemo = lazy(() => import('./pages/HUDDemo.jsx'))
 
 // Flat strategy paths that predate the Options tab, kept alive as redirects into it.
 const OPTIONS_STRATEGY_IDS = [
@@ -285,7 +284,6 @@ function AppContent() {
         <Suspense fallback={<RouteLoading pathname={pathname} />}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          {import.meta.env.DEV && <Route path="/hud-demo" element={<HUDDemo />} />}
           <Route path="/research" element={<Picks />} />
           <Route path="/search" element={<Search />} />
           <Route path="/news" element={<PolicyRadar />} />
