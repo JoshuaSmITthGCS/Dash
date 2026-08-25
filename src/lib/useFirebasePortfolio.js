@@ -12,8 +12,10 @@ import { db } from './firebase'
 import { useAuth } from './FirebaseAuthContext'
 import {
   planReferencePortfolioSync,
-  REFERENCE_PORTFOLIO,
-  REFERENCE_PORTFOLIO_RECORDED_AT,
+  referenceIntradaySnapshot,
+  referenceSyncRecord,
+  referenceTrackingState,
+  summarizeReferenceSync,
   REFERENCE_PORTFOLIO_VERSION,
 } from './referencePortfolio'
 import { normalizePortfolioPosition, PER_SHARE_COST } from './portfolioPosition'
@@ -288,48 +290,25 @@ export function useFirebasePortfolio() {
           batch.delete(positionRef)
           return
         }
-        // planReferencePortfolioSync already resolved purchaseDate from the transaction
-        // history (and never from the export date), so the record is taken as it stands.
-        // Blanking it here instead would discard every acquisition date the history knows.
-        const record = operation.kind === 'add'
-          ? { ...operation.record, id: operation.id, importedAt }
-          : { ...operation.record, syncedAt: importedAt }
-        batch.set(positionRef, record, { merge: operation.kind === 'update' })
+        batch.set(positionRef, referenceSyncRecord(operation, importedAt), {
+          merge: operation.kind === 'update',
+        })
       })
 
-      const investedValue = REFERENCE_PORTFOLIO.reduce((sum, position) => sum + position.snapshotValue, 0)
-      const prices = REFERENCE_PORTFOLIO.map((position) => ({
-        ticker: position.ticker,
-        shares: position.shares,
-        price: position.snapshotPrice,
-        value: position.snapshotValue,
-        previousClose: position.snapshotPreviousClose,
-        marketTime: REFERENCE_PORTFOLIO_RECORDED_AT,
-      }))
-      const snapshotId = REFERENCE_PORTFOLIO_RECORDED_AT.slice(0, 16).replace(/[:.]/g, '-')
-      batch.set(doc(db, 'portfolios', currentUser.uid, 'intradaySnapshots', snapshotId), {
-        value: investedValue,
-        investedValue,
-        coveragePct: 100,
-        source: 'fidelity_positions_export',
-        recordedAt: REFERENCE_PORTFOLIO_RECORDED_AT,
-        marketDate: REFERENCE_PORTFOLIO_RECORDED_AT.slice(0, 10),
-        positionCount: REFERENCE_PORTFOLIO.length,
-        prices,
-      }, { merge: true })
-      batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), {
-        referencePortfolioVersion: REFERENCE_PORTFOLIO_VERSION,
-        referencePortfolioImportedAt: importedAt,
-      }, { merge: true })
+      const snapshot = referenceIntradaySnapshot()
+      batch.set(
+        doc(db, 'portfolios', currentUser.uid, 'intradaySnapshots', snapshot.id),
+        snapshot.document,
+        { merge: true },
+      )
+      batch.set(
+        doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'),
+        referenceTrackingState(importedAt),
+        { merge: true },
+      )
       await batch.commit()
 
-      return {
-        success: true,
-        added: operations.filter((operation) => operation.kind === 'add').length,
-        updated: operations.filter((operation) => operation.kind === 'update').length,
-        removed: operations.filter((operation) => operation.kind === 'remove').length,
-        version: REFERENCE_PORTFOLIO_VERSION,
-      }
+      return { success: true, ...summarizeReferenceSync(operations), version: REFERENCE_PORTFOLIO_VERSION }
     } catch (error) {
       console.error('Failed to sync reference portfolio:', error)
       return { success: false, error: error.message }

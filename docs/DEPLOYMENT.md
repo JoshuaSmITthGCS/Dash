@@ -52,6 +52,36 @@ Three functions, each independently authenticated:
   `alerts/{uid}/subscriptions` directly and correctly bypasses `firestore.rules` — that is
   expected server-trust behavior, not a rules gap (rules govern client SDK access only).
 
+## Portfolio baseline sync (CLI)
+
+`scripts/sync-portfolio-firebase.mjs` applies the Fidelity reference portfolio
+(`src/lib/referencePortfolio.js`) straight to Firestore, for the cases that cannot wait on a
+browser: seeding a fresh account, repairing one whose holdings drifted, or pushing a newly
+exported baseline and confirming what it changes before it reaches the UI. The signed-in app
+already reconciles itself once per `REFERENCE_PORTFOLIO_VERSION`; this is the same
+reconciliation, run on demand.
+
+```bash
+npm run portfolio:sync -- --email you@example.com            # dry run — writes nothing
+npm run portfolio:sync -- --email you@example.com --commit   # apply
+npm run portfolio:sync -- --uid <uid> --commit               # by uid, skipping the Auth lookup
+```
+
+Both paths share `planReferencePortfolioSync` and the record builders beside it, so they write
+identical documents and cannot drift. A commit also stores the export's invested-only intraday
+snapshot and stamps `tracking/state` with the baseline version, which stops the app from
+re-running its own sync for that version.
+
+Two things to know before `--commit`:
+
+- **Dry run is the default**, because the import is authoritative: a stored holding absent
+  from the export is deleted, not left alone. The dry run prints every add, update and removal
+  with share counts, cost bases and acquisition dates.
+- It needs `FIREBASE_SERVICE_ACCOUNT_JSON` — the same service-account credential
+  `alert-push.mjs` uses, which bypasses `firestore.rules` by design. `npm run portfolio:sync`
+  loads `.env.local` if present. It is a server-side secret and must never take a `VITE_`
+  prefix.
+
 ## Scheduled pipeline (GitHub Actions)
 
 | Workflow | Schedule | What it does |

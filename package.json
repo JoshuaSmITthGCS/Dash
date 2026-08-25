@@ -14,7 +14,8 @@
     "screenshots:mobile": "node scripts/mobile-screenshots.mjs",
     "evidence:factors": "node scripts/factor-regression-evidence.mjs",
     "evidence:hygiene": "node scripts/hygiene-evidence.mjs",
-    "evidence:projection": "node scripts/projection-spread-evidence.mjs"
+    "evidence:projection": "node scripts/projection-spread-evidence.mjs",
+    "portfolio:sync": "node --env-file-if-exists=.env.local scripts/sync-portfolio-firebase.mjs"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.9",

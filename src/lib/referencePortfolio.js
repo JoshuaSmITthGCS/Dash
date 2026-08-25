@@ -145,3 +145,64 @@ export function planReferencePortfolioSync(positions, reference = REFERENCE_PORT
 
   return [...upserts, ...removals]
 }
+
+/**
+ * The exact document body to write for one planned operation. Shared so the in-app sync and
+ * the `sync-portfolio-firebase` CLI shape identical records -- the two run against the same
+ * collection, and a field only one of them sets is a divergence that surfaces as a portfolio
+ * that looks different depending on which path last touched it.
+ *
+ * purchaseDate arrives already resolved by planReferencePortfolioSync and is passed through
+ * untouched: blanking it here would discard every acquisition date the history knows.
+ */
+export function referenceSyncRecord(operation, importedAt) {
+  return operation.kind === 'add'
+    ? { ...operation.record, id: operation.id, importedAt }
+    : { ...operation.record, syncedAt: importedAt }
+}
+
+/**
+ * The invested-only intraday observation this export represents, as a document id and body.
+ * Money-market cash and pending activity are already absent from REFERENCE_PORTFOLIO, so the
+ * value here is invested holdings alone.
+ */
+export function referenceIntradaySnapshot(reference = REFERENCE_PORTFOLIO) {
+  const investedValue = reference.reduce((sum, position) => sum + position.snapshotValue, 0)
+  return {
+    id: REFERENCE_PORTFOLIO_RECORDED_AT.slice(0, 16).replace(/[:.]/g, '-'),
+    document: {
+      value: investedValue,
+      investedValue,
+      coveragePct: 100,
+      source: 'fidelity_positions_export',
+      recordedAt: REFERENCE_PORTFOLIO_RECORDED_AT,
+      marketDate: REFERENCE_PORTFOLIO_RECORDED_AT.slice(0, 10),
+      positionCount: reference.length,
+      prices: reference.map((position) => ({
+        ticker: position.ticker,
+        shares: position.shares,
+        price: position.snapshotPrice,
+        value: position.snapshotValue,
+        previousClose: position.snapshotPreviousClose,
+        marketTime: REFERENCE_PORTFOLIO_RECORDED_AT,
+      })),
+    },
+  }
+}
+
+/** Marks which export an account has been reconciled to, so the sync runs once per version. */
+export function referenceTrackingState(importedAt) {
+  return {
+    referencePortfolioVersion: REFERENCE_PORTFOLIO_VERSION,
+    referencePortfolioImportedAt: importedAt,
+  }
+}
+
+/** added/updated/removed counts for a plan, as both callers report them. */
+export function summarizeReferenceSync(operations) {
+  return {
+    added: operations.filter((operation) => operation.kind === 'add').length,
+    updated: operations.filter((operation) => operation.kind === 'update').length,
+    removed: operations.filter((operation) => operation.kind === 'remove').length,
+  }
+}
