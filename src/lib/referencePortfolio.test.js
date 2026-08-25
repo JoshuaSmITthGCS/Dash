@@ -66,10 +66,10 @@ describe('planReferencePortfolioSync', () => {
     expect(REFERENCE_PORTFOLIO.some((position) => ['FZFXX', 'Pending activity'].includes(position.ticker))).toBe(false)
   })
 
-  // The seven holdings the Aug 14 baseline had lost. Their combined cost basis is the exact
-  // difference between the two exports ($5,549.26 - $4,550.00), which is what makes it safe
-  // to say the earlier snapshot was short these positions rather than differently traded.
-  it('carries the holdings that were missing from the Aug 14 baseline', () => {
+  // The seven the Aug 14 baseline did not have. Their combined cost basis is the exact
+  // difference between the two exports ($5,549.26 - $4,550.00), and the transaction history
+  // shows all seven bought on Aug 21 -- after that snapshot, not dropped from it.
+  it('carries the holdings bought after the Aug 14 baseline', () => {
     const restored = ['AMP', 'AMZN', 'DELL', 'ETN', 'MPC', 'THC', 'TWLO']
     const byTicker = new Map(REFERENCE_PORTFOLIO.map((position) => [position.ticker, position]))
 
@@ -81,37 +81,74 @@ describe('planReferencePortfolioSync', () => {
       .reduce((sum, position) => sum + position.costBasisTotal, 0)).toBeCloseTo(4550, 8)
   })
 
-  // The export date says when these prices were observed, not when anything was bought.
-  // Fidelity's positions view carries no acquisition date at all, so the sync must leave
-  // purchaseDate alone -- writing the export date there would silently backdate or forward-
-  // date every holding and corrupt every since-purchase measure that reads it.
-  describe('never treats the export date as a purchase date', () => {
-    it('adds a holding undated rather than dating it from the export', () => {
+  // Acquisition dates come from the account's transaction history. The export date says only
+  // when these prices were observed, and writing it to a purchaseDate would backdate or
+  // forward-date every holding and corrupt every since-purchase measure that reads it.
+  describe('purchase dates come from the transaction history, never the export date', () => {
+    it('dates an added holding from the history rather than the export', () => {
       const [operation] = planReferencePortfolioSync([], [{
-        ticker: 'AMZN', shares: 0.386, costBasis: 258.52,
+        ticker: 'AMZN', shares: 0.386, costBasis: 258.52, purchaseDate: '2026-08-21',
         snapshotPrice: 262.0725, snapshotRecordedAt: REFERENCE_PORTFOLIO_RECORDED_AT,
       }])
 
       expect(operation.kind).toBe('add')
-      expect(operation.record.purchaseDate).toBeUndefined()
+      expect(operation.record.purchaseDate).toBe('2026-08-21')
       expect(operation.record.snapshotRecordedAt).toBe(REFERENCE_PORTFOLIO_RECORDED_AT)
     })
 
-    it('keeps a real purchase date while overwriting every other field', () => {
-      const [operation] = planReferencePortfolioSync([{
-        id: 'twlo-1', ticker: 'TWLO', shares: 0.5, costBasis: 180, purchaseDate: '2026-03-02',
-      }], [{ ticker: 'TWLO', shares: 0.906, costBasis: 220.63, snapshotPrice: 222.5828 }])
+    it('leaves an added holding undated when the history does not reach it', () => {
+      const [operation] = planReferencePortfolioSync([], [{
+        ticker: 'VOO', shares: 0.146, costBasis: 633.36, purchaseDate: null,
+        snapshotPrice: 701.8493,
+      }])
 
-      expect(operation.record.purchaseDate).toBe('2026-03-02')
-      expect(operation.record.shares).toBe(0.906)
+      expect(operation.record.purchaseDate).toBe('')
     })
 
-    it('carries no purchase date and no export date on any shipped holding', () => {
+    it('lets a date already stored win over the history', () => {
+      const [operation] = planReferencePortfolioSync([{
+        id: 'twlo-1', ticker: 'TWLO', shares: 0.5, costBasis: 180, purchaseDate: '2026-03-02',
+      }], [{ ticker: 'TWLO', shares: 0.906, costBasis: 220.63, purchaseDate: '2026-08-21' }])
+
+      expect(operation.record.purchaseDate).toBe('2026-03-02')
+      expect(operation.record.shares).toBe(0.906) // every other field still overwritten
+    })
+
+    it('backfills a holding stored without a date', () => {
+      const [operation] = planReferencePortfolioSync([{
+        id: 'thc-reference', ticker: 'THC', shares: 0.719, costBasis: 278.11, purchaseDate: '',
+      }], [{ ticker: 'THC', shares: 0.719, costBasis: 278.11, purchaseDate: '2026-08-21' }])
+
+      expect(operation.record.purchaseDate).toBe('2026-08-21')
+    })
+
+    it('never dates a shipped holding from the export day', () => {
       const exportDay = REFERENCE_PORTFOLIO_RECORDED_AT.slice(0, 10)
       REFERENCE_PORTFOLIO.forEach((position) => {
-        expect(position.purchaseDate).toBeUndefined()
-        expect(Object.values(position)).not.toContain(exportDay)
+        expect(position.purchaseDate).not.toBe(exportDay)
+        if (position.purchaseDate !== null) {
+          expect(position.purchaseDate).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+          expect(position.purchaseDate < exportDay).toBe(true)
+        }
       })
+    })
+
+    // BSX and VOO were bought before the supplied history window, so they are the only two
+    // that stay undated -- a guessed date would be worse than no date.
+    it('dates 44 of the 46 holdings and names the two it cannot', () => {
+      const undated = REFERENCE_PORTFOLIO.filter((position) => position.purchaseDate === null)
+      expect(undated.map((position) => position.ticker)).toEqual(['BSX', 'VOO'])
+    })
+
+    // The seven the Aug 14 baseline lacked were bought Aug 21, a week after it was taken --
+    // they were never missing from it, and their buys are exactly the cost-basis difference.
+    it('dates the seven holdings absent from the Aug 14 baseline to their Aug 21 buys', () => {
+      const augustTwentyFirst = REFERENCE_PORTFOLIO
+        .filter((position) => position.purchaseDate === '2026-08-21')
+      expect(augustTwentyFirst.map((position) => position.ticker))
+        .toEqual(['AMP', 'AMZN', 'DELL', 'ETN', 'MPC', 'THC', 'TWLO'])
+      expect(augustTwentyFirst.reduce((sum, position) => sum + position.costBasisTotal, 0))
+        .toBeCloseTo(999.26, 8)
     })
   })
 

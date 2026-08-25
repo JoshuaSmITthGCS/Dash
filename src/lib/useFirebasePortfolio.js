@@ -272,8 +272,10 @@ export function useFirebasePortfolio() {
   // Reconcile the signed-in portfolio to the user's Aug 25 Fidelity positions export. The
   // export is the authoritative invested baseline, so this updates quantities and total cost
   // bases, adds missing symbols, removes symbols no longer present, and stores the export as
-  // an invested-only intraday observation. Money-market cash and pending activity never enter
-  // the position collection or the chart snapshot.
+  // an invested-only intraday observation. Acquisition dates come from the account's
+  // transaction history rather than the export, and a date already stored always wins -- see
+  // planReferencePortfolioSync. Money-market cash and pending activity never enter the
+  // position collection or the chart snapshot.
   const syncReferencePortfolio = async () => {
     if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
     try {
@@ -286,8 +288,11 @@ export function useFirebasePortfolio() {
           batch.delete(positionRef)
           return
         }
+        // planReferencePortfolioSync already resolved purchaseDate from the transaction
+        // history (and never from the export date), so the record is taken as it stands.
+        // Blanking it here instead would discard every acquisition date the history knows.
         const record = operation.kind === 'add'
-          ? { ...operation.record, id: operation.id, purchaseDate: '', importedAt }
+          ? { ...operation.record, id: operation.id, importedAt }
           : { ...operation.record, syncedAt: importedAt }
         batch.set(positionRef, record, { merge: operation.kind === 'update' })
       })
