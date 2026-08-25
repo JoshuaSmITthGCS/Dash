@@ -8,10 +8,22 @@
 // before it reaches the UI. Both paths share planReferencePortfolioSync and the record
 // builders beside it, so they write byte-identical documents and cannot drift.
 //
+// Two ways to authenticate, picked automatically:
+//
+//   - SIGN-IN (default when no service account is configured). Signs in as the account with
+//     its own app password, using the VITE_FIREBASE_* client config already in .env.local for
+//     `npm run dev`. Nothing new to configure, and writes go through firestore.rules exactly
+//     as the browser's would -- the rules grant a signed-in user their own portfolios/{uid}.
+//     The password is prompted for, or read from PORTFOLIO_SYNC_PASSWORD; it is never taken
+//     as a flag, which would leave it in shell history.
+//   - ADMIN, when FIREBASE_SERVICE_ACCOUNT_JSON is set. Needs no password and can sync any
+//     account by uid, but bypasses firestore.rules by design -- a server-side secret.
+//
 // Usage:
-//   node --env-file=.env.local scripts/sync-portfolio-firebase.mjs --email you@example.com
-//   node --env-file=.env.local scripts/sync-portfolio-firebase.mjs --uid abc123 --commit
-//   ... --email you@example.com --report portfolio-check.md
+//   npm run portfolio:sync -- --email you@example.com
+//   npm run portfolio:sync -- --email you@example.com --commit
+//   npm run portfolio:sync -- --email you@example.com --report portfolio-check.md
+//   npm run portfolio:sync -- --uid abc123 --commit          # admin credentials only
 //
 // Dry run is the DEFAULT and prints the full plan. Nothing is written until --commit,
 // because this import is authoritative: a holding absent from the export is deleted.
@@ -21,10 +33,21 @@
 // so it is a server-side secret and must never be given a VITE_ prefix.
 
 import { writeFile } from 'node:fs/promises'
+import { createInterface } from 'node:readline'
 import { pathToFileURL } from 'node:url'
 import { cert, getApps, initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { getFirestore } from 'firebase-admin/firestore'
+import { initializeApp as initializeClientApp } from 'firebase/app'
+import { getAuth as getClientAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth'
+import {
+  collection as clientCollection,
+  doc as clientDoc,
+  getDocs as clientGetDocs,
+  getFirestore as getClientFirestore,
+  terminate as terminateClient,
+  writeBatch as clientWriteBatch,
+} from 'firebase/firestore'
 import {
   planReferencePortfolioSync,
   referenceIntradaySnapshot,
@@ -67,12 +90,8 @@ export function withTimeout(promise, what, ms = NETWORK_TIMEOUT_MS) {
   return Promise.race([promise, limit]).finally(() => clearTimeout(timer))
 }
 
-// firebase-admin holds a gRPC channel open, which can keep the process alive after the work
-// is done. Closing both explicitly means a finished run actually returns to the shell.
-async function shutdown(db, app) {
-  try { await db?.terminate?.() } catch { /* best effort */ }
-  try { await app?.delete?.() } catch { /* best effort */ }
-}
+// Both SDKs hold a connection open, which can keep the process alive after the work is done.
+// Closing explicitly means a finished run actually returns to the shell.
 
 export function parseArguments(argv) {
   const options = { commit: false, email: null, uid: null, report: null }
@@ -97,15 +116,9 @@ export function parseArguments(argv) {
   return options
 }
 
-function firebaseApp() {
-  if (getApps().length) return getApps()[0]
+function adminCredential() {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
-  if (!raw) {
-    throw new Error(
-      'FIREBASE_SERVICE_ACCOUNT_JSON is not set. Load it with '
-      + '`node --env-file=.env.local scripts/sync-portfolio-firebase.mjs ...`',
-    )
-  }
+  if (!raw) return null
   let credential
   try { credential = JSON.parse(raw) } catch { throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON.') }
   const missing = ['project_id', 'client_email', 'private_key'].filter((field) => !credential[field])
@@ -113,8 +126,146 @@ function firebaseApp() {
     throw new Error(`FIREBASE_SERVICE_ACCOUNT_JSON is missing ${missing.join(', ')}. `
       + 'Use the whole downloaded service-account key file, not a fragment of it.')
   }
-  step(`Credentials loaded for project ${credential.project_id}.`)
-  return initializeApp({ credential: cert(credential) })
+  return credential
+}
+
+function clientConfig() {
+  const config = {
+    apiKey: process.env.VITE_FIREBASE_API_KEY,
+    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.VITE_FIREBASE_APP_ID,
+  }
+  return config.apiKey && config.projectId ? config : null
+}
+
+/** Reads a secret without echoing it, so it never lands in a terminal scrollback. */
+function promptPassword(question) {
+  if (!process.stdin.isTTY) {
+    return Promise.reject(new Error(
+      'No terminal to prompt for a password on. Set PORTFOLIO_SYNC_PASSWORD instead, '
+      + 'or configure FIREBASE_SERVICE_ACCOUNT_JSON to use admin credentials.',
+    ))
+  }
+  return new Promise((resolve) => {
+    const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true })
+    rl._writeToOutput = (chunk) => { if (chunk.includes(question)) rl.output.write(question) }
+    rl.question(question, (answer) => {
+      rl.close()
+      process.stdout.write('\n')
+      resolve(answer)
+    })
+  })
+}
+
+/**
+ * One interface over the two credential paths, so the plan/report/commit logic below never
+ * branches on which is in use and behaves identically either way.
+ */
+async function connect(options) {
+  const credential = adminCredential()
+  if (credential) {
+    step(`Admin credentials loaded for project ${credential.project_id}.`)
+    const app = getApps().length ? getApps()[0] : initializeApp({ credential: cert(credential) })
+    const db = getFirestore(app)
+    let uid = options.uid
+    if (!uid) {
+      step(`Resolving ${options.email} via Firebase Auth…`)
+      try {
+        uid = (await withTimeout(getAuth(app).getUserByEmail(options.email), 'Firebase Auth')).uid
+      } catch (error) {
+        if (error.code === 'auth/user-not-found') {
+          throw new Error(`No Firebase user has the email ${options.email}. `
+            + 'Sign in to the app once with it, or pass --uid instead.')
+        }
+        throw error
+      }
+    }
+    return {
+      mode: 'admin',
+      uid,
+      readPositions: () => withTimeout(
+        db.collection('portfolios').doc(uid).collection('positions').get(), 'Firestore read',
+      ).then((snapshot) => snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
+      commit: (apply) => {
+        const batch = db.batch()
+        apply({
+          positionDoc: (id) => db.collection('portfolios').doc(uid).collection('positions').doc(id),
+          snapshotDoc: (id) => db.collection('portfolios').doc(uid).collection('intradaySnapshots').doc(id),
+          trackingDoc: () => db.collection('portfolios').doc(uid).collection('tracking').doc('state'),
+          set: (ref, data, merge) => batch.set(ref, data, merge ? { merge: true } : {}),
+          delete: (ref) => batch.delete(ref),
+        })
+        return withTimeout(batch.commit(), 'Firestore write')
+      },
+      close: async () => {
+        try { await db.terminate?.() } catch { /* best effort */ }
+      },
+    }
+  }
+
+  const config = clientConfig()
+  if (!config) {
+    throw new Error(
+      'No Firebase credentials found.\n'
+      + '  Sign-in mode needs VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID in .env.local\n'
+      + '  (the same values `npm run dev` uses). Admin mode needs FIREBASE_SERVICE_ACCOUNT_JSON.',
+    )
+  }
+  if (options.uid) {
+    throw new Error('--uid needs admin credentials. Sign-in mode can only sync the account it '
+      + 'signs in as, so pass --email instead.')
+  }
+
+  const password = process.env.PORTFOLIO_SYNC_PASSWORD
+    || await promptPassword(`Password for ${options.email}: `)
+  if (!password) throw new Error('No password given, so there is nothing to sign in with.')
+
+  step(`Signing in as ${options.email} on project ${config.projectId}…`)
+  const app = initializeClientApp(config, 'portfolio-sync-cli')
+  const auth = getClientAuth(app)
+  let user
+  try {
+    user = (await withTimeout(signInWithEmailAndPassword(auth, options.email, password), 'Firebase sign-in')).user
+  } catch (error) {
+    const friendly = {
+      'auth/invalid-credential': 'Email or password not accepted.',
+      'auth/wrong-password': 'Wrong password.',
+      'auth/user-not-found': `No account for ${options.email}.`,
+      'auth/too-many-requests': 'Too many attempts; Firebase has throttled this account briefly.',
+      'auth/network-request-failed': 'Could not reach Firebase. Check connectivity, proxy, or VPN.',
+      'auth/invalid-email': `${options.email} is not a valid email address.`,
+      'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
+        'VITE_FIREBASE_API_KEY in .env.local is not a valid key for this project.',
+    }[error.code]
+    throw new Error(friendly || error.message)
+  }
+  const db = getClientFirestore(app)
+  const uid = user.uid
+  return {
+    mode: 'sign-in',
+    uid,
+    readPositions: () => withTimeout(
+      clientGetDocs(clientCollection(db, 'portfolios', uid, 'positions')), 'Firestore read',
+    ).then((snapshot) => snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
+    commit: (apply) => {
+      const batch = clientWriteBatch(db)
+      apply({
+        positionDoc: (id) => clientDoc(db, 'portfolios', uid, 'positions', id),
+        snapshotDoc: (id) => clientDoc(db, 'portfolios', uid, 'intradaySnapshots', id),
+        trackingDoc: () => clientDoc(db, 'portfolios', uid, 'tracking', 'state'),
+        set: (ref, data, merge) => batch.set(ref, data, merge ? { merge: true } : {}),
+        delete: (ref) => batch.delete(ref),
+      })
+      return withTimeout(batch.commit(), 'Firestore write')
+    },
+    close: async () => {
+      try { await signOut(auth) } catch { /* best effort */ }
+      try { await terminateClient(db) } catch { /* best effort */ }
+    },
+  }
 }
 
 const money = (value) => `$${value.toFixed(2)}`
@@ -279,41 +430,31 @@ export async function main() {
   --report <path>     write a verification report (.md or .json; - for stdout)
   --help              this message
 
+Credentials, picked automatically:
+  sign-in   VITE_FIREBASE_* in .env.local (what \`npm run dev\` uses) plus the account
+            password — prompted for, or read from PORTFOLIO_SYNC_PASSWORD
+  admin     FIREBASE_SERVICE_ACCOUNT_JSON, if set; needed for --uid
+
 Reference baseline: ${REFERENCE_PORTFOLIO_VERSION} (${REFERENCE_PORTFOLIO.length} holdings)`)
     return
   }
 
   step(`sync-portfolio-firebase · baseline ${REFERENCE_PORTFOLIO_VERSION} · ${REFERENCE_PORTFOLIO.length} holdings`)
-  const app = firebaseApp()
-  const db = getFirestore(app)
+  const backend = await connect(options)
   try {
-    return await run(options, app, db)
+    return await run(options, backend)
   } finally {
-    await shutdown(db, app)
+    await backend.close()
   }
 }
 
-async function run(options, app, db) {
+async function run(options, backend) {
+  const { uid } = backend
 
-  let uid = options.uid
-  if (!uid) {
-    step(`Resolving ${options.email} via Firebase Auth…`)
-    try {
-      uid = (await withTimeout(getAuth(app).getUserByEmail(options.email), 'Firebase Auth')).uid
-    } catch (error) {
-      if (error.code === 'auth/user-not-found') {
-        throw new Error(`No Firebase user has the email ${options.email}. `
-          + 'Sign in to the app once with it, or pass --uid instead.')
-      }
-      throw error
-    }
-  }
-  console.log(`Account: ${uid}${options.email ? ` (${options.email})` : ''}\n`)
+  console.log(`Account: ${uid}${options.email ? ` (${options.email})` : ''} · ${backend.mode} credentials\n`)
 
-  const positionsRef = db.collection('portfolios').doc(uid).collection('positions')
   step('Reading stored positions from Firestore…')
-  const stored = await withTimeout(positionsRef.get(), 'Firestore read')
-  const existing = stored.docs.map((item) => ({ id: item.id, ...item.data() }))
+  const existing = await backend.readPositions()
   console.log(`Currently stored: ${existing.length} position${existing.length === 1 ? '' : 's'}`)
 
   const operations = planReferencePortfolioSync(existing)
@@ -346,29 +487,19 @@ async function run(options, app, db) {
   }
 
   const importedAt = new Date().toISOString()
-  const batch = db.batch()
-  operations.forEach((operation) => {
-    const positionRef = positionsRef.doc(operation.id)
-    if (operation.kind === 'remove') {
-      batch.delete(positionRef)
-      return
-    }
-    batch.set(positionRef, referenceSyncRecord(operation, importedAt), {
-      merge: operation.kind === 'update',
-    })
-  })
-  batch.set(
-    db.collection('portfolios').doc(uid).collection('intradaySnapshots').doc(snapshot.id),
-    snapshot.document,
-    { merge: true },
-  )
-  batch.set(
-    db.collection('portfolios').doc(uid).collection('tracking').doc('state'),
-    referenceTrackingState(importedAt),
-    { merge: true },
-  )
   step(`Committing ${writes} writes…`)
-  await withTimeout(batch.commit(), 'Firestore write')
+  await backend.commit((batch) => {
+    operations.forEach((operation) => {
+      const positionRef = batch.positionDoc(operation.id)
+      if (operation.kind === 'remove') {
+        batch.delete(positionRef)
+        return
+      }
+      batch.set(positionRef, referenceSyncRecord(operation, importedAt), operation.kind === 'update')
+    })
+    batch.set(batch.snapshotDoc(snapshot.id), snapshot.document, true)
+    batch.set(batch.trackingDoc(), referenceTrackingState(importedAt), true)
+  })
 
   console.log(`\nCommitted ${writes} writes at ${importedAt}.`)
   console.log(`Account marked as reconciled to ${REFERENCE_PORTFOLIO_VERSION}; the app will not re-run its own sync for this version.`)

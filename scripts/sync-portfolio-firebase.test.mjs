@@ -260,3 +260,23 @@ group('network timeouts', () => {
     expect((process._getActiveHandles?.().length ?? 0)).toBeLessThanOrEqual(before)
   })
 })
+
+// firestore.rules grant a signed-in user their own portfolios/{uid}, so the CLI does not need
+// a service account — it can sign in with the client config .env.local already carries for
+// `npm run dev`. --uid is the one thing sign-in cannot do, since it only reaches its own uid.
+group('credential modes', () => {
+  it('accepts --uid, which only admin credentials can satisfy', () => {
+    expect(parseArguments(['--uid', 'abc123'])).toMatchObject({ uid: 'abc123', email: null })
+  })
+
+  it('accepts --email, which either mode can satisfy', () => {
+    expect(parseArguments(['--email', 'you@example.com'])).toMatchObject({ email: 'you@example.com', uid: null })
+  })
+
+  // A password given as a flag would persist in shell history, so it is prompted for or read
+  // from the environment and is deliberately not an argument at all.
+  it('has no password flag', () => {
+    expect(() => parseArguments(['--email', 'a@b.c', '--password', 'hunter2']))
+      .toThrow(/Unrecognized argument: --password/)
+  })
+})

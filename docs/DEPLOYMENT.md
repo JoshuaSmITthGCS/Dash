@@ -95,15 +95,27 @@ identical documents and cannot drift. A commit also stores the export's invested
 snapshot and stamps `tracking/state` with the baseline version, which stops the app from
 re-running its own sync for that version.
 
-Two things to know before `--commit`:
+**Dry run is the default**, because the import is authoritative: a stored holding absent from
+the export is deleted, not left alone. The dry run prints every add, update and removal with
+share counts, cost bases and acquisition dates.
 
-- **Dry run is the default**, because the import is authoritative: a stored holding absent
-  from the export is deleted, not left alone. The dry run prints every add, update and removal
-  with share counts, cost bases and acquisition dates.
-- It needs `FIREBASE_SERVICE_ACCOUNT_JSON` — the same service-account credential
-  `alert-push.mjs` uses, which bypasses `firestore.rules` by design. `npm run portfolio:sync`
-  loads `.env.local` if present. It is a server-side secret and must never take a `VITE_`
-  prefix.
+### Credentials
+
+`npm run portfolio:sync` loads `.env.local` if present, and picks a mode from what it finds:
+
+- **Sign-in** (default). Uses the `VITE_FIREBASE_*` client config already there for
+  `npm run dev`, plus the account's own app password — prompted for without echo, or read
+  from `PORTFOLIO_SYNC_PASSWORD`. It is deliberately not a flag, which would leave the
+  password in shell history. Writes go through `firestore.rules` exactly as the browser's
+  would; the rules grant a signed-in user their own `portfolios/{uid}`, which is all this
+  needs. Nothing extra to configure.
+- **Admin**, when `FIREBASE_SERVICE_ACCOUNT_JSON` is set — the same service-account credential
+  `alert-push.mjs` uses. No password, and it can sync any account, so it is the only mode that
+  supports `--uid`. It bypasses `firestore.rules` by design: a server-side secret that must
+  never take a `VITE_` prefix.
+
+Every network step announces itself before it runs and is bounded at 30 seconds, so a blocked
+connection names the step it stalled on instead of appearing to hang.
 
 ## Scheduled pipeline (GitHub Actions)
 
