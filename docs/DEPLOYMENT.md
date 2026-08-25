@@ -145,7 +145,7 @@ connection names the step it stalled on instead of appearing to hang.
 
 | Workflow | Schedule | What it does |
 |---|---|---|
-| `refresh-advisor.yml` | 07:00/12:00/15:00 ET, weekdays | Full sweep (07:00) or fast refresh (12:00/15:00); scores the universe, publishes `public/data/*`, commits back |
+| `refresh-advisor.yml` | 07:00/12:00/15:00 ET, weekdays | Full sweep every slot (Alpha Vantage on 07:00 only); scores the universe, publishes `public/data/*`, commits back |
 | `marketstack-premarket.yml` | 08:00/16:00 ET, weekdays | Premarket/intraday collection |
 | `congress-trades.yml` | Monday ~08:00 ET | Weekly STOCK Act disclosure screen |
 | `ci.yml` | every push to `main`, every PR | Lint, test, build, pipeline test/validate — `contents: read` only, never writes |

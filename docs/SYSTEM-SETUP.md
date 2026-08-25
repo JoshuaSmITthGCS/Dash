@@ -163,22 +163,37 @@ Treat the first weeks of post-change readings as the evidence for whether it hel
 
 ### 4.2 Refresh modes
 
-| Mode | Trigger | Scope |
+| Scheduled slot | Scope | Alpha Vantage |
 |---|---|---|
-| `full-alpha` | 07:00 ET weekdays | All 910 names, spends Alpha Vantage quota |
-| `data-only` | 12:00 and 15:00 ET weekdays | Prior top 100 + portfolio/watchlist symbols; other names carried forward |
-| `rescore-only` | Manual | Re-runs scoring over the last `advisor.json` with zero network calls |
+| 07:00 ET weekdays | Full sweep, all ~910 names | Enabled, enrich limit 5 |
+| 12:00 and 15:00 ET weekdays | Full sweep, all ~910 names | Disabled (Yahoo-only) |
+| 07:00 ET weekends (once daily) | Full sweep, all ~910 names | Enabled, enrich limit 25 |
+
+Every weekday slot is a full sweep — this used to be one full sweep (07:00) plus two `fast`
+refreshes (12:00/15:00, prior top 100 + portfolio/watchlist symbols, everything else carried
+forward). The `fast` mode still exists (`workflow_dispatch`'s `universe_scope: fast` input, and
+`rescore-only`, which re-runs scoring over the last `advisor.json` with zero network calls), but no
+longer runs on the standing schedule: a `fast` refresh reuses the previously-published
+cross-sectional normalization fit (`CrossSectionalNormalizer.from_published`) rather than
+refitting one on its own (narrower) universe, and that stale basis was found to produce a broad,
+roughly uniform score shift that undid most of a full sweep's reranking within one refresh cycle —
+see `fetch_advisor.py`'s `normalization_fit_source` (`"current_full_refresh"` for a full sweep,
+`"prior_full_refresh"` for a fast one). Always-full trades roughly 3x the previous daily Yahoo
+request volume and runtime for a normalization basis that never goes stale between runs.
 
 Six separate cron entries cover both EDT and EST, and the gate maps the entry that fired
 (`github.event.schedule`) to `America/New_York` so DST does not shift the local schedule. It reads
 the *scheduled* hour, never the wall clock: Actions has started these runs 25–60 minutes behind
 their cron minute, and only 53 minutes separate `:07` from the next Eastern hour, so a wall-clock
-gate could classify a delayed 07:00 ET firing as 08:00 and silently drop the day's only full sweep.
+gate could classify a delayed 07:00 ET firing as 08:00 and silently drop that slot's sweep.
 Each run names its selected window in the job summary, so a deliberate no-op is distinguishable
-from a missed sweep without opening the logs. Concurrency group `scheduled-data-push-main`, three
-push retries, 90-minute timeout. Authenticated users can dispatch a `data-only` run from the Overview page via
-`netlify/functions/refresh-data.mjs`, which verifies a Firebase ID token server-side and refuses
-duplicate runs.
+from a missed sweep without opening the logs. A separate `is_daily_archive` flag (true only for
+the once-a-day slot — 07:00 ET weekdays, or the weekend run) gates the two legs that must still
+run once, not on every now-full weekday slot: the survivorship price archive's delisted-name leg
+(real Yahoo calls) and the Live v2 controlled representative validation. Concurrency group
+`scheduled-data-push-main`, three push retries, 120-minute timeout. Authenticated users can
+dispatch a `data-only` run from the Overview page via `netlify/functions/refresh-data.mjs`, which
+verifies a Firebase ID token server-side and refuses duplicate runs.
 
 ---
 
