@@ -1,50 +1,71 @@
-// Authoritative invested-positions snapshot exported from Fidelity on Aug 14, 2026 at
-// 2:29 p.m. ET. FZFXX (held in money market) and Pending activity are deliberately absent:
-// Dash tracks only invested holdings and their price movement.
-export const REFERENCE_PORTFOLIO_VERSION = 'fidelity-positions-2026-08-14-1429-et'
-export const REFERENCE_PORTFOLIO_RECORDED_AT = '2026-08-14T18:29:00.000Z'
+// Authoritative invested-positions snapshot exported from Fidelity (account Z32641125) on
+// Aug 25, 2026 at 7:55 a.m. ET. FZFXX (held in money market) and Pending activity are
+// deliberately absent: Dash tracks only invested holdings and their price movement.
+//
+// This export replaces the Aug 14 baseline, which had lost seven holdings -- AMP, AMZN,
+// DELL, ETN, MPC, THC and TWLO, together exactly $999.26 of cost basis. The 39 tickers
+// carried over from Aug 14 have identical share counts and cost bases here, so the only
+// difference between the two exports is those seven positions plus repriced values.
+//
+// Totals reconcile against the export: 46 invested positions, $5,549.26 total cost,
+// $5,668.16 market value, which with the $2.68 FZFXX money-market line is the $5,670.84
+// account total Fidelity displays.
+export const REFERENCE_PORTFOLIO_VERSION = 'fidelity-positions-2026-08-25-0755-et'
+export const REFERENCE_PORTFOLIO_RECORDED_AT = '2026-08-25T11:55:00.000Z'
 
+// [ticker, shares, total cost basis, last price, market value]. The export's positions view
+// carries no previous close, so snapshotPreviousClose is null here rather than guessed at --
+// every consumer treats it as an optional fallback behind the live quote feed. Prices are
+// the exported value divided by the exported quantity, which reproduces both the displayed
+// "Last" column and the displayed value to the cent.
 export const REFERENCE_PORTFOLIO = [
-  ['ACGL', 1.009, 99.96, 98.8, 99.68, 98.03],
-  ['ACN', 0.36, 50.0, 176.63, 63.58, 178.49],
-  ['ADBE', 0.23, 49.93, 265.19, 60.99, 270.49],
-  ['AGO', 0.595, 49.96, 76.38, 45.44, 76.17],
-  ['AMAT', 0.087, 49.57, 504.45, 43.88, 534.54],
-  ['BAC', 0.82, 49.95, 64.495, 52.88, 64.09],
-  ['BSX', 1.466, 99.97, 52.155, 76.45, 51.69],
-  ['CCK', 0.834, 99.96, 119.58, 99.72, 118.37],
-  ['CI', 0.351, 99.86, 281.65, 98.85, 277.99],
-  ['COP', 0.411, 49.95, 127.08, 52.22, 124.52],
-  ['CRUS', 1.344, 174.97, 120.77, 162.31, 121.22],
-  ['DECK', 0.995, 99.92, 93.64, 93.17, 93.3],
-  ['DINO', 1.165, 99.99, 93.04, 108.39, 91.87],
-  ['DXCM', 0.965, 79.93, 89.72, 86.57, 91.48],
-  ['EOG', 1.368, 199.95, 143.5245, 196.34, 141.41],
-  ['EXPE', 0.164, 49.95, 331.74, 54.4, 328.31],
-  ['FTDR', 0.539, 49.95, 86.79, 46.77, 84.66],
-  ['GMED', 1.239, 99.96, 85.78, 106.28, 85.94],
-  ['HIG', 1.394, 199.97, 138.37, 192.88, 137.81],
-  ['INTU', 1.055, 299.99, 346.54, 365.59, 358.29],
-  ['LULU', 1.0, 117.94, 119.7841, 119.78, 119.56],
-  ['MCY', 1.842, 199.93, 105.105, 193.6, 104.92],
-  ['META', 0.327, 199.81, 591.24, 193.33, 594.97],
-  ['MGY', 3.818, 99.98, 26.315, 100.47, 25.86],
-  ['MSFT', 0.098, 37.97, 495.51, 48.55, 496.88],
-  ['MU', 0.101, 99.3, 961.325, 97.09, 949.83],
-  ['NEM', 0.891, 99.99, 118.06, 105.19, 114.19],
-  ['NTNX', 1.284, 49.99, 66.62, 85.54, 67.95],
-  ['NUE', 0.183, 49.83, 270.345, 49.47, 272.29],
-  ['OXY', 0.854, 49.95, 58.625, 50.06, 57.7],
-  ['QCOM', 1.164, 199.99, 164.445, 191.41, 164.79],
-  ['RNR', 0.31, 99.8, 323.525, 100.29, 319.86],
-  ['SCHW', 1.961, 199.98, 110.91, 217.49, 109.74],
-  ['SIGI', 2.075, 199.92, 94.375, 195.82, 93.89],
-  ['SYF', 1.243, 99.95, 80.735, 100.35, 80.08],
-  ['THG', 0.87, 199.88, 223.91, 194.8, 223.19],
-  ['TRV', 0.539, 199.66, 370.84, 199.88, 370.0],
-  ['VGT', 1.692, 199.97, 122.265, 206.87, 122.99],
-  ['VOO', 0.146, 92.47, 713.225, 104.13, 714.95],
-].map(([ticker, shares, costBasisTotal, snapshotPrice, snapshotValue, snapshotPreviousClose]) => ({
+  ['ACGL', 1.009, 99.96, 101.1397, 102.05],
+  ['ACN', 0.36, 50.00, 186.5278, 67.15],
+  ['ADBE', 0.23, 49.93, 276.2609, 63.54],
+  ['AGO', 0.595, 49.96, 74.1849, 44.14],
+  ['AMAT', 0.087, 49.57, 484.1379, 42.12],
+  ['AMP', 0.179, 99.74, 561.1173, 100.44],
+  ['AMZN', 0.386, 99.79, 262.0725, 101.16],
+  ['BAC', 0.82, 49.95, 62.3293, 51.11],
+  ['BSX', 1.466, 99.97, 49.0041, 71.84],
+  ['CCK', 0.834, 99.96, 119.7482, 99.87],
+  ['CI', 0.351, 99.86, 280.4274, 98.43],
+  ['COP', 0.411, 49.95, 133.3333, 54.80],
+  ['CRUS', 1.344, 174.97, 111.6369, 150.04],
+  ['DECK', 0.995, 99.92, 92.0704, 91.61],
+  ['DELL', 0.228, 100.00, 433.2018, 98.77],
+  ['DINO', 1.165, 99.99, 95.176, 110.88],
+  ['DXCM', 0.965, 79.93, 91.057, 87.87],
+  ['EOG', 1.368, 199.95, 150.2047, 205.48],
+  ['ETN', 0.475, 199.98, 408.6526, 194.11],
+  ['EXPE', 0.164, 49.95, 339.0854, 55.61],
+  ['FTDR', 0.539, 49.95, 82.7458, 44.60],
+  ['GMED', 1.239, 99.96, 84.0759, 104.17],
+  ['HIG', 1.394, 199.97, 138.9742, 193.73],
+  ['INTU', 1.055, 299.99, 369.9147, 390.26],
+  ['LULU', 1, 117.94, 122.78, 122.78],
+  ['MCY', 1.842, 199.93, 106.2758, 195.76],
+  ['META', 0.327, 199.81, 558.9908, 182.79],
+  ['MGY', 3.818, 99.98, 27.2184, 103.92],
+  ['MPC', 0.276, 99.90, 362.5, 100.05],
+  ['MSFT', 0.098, 37.97, 487.2449, 47.75],
+  ['MU', 0.101, 99.30, 910.396, 91.95],
+  ['NEM', 0.891, 99.99, 131.8294, 117.46],
+  ['NTNX', 1.284, 49.99, 66.6745, 85.61],
+  ['NUE', 0.183, 49.83, 244.5902, 44.76],
+  ['OXY', 0.854, 49.95, 60.1054, 51.33],
+  ['QCOM', 1.164, 199.99, 158.5223, 184.52],
+  ['RNR', 0.31, 99.80, 329.4194, 102.12],
+  ['SCHW', 1.961, 199.98, 113.6461, 222.86],
+  ['SIGI', 2.075, 199.92, 92.6458, 192.24],
+  ['SYF', 1.243, 99.95, 80.0161, 99.46],
+  ['THC', 0.719, 199.96, 278.5814, 200.30],
+  ['THG', 0.87, 199.88, 227.4598, 197.89],
+  ['TRV', 0.539, 199.66, 370.538, 199.72],
+  ['TWLO', 0.906, 199.89, 222.5828, 201.66],
+  ['VGT', 1.692, 199.97, 116.4184, 196.98],
+  ['VOO', 0.146, 92.47, 701.8493, 102.47],
+].map(([ticker, shares, costBasisTotal, snapshotPrice, snapshotValue]) => ({
   ticker,
   shares,
   costBasis: costBasisTotal / shares,
@@ -53,9 +74,9 @@ export const REFERENCE_PORTFOLIO = [
   costBasisInputMode: 'total',
   snapshotPrice,
   snapshotValue,
-  snapshotPreviousClose,
+  snapshotPreviousClose: null,
   snapshotRecordedAt: REFERENCE_PORTFOLIO_RECORDED_AT,
-  snapshotSource: 'Fidelity positions export · Aug 14, 2026',
+  snapshotSource: 'Fidelity positions export · Aug 25, 2026',
 }))
 
 /**

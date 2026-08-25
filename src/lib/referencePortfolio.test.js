@@ -55,10 +55,36 @@ describe('planReferencePortfolioSync', () => {
     expect(operations[1].id).toBe('AAA-manual')
   })
 
-  it('matches the invested-only Aug 14 Fidelity totals', () => {
-    expect(REFERENCE_PORTFOLIO).toHaveLength(39)
-    expect(REFERENCE_PORTFOLIO.reduce((sum, position) => sum + position.costBasisTotal, 0)).toBeCloseTo(4550, 8)
-    expect(REFERENCE_PORTFOLIO.reduce((sum, position) => sum + position.snapshotValue, 0)).toBeCloseTo(4660.51, 8)
+  it('matches the invested-only Aug 25 Fidelity totals', () => {
+    expect(REFERENCE_PORTFOLIO).toHaveLength(46)
+    expect(REFERENCE_PORTFOLIO.reduce((sum, position) => sum + position.costBasisTotal, 0)).toBeCloseTo(5549.26, 8)
+    expect(REFERENCE_PORTFOLIO.reduce((sum, position) => sum + position.snapshotValue, 0)).toBeCloseTo(5668.16, 8)
     expect(REFERENCE_PORTFOLIO.some((position) => ['FZFXX', 'Pending activity'].includes(position.ticker))).toBe(false)
+  })
+
+  // The seven holdings the Aug 14 baseline had lost. Their combined cost basis is the exact
+  // difference between the two exports ($5,549.26 - $4,550.00), which is what makes it safe
+  // to say the earlier snapshot was short these positions rather than differently traded.
+  it('carries the holdings that were missing from the Aug 14 baseline', () => {
+    const restored = ['AMP', 'AMZN', 'DELL', 'ETN', 'MPC', 'THC', 'TWLO']
+    const byTicker = new Map(REFERENCE_PORTFOLIO.map((position) => [position.ticker, position]))
+
+    restored.forEach((ticker) => expect(byTicker.get(ticker)).toBeDefined())
+    expect(restored.reduce((sum, ticker) => sum + byTicker.get(ticker).costBasisTotal, 0))
+      .toBeCloseTo(999.26, 8)
+    expect(REFERENCE_PORTFOLIO
+      .filter((position) => !restored.includes(position.ticker))
+      .reduce((sum, position) => sum + position.costBasisTotal, 0)).toBeCloseTo(4550, 8)
+  })
+
+  // Fidelity's positions view reports quantity, cost and value but no previous close, so the
+  // per-share price is derived. Guarding the round-trip keeps a mistyped quantity or value
+  // from silently producing a position that reprices wrongly.
+  it('derives a per-share price that reproduces the exported market value', () => {
+    REFERENCE_PORTFOLIO.forEach((position) => {
+      expect(position.snapshotPrice * position.shares).toBeCloseTo(position.snapshotValue, 2)
+      expect(position.costBasis * position.shares).toBeCloseTo(position.costBasisTotal, 8)
+      expect(position.snapshotPreviousClose).toBeNull()
+    })
   })
 })

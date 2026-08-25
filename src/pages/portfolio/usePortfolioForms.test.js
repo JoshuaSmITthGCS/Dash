@@ -130,7 +130,11 @@ describe('FIFO cross-lot sell (B3)', () => {
     await act(async () => { await result.current.saveLotSell() })
 
     expect(portfolio.removePosition).toHaveBeenCalledWith('lot-a')
-    expect(portfolio.updatePosition).toHaveBeenCalledWith('lot-b', { shares: 3 })
+    // costBasisTotal/snapshotValue are restated because the remaining quantity changed;
+    // this lot carries no snapshot price, so there is no snapshot value left to reprice.
+    expect(portfolio.updatePosition).toHaveBeenCalledWith('lot-b', {
+      shares: 3, costBasisTotal: 360, snapshotValue: null,
+    })
     // Lot a: 10 @ (150-100)=500. Lot b: 5 @ (150-120)=150. Total 650.
     expect(tracking.recordActivity).toHaveBeenCalledWith(expect.objectContaining({
       type: 'realized_gain', amount: 650, effectiveDate: '2026-04-01',
@@ -188,5 +192,50 @@ describe('FIFO cross-lot sell (B3)', () => {
     act(() => { result.current.cancelLotSell() })
     expect(result.current.lotSellTicker).toBeNull()
     expect(result.current.lotSellForm.shares).toBe('')
+  })
+})
+
+// A brokerage-synced holding renders its stored snapshotValue until a live quote arrives, so
+// a write that changes the share count without restating that value looks like a form that
+// silently refused to save.
+describe('usePortfolioForms snapshot restatement on quantity writes', () => {
+  const synced = () => [{
+    id: 'hig', ticker: 'HIG', shares: 1.394, costBasis: 143.45, costBasisTotal: 199.97,
+    snapshotPrice: 138.9742, snapshotValue: 193.73, purchaseDate: '',
+  }]
+
+  it('reprices the stored snapshot value when the edit form changes shares', async () => {
+    const { result, portfolio } = setup({ positions: synced() })
+    act(() => { result.current.startEdit(synced()[0]) })
+    act(() => { result.current.setEditForm({ shares: '2.788', costBasis: '143.45', costMode: 'share', purchaseDate: '' }) })
+    await act(async () => { await result.current.saveEdit('hig') })
+
+    const [, updates] = portfolio.updatePosition.mock.calls[0]
+    expect(updates.shares).toBe(2.788)
+    expect(updates.snapshotValue).toBeCloseTo(2.788 * 138.9742, 6)
+    expect(updates.costBasisTotal).toBeCloseTo(2.788 * 143.45, 6)
+  })
+
+  it('reprices the stored snapshot value on a partial sale', async () => {
+    const { result, portfolio } = setup({ positions: synced() })
+    act(() => { result.current.startSell(synced()[0]) })
+    act(() => { result.current.setSellForm({ shares: '0.394', price: '140', saleDate: '2026-08-25' }) })
+    await act(async () => { await result.current.saveSell(synced()[0]) })
+
+    const [, updates] = portfolio.updatePosition.mock.calls[0]
+    expect(updates.shares).toBeCloseTo(1, 6)
+    expect(updates.snapshotValue).toBeCloseTo(1 * 138.9742, 6)
+  })
+
+  it('drops the stored snapshot value when the holding has no snapshot price', async () => {
+    const manual = [{ id: 'man', ticker: 'MAN', shares: 4, costBasis: 10, snapshotValue: 60 }]
+    const { result, portfolio } = setup({ positions: manual })
+    act(() => { result.current.startEdit(manual[0]) })
+    act(() => { result.current.setEditForm({ shares: '8', costBasis: '10', costMode: 'share', purchaseDate: '' }) })
+    await act(async () => { await result.current.saveEdit('man') })
+
+    const [, updates] = portfolio.updatePosition.mock.calls[0]
+    expect(updates.snapshotValue).toBeNull()
+    expect(updates.costBasisTotal).toBe(80)
   })
 })

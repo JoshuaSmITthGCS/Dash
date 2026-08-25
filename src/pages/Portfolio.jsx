@@ -178,7 +178,7 @@ export default function Portfolio({ view = 'summary' }) {
               </div>
               <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing}><Icon name="sync" size={17} className={refresh.refreshing && refresh.activeMode === 'data' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'data' ? 'Refreshing all data…' : 'Refresh all research'}</button>
               <button className="secondary-button" onClick={refresh.requestReanalyze} disabled={refresh.refreshing}><Icon name="research" size={17} className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze portfolio'}</button>
-              <button className="secondary-button" onClick={forms.handleReferenceSync}>Reapply Aug 14 Fidelity snapshot</button>
+              <button className="secondary-button" onClick={forms.handleReferenceSync}>Reapply Aug 25 Fidelity snapshot</button>
               <button className="secondary-button" onClick={exportPortfolio}><Icon name="download" size={17} />Export portfolio</button>
             </div>
           </details>

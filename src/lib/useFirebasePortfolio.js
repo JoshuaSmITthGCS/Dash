@@ -27,8 +27,10 @@ const hiddenStorageKey = (userId) => `valuesignal.hiddenPositions.${userId}`
 //
 // TTM and AMZM (Round 7 Task 1): the two missing_price_tickers breaching
 // data_quality_counters. TTM is the Tata Motors NYSE ADR, delisted January 2025 - no
-// provider serves that line anymore. AMZM resolves to nothing at any provider and is most
-// likely a typo for AMZN; if the position was real, re-add AMZN with its actual cost basis.
+// provider serves that line anymore. AMZM resolves to nothing at any provider and was a typo
+// for AMZN, which the Aug 25 Fidelity export confirms is a real holding (0.386 shares,
+// $99.79 cost) and now carries in REFERENCE_PORTFOLIO. Only the AMZM misspelling stays
+// retired; the correctly spelled AMZN is matched by neither set and syncs normally.
 // The matching pipeline-side list is RETIRED_SYMBOLS in pipeline/fetch_advisor.py, which
 // stops the refresh from re-seeding either symbol out of the previous run's coverage.
 const RETIRED_TICKERS = new Set(['DECJ', 'TTM', 'AMZM'])
@@ -267,7 +269,7 @@ export function useFirebasePortfolio() {
     }
   }
 
-  // Reconcile the signed-in portfolio to the user's Aug 14 Fidelity positions export. The
+  // Reconcile the signed-in portfolio to the user's Aug 25 Fidelity positions export. The
   // export is the authoritative invested baseline, so this updates quantities and total cost
   // bases, adds missing symbols, removes symbols no longer present, and stores the export as
   // an invested-only intraday observation. Money-market cash and pending activity never enter

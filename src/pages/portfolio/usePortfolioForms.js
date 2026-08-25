@@ -18,6 +18,21 @@ function captureRebalance(tracking, date, before, after) {
   tracking.recordRebalance({ date, beforeWeights: costWeights(before), afterWeights: costWeights(after) })
 }
 
+// Until a live quote lands, a holding's displayed value is read from the brokerage export's
+// stored snapshotValue rather than recomputed (see buildHoldingsModel in portfolioModels.js
+// and enrichPortfolio in portfolioAnalytics.js). Both that value and costBasisTotal are
+// quantity-derived, so any write that changes the share count has to restate them: without
+// this an edit or a sale commits to Firestore correctly and the tile still renders the
+// pre-edit dollars, which reads as the form having silently failed to save. The snapshot's
+// per-share price is still valid, so it is repriced rather than dropped.
+function snapshotFieldsForShares(position, shares, costBasis) {
+  const snapshotPrice = Number(position?.snapshotPrice)
+  return {
+    snapshotValue: Number.isFinite(snapshotPrice) ? shares * snapshotPrice : null,
+    costBasisTotal: Number.isFinite(costBasis) ? shares * costBasis : null,
+  }
+}
+
 export function usePortfolioForms({ portfolio, tracking, previewPortfolio, positions = [] }) {
   const {
     addPosition,
@@ -87,7 +102,7 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
     setSyncMessage('Syncing…')
     const result = await syncReferencePortfolio()
     setSyncMessage(result.success
-      ? `${result.added} added · ${result.updated} updated · ${result.removed} removed from the Aug 14 Fidelity baseline`
+      ? `${result.added} added · ${result.updated} updated · ${result.removed} removed from the Aug 25 Fidelity baseline`
       : `Sync failed: ${result.error}`)
   }
 
@@ -133,7 +148,10 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
     const realizedGain = proceeds - sharesSold * pos.costBasis
     const remainingShares = pos.shares - sharesSold
     const positionResult = remainingShares > 0.0000001
-      ? await updatePosition(pos.id, { shares: remainingShares })
+      ? await updatePosition(pos.id, {
+        shares: remainingShares,
+        ...snapshotFieldsForShares(pos, remainingShares, pos.costBasis),
+      })
       : await removePosition(pos.id)
     if (positionResult?.success === false) {
       setSellSaving(false)
@@ -186,8 +204,12 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
     }
     setLotSellSaving(true)
     for (const depletion of plan.depletions) {
+      const lot = positions.find((row) => row.id === depletion.positionId)
       const result = depletion.remainingAfter > 0.0000001
-        ? await updatePosition(depletion.positionId, { shares: depletion.remainingAfter })
+        ? await updatePosition(depletion.positionId, {
+          shares: depletion.remainingAfter,
+          ...snapshotFieldsForShares(lot, depletion.remainingAfter, lot?.costBasis),
+        })
         : await removePosition(depletion.positionId)
       if (result?.success === false) {
         setLotSellSaving(false)
@@ -250,6 +272,7 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
       costBasisUnit: 'per_share',
       costBasisInputMode: editForm.costMode,
       purchaseDate: editForm.purchaseDate,
+      ...snapshotFieldsForShares(positions.find((row) => row.id === positionId), shares, costBasis),
     })
     setEditSaving(false)
     if (result?.success === false) {
