@@ -43,6 +43,37 @@ import {
 // is far below it, but a plan is only bounded by what the account already holds.
 const BATCH_LIMIT = 500
 
+// Every network call is bounded and announced before it starts. firebase-admin retries a
+// blocked connection with long backoff and prints nothing while it does, so an unreachable
+// Google endpoint -- a proxy, a VPN, an offline machine -- otherwise looks like the script
+// silently froze, with no way to tell which step it froze on.
+const NETWORK_TIMEOUT_MS = 30_000
+
+const step = (message) => process.stdout.write(`${message}\n`)
+
+export function withTimeout(promise, what, ms = NETWORK_TIMEOUT_MS) {
+  let timer
+  const limit = new Promise((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(
+        `${what} did not respond within ${ms / 1000}s.\n`
+        + '  This step talks to Google. A proxy, VPN, or offline machine blocks it silently.\n'
+        + '  Check connectivity, then re-run — nothing has been written.',
+      )),
+      ms,
+    )
+    timer.unref?.()
+  })
+  return Promise.race([promise, limit]).finally(() => clearTimeout(timer))
+}
+
+// firebase-admin holds a gRPC channel open, which can keep the process alive after the work
+// is done. Closing both explicitly means a finished run actually returns to the shell.
+async function shutdown(db, app) {
+  try { await db?.terminate?.() } catch { /* best effort */ }
+  try { await app?.delete?.() } catch { /* best effort */ }
+}
+
 export function parseArguments(argv) {
   const options = { commit: false, email: null, uid: null, report: null }
   for (let index = 0; index < argv.length; index += 1) {
@@ -77,6 +108,12 @@ function firebaseApp() {
   }
   let credential
   try { credential = JSON.parse(raw) } catch { throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON.') }
+  const missing = ['project_id', 'client_email', 'private_key'].filter((field) => !credential[field])
+  if (missing.length) {
+    throw new Error(`FIREBASE_SERVICE_ACCOUNT_JSON is missing ${missing.join(', ')}. `
+      + 'Use the whole downloaded service-account key file, not a fragment of it.')
+  }
+  step(`Credentials loaded for project ${credential.project_id}.`)
   return initializeApp({ credential: cert(credential) })
 }
 
@@ -246,15 +283,37 @@ Reference baseline: ${REFERENCE_PORTFOLIO_VERSION} (${REFERENCE_PORTFOLIO.length
     return
   }
 
+  step(`sync-portfolio-firebase · baseline ${REFERENCE_PORTFOLIO_VERSION} · ${REFERENCE_PORTFOLIO.length} holdings`)
   const app = firebaseApp()
   const db = getFirestore(app)
+  try {
+    return await run(options, app, db)
+  } finally {
+    await shutdown(db, app)
+  }
+}
 
-  const uid = options.uid || (await getAuth(app).getUserByEmail(options.email)).uid
-  console.log(`Account: ${uid}${options.email ? ` (${options.email})` : ''}`)
-  console.log(`Baseline: ${REFERENCE_PORTFOLIO_VERSION} · ${REFERENCE_PORTFOLIO.length} holdings\n`)
+async function run(options, app, db) {
+
+  let uid = options.uid
+  if (!uid) {
+    step(`Resolving ${options.email} via Firebase Auth…`)
+    try {
+      uid = (await withTimeout(getAuth(app).getUserByEmail(options.email), 'Firebase Auth')).uid
+    } catch (error) {
+      if (error.code === 'auth/user-not-found') {
+        throw new Error(`No Firebase user has the email ${options.email}. `
+          + 'Sign in to the app once with it, or pass --uid instead.')
+      }
+      throw error
+    }
+  }
+  console.log(`Account: ${uid}${options.email ? ` (${options.email})` : ''}\n`)
 
   const positionsRef = db.collection('portfolios').doc(uid).collection('positions')
-  const existing = (await positionsRef.get()).docs.map((item) => ({ id: item.id, ...item.data() }))
+  step('Reading stored positions from Firestore…')
+  const stored = await withTimeout(positionsRef.get(), 'Firestore read')
+  const existing = stored.docs.map((item) => ({ id: item.id, ...item.data() }))
   console.log(`Currently stored: ${existing.length} position${existing.length === 1 ? '' : 's'}`)
 
   const operations = planReferencePortfolioSync(existing)
@@ -308,7 +367,8 @@ Reference baseline: ${REFERENCE_PORTFOLIO_VERSION} (${REFERENCE_PORTFOLIO.length
     referenceTrackingState(importedAt),
     { merge: true },
   )
-  await batch.commit()
+  step(`Committing ${writes} writes…`)
+  await withTimeout(batch.commit(), 'Firestore write')
 
   console.log(`\nCommitted ${writes} writes at ${importedAt}.`)
   console.log(`Account marked as reconciled to ${REFERENCE_PORTFOLIO_VERSION}; the app will not re-run its own sync for this version.`)
@@ -320,8 +380,15 @@ Reference baseline: ${REFERENCE_PORTFOLIO_VERSION} (${REFERENCE_PORTFOLIO.length
 const invokedDirectly = process.argv[1]
   && import.meta.url === pathToFileURL(process.argv[1]).href
 if (invokedDirectly) {
-  main().catch((error) => {
-    console.error(`\nsync-portfolio-firebase failed: ${error.message}`)
-    process.exitCode = 1
-  })
+  main()
+    .catch((error) => {
+      console.error(`\nsync-portfolio-firebase failed: ${error.message}`)
+      process.exitCode = 1
+    })
+    .finally(() => {
+      // Backstop: if a stray handle still holds the loop open, leave with the status we set
+      // rather than appearing to hang after the work is visibly finished.
+      const exit = setTimeout(() => process.exit(process.exitCode ?? 0), 2000)
+      exit.unref?.()
+    })
 }

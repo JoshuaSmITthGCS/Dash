@@ -1,5 +1,5 @@
 import { describe as group, expect, it } from 'vitest'
-import { buildReport, describe, parseArguments, renderReportMarkdown } from './sync-portfolio-firebase.mjs'
+import { buildReport, describe, parseArguments, renderReportMarkdown, withTimeout } from './sync-portfolio-firebase.mjs'
 import {
   planReferencePortfolioSync,
   referenceSyncDrift,
@@ -229,5 +229,34 @@ group('verification report', () => {
       uid: 'u1', committed: true, generatedAt: 'now',
       operations: planReferencePortfolioSync(stored),
     }))).toContain('committed — Firestore was written')
+  })
+})
+
+// firebase-admin retries a blocked connection with long backoff and prints nothing while it
+// does, so an unreachable Google endpoint used to look like the script had frozen. Every
+// network call is now bounded and announced before it starts.
+group('network timeouts', () => {
+  it('passes a result through untouched when it arrives in time', async () => {
+    await expect(withTimeout(Promise.resolve('ok'), 'Firestore read', 50)).resolves.toBe('ok')
+  })
+
+  it('surfaces the underlying failure rather than masking it as a timeout', async () => {
+    await expect(withTimeout(Promise.reject(new Error('permission denied')), 'Firestore read', 50))
+      .rejects.toThrow('permission denied')
+  })
+
+  it('names the step and says nothing was written when it stalls', async () => {
+    const stalled = new Promise(() => {})
+    await expect(withTimeout(stalled, 'Firebase Auth', 10)).rejects.toThrow(
+      /Firebase Auth did not respond within 0\.01s[\s\S]*nothing has been written/,
+    )
+  })
+
+  // A leaked timer would keep the process alive after the work finished — the exact class of
+  // hang this whole change is about.
+  it('clears its timer once the call resolves', async () => {
+    const before = process._getActiveHandles?.().length ?? 0
+    await withTimeout(Promise.resolve(1), 'Firestore read', 60_000)
+    expect((process._getActiveHandles?.().length ?? 0)).toBeLessThanOrEqual(before)
   })
 })
