@@ -65,7 +65,30 @@ reconciliation, run on demand.
 npm run portfolio:sync -- --email you@example.com            # dry run — writes nothing
 npm run portfolio:sync -- --email you@example.com --commit   # apply
 npm run portfolio:sync -- --uid <uid> --commit               # by uid, skipping the Auth lookup
+npm run portfolio:sync -- --email you@example.com --report portfolio-check.md
 ```
+
+### Verification report (`--report`)
+
+`--report <path>` writes a self-contained report — Markdown, or JSON if the path ends `.json`,
+or `-` for stdout. It works on a dry run and after a commit, and answers two questions that
+are easy to conflate:
+
+- **Is the baseline correct?** Ten checks compare the shipped rows against
+  `REFERENCE_PORTFOLIO_EXPECTED`, the figures transcribed from the Fidelity account summary
+  and deliberately kept separate from the rows: position count, total cost, market value,
+  value + money market against the account total, `shares × price = value` and
+  `shares × cost/share = total cost` on every row, no money-market line tracked as a holding,
+  no duplicate ticker, no purchase date taken from the export date, and only the expected
+  holdings undated. Editing a holding without updating the brokerage totals fails these.
+- **Is the account updated?** Field-level drift between what Firestore holds and what the
+  sync would write — `shares: 0.5 → 0.101`, `purchaseDate: (none) → 2026-08-07` — plus adds,
+  removals, and a full holdings table totalling to the brokerage account total. An account
+  already holding the baseline reports "already matches this baseline" with no drift rows.
+
+The report is the artifact to check against a statement, or to attach when someone asks
+whether the stored portfolio is right.
+
 
 Both paths share `planReferencePortfolioSync` and the record builders beside it, so they write
 identical documents and cannot drift. A commit also stores the export's invested-only intraday

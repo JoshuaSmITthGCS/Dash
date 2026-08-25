@@ -27,6 +27,19 @@
 // $5,668.16 market value, which with the $2.68 FZFXX money-market line is the $5,670.84
 // account total Fidelity displays.
 export const REFERENCE_PORTFOLIO_VERSION = 'fidelity-positions-2026-08-25-0755-et-dated'
+
+// Figures read straight off the Fidelity account summary, kept separate from the rows below
+// on purpose: verifyReferencePortfolio() checks the rows against these, so editing a holding
+// without updating the brokerage totals it came from fails loudly instead of silently
+// producing a portfolio that no longer matches the statement it claims to reproduce.
+export const REFERENCE_PORTFOLIO_EXPECTED = {
+  positionCount: 46,
+  costBasisTotal: 5549.26,
+  marketValue: 5668.16,
+  moneyMarketValue: 2.68, // FZFXX -- held, but never a tracked holding
+  accountTotal: 5670.84,
+  undatedTickers: ['BSX', 'VOO'], // bought before the supplied transaction history begins
+}
 export const REFERENCE_PORTFOLIO_RECORDED_AT = '2026-08-25T11:55:00.000Z'
 
 // [ticker, shares, total cost basis, last price, market value, acquisition date]. The
@@ -131,6 +144,7 @@ export function planReferencePortfolioSync(positions, reference = REFERENCE_PORT
     return {
       kind: 'update',
       id: existing.id,
+      previous: existing,
       record: {
         ...existing,
         ...snapshot,
@@ -205,4 +219,85 @@ export function summarizeReferenceSync(operations) {
     updated: operations.filter((operation) => operation.kind === 'update').length,
     removed: operations.filter((operation) => operation.kind === 'remove').length,
   }
+}
+
+// The stored fields that carry meaning for a holding. A sync that changes none of them is a
+// no-op on that row, which is what lets a report say whether an account is already in sync
+// rather than just how many documents the write would touch.
+const TRACKED_FIELDS = [
+  'shares', 'costBasis', 'costBasisTotal', 'purchaseDate', 'snapshotPrice', 'snapshotValue',
+]
+
+const sameValue = (left, right) => {
+  if (typeof left === 'number' && typeof right === 'number') return Math.abs(left - right) < 1e-9
+  return (left ?? '') === (right ?? '')
+}
+
+/**
+ * What an update would actually change, field by field. Returns [] for a row the sync would
+ * rewrite identically -- an operation list alone cannot distinguish that from a real edit,
+ * because the planner emits an update for every held ticker.
+ */
+export function referenceSyncDrift(operation) {
+  if (operation.kind !== 'update' || !operation.previous) return []
+  // An empty string and a missing field both mean "no value stored" -- an undated holding is
+  // written as '' but read back as undefined on a document that predates the field. Reporting
+  // them as one null keeps a report from showing a change where nothing actually differs.
+  const reported = (value) => (value === undefined || value === '' ? null : value)
+  return TRACKED_FIELDS
+    .filter((field) => !sameValue(operation.previous[field], operation.record[field]))
+    .map((field) => ({ field, from: reported(operation.previous[field]), to: reported(operation.record[field]) }))
+}
+
+const round = (value) => Math.round(value * 100) / 100
+
+/**
+ * Checks the shipped rows against the brokerage figures they were transcribed from, and
+ * against the internal invariants the rest of the app relies on. Every check states what it
+ * compared, so a failing report says which number disagreed with which source rather than
+ * only that something is wrong.
+ */
+export function verifyReferencePortfolio(
+  reference = REFERENCE_PORTFOLIO,
+  expected = REFERENCE_PORTFOLIO_EXPECTED,
+) {
+  const cost = round(reference.reduce((sum, position) => sum + position.costBasisTotal, 0))
+  const value = round(reference.reduce((sum, position) => sum + position.snapshotValue, 0))
+  const exportDay = REFERENCE_PORTFOLIO_RECORDED_AT.slice(0, 10)
+  const tickers = reference.map((position) => position.ticker)
+  const undated = reference.filter((position) => !position.purchaseDate).map((position) => position.ticker)
+
+  const mispriced = reference.filter((position) =>
+    Math.abs(position.snapshotPrice * position.shares - position.snapshotValue) >= 0.005)
+  const misCosted = reference.filter((position) =>
+    Math.abs(position.costBasis * position.shares - position.costBasisTotal) >= 1e-6)
+  const badDates = reference.filter((position) => position.purchaseDate
+    && !(/^\d{4}-\d{2}-\d{2}$/.test(position.purchaseDate) && position.purchaseDate < exportDay))
+
+  const check = (name, ok, detail) => ({ name, ok, detail })
+  return [
+    check('Holdings match the brokerage position count', reference.length === expected.positionCount,
+      `${reference.length} rows vs ${expected.positionCount} reported`),
+    check('Total cost basis matches the account summary', cost === expected.costBasisTotal,
+      `$${cost.toFixed(2)} vs $${expected.costBasisTotal.toFixed(2)} reported`),
+    check('Market value matches the account summary', value === expected.marketValue,
+      `$${value.toFixed(2)} vs $${expected.marketValue.toFixed(2)} reported`),
+    check('Value plus money market reconciles to the account total',
+      round(expected.marketValue + expected.moneyMarketValue) === expected.accountTotal,
+      `$${expected.marketValue.toFixed(2)} + $${expected.moneyMarketValue.toFixed(2)} = $${expected.accountTotal.toFixed(2)}`),
+    check('Every price reproduces its exported value', mispriced.length === 0,
+      mispriced.length ? `off by a cent or more: ${mispriced.map((row) => row.ticker).join(', ')}` : 'shares x price = value on all rows'),
+    check('Every cost basis reproduces its exported total', misCosted.length === 0,
+      misCosted.length ? `inconsistent: ${misCosted.map((row) => row.ticker).join(', ')}` : 'shares x cost/share = total cost on all rows'),
+    check('No money-market or pending line is tracked as a holding',
+      !tickers.some((ticker) => ['FZFXX', 'SPAXX', 'Pending activity'].includes(ticker)),
+      'invested holdings only'),
+    check('No ticker appears twice', new Set(tickers).size === tickers.length,
+      `${new Set(tickers).size} distinct of ${tickers.length}`),
+    check('No purchase date is taken from the export date', badDates.length === 0,
+      badDates.length ? `suspect: ${badDates.map((row) => row.ticker).join(', ')}` : `all buys precede ${exportDay}`),
+    check('Only the expected holdings are undated',
+      undated.join(',') === expected.undatedTickers.join(','),
+      undated.length ? `${undated.join(', ')} (no buy in the supplied history)` : 'every holding dated'),
+  ]
 }

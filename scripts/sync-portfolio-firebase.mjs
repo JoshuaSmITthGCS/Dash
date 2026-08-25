@@ -11,6 +11,7 @@
 // Usage:
 //   node --env-file=.env.local scripts/sync-portfolio-firebase.mjs --email you@example.com
 //   node --env-file=.env.local scripts/sync-portfolio-firebase.mjs --uid abc123 --commit
+//   ... --email you@example.com --report portfolio-check.md
 //
 // Dry run is the DEFAULT and prints the full plan. Nothing is written until --commit,
 // because this import is authoritative: a holding absent from the export is deleted.
@@ -19,6 +20,7 @@
 // credential netlify/functions/alert-push.mjs uses. It bypasses firestore.rules by design,
 // so it is a server-side secret and must never be given a VITE_ prefix.
 
+import { writeFile } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 import { cert, getApps, initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
@@ -26,10 +28,14 @@ import { getFirestore } from 'firebase-admin/firestore'
 import {
   planReferencePortfolioSync,
   referenceIntradaySnapshot,
+  referenceSyncDrift,
   referenceSyncRecord,
   referenceTrackingState,
   summarizeReferenceSync,
+  verifyReferencePortfolio,
   REFERENCE_PORTFOLIO,
+  REFERENCE_PORTFOLIO_EXPECTED,
+  REFERENCE_PORTFOLIO_RECORDED_AT,
   REFERENCE_PORTFOLIO_VERSION,
 } from '../src/lib/referencePortfolio.js'
 
@@ -38,13 +44,14 @@ import {
 const BATCH_LIMIT = 500
 
 export function parseArguments(argv) {
-  const options = { commit: false, email: null, uid: null }
+  const options = { commit: false, email: null, uid: null, report: null }
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index]
     if (argument === '--commit') options.commit = true
     else if (argument === '--help' || argument === '-h') options.help = true
     else if (argument === '--email') options.email = argv[index += 1]
     else if (argument === '--uid') options.uid = argv[index += 1]
+    else if (argument === '--report') options.report = argv[index += 1]
     else throw new Error(`Unrecognized argument: ${argument}`)
   }
   if (!options.help && !options.email && !options.uid) {
@@ -52,6 +59,9 @@ export function parseArguments(argv) {
   }
   if (options.email && options.uid) {
     throw new Error('Pass either --email or --uid, not both.')
+  }
+  if (options.report === undefined || options.report === '') {
+    throw new Error('--report needs a file path, or - for stdout.')
   }
   return options
 }
@@ -90,6 +100,137 @@ export function describe(operations) {
     .join('\n')
 }
 
+const ACTIONS = { add: 'add', update: 'update', remove: 'remove' }
+
+const shown = (value) => (value === null ? '(none)' : value)
+const driftText = (drift) => drift
+  .map((change) => `${change.field}: ${shown(change.from)} → ${shown(change.to)}`)
+  .join('; ')
+
+/**
+ * The verification report. It answers two separate questions that are easy to conflate:
+ * whether the shipped baseline is CORRECT (its rows still reconcile to the brokerage figures
+ * they were transcribed from) and whether the account is UPDATED (Firestore already holds
+ * that baseline, or what a sync would change). A row-by-row table plus the drift list makes
+ * both checkable against a statement without reading any code.
+ */
+export function buildReport({ uid, email, operations, committed, generatedAt }) {
+  const checks = verifyReferencePortfolio()
+  const counts = summarizeReferenceSync(operations)
+  const rows = operations
+    .filter((operation) => operation.kind !== 'remove')
+    .map((operation) => {
+      const drift = referenceSyncDrift(operation)
+      return {
+        ticker: operation.record.ticker,
+        shares: operation.record.shares,
+        costBasisTotal: operation.record.costBasisTotal,
+        snapshotPrice: operation.record.snapshotPrice,
+        snapshotValue: operation.record.snapshotValue,
+        purchaseDate: operation.record.purchaseDate || null,
+        action: operation.kind === 'add' ? ACTIONS.add : drift.length ? ACTIONS.update : 'unchanged',
+        drift,
+      }
+    })
+    .sort((left, right) => left.ticker.localeCompare(right.ticker))
+  const removals = operations.filter((operation) => operation.kind === 'remove')
+  const changed = rows.filter((row) => row.action !== 'unchanged')
+  return {
+    generatedAt,
+    account: { uid, email: email || null },
+    baseline: {
+      version: REFERENCE_PORTFOLIO_VERSION,
+      pricesObservedAt: REFERENCE_PORTFOLIO_RECORDED_AT,
+      holdings: REFERENCE_PORTFOLIO.length,
+    },
+    brokerage: REFERENCE_PORTFOLIO_EXPECTED,
+    checks,
+    correct: checks.every((check) => check.ok),
+    inSync: changed.length === 0 && removals.length === 0,
+    committed,
+    counts,
+    rows,
+    removals: removals.map((operation) => ({ ticker: operation.record.ticker, id: operation.id })),
+  }
+}
+
+export function renderReportMarkdown(report) {
+  const mark = (ok) => (ok ? '✅' : '❌')
+  const dollars = (value) => (Number.isFinite(value) ? `$${value.toFixed(2)}` : '—')
+  const lines = []
+
+  lines.push('# Portfolio baseline verification', '')
+  lines.push(`- **Generated** ${report.generatedAt}`)
+  lines.push(`- **Account** \`${report.account.uid}\`${report.account.email ? ` (${report.account.email})` : ''}`)
+  lines.push(`- **Baseline** \`${report.baseline.version}\``)
+  lines.push(`- **Prices observed** ${report.baseline.pricesObservedAt} — this is when prices were read, not a purchase date`)
+  lines.push(`- **Mode** ${report.committed ? 'committed — Firestore was written' : 'dry run — nothing written'}`)
+  lines.push('')
+  lines.push(`## ${mark(report.correct)} Baseline ${report.correct ? 'reconciles to the brokerage' : 'does NOT reconcile — see failures below'}`)
+  lines.push('')
+  lines.push('Each row of the baseline checked against the figures transcribed from the Fidelity account summary.', '')
+  lines.push('| | Check | Detail |', '|---|---|---|')
+  report.checks.forEach((check) => lines.push(`| ${mark(check.ok)} | ${check.name} | ${check.detail} |`))
+  lines.push('')
+  lines.push(`## ${mark(report.inSync)} Account ${report.inSync ? 'already matches this baseline' : 'is out of date'}`)
+  lines.push('')
+  lines.push(`${report.counts.added} to add · ${report.counts.updated} already stored · ${report.counts.removed} to remove`)
+  lines.push('')
+
+  if (report.inSync) {
+    lines.push('Every stored holding already matches the baseline. A sync would change nothing.', '')
+  } else {
+    lines.push('### What a sync would change', '')
+    lines.push('| Ticker | Action | Change |', '|---|---|---|')
+    report.rows.filter((row) => row.action !== 'unchanged').forEach((row) => {
+      lines.push(`| ${row.ticker} | ${row.action} | ${row.action === 'add' ? 'new holding' : driftText(row.drift)} |`)
+    })
+    report.removals.forEach((row) => lines.push(`| ${row.ticker} | remove | not present in the export |`))
+    lines.push('')
+  }
+
+  lines.push('## Holdings', '')
+  lines.push('| Ticker | Shares | Cost basis | Price | Value | Bought | State |', '|---|---:|---:|---:|---:|---|---|')
+  report.rows.forEach((row) => {
+    lines.push(`| ${row.ticker} | ${row.shares} | ${dollars(row.costBasisTotal)} | ${dollars(row.snapshotPrice)} `
+      + `| ${dollars(row.snapshotValue)} | ${row.purchaseDate || '—'} | ${row.action} |`)
+  })
+  const cost = report.rows.reduce((sum, row) => sum + (row.costBasisTotal || 0), 0)
+  const value = report.rows.reduce((sum, row) => sum + (row.snapshotValue || 0), 0)
+  lines.push(`| **Total** | | **${dollars(cost)}** | | **${dollars(value)}** | | ${report.rows.length} holdings |`)
+  lines.push('')
+  lines.push(`Money market (FZFXX, not tracked): ${dollars(report.brokerage.moneyMarketValue)} · `
+    + `account total per Fidelity: **${dollars(report.brokerage.accountTotal)}**`)
+  lines.push('')
+  const undated = report.rows.filter((row) => !row.purchaseDate)
+  if (undated.length) {
+    lines.push(`Undated holdings — no buy in the supplied transaction history, so since-purchase `
+      + `measures stay unavailable for them: **${undated.map((row) => row.ticker).join(', ')}**`, '')
+  }
+  return lines.join('\n')
+}
+
+async function emitReport(options, { uid, operations, committed }) {
+  if (!options.report) return
+  const report = buildReport({
+    uid,
+    email: options.email,
+    operations,
+    committed,
+    generatedAt: new Date().toISOString(),
+  })
+  const asJson = options.report !== '-' && options.report.endsWith('.json')
+  const body = asJson ? `${JSON.stringify(report, null, 2)}\n` : `${renderReportMarkdown(report)}\n`
+  if (options.report === '-') {
+    console.log(`\n${body}`)
+    return
+  }
+  await writeFile(options.report, body, 'utf8')
+  console.log(`\nReport written to ${options.report}`
+    + ` — baseline ${report.correct ? 'reconciles' : 'DOES NOT reconcile'},`
+    + ` account ${report.inSync ? 'already matches' : 'out of date'}.`)
+}
+
 export async function main() {
   const options = parseArguments(process.argv.slice(2))
   if (options.help) {
@@ -98,6 +239,7 @@ export async function main() {
   --email <address>   account to sync, resolved to a uid via Firebase Auth
   --uid <id>          account to sync, by uid
   --commit            actually write (default is a dry run that writes nothing)
+  --report <path>     write a verification report (.md or .json; - for stdout)
   --help              this message
 
 Reference baseline: ${REFERENCE_PORTFOLIO_VERSION} (${REFERENCE_PORTFOLIO.length} holdings)`)
@@ -136,6 +278,7 @@ Reference baseline: ${REFERENCE_PORTFOLIO_VERSION} (${REFERENCE_PORTFOLIO.length
   }
 
   if (!options.commit) {
+    await emitReport(options, { uid, operations, committed: false })
     console.log('\nDry run — nothing written. Re-run with --commit to apply.')
     if (counts.removed) {
       console.log(`Note: --commit deletes ${counts.removed} stored holding${counts.removed === 1 ? '' : 's'} absent from the export.`)
@@ -169,6 +312,8 @@ Reference baseline: ${REFERENCE_PORTFOLIO_VERSION} (${REFERENCE_PORTFOLIO.length
 
   console.log(`\nCommitted ${writes} writes at ${importedAt}.`)
   console.log(`Account marked as reconciled to ${REFERENCE_PORTFOLIO_VERSION}; the app will not re-run its own sync for this version.`)
+  // Reported against the pre-commit plan, so the drift section says what this run changed.
+  await emitReport(options, { uid, operations, committed: true })
 }
 
 // Guarded so the module can be imported for testing without running a sync.

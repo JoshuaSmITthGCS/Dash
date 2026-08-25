@@ -36,7 +36,8 @@ npm test -- src/lib/scoreBands.test.js       # single file
 npm test -- -t "some test name"                # single test by name
 npm run docs:breakdown                          # regenerate APP-COMPLETE-BREAKDOWN.md from source
 npm run portfolio:sync -- --email you@example.com    # dry-run the Fidelity baseline against a
-                                                      # Firestore account; add --commit to write
+                                                      # Firestore account; add --commit to write,
+                                                      # --report <path> for a verification report
 ```
 
 Tests are colocated with source (`Foo.jsx` + `Foo.test.jsx`), except `netlify/functions/*.mjs`
