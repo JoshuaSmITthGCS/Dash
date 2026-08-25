@@ -261,4 +261,38 @@ describe('PoliticalTrading page', () => {
 
     expect(screen.queryByText('Top disclosed signals')).not.toBeInTheDocument()
   })
+
+  it('renders the top-10 unusual-stocks panel from the published top_tickers block', () => {
+    useData.mockReturnValue({
+      data: {
+        results: [trade()],
+        top_tickers: [
+          { rank: 1, ticker: 'WEIRD', asset_description: 'Weird Co', trade_count: 3,
+            buy_count: 3, sell_count: 0, unique_politicians: 3,
+            politicians: ['Jane Doe', 'John Smith', 'Ana Lee'],
+            disclosed_volume_midpoint: 105000, max_single_trade_amount_upper: 50000,
+            flags: ['CLUSTER_TRADE'] },
+        ],
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
+
+    expect(screen.getByText('Top 10 unusual stocks')).toBeVisible()
+    expect(screen.getByText('WEIRD')).toBeVisible()
+    fireEvent.click(screen.getByText('WEIRD').closest('summary'))
+    expect(screen.getByText('Weird Co')).toBeVisible()
+    fireEvent.click(screen.getByText('3').closest('summary'))
+    expect(screen.getByText(/Jane Doe, John Smith, Ana Lee/)).toBeVisible()
+    expect(screen.getByText((_, el) => el.className === 'chip' && el.textContent === 'Cluster trade')).toBeVisible()
+  })
+
+  it('omits the top-tickers panel entirely when nothing published qualifies', () => {
+    useData.mockReturnValue({ data: { results: [trade()], top_tickers: [] }, loading: false, error: null })
+
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
+
+    expect(screen.queryByText('Top 10 unusual stocks')).not.toBeInTheDocument()
+  })
 })

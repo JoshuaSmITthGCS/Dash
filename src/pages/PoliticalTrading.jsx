@@ -108,6 +108,54 @@ function SignalsPanel({ signals }) {
   )
 }
 
+// top_ticker_aggregates()'s per-stock leaderboard: every disclosed trade in the window
+// rolled up by ticker, so a stock several different filers quietly bought in separate
+// tranches ranks alongside one filer's single outsized trade - display-only, same
+// disclaimer as SignalsPanel above.
+function TopTickersPanel({ tickers }) {
+  if (!tickers?.length) return null
+  return (
+    <div className="card political-signals" aria-label="Top 10 unusual stocks">
+      <div className="political-signals-head">
+        <h2 className="political-signals-title">Top 10 unusual stocks</h2>
+        <span className="political-signals-note">
+          Every disclosed Congress and executive-branch trade this window, rolled up per stock by disclosed
+          volume, how many distinct filers traded it, and clustering/novelty flags – not a score, not advice.
+        </span>
+      </div>
+      <DataTable
+        rows={tickers}
+        getKey={(row) => row.ticker}
+        columns={[
+          { key: 'rank', label: '#', cell: (row) => <span className="mono">{row.rank}</span> },
+          { key: 'symbol', label: 'Stock', cell: (row) => (
+            <details className="trade-identity-reveal">
+              <summary><b className="mono">{row.ticker}</b></summary>
+              <span><b>{row.asset_description || 'Issuer unavailable'}</b></span>
+            </details>) },
+          { key: 'disclosed_volume_midpoint', label: 'Disclosed volume', numeric: true,
+            cell: (row) => <span className="mono">{compactMoney(row.disclosed_volume_midpoint)}</span> },
+          { key: 'max_single_trade_amount_upper', label: 'Biggest single trade', numeric: true,
+            cell: (row) => <span className="mono">{compactMoney(row.max_single_trade_amount_upper)}</span> },
+          { key: 'trade_count', label: 'Trades', numeric: true, cell: (row) => (
+            <span className="mono">{`${row.trade_count} (${row.buy_count} buy / ${row.sell_count} sell)`}</span>) },
+          { key: 'unique_politicians', label: 'Distinct filers', numeric: true, cell: (row) => (
+            <details className="trade-identity-reveal">
+              <summary><span className="mono">{row.unique_politicians}</span></summary>
+              <span>{(row.politicians || []).join(', ') || 'Filer unavailable'}</span>
+            </details>) },
+          { key: 'flags', label: 'Flags', sortable: false, cell: (row) => <FlagChips flags={row.flags} /> },
+        ]}
+        mobile={{
+          titleColumn: 'symbol',
+          title: (row) => row.ticker,
+          subtitle: (row) => `${compactMoney(row.disclosed_volume_midpoint)} disclosed · ${row.unique_politicians} filer(s)`,
+        }}
+      />
+    </div>
+  )
+}
+
 export default function PoliticalTrading() {
   const { data, loading, error, reload } = useData('screens/congress-trades.json')
   const refresh = useScreenRefresh('congress', reload)
@@ -183,6 +231,7 @@ export default function PoliticalTrading() {
       )}
 
       <SignalsPanel signals={data?.signals} />
+      <TopTickersPanel tickers={data?.top_tickers} />
 
       {summary && (
         <div className="grid congress-kpi-grid">

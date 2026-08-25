@@ -88,6 +88,20 @@ NOTABLE_SIGNAL_FLAG_WEIGHTS = {
     "CONCENTRATED_SIZE": 1.0,
 }
 
+# top_ticker_aggregates() leaderboard - unlike notable_signals (one row per ticker, the
+# single most-notable disclosure), this rolls up EVERY disclosed trade in the window per
+# symbol, so a stock ten different representatives quietly bought in $15k tranches ranks
+# on the same footing as one representative's single $1M+ trade.
+TOP_TICKER_TOP_N = 10
+# Aggregate disclosed volume (sum of each trade's amount-range midpoint) at which the size
+# component saturates at 1.0. Higher than NOTABLE_SIGNAL_SIZE_REFERENCE on purpose - this is
+# a sum across a ticker's whole window of trades, not one disclosure.
+TOP_TICKER_SIZE_REFERENCE = 3_000_000
+# Distinct filers trading the same symbol at which the "how many different people bought
+# this" component saturates at 1.0. A single trader's repeated trades in a name contributes
+# nothing here - that is what CLUSTER_TRADE already measures per-trade.
+TOP_TICKER_POLITICIAN_DIVERSITY_REFERENCE = 5
+
 
 def _path():
     os.makedirs(CONGRESS_DIR, exist_ok=True)
@@ -386,6 +400,123 @@ def notable_signals(rows, *, top_n=NOTABLE_SIGNAL_TOP_N, as_of=None):
     return ranked
 
 
+def _amount_midpoint(row):
+    lower, upper = row.get("amount_lower"), row.get("amount_upper")
+    if lower is None and upper is None:
+        return None
+    if lower is None:
+        return upper
+    if upper is None:
+        return lower
+    return (lower + upper) / 2
+
+
+def top_ticker_aggregates(rows, *, top_n=TOP_TICKER_TOP_N, as_of=None):
+    """A per-stock "unusual activity" leaderboard, aggregated across every disclosed trade
+    in the window for that symbol - Congress and the executive branch pooled together.
+
+    Unlike ``notable_signals`` (one row per ticker: the single most-notable disclosure),
+    this rolls every trade in a symbol up into one row, so a stock several different
+    filers quietly bought in separate small tranches - the "weird volume" case a single
+    largest-trade leaderboard can't surface - ranks on the same footing as one filer's
+    single outsized trade.
+
+    Ranked on three things, each display-only (never fed to advisor_engine, same as
+    ``notable_signals``): aggregate disclosed dollar volume (sum of each trade's
+    amount-range midpoint - the least-wrong single number from a range-only disclosure,
+    same convention ``PoliticalTrading.jsx``'s ``monthlyVolume`` already uses), how many
+    *distinct* filers traded the name (a cluster of otherwise-unrelated buyers is a
+    stronger tell than one prolific trader repeating itself - see
+    ``TOP_TICKER_POLITICIAN_DIVERSITY_REFERENCE``), and the same unusual-activity flags
+    ``classify`` already computes (``NOVEL_TICKER``/``EXTRAORDINARY_BUY`` for an obscure
+    company nobody would otherwise notice, ``CLUSTER_TRADE`` for several filers within two
+    weeks, ``CONCENTRATED_SIZE`` for individually large disclosures), weighted once per
+    distinct flag *present* rather than once per trade carrying it - a single clustered
+    event already inflates ``trade_count`` and ``unique_politicians`` on its own, and
+    counting its flag once per participating row would double it a third time.
+
+    Scaled by the same freshness decay ``notable_signals`` uses, keyed off the ticker's
+    most recently disclosed trade, so a name that went quiet months ago falls out of the
+    leaderboard even if its historical volume was large.
+    """
+    from insider_signal import decay  # local import: same lazy pattern as notable_signals
+
+    as_of_date = as_of or date.today()
+    buckets = {}
+    for row in rows:
+        symbol = row.get("symbol")
+        if not symbol:
+            continue
+        bucket = buckets.setdefault(symbol, {
+            "ticker": symbol, "asset_description": None, "trade_count": 0,
+            "buy_count": 0, "sell_count": 0, "politicians": set(), "chambers": set(),
+            "flags_present": set(), "volume_midpoint": 0.0,
+            "max_single_trade_amount_upper": 0.0, "latest_disclosure_date": None,
+        })
+        bucket["trade_count"] += 1
+        if is_buy(row.get("transaction_type")):
+            bucket["buy_count"] += 1
+        elif is_sell(row.get("transaction_type")):
+            bucket["sell_count"] += 1
+        if row.get("representative"):
+            bucket["politicians"].add(row["representative"])
+        if row.get("chamber"):
+            bucket["chambers"].add(row["chamber"])
+        if row.get("asset_description") and not bucket["asset_description"]:
+            bucket["asset_description"] = row["asset_description"]
+        midpoint = _amount_midpoint(row)
+        if midpoint is not None:
+            bucket["volume_midpoint"] += midpoint
+        if row.get("amount_upper") is not None:
+            bucket["max_single_trade_amount_upper"] = max(
+                bucket["max_single_trade_amount_upper"], row["amount_upper"])
+        bucket["flags_present"].update(row.get("flags") or ())
+        disclosure_date = row.get("disclosure_date")
+        if disclosure_date and (bucket["latest_disclosure_date"] is None
+                                or disclosure_date > bucket["latest_disclosure_date"]):
+            bucket["latest_disclosure_date"] = disclosure_date
+
+    aggregates = []
+    for bucket in buckets.values():
+        when = bucket["latest_disclosure_date"]
+        try:
+            days_since = (as_of_date - date.fromisoformat(when)).days if when else None
+        except ValueError:
+            days_since = None
+        freshness = decay(days_since)
+        if freshness <= 0:
+            continue
+
+        size_component = min(1.0, bucket["volume_midpoint"] / TOP_TICKER_SIZE_REFERENCE)
+        diversity_component = min(
+            1.0, (len(bucket["politicians"]) - 1) / (TOP_TICKER_POLITICIAN_DIVERSITY_REFERENCE - 1))
+        flag_bonus = sum(NOTABLE_SIGNAL_FLAG_WEIGHTS.get(flag, 0.0) for flag in bucket["flags_present"])
+        rank_score = round((size_component + diversity_component + flag_bonus) * freshness, 4)
+        if rank_score <= 0:
+            continue
+
+        aggregates.append({
+            "ticker": bucket["ticker"],
+            "asset_description": bucket["asset_description"],
+            "trade_count": bucket["trade_count"],
+            "buy_count": bucket["buy_count"],
+            "sell_count": bucket["sell_count"],
+            "unique_politicians": len(bucket["politicians"]),
+            "politicians": sorted(bucket["politicians"]),
+            "chambers": sorted(bucket["chambers"]),
+            "disclosed_volume_midpoint": round(bucket["volume_midpoint"], 2),
+            "max_single_trade_amount_upper": bucket["max_single_trade_amount_upper"] or None,
+            "flags": sorted(bucket["flags_present"]),
+            "latest_disclosure_date": bucket["latest_disclosure_date"],
+            "rank_score": rank_score,
+        })
+
+    ranked = sorted(aggregates, key=lambda row: (-row["rank_score"], row["ticker"]))[:top_n]
+    for position, row in enumerate(ranked, 1):
+        row["rank"] = position
+    return ranked
+
+
 def is_equity_purchase(row):
     """A plain stock buy - excludes options (already their own flag) and bonds/munis,
     which have no meaningful daily price series to measure against.
@@ -664,6 +795,7 @@ def run():
                        "source_counts": source_counts},
         "summary": summary_stats(results),
         "signals": notable_signals(results, as_of=generated_at.date()),
+        "top_tickers": top_ticker_aggregates(results, as_of=generated_at.date()),
         "results": results,
     }
     save_json("screens/congress-trades.json", payload)
