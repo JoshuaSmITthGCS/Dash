@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 74,
+  "refreshes_observed": 75,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -16018,6 +16018,124 @@
           ],
           "score_delta": -0.3,
           "confidence_delta": 0.03
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-24T19:38:14.947668+00:00",
+      "current_refresh": "advisor-2026-08-25T12:25:00.765680+00:00",
+      "shared_tickers": 879,
+      "rank_turnover": {
+        "top_40": 0.35,
+        "top_100": 0.35
+      },
+      "tickers_with_availability_driven_change": 36,
+      "tickers_with_availability_driven_change_pct": 0.041,
+      "mean_abs_score_delta": 0.71,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "RLI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -11.6,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "LBRDK",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "ev_to_ebitda",
+            "free_cash_flow_yield",
+            "sales_multiple"
+          ],
+          "score_delta": -10.6,
+          "confidence_delta": 0.09
+        },
+        {
+          "ticker": "VNO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 9.6,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "DDS",
+          "metrics_with_value_change": [
+            "ev_to_ebitda"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -5.6,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "CMC",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 3.6,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "XPO",
+          "metrics_with_value_change": [
+            "ev_to_ebitda",
+            "net_debt_to_ebitda"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -3.1,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "NEM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 2.7,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "KBH",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 2.3,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "TGT",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 2.1,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "OLN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 2.0,
+          "confidence_delta": 0.04
         }
       ]
     }
