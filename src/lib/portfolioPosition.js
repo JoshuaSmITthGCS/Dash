@@ -1,5 +1,13 @@
 export const PER_SHARE_COST = 'per_share'
 
+// Number(null) is 0 and Number.isFinite(0) is true, so a bare Number.isFinite(Number(x)) reads
+// an absent value as a real zero. That matters here: a brokerage export states quantity and
+// cost but often no price and never a previous close, and those arrive as null. Treated as
+// zero they became a $0.00 price and a zero previous close that silently disabled every day
+// move -- the same guard the rest of the app uses (factorAnalytics, taxLots, portfolioAnalytics).
+const finite = (value) =>
+  value !== null && value !== '' && typeof value !== 'boolean' && Number.isFinite(Number(value))
+
 export function buildPortfolioPriceData(screenUniverse = [], portfolioCoverage = [], research = []) {
   return Object.fromEntries([...screenUniverse, ...portfolioCoverage, ...research]
     .filter((row) => row?.ticker && row.price != null)
@@ -29,17 +37,20 @@ export function mergePositionSnapshots(priceData, positions = [], publishedAt = 
   positions.forEach((position) => {
     const ticker = String(position?.ticker || '').trim().toUpperCase()
     const snapshotTime = Date.parse(position?.snapshotRecordedAt || '')
-    if (!ticker || !Number.isFinite(Number(position?.snapshotPrice))) return
+    if (!ticker || !finite(position?.snapshotPrice)) return
     const current = merged[ticker]
     const snapshotIsNewer = !Number.isFinite(publishedTime)
       || (Number.isFinite(snapshotTime) && snapshotTime >= publishedTime)
-    if (current?.portfolioQuote || (Number.isFinite(Number(current?.price)) && !snapshotIsNewer)) return
+    if (current?.portfolioQuote || (finite(current?.price) && !snapshotIsNewer)) return
     merged[ticker] = {
       ...(current || { ticker }),
       price: Number(position.snapshotPrice),
-      previousClose: Number.isFinite(Number(position.snapshotPreviousClose))
+      // Falls through to the row's own price history when the export carries no previous
+      // close, which is the normal case: dailyMove derives one from published closes, but
+      // only if this is genuinely absent rather than present-and-zero.
+      previousClose: finite(position.snapshotPreviousClose)
         ? Number(position.snapshotPreviousClose)
-        : current?.previousClose ?? null,
+        : finite(current?.previousClose) ? Number(current.previousClose) : null,
       positionSnapshot: true,
       quoteMarketTime: position.snapshotRecordedAt || null,
     }

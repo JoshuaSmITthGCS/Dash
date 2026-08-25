@@ -6,6 +6,7 @@ import {
   normalizePortfolioPosition,
   PER_SHARE_COST,
 } from './portfolioPosition'
+import { dailyMove } from './marketPresentation'
 
 describe('buildPortfolioPriceData', () => {
   it('uses screen-universe quotes as fallback and prefers full research', () => {
@@ -104,5 +105,46 @@ describe('normalizePortfolioPosition', () => {
     expect(unrelated.firestoreUpdates).toBeNull()
     expect(normalized.position.costBasis).toBe(200)
     expect(normalized.firestoreUpdates).toBeNull()
+  })
+})
+
+// Number(null) is 0 and Number.isFinite(0) is true, so an absent value read through a bare
+// finite check becomes a real zero. A brokerage export states quantity and cost but often no
+// price and never a previous close, so this is the normal case, not an edge one.
+describe('mergePositionSnapshots treats absent numbers as absent, not zero', () => {
+  const holding = (over = {}) => ({
+    ticker: 'INTU', shares: 1.055, snapshotPrice: 369.9147,
+    snapshotPreviousClose: null, snapshotRecordedAt: '2026-08-25T11:55:00.000Z', ...over,
+  })
+
+  it('leaves previousClose null when the export carries none', () => {
+    const merged = mergePositionSnapshots({}, [holding()], '2026-08-24T19:38:00.000Z')
+
+    expect(merged.INTU.previousClose).toBeNull()
+    expect(merged.INTU.price).toBeCloseTo(369.9147, 6)
+  })
+
+  // The whole point of leaving it null: dailyMove derives one from published closes, but only
+  // if it is genuinely absent. A zero looked present and disabled every day move instead.
+  it('lets the day move fall through to published closes', () => {
+    const research = [{ ticker: 'INTU', price: 370.83, history: { closes: [361.87, 367, 370.83] } }]
+    const merged = mergePositionSnapshots(
+      buildPortfolioPriceData([], [], research), [holding()], '2026-08-24T19:38:00.000Z',
+    )
+
+    expect(dailyMove(merged.INTU).available).toBe(true)
+    expect(dailyMove(merged.INTU).previousClose).toBe(367)
+  })
+
+  it('keeps a real previous close when the export does carry one', () => {
+    const merged = mergePositionSnapshots({}, [holding({ snapshotPreviousClose: 358.29 })], null)
+
+    expect(merged.INTU.previousClose).toBeCloseTo(358.29, 6)
+  })
+
+  // A holding with no price must stay unpriced rather than render as $0.00.
+  it('skips a holding whose price is absent instead of pricing it at zero', () => {
+    expect(mergePositionSnapshots({}, [holding({ snapshotPrice: null })], null).INTU).toBeUndefined()
+    expect(mergePositionSnapshots({}, [holding({ snapshotPrice: '' })], null).INTU).toBeUndefined()
   })
 })

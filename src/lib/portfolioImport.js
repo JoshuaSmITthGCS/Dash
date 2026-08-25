@@ -15,7 +15,9 @@ export const IMPORT_SCHEMA_VERSION = 1
 const TICKER_PATTERN = /^[A-Z][A-Z0-9.-]{0,9}$/
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
-const finite = (value) => Number.isFinite(Number(value))
+// Rejects null and '' rather than reading them as zero -- see the note in portfolioPosition.js.
+const finite = (value) =>
+  value !== null && value !== '' && typeof value !== 'boolean' && Number.isFinite(Number(value))
 const round = (value) => Math.round(value * 100) / 100
 
 /**
