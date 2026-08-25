@@ -247,3 +247,31 @@
    Visual upgrade: rolling sharpe fill
    ============================================================ */
 .rolling-sharpe-fill { vector-effect: non-scaling-stroke; }
+
+/* Uploading a holdings file. The plan is shown before anything is written, so this leans on
+   the same tokens as the edit sheet rather than introducing a second visual language. */
+.visually-hidden-input { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.import-preview { display: grid; gap: var(--sp-4); }
+.import-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: var(--sp-2-5); }
+.import-summary div { padding: var(--sp-2-5) var(--sp-3); border: 1px solid var(--border); border-radius: var(--control-radius); background: var(--bg-elev); }
+.import-summary span { display: block; margin-bottom: var(--sp-1); color: var(--text-faint); font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: .07em; }
+.import-summary strong { font: var(--fw-bold) var(--fs-lg) var(--font-display); }
+
+.import-mode { display: grid; gap: var(--sp-2); padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--control-radius); }
+.import-mode legend { padding: 0 var(--sp-1); color: var(--text-dim); font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: .07em; }
+.import-mode label { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-2-5); align-items: start; color: var(--text-dim); font-size: var(--fs-xs); line-height: 1.5; cursor: pointer; }
+.import-mode input { margin-top: 3px; accent-color: var(--accent); }
+.import-mode strong { color: var(--text); }
+
+.import-changes { display: grid; gap: var(--sp-2); }
+.import-changes > strong { font-size: var(--fs-sm); }
+.import-changes p { color: var(--text-faint); font-size: var(--fs-xs); }
+.import-changes ul { display: grid; gap: var(--sp-1); max-height: 40dvh; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+.import-changes li { display: grid; grid-template-columns: 68px 62px 1fr; gap: var(--sp-2); align-items: baseline; padding: var(--sp-1-5) 0; border-bottom: 1px solid var(--border); color: var(--text-dim); font-size: var(--fs-2xs); }
+.import-changes li > span:nth-child(2) { font: var(--fw-bold) var(--fs-xs) var(--font-mono); color: var(--text); }
+.import-action { padding: 2px var(--sp-1-5); border-radius: 6px; font: var(--fs-2xs) var(--font-mono); text-align: center; text-transform: uppercase; letter-spacing: .05em; }
+.import-action-add { background: color-mix(in srgb, var(--up) 14%, transparent); color: var(--up); }
+.import-action-update { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.import-action-remove { background: color-mix(in srgb, var(--down) 14%, transparent); color: var(--down); }
+
+.import-warning { padding: var(--sp-2-5) var(--sp-3); border: 1px solid color-mix(in srgb, var(--down) 35%, var(--border)); border-radius: var(--control-radius); background: color-mix(in srgb, var(--down) 8%, var(--bg-elev)); color: var(--down); font-size: var(--fs-xs); }

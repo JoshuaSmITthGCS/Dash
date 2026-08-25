@@ -15,6 +15,7 @@ import { nextPortfolioSort, PORTFOLIO_SORT_OPTIONS, sortPortfolioPositions } fro
 import { usePortfolioQuotes } from '../lib/usePortfolioQuotes'
 import { usePullToRefresh } from '../lib/usePullToRefresh'
 import PullToRefreshIndicator from '../components/PullToRefreshIndicator.jsx'
+import ImportHoldings from './portfolio/ImportHoldings.jsx'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import { currentHoldingsSeries } from '../lib/portfolioAnalytics.js'
@@ -44,7 +45,7 @@ export default function Portfolio({ view = 'summary' }) {
   const { data: iwmSnapshot, loading: iwmLoading, reload: reloadIwm } = useData('etf/IWM.json')
   const { data: ijrSnapshot, loading: ijrLoading, reload: reloadIjr } = useData('etf/IJR.json')
   const portfolio = useFirebasePortfolio()
-  const { loading: portfolioLoading, exportPortfolio, syncState } = portfolio
+  const { loading: portfolioLoading, exportPortfolio, applyPortfolioImport, syncState } = portfolio
   const previewPortfolio = import.meta.env.DEV
     && new window.URLSearchParams(window.location.search).get('portfolioPreview') === '1'
   const positions = previewPortfolio ? modelSettings.interface.mobile_preview_positions : portfolio.positions
@@ -180,6 +181,8 @@ export default function Portfolio({ view = 'summary' }) {
               <button className="secondary-button" onClick={refresh.requestReanalyze} disabled={refresh.refreshing}><Icon name="research" size={17} className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze portfolio'}</button>
               <button className="secondary-button" onClick={forms.handleReferenceSync}>Reapply Aug 25 Fidelity snapshot</button>
               <button className="secondary-button" onClick={exportPortfolio}><Icon name="download" size={17} />Export portfolio</button>
+              <ImportHoldings positions={positions} applyPortfolioImport={applyPortfolioImport}
+                onDone={forms.setSyncMessage} />
             </div>
           </details>
         </div>

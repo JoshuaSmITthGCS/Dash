@@ -286,7 +286,7 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
   }
 
   return {
-    syncMessage,
+    syncMessage, setSyncMessage,
     showAddForm, setShowAddForm, formData, setFormData, handleSubmit,
     handleReferenceSync, handlePurchaseDateChange,
     removingId, handleRemove,

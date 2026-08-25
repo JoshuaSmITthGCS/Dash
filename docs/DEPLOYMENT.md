@@ -52,6 +52,30 @@ Three functions, each independently authenticated:
   `alerts/{uid}/subscriptions` directly and correctly bypasses `firestore.rules` — that is
   expected server-trust behavior, not a rules gap (rules govern client SDK access only).
 
+## Uploading a holdings file
+
+The Portfolio page's **Data actions → Upload holdings file** reads a JSON file and writes it to
+Firestore. This is the general-purpose form of the baseline import: the same reconciliation,
+driven by a file rather than a constant compiled into the bundle, so a new brokerage export
+never needs a code change.
+
+The file is parsed and planned entirely in the browser first (`src/lib/portfolioImport.js`,
+pure and separately tested) and nothing is written until the plan on screen is confirmed. Two
+modes, because one of them deletes:
+
+- **Replace** — the file is the whole portfolio; holdings it omits are removed.
+- **Merge** — add and update only.
+
+Accepted shape is a JSON array of holdings, or an object with a `positions` array. Each holding
+needs `ticker`, `shares`, and either `costBasisTotal` or `costBasis` (per share); `purchaseDate`
+(`YYYY-MM-DD`), `price` and `value` are optional. Every problem in a file is reported at once
+rather than one per attempt, and a repeated ticker is refused rather than silently resolved.
+**Export portfolio** writes this same shape, so an export always imports back.
+
+A current file is served at `/holdings/fidelity-2026-08-25.json` and is covered by a test that
+fails if it stops matching the shipped baseline. An import stamps the reference-baseline marker,
+so the built-in Fidelity baseline will not reconcile a deliberate upload away.
+
 ## Portfolio baseline sync (CLI)
 
 `scripts/sync-portfolio-firebase.mjs` applies the Fidelity reference portfolio

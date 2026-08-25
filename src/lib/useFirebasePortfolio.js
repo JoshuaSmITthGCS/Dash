@@ -19,6 +19,7 @@ import {
   REFERENCE_PORTFOLIO_VERSION,
 } from './referencePortfolio'
 import { normalizePortfolioPosition, PER_SHARE_COST } from './portfolioPosition'
+import { buildPortfolioExport, planPortfolioImport } from './portfolioImport'
 
 const hiddenStorageKey = (userId) => `valuesignal.hiddenPositions.${userId}`
 // DECJ was a typo for DECK, which is a real holding and already tracked separately. No
@@ -108,47 +109,6 @@ export function useFirebasePortfolio() {
     } catch (error) {
       console.error('Migration error:', error)
       return false
-    }
-  }
-
-  // Load positions from Firestore
-  const loadPositions = async (userId) => {
-    try {
-      const positionsRef = collection(db, 'portfolios', userId, 'positions')
-      // Firestore orderBy excludes documents where the ordered field is missing. Some
-      // migrated and brokerage-synced positions predate purchaseDate, so ordering in the
-      // query made otherwise valid holdings disappear from the portfolio.
-      const snapshot = await getDocs(positionsRef)
-
-      const loadedPositions = []
-      const repairWrites = []
-      snapshot.forEach((snapshotDoc) => {
-        if (isRetiredReferencePosition(snapshotDoc.id, snapshotDoc.data())) {
-          repairWrites.push(deleteDoc(snapshotDoc.ref))
-          return
-        }
-        const { position, firestoreUpdates } = normalizePortfolioPosition(
-          snapshotDoc.id,
-          snapshotDoc.data(),
-        )
-        loadedPositions.push(position)
-        if (firestoreUpdates) {
-          repairWrites.push(setDoc(snapshotDoc.ref, firestoreUpdates, { merge: true }))
-        }
-      })
-      // The repaired value is already used in memory. Persist it best-effort so all devices
-      // converge without making a transient write failure hide the rest of the portfolio.
-      await Promise.allSettled(repairWrites)
-      loadedPositions.sort((left, right) =>
-        String(right.purchaseDate || right.addedAt || '').localeCompare(
-          String(left.purchaseDate || left.addedAt || '')
-        ))
-
-      setPositions(loadedPositions)
-      return loadedPositions
-    } catch (error) {
-      console.error('Failed to load positions:', error)
-      return []
     }
   }
 
@@ -340,66 +300,87 @@ export function useFirebasePortfolio() {
     }
   }
 
-  // Export portfolio (same as before, but from Firestore data)
+  // Written in the same shape importPortfolio reads, so a file this app produces can always
+  // be fed back into it -- on this account or another one.
   const exportPortfolio = () => {
     if (!currentUser) return
-
-    const data = {
-      exportDate: new Date().toISOString(),
-      userId: currentUser.uid,
-      userEmail: currentUser.email,
-      positions
-    }
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const document = buildPortfolioExport(positions, {
+      source: `ValueSignal portfolio export · ${currentUser.email || currentUser.uid}`,
+    })
+    const blob = new Blob([JSON.stringify(document, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `valuesignal-portfolio-${new Date().toISOString().split('T')[0]}.json`
-    a.click()
+    const link = window.document.createElement('a')
+    link.href = url
+    link.download = `valuesignal-portfolio-${new Date().toISOString().split('T')[0]}.json`
+    link.click()
     URL.revokeObjectURL(url)
   }
 
-  // Import portfolio
-  const importPortfolio = async (file) => {
-    if (!currentUser) {
-      alert('Firebase is not connected. Reconnect cloud data before importing a portfolio.')
-      return
-    }
+  /**
+   * Writes an already-parsed holdings file to Firestore.
+   *
+   * Parsing and planning happen in portfolioImport.js before this is called, so the caller can
+   * show exactly what will change and this only ever runs against a file already known to be
+   * valid. Writes go in batches because Firestore caps one at 500 operations, and each batch
+   * is committed in order so a partial failure leaves a prefix of the plan applied rather than
+   * an arbitrary scatter of it.
+   *
+   * The reference-baseline marker is stamped afterwards on purpose: an import is a deliberate
+   * statement about what is held, and without the marker the built-in Fidelity baseline would
+   * reconcile it away the next time the app loaded.
+   */
+  const applyPortfolioImport = async (parsed, mode = 'replace') => {
+    if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
+    if (!parsed?.ok) return { success: false, error: 'The file has not been validated.' }
 
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      try {
-        const data = JSON.parse(e.target.result)
-        if (!data.positions || !Array.isArray(data.positions)) {
-          alert('Invalid portfolio file format')
-          return
-        }
+    try {
+      const importedAt = new Date().toISOString()
+      const operations = planPortfolioImport(positions, parsed, mode)
+      const root = (name) => collection(db, 'portfolios', currentUser.uid, name)
 
-        const confirmed = window.confirm(
-          `Import ${data.positions.length} positions? This will add to your existing portfolio.`
-        )
-        if (!confirmed) return
-
-        // Import positions to Firestore
-        for (const position of data.positions) {
-          const positionId = position.id || `${position.ticker}-${Date.now()}-${Math.random()}`
-          await setDoc(doc(db, 'portfolios', currentUser.uid, 'positions', positionId), {
-            ...position,
-            id: positionId,
-            importedAt: new Date().toISOString()
-          })
-        }
-
-        // Reload positions
-        await loadPositions(currentUser.uid)
-        alert('Portfolio imported successfully!')
-      } catch (error) {
-        console.error('Import error:', error)
-        alert('Failed to import portfolio: ' + error.message)
+      for (let index = 0; index < operations.length; index += 450) {
+        const batch = writeBatch(db)
+        operations.slice(index, index + 450).forEach((operation) => {
+          const positionRef = doc(root('positions'), operation.id)
+          if (operation.kind === 'remove') {
+            batch.delete(positionRef)
+            return
+          }
+          const record = operation.kind === 'add'
+            ? { ...operation.record, id: operation.id, importedAt }
+            : { ...operation.record, importedAt }
+          batch.set(positionRef, record, { merge: operation.kind === 'update' })
+        })
+        await batch.commit()
       }
+
+      const summary = {
+        added: operations.filter((operation) => operation.kind === 'add').length,
+        updated: operations.filter((operation) => operation.kind === 'update').length,
+        removed: operations.filter((operation) => operation.kind === 'remove').length,
+      }
+      const closing = writeBatch(db)
+      closing.set(doc(root('activity'), `portfolio-imported-${Date.now()}`), {
+        type: 'portfolio_imported',
+        mode,
+        positionCount: parsed.positions.length,
+        source: parsed.meta.source || 'uploaded file',
+        recordedAt: importedAt,
+        ...summary,
+      })
+      closing.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), {
+        referencePortfolioVersion: REFERENCE_PORTFOLIO_VERSION,
+        referencePortfolioImportedAt: importedAt,
+        lastImportAt: importedAt,
+        ledgerComplete: false,
+      }, { merge: true })
+      await closing.commit()
+
+      return { success: true, ...summary }
+    } catch (error) {
+      console.error('Failed to import portfolio:', error)
+      return { success: false, error: error.message }
     }
-    reader.readAsText(file)
   }
 
   return {
@@ -411,7 +392,7 @@ export function useFirebasePortfolio() {
     updatePosition,
     clearAll,
     exportPortfolio,
-    importPortfolio,
+    applyPortfolioImport,
     syncReferencePortfolio
   }
 }
