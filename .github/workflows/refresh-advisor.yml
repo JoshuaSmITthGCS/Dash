@@ -22,9 +22,16 @@ on:
         # whole dispatch with a 422 if a required one is missing. The site's refresh
         # button calls this via netlify/functions/refresh-data.mjs, which predates this
         # input - required:true here would break every button click until that function
-        # is updated to match. `inputs.universe_scope || 'full'` below covers the blank.
+        # is updated to match. `inputs.universe_scope || 'fast'` below covers the blank.
+        #
+        # Defaults to fast: a manual reset is a "get me current prices/rankings now"
+        # click, not a request to re-run statement enrichment across the whole universe -
+        # that already happens once every morning on schedule (see the schedule comment
+        # below). Anyone who deliberately wants a full sweep by hand still gets one by
+        # picking `full` here (or the site's own explicit full-refresh control, which
+        # already sends universe_scope: 'full' regardless of this default).
         required: false
-        default: full
+        default: fast
         type: choice
         options:
           - full
@@ -44,22 +51,20 @@ on:
         type: string
   schedule:
     # GitHub cron is UTC. Trigger both EDT/EST candidates, then gate on New York time.
-    # Weekdays: all three slots (07:00, 12:00, 15:00 ET) are now full sweeps (all ~900
-    # stocks) - see the "Select the Eastern-time refresh window" step below for how
-    # that's enforced. This used to be one full sweep plus two fast (prior-top-100)
-    # refreshes; the fast slots were dropped in favor of always-full after a fast
-    # refresh was found to silently undo a chunk of the previous full sweep's effect -
-    # not by discarding the newly-enriched data (carry-forward preserves that), but by
-    # rescoring the whole cross-section against CrossSectionalNormalizer.from_published's
-    # STALE, previously-published normalization basis instead of refitting one fresh
-    # (full mode's fit_source: "current_full_refresh" vs fast mode's
-    # "prior_full_refresh" - see scorer.py/fetch_advisor.py). That produced a broad,
-    # roughly uniform score shift a few hours after every full sweep that reverted most
-    # of a fresh enrichment's top-40 reranking within one refresh cycle. Always-full
-    # keeps every run's normalization basis current instead of stale. The tradeoff is
-    # real: three full ~900-name sweeps a day costs roughly 3x the previous daily Yahoo
-    # request volume and runtime instead of one full sweep plus two much lighter ones -
-    # accepted deliberately, not overlooked.
+    # Weekdays: 07:00 ET is the one full sweep of the day (all ~900 stocks, statement
+    # enrichment included); 12:00 and 15:00 ET are fast refreshes limited to the prior
+    # top 100 plus portfolio holdings - see the "Select the Eastern-time refresh window"
+    # step below for how that's enforced. A fast refresh scores against
+    # CrossSectionalNormalizer.from_published's previously-published normalization fit
+    # rather than refitting one fresh (fit_source: "prior_full_refresh" vs a full
+    # sweep's "current_full_refresh" - see scorer.py/fetch_advisor.py); that basis only
+    # ever drifts within one intraday cadence before the next morning's full sweep
+    # refits it, which is why this stays a once-daily full sweep rather than running
+    # full on every slot. Manual dispatches (the site's refresh button, or a hand
+    # dispatch from the Actions tab) default to fast for the same reason a manual reset
+    # is "get me current prices now", not "re-run the whole enrichment pass" - pick
+    # `full` explicitly (or use the site's dedicated full-refresh control) to get one
+    # by hand.
     # Avoid minute zero, when GitHub documents that scheduled events are most likely to
     # be delayed or dropped under Actions load.
     #
@@ -72,25 +77,24 @@ on:
     #
     # Every day, not just weekdays (`* * *`, not `* * 1-5`): the gate step below only lets
     # the weekend 07:00 ET slot through (equity quotes don't move over the weekend, so
-    # there's no case for the 12:00/15:00 slots on a non-trading day), but Alpha Vantage,
-    # statement enrichment (10-Ks/10-Qs/8-Ks file on any day), SEC filings, and news don't
-    # stop either, so that single weekend run raises ALPHA_ENRICH_LIMIT to 25 - Alpha
-    # Vantage's real free-tier daily ceiling, not the 5-per-refresh weekday figure sized
-    # for the one weekday slot Alpha Vantage still runs on (07:00 ET; 12:00/15:00 stay
-    # Yahoo-only to keep the free-tier daily quota from being split three ways) - and
-    # paces calls with a 13s ALPHA_VANTAGE_CALL_DELAY (5 req/min limit) so that run is
-    # mainly a universe enrichment pass, not a mirror of the weekday cadence. Themes need
-    # no separate schedule entry -- build_theme_layer already runs unconditionally inside
+    # there's no case for the 12:00/15:00 fast-refresh slots), but Alpha Vantage, statement
+    # enrichment (10-Ks/10-Qs/8-Ks file on any day), SEC filings, and news don't stop
+    # either, so that single weekend run raises ALPHA_ENRICH_LIMIT to 25 - Alpha Vantage's
+    # real free-tier daily ceiling, not the 5-per-refresh weekday figure that's sized to be
+    # safe across three same-day weekday runs - and paces calls with a 13s
+    # ALPHA_VANTAGE_CALL_DELAY (5 req/min limit) so that run is mainly a universe
+    # enrichment pass, not a mirror of the weekday cadence. Themes need no separate
+    # schedule entry -- build_theme_layer already runs unconditionally inside
     # fetch_advisor.py's run() on every non-rescore refresh, so it fires on the weekend
     # run too.
     #
     #                    EDT (UTC-4)        EST (UTC-5)
     - cron: '7 11 * * *'  # 07:00 full sweep | 06:00 no-op
     - cron: '7 12 * * *'  # 08:00 no-op      | 07:00 full sweep
-    - cron: '7 16 * * *'  # 12:00 full sweep | 11:00 no-op
-    - cron: '7 17 * * *'  # 13:00 no-op      | 12:00 full sweep
-    - cron: '7 19 * * *'  # 15:00 full sweep | 14:00 no-op
-    - cron: '7 20 * * *'  # 16:00 no-op      | 15:00 full sweep
+    - cron: '7 16 * * *'  # 12:00 fast       | 11:00 no-op
+    - cron: '7 17 * * *'  # 13:00 no-op      | 12:00 fast
+    - cron: '7 19 * * *'  # 15:00 fast       | 14:00 no-op
+    - cron: '7 20 * * *'  # 16:00 no-op      | 15:00 fast
 
 permissions:
   contents: write
@@ -114,10 +118,7 @@ jobs:
     # figure was measured on (obscurer names miss Yahoo more often and fall through to the
     # slower EDGAR fallback). That put the projected full sweep near 70 minutes against a
     # 90-minute ceiling. A timeout publishes nothing at all - the commit step never runs -
-    # so the margin matters more than the minutes do. This budget now applies to every
-    # weekday slot (07:00/12:00/15:00 ET are all full sweeps - see the schedule comment
-    # above), not just one run a day; the concurrency group below still serializes runs
-    # rather than letting a late one overlap the next slot's start.
+    # so the margin matters more than the minutes do.
     timeout-minutes: 120
     env:
       ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
@@ -153,12 +154,6 @@ jobs:
           is_rescore=false
           alpha_enrich_limit=5
           alpha_call_delay=0
-          # True only for the one slot a day meant to carry the once-daily-only legs
-          # (the delisted-name price-archive leg, the Live v2 controlled validation) -
-          # decoupled from universe_mode because every weekday slot is a full sweep now
-          # (see the schedule comment above `on:`), and those two legs must still run
-          # once, not three times.
-          is_daily_archive=false
 
           # The Eastern hour this run was SCHEDULED for, derived from the cron entry that
           # fired rather than from `date` at execution time.
@@ -187,18 +182,13 @@ jobs:
 
           if [[ "${{ github.event_name }}" != "schedule" ]]; then
             should_run=true
-            universe_mode="${{ inputs.universe_scope || 'full' }}"
+            universe_mode="${{ inputs.universe_scope || 'fast' }}"
             window="manual ${{ inputs.refresh_mode }} / ${universe_mode} universe"
             if [[ "${{ inputs.refresh_mode }}" == "full-alpha" ]]; then
               alpha_disable=0
             elif [[ "${{ inputs.refresh_mode }}" == "rescore-only" ]]; then
               is_rescore=true
             fi
-            # A manual full-scope dispatch is the same "give this one run the once-daily
-            # legs" case as the scheduled once-a-day slot below - preserves the pre-
-            # always-full behavior (this was the only signal those two steps had) for
-            # anyone dispatching a full sweep by hand.
-            [[ "$universe_mode" == "full" ]] && is_daily_archive=true
           else
             if ! local_hour="$(scheduled_hour_et '${{ github.event.schedule }}')"; then
               # An unparseable cron expression must not cost a refresh: fall back to the
@@ -228,7 +218,6 @@ jobs:
                 universe_mode=full
                 alpha_enrich_limit=25
                 alpha_call_delay=13
-                is_daily_archive=true
                 window="${local_hour}:00 ET - weekend full sweep + enrichment (~900 names, Alpha Vantage enabled, enrich limit 25)"
               else
                 window="${local_hour}:00 ET - weekend, outside the once-daily refresh window, nothing to do"
@@ -239,13 +228,12 @@ jobs:
                   should_run=true
                   alpha_disable=0
                   universe_mode=full
-                  is_daily_archive=true
                   window="${local_hour}:00 ET - full sweep (~900 names, Alpha Vantage enabled)"
                   ;;
                 12|15)
                   should_run=true
-                  universe_mode=full
-                  window="${local_hour}:00 ET - full sweep (~900 names, Yahoo-only)"
+                  universe_mode=fast
+                  window="${local_hour}:00 ET - fast refresh (prior top 100 plus holdings)"
                   ;;
                 *)
                   window="${local_hour}:00 ET - outside every refresh window, nothing to do"
@@ -256,7 +244,6 @@ jobs:
           echo "should_run=$should_run" >> "$GITHUB_OUTPUT"
           echo "is_rescore=$is_rescore" >> "$GITHUB_OUTPUT"
           echo "universe_mode=$universe_mode" >> "$GITHUB_OUTPUT"
-          echo "is_daily_archive=$is_daily_archive" >> "$GITHUB_OUTPUT"
           echo "ALPHA_DISABLE=$alpha_disable" >> "$GITHUB_ENV"
           echo "ADVISOR_UNIVERSE_MODE=$universe_mode" >> "$GITHUB_ENV"
           echo "ALPHA_ENRICH_LIMIT=$alpha_enrich_limit" >> "$GITHUB_ENV"
@@ -273,7 +260,6 @@ jobs:
             echo "| Cron entry | \`${{ github.event.schedule || 'n/a' }}\` |"
             echo "| Pipeline runs | $should_run |"
             echo "| Universe mode | $universe_mode |"
-            echo "| Once-daily legs (price archive, Live v2) | $is_daily_archive |"
             echo "| Alpha Vantage enrich limit | $alpha_enrich_limit (call delay ${alpha_call_delay}s) |"
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/checkout@v4
@@ -313,13 +299,11 @@ jobs:
         # network calls - so a failure here shouldn't take down the rest of the refresh.
         run: python pipeline/build_momentum_screen.py || echo "::warning::Momentum screen build failed; keeping previous momentum.json"
       - name: Archive today's closes (survivorship price archive)
-        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true' && steps.refresh_window.outputs.is_daily_archive == 'true'
-        # Gated on is_daily_archive, not universe_mode == 'full': every weekday slot is a
-        # full sweep now (see the schedule comment above `on:`), but this leg still must
-        # run only once a day. The live-universe leg is free (same warmed cache as the
-        # Momentum screen above), but the recently-delisted leg makes real Yahoo calls by
-        # design (see price_archive.py DELISTING_RETENTION_DAYS), and that cost shouldn't
-        # be paid three times a day.
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true' && steps.refresh_window.outputs.universe_mode == 'full'
+        # Only on the once-daily full sweep, not the fast top-100 refreshes: the live
+        # universe leg is free (same warmed cache as the Momentum screen above), but the
+        # recently-delisted leg makes real Yahoo calls by design (see price_archive.py
+        # DELISTING_RETENTION_DAYS), and that cost shouldn't be paid three times a day.
         run: python pipeline/price_archive.py daily || echo "::warning::Price archive run failed; archive_health will reflect the gap"
       - name: Build multi-day options, covered-call, cash-secured-put, and short-term-trades screens from one shared chain fetch per ticker
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
@@ -414,12 +398,7 @@ jobs:
           python pipeline/signal_metrics.py
           python pipeline/build_research_evidence.py
       - name: Refresh the controlled Live v2 representative validation
-        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_daily_archive == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
-        # Gated on is_daily_archive, not universe_mode == 'full' (every weekday slot is a
-        # full sweep now - see the schedule comment above `on:`), to keep this at its
-        # original once-a-day cadence rather than tripling for no measurement gain: it's a
-        # fixed 10-ticker representative check, not a load concern, but a validation
-        # artifact compared run-over-run is more useful sampled once daily than thrice.
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.universe_mode == 'full' && steps.refresh_window.outputs.is_rescore != 'true'
         # The script always writes explicit per-ticker failures before returning nonzero.
         # Keep that evidence and publish it rather than aborting before the commit step.
         run: python pipeline/live_v2_validation.py || echo "::warning::One or more controlled Live v2 checks failed; publishing the failure artifact"
