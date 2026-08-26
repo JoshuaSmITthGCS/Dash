@@ -15,6 +15,7 @@ function FakeLabelFrame({ parts, capabilityId, children }) {
       <p data-testid="confidence">{parts.confidence.level}</p>
       {parts.reason && <p data-testid="reason">{parts.reason}</p>}
       {parts.previous != null && <p data-testid="previous">{parts.previous}</p>}
+      <p data-testid="headline">{parts.headline.headline}</p>
       {children}
     </section>
   )
@@ -43,6 +44,12 @@ describe('WallLabel', () => {
   it('passes through a genuinely published previous value, additive and optional', () => {
     renderWithMedium(<WallLabel metric={{ id: 'x', label: 'X', status: 'ready', previous_value: 0.42 }} />)
     expect(screen.getByTestId('previous')).toHaveTextContent('0.42')
+  })
+
+  it('derives a headline via headlineFor — never a declarative sentence for an accumulating metric', () => {
+    renderWithMedium(<WallLabel metric={{ id: 'x', label: 'Rank IC', status: 'provisional', observations: 17, required_observations: 24, cadence: 'Weekly' }} />)
+    expect(screen.getByTestId('headline')).toHaveTextContent('Is')
+    expect(screen.getByTestId('headline')).toHaveTextContent('17 of 24')
   })
 
   it('never fabricates a previous value when the metric does not publish one', () => {

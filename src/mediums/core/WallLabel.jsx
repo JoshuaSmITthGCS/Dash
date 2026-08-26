@@ -1,4 +1,5 @@
 import { canonicalMetricState, confidenceOf } from './states.js'
+import { headlineFor } from './headline.js'
 import { cap, warnIfUnknownCapability } from './capability.js'
 import { useMedium } from './MediumContext.jsx'
 
@@ -42,6 +43,10 @@ export default function WallLabel({ metric, action = null, capabilityId = null, 
     // genuinely publishes one — a medium's erasure/prior-value device (Chalkboard's smudge)
     // must never fabricate a "previous" reading that wasn't actually published.
     previous: metric?.previous_value ?? metric?.detail?.previous_value ?? null,
+    // Precomputed here (not in the medium) so headline.js's declarative/interrogative grammar
+    // stays testable independent of any renderer — Newspaper's primary consumer, but additive
+    // and available to any medium's LabelFrame.
+    headline: headlineFor(metric),
   }
 
   const LabelFrame = manifest?.components?.LabelFrame
