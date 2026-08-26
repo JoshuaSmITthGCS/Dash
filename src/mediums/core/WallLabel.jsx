@@ -37,6 +37,11 @@ export default function WallLabel({ metric, action = null, capabilityId = null, 
     confidence,
     action,
     reason: canonical.reason,
+    // Optional, additive: a metric's own detail block sometimes carries a prior observation
+    // (e.g. signal_metrics.json rows' `detail.series`). Passed through only when the row
+    // genuinely publishes one — a medium's erasure/prior-value device (Chalkboard's smudge)
+    // must never fabricate a "previous" reading that wasn't actually published.
+    previous: metric?.previous_value ?? metric?.detail?.previous_value ?? null,
   }
 
   const LabelFrame = manifest?.components?.LabelFrame

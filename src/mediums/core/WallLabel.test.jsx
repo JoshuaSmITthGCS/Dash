@@ -14,6 +14,7 @@ function FakeLabelFrame({ parts, capabilityId, children }) {
       <p data-testid="state">{parts.state.state}</p>
       <p data-testid="confidence">{parts.confidence.level}</p>
       {parts.reason && <p data-testid="reason">{parts.reason}</p>}
+      {parts.previous != null && <p data-testid="previous">{parts.previous}</p>}
       {children}
     </section>
   )
@@ -37,6 +38,16 @@ describe('WallLabel', () => {
     expect(screen.getByTestId('medium-line')).toHaveTextContent('correlation · Weekly')
     expect(screen.getByTestId('read')).toHaveTextContent('Spearman correlation')
     expect(screen.getByTestId('state')).toHaveTextContent('breached')
+  })
+
+  it('passes through a genuinely published previous value, additive and optional', () => {
+    renderWithMedium(<WallLabel metric={{ id: 'x', label: 'X', status: 'ready', previous_value: 0.42 }} />)
+    expect(screen.getByTestId('previous')).toHaveTextContent('0.42')
+  })
+
+  it('never fabricates a previous value when the metric does not publish one', () => {
+    renderWithMedium(<WallLabel metric={{ id: 'x', label: 'X', status: 'ready' }} />)
+    expect(screen.queryByTestId('previous')).not.toBeInTheDocument()
   })
 
   it('never emits a numeral or label the metric did not publish (blank fields stay blank)', () => {
