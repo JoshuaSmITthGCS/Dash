@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-26T03:59:14.720172+00:00",
+  "generated_at": "2026-08-26T12:30:25.182556+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "acc20ba0497c2c93d24254bd73119752881d1dbc",
+  "code_commit_hash": "b3885964dcda8a82a03bac5925589e5f2a9aebca",
   "config_hash": "ae4d188f2c6d6808ee2edcf2da308b051842737c393d266691484a1203456902",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -879,7 +879,7 @@
             "total": 40
           },
           "financial_health": {
-            "scored": 29,
+            "scored": 31,
             "total": 40
           },
           "growth": {
@@ -909,7 +909,7 @@
             "total": 838
           },
           "financial_health": {
-            "scored": 801,
+            "scored": 799,
             "total": 838
           },
           "growth": {
@@ -933,8 +933,8 @@
       "score": {
         "enriched": {
           "n": 874,
-          "mean": 63.61,
-          "median": 64.9,
+          "mean": 63.74,
+          "median": 64.95,
           "stdev": 11.62
         },
         "non_enriched": {
@@ -948,15 +948,18 @@
         "enriched": {
           "Technology": 152,
           "Industrials": 138,
-          "Financial Services": 124,
+          "Financial Services": 121,
           "Consumer Cyclical": 113,
           "Healthcare": 100,
           "Consumer Defensive": 56,
           "Real Estate": 52,
-          "Energy": 39,
-          "Basic Materials": 38,
+          "Energy": 38,
+          "Basic Materials": 37,
           "Utilities": 34,
           "Communication Services": 27,
+          "FINANCIAL SERVICES": 3,
+          "BASIC MATERIALS": 1,
+          "ENERGY": 1,
           "Unknown": 1
         },
         "non_enriched": {
@@ -967,7 +970,7 @@
       },
       "market_cap_comparison": {
         "status": "not_measurable",
-        "rows_with_market_cap": 38,
+        "rows_with_market_cap": 37,
         "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
       },
       "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
@@ -977,8 +980,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "acc20ba0497c2c93d24254bd73119752881d1dbc",
+    "git_commit_sha": "b3885964dcda8a82a03bac5925589e5f2a9aebca",
     "config_hash": "ae4d188f2c6d6808ee2edcf2da308b051842737c393d266691484a1203456902",
-    "generated_at": "2026-08-26T03:59:14.720172+00:00"
+    "generated_at": "2026-08-26T12:30:25.182556+00:00"
   }
 }
