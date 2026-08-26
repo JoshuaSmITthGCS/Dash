@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 78,
+  "refreshes_observed": 79,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -16374,6 +16374,124 @@
       "mean_abs_score_delta": 0.42,
       "mean_abs_confidence_delta": 0.0,
       "largest_availability_driven_movers": []
+    },
+    {
+      "previous_refresh": "advisor-2026-08-25T19:55:30.838389+00:00",
+      "current_refresh": "advisor-2026-08-26T03:59:14.720172+00:00",
+      "shared_tickers": 878,
+      "rank_turnover": {
+        "top_40": 0.1,
+        "top_100": 0.1
+      },
+      "tickers_with_availability_driven_change": 39,
+      "tickers_with_availability_driven_change_pct": 0.044,
+      "mean_abs_score_delta": 0.71,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "RLI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 11.3,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "LBRDK",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "ev_to_ebitda",
+            "free_cash_flow_yield",
+            "sales_multiple"
+          ],
+          "score_delta": 10.6,
+          "confidence_delta": -0.09
+        },
+        {
+          "ticker": "VNO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -8.9,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "DDS",
+          "metrics_with_value_change": [
+            "ev_to_ebitda"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 5.6,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "SNX",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 4.1,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "CMC",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -3.7,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "BBY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 3.3,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "DAL",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 2.9,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "WDC",
+          "metrics_with_value_change": [
+            "ev_to_ebitda",
+            "ev_to_fcf"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -2.8,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "GAP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 2.5,
+          "confidence_delta": -0.03
+        }
+      ]
     }
   ],
   "peer_group_recomposition": {
