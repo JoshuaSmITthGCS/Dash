@@ -6,7 +6,8 @@ import { useFirebasePortfolio } from '../../../lib/useFirebasePortfolio.js'
 import { buildPortfolioPriceData, mergePositionSnapshots } from '../../../lib/portfolioPosition.js'
 import { currentHoldingsSeries, returnOverWindow } from '../../../lib/portfolioAnalytics.js'
 import { useMedium } from '../MediumContext.jsx'
-import { promotionDisclosure } from '../states.js'
+import { useRenderer } from '../useRenderer.js'
+import { promotionDisclosure, canonicalArtifactState, confidenceOf } from '../states.js'
 import { cap } from '../capability.js'
 import { EVIDENCE_IDS } from './capabilityIds.js'
 import WallLabel from '../WallLabel.jsx'
@@ -65,6 +66,21 @@ const backtestStatusLabel = (row) => {
   if (row.status === 'measured') return null
   if (row.status === 'unavailable') return 'Not yet run'
   return 'Insufficient history'
+}
+
+/**
+ * Feeds `chart.evidence.backtests-dotplots` (`renderer.dotPlot`). Mirrors the `dotRows` mapping
+ * `BacktestComparison.jsx` builds before handing rows to `DotPlot` — measured methods only, mean
+ * IC for the rank-quality group (already a small ratio, no rescale) and success rate rescaled to
+ * a 0-100 percentage everywhere else — but returns bare numbers, since the chart contract's
+ * `dotPlot` renderer (see any medium's `renderer/index.jsx`) takes a plain `values` array rather
+ * than the label-carrying `rows` shape `DotPlot` itself expects.
+ */
+function backtestDotValues(group, rows) {
+  const measured = rows.filter((row) => row.status === 'measured')
+  return group === 'rank_quality'
+    ? measured.filter((row) => row.mean_ic != null).map((row) => row.mean_ic)
+    : measured.filter((row) => row.success_rate != null).map((row) => row.success_rate * 100)
 }
 
 function groupBacktestMethods(methods) {
@@ -203,6 +219,7 @@ function BacktestSuccessCell({ row }) {
 }
 
 function BacktestsSection({ comparison, optionsBacktest, loading, Container }) {
+  const renderer = useRenderer()
   const [showCaveats, setShowCaveats] = useState(false)
 
   if (loading) return <div role="status" aria-live="polite">Loading…</div>
@@ -216,6 +233,13 @@ function BacktestsSection({ comparison, optionsBacktest, loading, Container }) {
   const caveats = methods.filter((row) => (row.caveats || []).length)
   const groups = groupBacktestMethods(methods)
   const metricRows = backtestMetricRows(comparison, optionsBacktest)
+  // chart.evidence.backtests-dotplots: one artifact (backtest-comparison.json, which does publish
+  // a real top-level `status`), so every group's dot plot shares the same canonicalArtifactState
+  // call rather than re-deriving per group. No numeric confidence signal exists on this artifact
+  // (no explicit `confidence`, tStat, or classification field), so confidenceOf({}) is the same
+  // neutral-default call MarketsScreen's growth chart makes for the same reason.
+  const dotplotState = canonicalArtifactState(comparison)
+  const dotplotConfidence = confidenceOf({})
 
   return (
     <div data-testid="backtests-section">
@@ -236,18 +260,30 @@ function BacktestsSection({ comparison, optionsBacktest, loading, Container }) {
         {metricRows.map((metric) => <WallLabel key={metric.id} metric={metric} />)}
       </div>
 
-      {/*
-        chart.evidence.backtests-dotplots (DotPlot x4 groups) is deliberately skipped: it needs
-        the same per-medium chart-renderer contract the task notes as legitimately hard to do
-        well in one pass, and `DotPlot` itself lives under the ESLint-restricted src/components/*
-        (only Classic may import it). Every value it would plot is still on screen via the
-        method tables below.
-      */}
-
-      {groups.map(([group, groupRows]) => (
+      {groups.map(([group, groupRows]) => {
+        const dotValues = backtestDotValues(group, groupRows)
+        const dotLabel = `${BACKTEST_GROUP_TITLES[group] || group}, ${group === 'rank_quality' ? 'mean IC' : 'success rate'} by method`
+        return (
         <Container key={group} {...cap('column.evidence.backtests-method-tables')}>
           <h3>{BACKTEST_GROUP_TITLES[group] || group}</h3>
           <p>{comparison.comparable_groups?.[group]}</p>
+          {renderer && dotValues.length > 1 && (
+            <div {...cap('chart.evidence.backtests-dotplots')} aria-label={dotLabel} data-testid={`backtests-dotplot-${group}`}>
+              {renderer.dotPlot({
+                metricId: `evidence-backtests-dotplot-${group}`,
+                values: dotValues,
+                domain: group === 'rank_quality' ? null : { min: 0, max: 100 },
+                unit: group === 'rank_quality' ? 'ratio' : '%',
+                thresholds: [],
+                annotations: [],
+                state: dotplotState,
+                confidence: dotplotConfidence,
+                ariaLabel: dotLabel,
+                width: 480,
+                height: 140,
+              })}
+            </div>
+          )}
           <div style={{ overflowX: 'auto' }}>
             <table>
               <thead>
@@ -285,7 +321,8 @@ function BacktestsSection({ comparison, optionsBacktest, loading, Container }) {
             </table>
           </div>
         </Container>
-      ))}
+        )
+      })}
 
       <Container {...cap('figure.evidence.backtests-success-rollup')}>
         <h3>Success rate by feature</h3>
@@ -547,6 +584,7 @@ function ShadowMineWrapper(props) {
 }
 
 function ShadowSection({ shadowData, reportData, loading, Container }) {
+  const renderer = useRenderer()
   if (loading) return <div role="status" aria-live="polite">Loading…</div>
   if (!shadowData) {
     return <div {...cap('state.evidence.shadow-unavailable')} role="alert">Shadow results unavailable</div>
@@ -561,6 +599,21 @@ function ShadowSection({ shadowData, reportData, loading, Container }) {
     : 20
   const overview = shadowRankingOverview(strategies, alignedWindow, annualizedMinimum)
   const metricRows = shadowMetricRows(shadowData)
+  // chart.evidence.shadow-scatter: mirrors ShadowPortfolios.jsx's ScatterChart mapping (max
+  // drawdown on x, aligned net return on y, live strategies only), but the chart contract's
+  // `scatter` renderer takes bare {x, y} series points rather than ScatterChart's
+  // label-carrying `points` shape.
+  const scatterPoints = live
+    .filter((row) => row.max_drawdown != null && row.aligned?.net_return != null)
+    .map((row) => ({ x: row.max_drawdown, y: row.aligned.net_return }))
+  // shadow-portfolios.json publishes no top-level `status` field at all (unlike most
+  // screens/*.json — see states.js's doc comment), so canonicalArtifactState(shadowData) would
+  // always read UNAVAILABLE regardless of how much real data is present. Synthesize the same
+  // `{ status: 'success' }` wrapper HomeScreen.jsx uses for report.json for the same reason:
+  // by this point `shadowData` is already known truthy (guarded above), so "the artifact loaded"
+  // is the real, non-fabricated signal being encoded, not an invented status value.
+  const scatterState = canonicalArtifactState(shadowData ? { status: 'success' } : null)
+  const scatterConfidence = confidenceOf({})
 
   return (
     <div data-testid="shadow-section">
@@ -585,12 +638,23 @@ function ShadowSection({ shadowData, reportData, loading, Container }) {
         {metricRows.map((metric) => <WallLabel key={metric.id} metric={metric} />)}
       </div>
 
-      {/*
-        chart.evidence.shadow-scatter (max drawdown vs aligned net return) is deliberately
-        skipped for the same reason as the backtests dot plots: `ScatterChart` lives under the
-        ESLint-restricted src/components/*, and a bespoke chart-contract renderer per medium is
-        out of scope for this pass. Every point it would plot is on the strategies table below.
-      */}
+      {renderer && (
+        <Container {...cap('chart.evidence.shadow-scatter')} aria-label="Max drawdown versus aligned net return" data-testid="shadow-scatter">
+          {renderer.scatter({
+            metricId: 'evidence-shadow-scatter',
+            series: scatterPoints,
+            domain: null,
+            unit: '%',
+            thresholds: [],
+            annotations: [],
+            state: scatterState,
+            confidence: scatterConfidence,
+            ariaLabel: 'Max drawdown versus aligned net return, one point per reporting strategy',
+            width: 480,
+            height: 240,
+          })}
+        </Container>
+      )}
 
       <Container {...cap('column.evidence.shadow-strategies-table')}>
         <div style={{ overflowX: 'auto' }}>

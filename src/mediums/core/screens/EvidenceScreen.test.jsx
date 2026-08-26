@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import EvidenceScreen from './EvidenceScreen.jsx'
@@ -18,9 +18,12 @@ vi.mock('../../../lib/FirebaseAuthContext.jsx', () => ({
 }))
 vi.mock('../../../lib/useFirebasePortfolio.js', () => ({ useFirebasePortfolio: vi.fn() }))
 
-const fakeManifest = { components: {} }
+const fakeDotPlot = vi.fn(({ metricId }) => <svg data-testid="fake-dotplot" data-metric-id={metricId} />)
+const fakeScatter = vi.fn(({ metricId }) => <svg data-testid="fake-scatter" data-metric-id={metricId} />)
+const fakeManifest = { components: {}, loadRenderer: () => Promise.resolve({ dotPlot: fakeDotPlot, scatter: fakeScatter }) }
 
 const comparisonFixture = {
+  status: 'success',
   methods_total: 2,
   generated_at: '2026-08-25T19:59:33.979245+00:00',
   interpretation: 'Success rates may be ranked only inside a comparable group.',
@@ -39,6 +42,26 @@ const comparisonFixture = {
   ],
 }
 
+// A second held_portfolio method on top of comparisonFixture's one, used only by the dot-plot
+// test below (chart.evidence.backtests-dotplots needs >1 measured method in a group to render at
+// all — see backtestDotValues in EvidenceScreen.jsx). Kept separate from comparisonFixture so the
+// pre-existing "measured count" assertions above stay exactly as they were.
+const comparisonTwoMethodsFixture = {
+  ...comparisonFixture,
+  methods: [
+    ...comparisonFixture.methods,
+    {
+      id: 'buy_and_hold', label: 'Buy and hold, top 20', comparable_group: 'held_portfolio',
+      status: 'measured', status_detail: null, source: 'pipeline/backtest_monthly_results.json',
+      window_start: '2021-09-01', window_end: '2026-08-13',
+      total_return_pct: 80.1, cagr_pct: 12.4, sharpe: 0.75, max_drawdown_pct: -22.1,
+      excess_return_pct: 10.2, excess_return_withheld_reason: null,
+      success_rate: 0.5, success_rate_basis: 'rebalance_periods_positive',
+      beat_benchmark_rate: 0.48, periods_measured: 60, periods_in_cash: 0, caveats: [],
+    },
+  ],
+}
+
 const optionsBacktestFixture = {
   status: 'success',
   backtest: { num_trades: 12280, sharpe_ratio: 0.233, deflated_sharpe_ratio: 0.9975, win_rate: 0.3288, average_pnl_per_trade: 5.58 },
@@ -53,6 +76,12 @@ const shadowFixture = {
       max_drawdown: -1.1037, turnover: 290.0, observations: 12, snapshots: 16, composition_change: 5.0,
       annualized_metrics_minimum_observations: 20, evidence_status: 'Accumulating · 12 immutable net-of-cost returns',
       aligned: { net_return: -0.1351 }, cost_bps: 20,
+    },
+    {
+      strategy: 'Challenger policy', net_return: 2.201, cagr: null, sharpe: null, sortino: null,
+      max_drawdown: -0.8123, turnover: 150.0, observations: 12, snapshots: 16, composition_change: 3.0,
+      annualized_metrics_minimum_observations: 20, evidence_status: 'Accumulating · 12 immutable net-of-cost returns',
+      aligned: { net_return: 0.4102 }, cost_bps: 20,
     },
   ],
 }
@@ -151,6 +180,39 @@ describe('EvidenceScreen backtests section', () => {
     renderEvidence('/v2/evidence?section=backtests')
     expect(screen.getByRole('alert')).toHaveTextContent('Backtest comparison unavailable')
   })
+
+  it('renders the held_portfolio dot plot under its ledger capability id once the renderer resolves, via renderer.dotPlot with real success-rate values', async () => {
+    useData.mockImplementation((file) => {
+      if (file === 'screens/backtest-comparison.json') return { data: comparisonTwoMethodsFixture, loading: false }
+      if (file === 'screens/options-backtest.json') return { data: optionsBacktestFixture, loading: false }
+      return { data: null, loading: false }
+    })
+    const { container } = renderEvidence('/v2/evidence?section=backtests')
+
+    await waitFor(() => expect(container.querySelector('[data-testid="backtests-dotplot-held_portfolio"]')).toBeInTheDocument())
+    const chartContainer = container.querySelector('[data-capability-id="chart.evidence.backtests-dotplots"]')
+    expect(chartContainer).toBeInTheDocument()
+    expect(chartContainer.querySelector('[data-testid="fake-dotplot"]')).toBeInTheDocument()
+
+    expect(fakeDotPlot).toHaveBeenCalled()
+    const callProps = fakeDotPlot.mock.calls.at(-1)[0]
+    expect(callProps.values).toHaveLength(2)
+    expect(callProps.values[0]).toBeCloseTo(58.33, 2)
+    expect(callProps.values[1]).toBeCloseTo(50, 2)
+    expect(callProps.domain).toEqual({ min: 0, max: 100 })
+    expect(callProps.state).toEqual({ state: 'established', reason: null })
+  })
+
+  it('does not render the dot plot for a group with fewer than two measured methods', async () => {
+    useData.mockImplementation((file) => {
+      if (file === 'screens/backtest-comparison.json') return { data: comparisonFixture, loading: false }
+      if (file === 'screens/options-backtest.json') return { data: optionsBacktestFixture, loading: false }
+      return { data: null, loading: false }
+    })
+    const { container } = renderEvidence('/v2/evidence?section=backtests')
+    await waitFor(() => expect(container.querySelector('[data-capability-id="column.evidence.backtests-method-tables"]')).toBeInTheDocument())
+    expect(container.querySelector('[data-capability-id="chart.evidence.backtests-dotplots"]')).not.toBeInTheDocument()
+  })
 })
 
 describe('EvidenceScreen shadow section', () => {
@@ -186,6 +248,29 @@ describe('EvidenceScreen shadow section', () => {
     useFirebasePortfolio.mockReturnValue({ positions: [] })
     renderEvidence('/v2/evidence?section=shadow')
     expect(screen.getByRole('alert')).toHaveTextContent('Shadow results unavailable')
+  })
+
+  it('renders the max-drawdown-vs-aligned-net-return scatter under its ledger capability id once the renderer resolves, via renderer.scatter with real points', async () => {
+    useData.mockImplementation((file) => {
+      if (file === 'screens/shadow-portfolios.json') return { data: shadowFixture, loading: false }
+      return { data: null, loading: false }
+    })
+    useAuth.mockReturnValue({ currentUser: null })
+    useFirebasePortfolio.mockReturnValue({ positions: [] })
+    const { container } = renderEvidence('/v2/evidence?section=shadow')
+
+    await waitFor(() => expect(container.querySelector('[data-testid="shadow-scatter"]')).toBeInTheDocument())
+    const chartContainer = container.querySelector('[data-capability-id="chart.evidence.shadow-scatter"]')
+    expect(chartContainer).toBeInTheDocument()
+    expect(chartContainer.querySelector('[data-testid="fake-scatter"]')).toBeInTheDocument()
+
+    expect(fakeScatter).toHaveBeenCalled()
+    const callProps = fakeScatter.mock.calls.at(-1)[0]
+    expect(callProps.series).toEqual([
+      { x: -1.1037, y: -0.1351 },
+      { x: -0.8123, y: 0.4102 },
+    ])
+    expect(callProps.state).toEqual({ state: 'established', reason: null })
   })
 })
 
