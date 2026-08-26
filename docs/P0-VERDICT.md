@@ -1,32 +1,46 @@
 # P0 — Verdict
 
+> **Numbers refreshed 2026-08-26** against `docs/P0-Q1-BENCHMARK.md`'s re-run of
+> `pipeline/p0_q1_benchmark_factor_report.py` on currently committed data — the original 2026-08-14
+> figures this doc cited had drifted from what the scheduled pipeline's own later backtest refresh
+> now produces (see that doc's refresh note for the full explanation). The **qualitative verdict
+> (B) is unchanged**; the point estimates below are updated to match.
+
 **B. A factor tilt with no residual alpha.** Six-factor regression on the strategy's own
-published 5-year backtest returns (n = 58 months, 2021-09 → 2026-06, the longest window the
-already-cached Ken French data supports) finds an annualized alpha of **−2.57%, Newey-West(3)
-t = −0.437** — net of market, size, value, profitability, investment, and momentum, there is
-nothing left, and the point estimate is negative. Per the brief's own threshold (|t| < 1.0 → no
-residual alpha), this is not the ambiguous middle case. The deflation accounting below shows this
-verdict does not rest on a cherry-picked winner from a search — it's the direct result of one
-pre-specified regression, and no "best variant" was selected from a set of competing
-configurations this session, because both work orders that would have run a real variant search
-(WO-3's cost regimes, WO-5's turnover controls) were blocked by this session's network policy
-before they could produce anything to select from.
+published backtest returns (n = 57 months, 2021-10 → 2026-06, the longest window the already-cached
+Ken French data supports) finds an annualized alpha of **+3.06%, Newey-West(3) t = +0.680** — net
+of market, size, value, profitability, investment, and momentum, there is nothing *significant*
+left, though the point estimate is now positive rather than the −2.57% found in the 2026-08-14 run.
+Per the brief's own threshold (|t| < 1.0 → no residual alpha), this is still not the ambiguous
+middle case, though at |t| = 0.68 it sits closer to that boundary than before. The deflation
+accounting below shows this verdict does not rest on a cherry-picked winner from a search — it's
+the direct result of one pre-specified regression, and no "best variant" was selected from a set of
+competing configurations this session, because both work orders that would have run a real variant
+search (WO-3's cost regimes, WO-5's turnover controls) were blocked by this session's network
+policy before they could produce anything to select from.
 
 Two qualifications keep this from being a clean B-and-done:
 
-1. **The strategy is competitive against better-matched benchmarks** (beats RSP 11.14% vs 9.23%
-   CAGR, beats IWM decisively on Sharpe, 0.644 vs 0.439). "Loses to SPY" was never strong evidence
-   against the score; it was evidence the yardstick was wrong. That doesn't change the six-factor
-   result, but it means the honest reframing isn't "this failed," it's "this is a tilt, and a
-   reasonably executed one, that happens to have been benchmarked against the hardest target
-   available."
+1. **The strategy now beats every benchmark tested, including SPY, outright** (CAGR 15.61% vs.
+   SPY 13.12%, RSP 9.22%, IWM 7.32%; Sharpe 0.921 vs. 0.805, 0.629, 0.429 respectively — see
+   `docs/P0-Q1-BENCHMARK.md` for the full table, and its refresh note for a real date-alignment
+   bug this session found and fixed in the underlying script). "Loses to SPY" was never strong
+   evidence against the score, and as of this refresh it's no longer even descriptively true.
+   That doesn't change
+   the six-factor result — the improved raw numbers are still explained by market, size, and
+   momentum exposure, not a residual selection effect — but it means the honest reframing isn't
+   "this failed" or even "this is a tilt that happens to have been benchmarked against the hardest
+   target available" — it's "this is a tilt that is currently ahead of every benchmark tested, for
+   reasons the factor regression fully accounts for without needing to invoke stock-picking skill."
 2. **A factor tilt is only worth running yourself, instead of buying a factor ETF, if it's cheap.**
    At 64.9% monthly turnover (WO-5), this one is not. The dominant driver of that turnover, per
    the one piece of turnover evidence available this session, is not band quantization (0.42% of
    live-refresh churn events) but metric availability flicker (96.72%) — a data-consistency
    problem, not a normalization-mode problem. **This means the standard Verdict-B prescription
    ("reposition as a cheap tilt, stop trying to beat SPY") is not yet actionable as stated** —
-   it's cheap in theory, not in the numbers this system currently produces.
+   it's cheap in theory, not in the numbers this system currently produces. Being ahead of SPY
+   right now doesn't change this: turnover cost is a drag regardless of which side of the
+   benchmark the strategy currently sits on, and nothing in this refresh touched WO-5's evidence.
 
 ## Ranked recommendations
 

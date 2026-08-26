@@ -21,6 +21,16 @@ simulate_benchmark() (buy-and-hold from the strategy's first execution date, one
 10bps, no further trading) applied to each ETF's own daily adjusted-close series. This makes the
 three benchmark legs directly comparable: same start date, same capital, same one-time cost.
 
+The ETF price files under public/data/etf/ and pipeline/backtest_monthly_results.json are
+refreshed on independent schedules -- the ETF files by whatever job last updated the ETF
+watchlist, the backtest by its own less-frequent monthly-backtest run. A 2026-08-26 re-run of
+this script found the ETF files 11 days fresher than the backtest, which without a guard would
+have simulated RSP/IWM/etc. through several extra trading days the strategy/SPY legs don't have --
+a real period mismatch masquerading as a comparability guarantee this docstring already claimed.
+clip_to_end_date() below enforces the guarantee: every ETF-derived leg is truncated to the
+strategy portfolio's own last history date before simulate_benchmark() runs, so "directly
+comparable" stays true regardless of which file happened to refresh more recently.
+
 Method for the six-factor regression: monthly strategy returns are month-end-to-month-end
 resamples of the daily portfolio value series already in backtest_monthly_results.json (a full
 calendar month already includes the 10bps-per-rebalance cost baked into that series -- this is
@@ -84,6 +94,13 @@ def load_etf_benchmark(ticker):
     dates = [row["date"] for row in fund]
     closes = [row["adjusted_close"] for row in fund]
     return {"dates": dates, "closes": closes}
+
+
+def clip_to_end_date(benchmark, end_date):
+    """Drop any date past ``end_date`` so an independently-refreshed ETF file can't simulate
+    through days the strategy/SPY legs don't have -- see the module docstring."""
+    kept = [(day, close) for day, close in zip(benchmark["dates"], benchmark["closes"]) if day <= end_date]
+    return {"dates": [day for day, _ in kept], "closes": [close for _, close in kept]}
 
 
 def month_end_values(dates, values):
@@ -192,10 +209,14 @@ def main():
     spy = backtest["benchmark_spy"]
     start_date = portfolio["metrics"]["start_date"]
     initial_capital = portfolio["metrics"]["initial_value"]
+    # Every ETF-derived leg is clipped to this so a more-recently-refreshed ETF file can't
+    # simulate through days the strategy/SPY legs (bounded by backtest_monthly_results.json)
+    # don't have -- see clip_to_end_date() and the module docstring.
+    end_date = portfolio["history"][-1]["date"]
 
     # --- Four-benchmark comparison ---------------------------------------------------
-    rsp_benchmark = load_etf_benchmark("RSP")
-    iwm_benchmark = load_etf_benchmark("IWM")
+    rsp_benchmark = clip_to_end_date(load_etf_benchmark("RSP"), end_date)
+    iwm_benchmark = clip_to_end_date(load_etf_benchmark("IWM"), end_date)
     rsp_result = simulate_benchmark(rsp_benchmark, start_date, initial_capital, 10.0)
     iwm_result = simulate_benchmark(iwm_benchmark, start_date, initial_capital, 10.0)
 
@@ -209,10 +230,14 @@ def main():
     # C1: style/size/quality benchmarks matched to the strategy's realized beta 0.79 / SMB
     # 0.455 profile, plus a 50/50 IWD+IJH blend as the closest single passive match.
     style_size_results = {
-        label: simulate_benchmark(load_etf_benchmark(ticker), start_date, initial_capital, 10.0)["metrics"]
+        label: simulate_benchmark(
+            clip_to_end_date(load_etf_benchmark(ticker), end_date), start_date, initial_capital, 10.0
+        )["metrics"]
         for label, ticker in STYLE_SIZE_BENCHMARKS.items()
     }
-    iwd_ijh_blend = blend_benchmark(load_etf_benchmark("IWD"), load_etf_benchmark("IJH"))
+    iwd_ijh_blend = clip_to_end_date(
+        blend_benchmark(load_etf_benchmark("IWD"), load_etf_benchmark("IJH")), end_date
+    )
     style_size_results["iwd_ijh_50_50_blend"] = simulate_benchmark(
         iwd_ijh_blend, start_date, initial_capital, 10.0
     )["metrics"]

@@ -5,53 +5,53 @@
     "r_squared": 0.6523518189288242,
     "coefficients": {
       "alpha": {
-        "estimate": 0.0025152973500496057,
+        "estimate": 0.0025152973500496122,
         "classical_standard_error": 0.004600352176753131,
-        "classical_t_statistic": 0.5467619115684466,
-        "newey_west_standard_error": 0.003699281902659558,
-        "newey_west_t_statistic": 0.6799420580089505
+        "classical_t_statistic": 0.546761911568448,
+        "newey_west_standard_error": 0.0036992819026595587,
+        "newey_west_t_statistic": 0.679942058008952
       },
       "market_excess": {
-        "estimate": 0.8097074608527671,
+        "estimate": 0.8097074608527675,
         "classical_standard_error": 0.09770807219417356,
-        "classical_t_statistic": 8.287006822155385,
-        "newey_west_standard_error": 0.09731074386527148,
-        "newey_west_t_statistic": 8.320843400126732
+        "classical_t_statistic": 8.287006822155387,
+        "newey_west_standard_error": 0.09731074386527144,
+        "newey_west_t_statistic": 8.320843400126739
       },
       "size": {
-        "estimate": 0.5247002523008238,
+        "estimate": 0.5247002523008241,
         "classical_standard_error": 0.1733945604193843,
-        "classical_t_statistic": 3.0260479396340165,
+        "classical_t_statistic": 3.0260479396340174,
         "newey_west_standard_error": 0.13619634397514735,
-        "newey_west_t_statistic": 3.852528173565139
+        "newey_west_t_statistic": 3.8525281735651404
       },
       "value": {
-        "estimate": 0.1056522427314743,
-        "classical_standard_error": 0.18187646519371015,
+        "estimate": 0.10565224273147432,
+        "classical_standard_error": 0.18187646519371017,
         "classical_t_statistic": 0.5809011221927359,
-        "newey_west_standard_error": 0.2048521824978631,
-        "newey_west_t_statistic": 0.5157486800638622
+        "newey_west_standard_error": 0.20485218249786308,
+        "newey_west_t_statistic": 0.5157486800638623
       },
       "profitability": {
-        "estimate": 0.21083462121141305,
-        "classical_standard_error": 0.16492209804899222,
+        "estimate": 0.21083462121141303,
+        "classical_standard_error": 0.1649220980489922,
         "classical_t_statistic": 1.2783891528519238,
         "newey_west_standard_error": 0.15231736422614695,
-        "newey_west_t_statistic": 1.3841798161527075
+        "newey_west_t_statistic": 1.3841798161527072
       },
       "investment": {
-        "estimate": 0.14820779733450007,
+        "estimate": 0.1482077973345003,
         "classical_standard_error": 0.22595781213815747,
-        "classical_t_statistic": 0.6559091537135318,
-        "newey_west_standard_error": 0.235825816401685,
-        "newey_west_t_statistic": 0.6284629884713551
+        "classical_t_statistic": 0.6559091537135328,
+        "newey_west_standard_error": 0.23582581640168493,
+        "newey_west_t_statistic": 0.6284629884713563
       },
       "momentum": {
-        "estimate": 0.37956613308383347,
-        "classical_standard_error": 0.12314398475830121,
-        "classical_t_statistic": 3.0822953620416014,
-        "newey_west_standard_error": 0.12982119089887525,
-        "newey_west_t_statistic": 2.923760985827792
+        "estimate": 0.3795661330838332,
+        "classical_standard_error": 0.12314398475830116,
+        "classical_t_statistic": 3.0822953620416005,
+        "newey_west_standard_error": 0.1298211908988751,
+        "newey_west_t_statistic": 2.9237609858277933
       }
     },
     "months": [
@@ -119,21 +119,21 @@
   },
   "single_factor_capm": {
     "observations": 57,
-    "r_squared": 0.4814631438606578,
+    "r_squared": 0.4814631438606579,
     "coefficients": {
       "alpha": {
-        "estimate": 0.004528363248551272,
-        "classical_standard_error": 0.005021054279167228,
-        "classical_t_statistic": 0.9018749841721146,
+        "estimate": 0.004528363248551273,
+        "classical_standard_error": 0.005021054279167227,
+        "classical_t_statistic": 0.901874984172115,
         "newey_west_standard_error": 0.0041862938665183855,
-        "newey_west_t_statistic": 1.0817117462222916
+        "newey_west_t_statistic": 1.0817117462222918
       },
       "market_excess": {
-        "estimate": 0.7587018361648876,
-        "classical_standard_error": 0.10616908679245032,
-        "classical_t_statistic": 7.146165226494524,
-        "newey_west_standard_error": 0.09319186047897772,
-        "newey_west_t_statistic": 8.141288651877876
+        "estimate": 0.7587018361648877,
+        "classical_standard_error": 0.10616908679245031,
+        "classical_t_statistic": 7.146165226494527,
+        "newey_west_standard_error": 0.09319186047897775,
+        "newey_west_t_statistic": 8.141288651877874
       }
     },
     "months": [
@@ -199,12 +199,12 @@
   },
   "shortfall_decomposition": {
     "description": "Mean monthly excess return over the same aligned sample, decomposed via the single-factor CAPM: strategy_mean_excess = beta * spy_mean_excess + alpha. The beta*spy_mean_excess term is 'explained by running at this beta in this market'; alpha is what beta exposure alone does not explain (selection, positive or negative).",
-    "capm_beta": 0.7587018361648876,
-    "capm_beta_newey_west_t": 8.141288651877876,
+    "capm_beta": 0.7587018361648877,
+    "capm_beta_newey_west_t": 8.141288651877874,
     "spy_mean_monthly_excess_return": 0.008205263157894736,
     "strategy_mean_monthly_excess_return": 0.01075371147266211,
-    "explained_by_beta_monthly": 0.0062253482241108405,
-    "residual_selection_monthly": 0.0045283632485512695,
+    "explained_by_beta_monthly": 0.006225348224110841,
+    "residual_selection_monthly": 0.004528363248551269,
     "explained_by_beta_annualized_pct": 7.7315834893628255,
     "residual_selection_annualized_pct": 5.571439847979209
   }

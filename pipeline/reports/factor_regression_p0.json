@@ -33,21 +33,21 @@
       "start_date": "2021-09-01",
       "end_date": "2026-08-13",
       "initial_value": 100000.0,
-      "final_value": 154683.61,
-      "total_return": 0.546836,
+      "final_value": 154683.66,
+      "total_return": 0.546837,
       "cagr": 0.092176,
       "maximum_drawdown": -0.213844,
-      "annualized_volatility": 0.162322,
-      "sharpe_zero_rate": 0.629,
+      "annualized_volatility": 0.162212,
+      "sharpe_zero_rate": 0.6285,
       "estimated_transaction_cost": 100.0
     },
     "iwm_small_mid_cap": {
       "start_date": "2021-09-01",
       "end_date": "2026-08-13",
       "initial_value": 100000.0,
-      "final_value": 141864.03,
-      "total_return": 0.41864,
-      "cagr": 0.073243,
+      "final_value": 141868.73,
+      "total_return": 0.418687,
+      "cagr": 0.07325,
       "maximum_drawdown": -0.319116,
       "annualized_volatility": 0.22504,
       "sharpe_zero_rate": 0.4289,
@@ -57,7 +57,7 @@
       "start_date": "2021-09-01",
       "end_date": "2026-08-13",
       "initial_value": 100000.0,
-      "final_value": 174489.64,
+      "final_value": 174489.65,
       "total_return": 0.744896,
       "cagr": 0.1191,
       "maximum_drawdown": -0.190394,
@@ -69,8 +69,8 @@
       "start_date": "2021-09-01",
       "end_date": "2026-08-13",
       "initial_value": 100000.0,
-      "final_value": 177343.02,
-      "total_return": 0.77343,
+      "final_value": 177343.07,
+      "total_return": 0.773431,
       "cagr": 0.122776,
       "maximum_drawdown": -0.327226,
       "annualized_volatility": 0.21846,
@@ -84,7 +84,7 @@
       "final_value": 152588.97,
       "total_return": 0.52589,
       "cagr": 0.08917,
-      "maximum_drawdown": -0.241046,
+      "maximum_drawdown": -0.241047,
       "annualized_volatility": 0.197273,
       "sharpe_zero_rate": 0.5346,
       "estimated_transaction_cost": 100.0
@@ -105,12 +105,12 @@
       "start_date": "2021-09-01",
       "end_date": "2026-08-13",
       "initial_value": 100000.0,
-      "final_value": 145854.83,
-      "total_return": 0.458548,
+      "final_value": 145854.85,
+      "total_return": 0.458549,
       "cagr": 0.079278,
       "maximum_drawdown": -0.281541,
       "annualized_volatility": 0.207505,
-      "sharpe_zero_rate": 0.474,
+      "sharpe_zero_rate": 0.4741,
       "estimated_transaction_cost": 100.0
     },
     "schd_quality_dividend": {
@@ -141,19 +141,19 @@
       "start_date": "2021-09-01",
       "end_date": "2026-08-13",
       "initial_value": 100000.0,
-      "final_value": 138689.29,
+      "final_value": 138689.28,
       "total_return": 0.386893,
       "cagr": 0.068344,
       "maximum_drawdown": -0.363936,
-      "annualized_volatility": 0.224929,
-      "sharpe_zero_rate": 0.4093,
+      "annualized_volatility": 0.224805,
+      "sharpe_zero_rate": 0.4087,
       "estimated_transaction_cost": 100.0
     },
     "iwd_ijh_50_50_blend": {
       "start_date": "2021-09-01",
       "end_date": "2026-08-13",
       "initial_value": 100000.0,
-      "final_value": 160776.01,
+      "final_value": 160776.02,
       "total_return": 0.60776,
       "cagr": 0.100737,
       "maximum_drawdown": -0.209631,
@@ -166,9 +166,11 @@
       "reason": "insufficient on-disk sector coverage to build without fabricating labels",
       "coverage": {
         "total": 353,
-        "found": 353,
-        "missing": 0,
-        "missing_sample": []
+        "found": 352,
+        "missing": 1,
+        "missing_sample": [
+          "EQR"
+        ]
       }
     },
     "method": "All ETF legs use backtest_monthly.simulate_benchmark: buy-and-hold from the strategy's own first execution date, one 10bps entry cost, no further trading -- identical method and cost to the SPY/RSP/IWM legs, so every row is directly comparable. iwd_ijh_50_50_blend is a static (non-rebalanced) growth-weighted blend, not a rebalanced index."
@@ -178,53 +180,53 @@
     "r_squared": 0.6523518189288242,
     "coefficients": {
       "alpha": {
-        "estimate": 0.0025152973500496057,
+        "estimate": 0.0025152973500496122,
         "classical_standard_error": 0.004600352176753131,
-        "classical_t_statistic": 0.5467619115684466,
-        "newey_west_standard_error": 0.003699281902659558,
-        "newey_west_t_statistic": 0.6799420580089505
+        "classical_t_statistic": 0.546761911568448,
+        "newey_west_standard_error": 0.0036992819026595587,
+        "newey_west_t_statistic": 0.679942058008952
       },
       "market_excess": {
-        "estimate": 0.8097074608527671,
+        "estimate": 0.8097074608527675,
         "classical_standard_error": 0.09770807219417356,
-        "classical_t_statistic": 8.287006822155385,
-        "newey_west_standard_error": 0.09731074386527148,
-        "newey_west_t_statistic": 8.320843400126732
+        "classical_t_statistic": 8.287006822155387,
+        "newey_west_standard_error": 0.09731074386527144,
+        "newey_west_t_statistic": 8.320843400126739
       },
       "size": {
-        "estimate": 0.5247002523008238,
+        "estimate": 0.5247002523008241,
         "classical_standard_error": 0.1733945604193843,
-        "classical_t_statistic": 3.0260479396340165,
+        "classical_t_statistic": 3.0260479396340174,
         "newey_west_standard_error": 0.13619634397514735,
-        "newey_west_t_statistic": 3.852528173565139
+        "newey_west_t_statistic": 3.8525281735651404
       },
       "value": {
-        "estimate": 0.1056522427314743,
-        "classical_standard_error": 0.18187646519371015,
+        "estimate": 0.10565224273147432,
+        "classical_standard_error": 0.18187646519371017,
         "classical_t_statistic": 0.5809011221927359,
-        "newey_west_standard_error": 0.2048521824978631,
-        "newey_west_t_statistic": 0.5157486800638622
+        "newey_west_standard_error": 0.20485218249786308,
+        "newey_west_t_statistic": 0.5157486800638623
       },
       "profitability": {
-        "estimate": 0.21083462121141305,
-        "classical_standard_error": 0.16492209804899222,
+        "estimate": 0.21083462121141303,
+        "classical_standard_error": 0.1649220980489922,
         "classical_t_statistic": 1.2783891528519238,
         "newey_west_standard_error": 0.15231736422614695,
-        "newey_west_t_statistic": 1.3841798161527075
+        "newey_west_t_statistic": 1.3841798161527072
       },
       "investment": {
-        "estimate": 0.14820779733450007,
+        "estimate": 0.1482077973345003,
         "classical_standard_error": 0.22595781213815747,
-        "classical_t_statistic": 0.6559091537135318,
-        "newey_west_standard_error": 0.235825816401685,
-        "newey_west_t_statistic": 0.6284629884713551
+        "classical_t_statistic": 0.6559091537135328,
+        "newey_west_standard_error": 0.23582581640168493,
+        "newey_west_t_statistic": 0.6284629884713563
       },
       "momentum": {
-        "estimate": 0.37956613308383347,
-        "classical_standard_error": 0.12314398475830121,
-        "classical_t_statistic": 3.0822953620416014,
-        "newey_west_standard_error": 0.12982119089887525,
-        "newey_west_t_statistic": 2.923760985827792
+        "estimate": 0.3795661330838332,
+        "classical_standard_error": 0.12314398475830116,
+        "classical_t_statistic": 3.0822953620416005,
+        "newey_west_standard_error": 0.1298211908988751,
+        "newey_west_t_statistic": 2.9237609858277933
       }
     },
     "months": [
@@ -292,21 +294,21 @@
   },
   "single_factor_capm": {
     "observations": 57,
-    "r_squared": 0.4814631438606578,
+    "r_squared": 0.4814631438606579,
     "coefficients": {
       "alpha": {
-        "estimate": 0.004528363248551272,
-        "classical_standard_error": 0.005021054279167228,
-        "classical_t_statistic": 0.9018749841721146,
+        "estimate": 0.004528363248551273,
+        "classical_standard_error": 0.005021054279167227,
+        "classical_t_statistic": 0.901874984172115,
         "newey_west_standard_error": 0.0041862938665183855,
-        "newey_west_t_statistic": 1.0817117462222916
+        "newey_west_t_statistic": 1.0817117462222918
       },
       "market_excess": {
-        "estimate": 0.7587018361648876,
-        "classical_standard_error": 0.10616908679245032,
-        "classical_t_statistic": 7.146165226494524,
-        "newey_west_standard_error": 0.09319186047897772,
-        "newey_west_t_statistic": 8.141288651877876
+        "estimate": 0.7587018361648877,
+        "classical_standard_error": 0.10616908679245031,
+        "classical_t_statistic": 7.146165226494527,
+        "newey_west_standard_error": 0.09319186047897775,
+        "newey_west_t_statistic": 8.141288651877874
       }
     },
     "months": [
@@ -372,12 +374,12 @@
   },
   "shortfall_decomposition": {
     "description": "Mean monthly excess return over the same aligned sample, decomposed via the single-factor CAPM: strategy_mean_excess = beta * spy_mean_excess + alpha. The beta*spy_mean_excess term is 'explained by running at this beta in this market'; alpha is what beta exposure alone does not explain (selection, positive or negative).",
-    "capm_beta": 0.7587018361648876,
-    "capm_beta_newey_west_t": 8.141288651877876,
+    "capm_beta": 0.7587018361648877,
+    "capm_beta_newey_west_t": 8.141288651877874,
     "spy_mean_monthly_excess_return": 0.008205263157894736,
     "strategy_mean_monthly_excess_return": 0.01075371147266211,
-    "explained_by_beta_monthly": 0.0062253482241108405,
-    "residual_selection_monthly": 0.0045283632485512695,
+    "explained_by_beta_monthly": 0.006225348224110841,
+    "residual_selection_monthly": 0.004528363248551269,
     "explained_by_beta_annualized_pct": 7.7315834893628255,
     "residual_selection_annualized_pct": 5.571439847979209
   }
