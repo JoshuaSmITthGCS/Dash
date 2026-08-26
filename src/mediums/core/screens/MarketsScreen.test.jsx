@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import MarketsScreen from './MarketsScreen.jsx'
@@ -7,7 +7,8 @@ import { useData } from '../../../lib/useData.js'
 
 vi.mock('../../../lib/useData.js', async (importOriginal) => ({ ...(await importOriginal()), useData: vi.fn() }))
 
-const fakeManifest = { components: {} }
+const fakeLine = vi.fn(({ metricId }) => <svg data-testid="fake-growth-chart" data-metric-id={metricId} />)
+const fakeManifest = { components: {}, loadRenderer: () => Promise.resolve({ line: fakeLine }) }
 
 const reportFixture = {
   market: { macro: { regime: { label: 'supportive' } } },
@@ -24,9 +25,9 @@ const reportFixture = {
   portfolio_coverage: [],
 }
 
-const spyFixture = { price_series: { fund: [{ date: '2026-08-24', adjusted_close: 550 }, { date: '2026-08-25', adjusted_close: 560 }] } }
-const flatEtfFixture = { price_series: { fund: [{ date: '2026-08-24', adjusted_close: 100 }, { date: '2026-08-25', adjusted_close: 100 }] } }
-const singlePointEtfFixture = { price_series: { fund: [{ date: '2026-08-25', adjusted_close: 560 }] } }
+const spyFixture = { status: 'success', price_series: { fund: [{ date: '2026-08-24', adjusted_close: 550 }, { date: '2026-08-25', adjusted_close: 560 }] } }
+const flatEtfFixture = { status: 'success', price_series: { fund: [{ date: '2026-08-24', adjusted_close: 100 }, { date: '2026-08-25', adjusted_close: 100 }] } }
+const singlePointEtfFixture = { status: 'success', price_series: { fund: [{ date: '2026-08-25', adjusted_close: 560 }] } }
 
 const advisorFixture = {
   market: { status: [{ region: 'United States', market_type: 'Equity', current_status: 'Open', primary_exchanges: 'NYSE, Nasdaq', local_open: '9:30am', local_close: '4:00pm' }] },
@@ -60,6 +61,7 @@ function renderMarkets(path = '/v2/markets') {
 
 beforeEach(() => {
   localStorage.clear()
+  fakeLine.mockClear()
 })
 
 afterEach(() => {
@@ -177,6 +179,37 @@ describe('MarketsScreen — ?view=indexes', () => {
     const input = container.querySelector('[data-capability-id="control.markets.direct-lookup"] input')
     fireEvent.change(input, { target: { value: 'ZZZZ' } })
     expect(screen.getByTestId('no-lookup-match')).toHaveTextContent('No covered ticker matched')
+  })
+
+  it('renders the growth chart under its ledger capability id once the renderer resolves, via renderer.line with a real series', async () => {
+    mockUseData()
+    const { container } = renderMarkets()
+
+    await waitFor(() => expect(container.querySelector('[data-capability-id="chart.markets.growth-chart"]')).toBeInTheDocument())
+    const chartContainer = container.querySelector('[data-capability-id="chart.markets.growth-chart"]')
+    expect(chartContainer.querySelector('[data-testid="fake-growth-chart"]')).toBeInTheDocument()
+
+    expect(fakeLine).toHaveBeenCalled()
+    const callProps = fakeLine.mock.calls.at(-1)[0]
+    expect(callProps.metricId).toBe('markets-growth-SPY')
+    expect(callProps.series).toEqual([
+      { x: '2026-08-24', y: 550 },
+      { x: '2026-08-25', y: 560 },
+    ])
+    expect(callProps.thresholds).toEqual([])
+    expect(callProps.annotations).toEqual([])
+    expect(callProps.state.state).toBe('established')
+  })
+
+  it('does not render the growth chart while no index has two usable closes', () => {
+    mockUseData({
+      'etf/SPY.json': { data: singlePointEtfFixture, loading: false, reload: vi.fn().mockResolvedValue({}) },
+      'etf/QQQ.json': { data: singlePointEtfFixture, loading: false, reload: vi.fn().mockResolvedValue({}) },
+      'etf/DIA.json': { data: singlePointEtfFixture, loading: false, reload: vi.fn().mockResolvedValue({}) },
+      'etf/IWM.json': { data: singlePointEtfFixture, loading: false, reload: vi.fn().mockResolvedValue({}) },
+    })
+    const { container } = renderMarkets()
+    expect(container.querySelector('[data-capability-id="chart.markets.growth-chart"]')).not.toBeInTheDocument()
   })
 })
 

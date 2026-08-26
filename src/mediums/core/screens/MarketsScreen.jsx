@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useData } from '../../../lib/useData.js'
 import { useMedium } from '../MediumContext.jsx'
+import { useRenderer } from '../useRenderer.js'
+import { canonicalArtifactState, confidenceOf } from '../states.js'
 import { cap } from '../capability.js'
 import { MARKETS_IDS } from './capabilityIds.js'
 import { dailyMove, priceSeriesFromSnapshot, rankDailySectors, rankDailyStocks } from '../../../lib/marketPresentation.js'
@@ -79,10 +81,10 @@ function ButtonField({ Control, onClick, ariaLabel, children }) {
 /**
  * Absorbs Markets and News behind `?view=indexes|news` (see ROUTE-INVENTORY.md §2), which also
  * resolves the old `/market` (singular) vs `/markets` (plural) confusion by naming both as
- * views of one destination. Wires CAPABILITY-LEDGER.md §3 in full except two rows noted at their
- * render site: `chart.markets.growth-chart` (the full per-medium chart-renderer contract is out
- * of scope for this pass) and `link.markets.market-redirect` (a router-level `/market` redirect —
- * this file has no route table to add it to).
+ * views of one destination. Wires CAPABILITY-LEDGER.md §3 in full except one row noted at its
+ * render site: `link.markets.market-redirect` (a router-level `/market` redirect — this file has
+ * no route table to add it to). `chart.markets.growth-chart` renders through the shared
+ * `useRenderer()` chart-renderer contract — see `IndexesView`'s `chart` block below.
  */
 export default function MarketsScreen() {
   const manifest = useMedium()
@@ -125,6 +127,7 @@ export default function MarketsScreen() {
 }
 
 function IndexesView({ report, Container, Control, searchParams, updateParams }) {
+  const renderer = useRenderer()
   const spyQ = useData('etf/SPY.json')
   const qqqQ = useData('etf/QQQ.json')
   const diaQ = useData('etf/DIA.json')
@@ -163,6 +166,12 @@ function IndexesView({ report, Container, Control, searchParams, updateParams })
         ? { dates: recordedToday.map((point) => point.at), values: recordedToday.map((point) => point.price) }
         : sliceRange(selected.series, range))
     : null
+  // `chart.markets.growth-chart`'s state/confidence come from the selected index's own
+  // `etf/<ticker>.json` artifact envelope (a top-level `status`, no per-metric row exists for a
+  // market index) — via `canonicalArtifactState`, never hand-derived. No kill_threshold applies
+  // to a market index, so `thresholds`/`annotations` stay empty rather than forcing one in.
+  const growthChartState = canonicalArtifactState(selected ? snapshots[selected.ticker] : null)
+  const growthChartConfidence = confidenceOf({})
 
   const normalizedQuery = query.trim().toUpperCase()
   const result = normalizedQuery
@@ -248,6 +257,24 @@ function IndexesView({ report, Container, Control, searchParams, updateParams })
           ? <p {...cap('disclosure.markets.chart-caption')} data-testid="chart-caption">{`${selected.ticker} adjusted closes through ${chart.dates.at(-1)}.`}</p>
           : <div {...cap('state.markets.two-observations-needed')} role="status" data-testid="two-observations-needed">Two market observations are required to draw this range.</div>}
       </Container>
+
+      {chart?.dates.length > 1 && renderer && (
+        <Container {...cap(MARKETS_IDS.growthChart)} aria-label={`${selected.label} price history`} data-testid="growth-chart">
+          {renderer.line({
+            metricId: `markets-growth-${selected.ticker}`,
+            series: chart.dates.map((date, index) => ({ x: date, y: chart.values[index] })),
+            domain: { min: Math.min(...chart.values), max: Math.max(...chart.values) },
+            unit: 'USD',
+            thresholds: [],
+            annotations: [],
+            state: growthChartState,
+            confidence: growthChartConfidence,
+            ariaLabel: `${selected.label} adjusted close price history, ${range} range`,
+            width: 720,
+            height: 240,
+          })}
+        </Container>
+      )}
 
       <Container {...cap('figure.markets.index-strip')} aria-label="Major index ETF performance">
         {indexes.map((index) => (
