@@ -1,4 +1,5 @@
 import { useData } from '../../../lib/useData.js'
+import { cap } from '../../core/capability.js'
 
 /** Arcade attract-screen title card, carrying the live as-of date. Skippable, persisted, one interaction. */
 export default function Entry({ onContinue }) {
@@ -11,6 +12,7 @@ export default function Entry({ onContinue }) {
       <p style={{ color: 'var(--ink-secondary)', fontSize: '13px' }}>AS OF {asOf}</p>
       <button
         onClick={onContinue}
+        {...cap('nav.chrome.mobile-tab-bar')}
         style={{ minHeight: '44px', padding: '10px 24px', background: 'transparent', border: '1px solid var(--brand-cyan)', color: 'var(--brand-cyan)', fontFamily: 'var(--font-mono)', letterSpacing: '0.08em' }}
       >
         ENTER

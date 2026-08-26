@@ -13,8 +13,9 @@ function confidenceWord(level) {
  * grammar.
  */
 export default function LabelFrame({ parts, capabilityId, children }) {
-  const { title, read, reference, state, confidence, reason, headline, action } = parts
+  const { title, value, read, reference, state, confidence, reason, headline, action } = parts
   const isBreached = state.state === STATES.BREACHED
+  const isAccumulating = state.state === STATES.ACCUMULATING
   const isUnavailable = state.state === STATES.UNAVAILABLE
 
   if (isUnavailable) {
@@ -33,7 +34,7 @@ export default function LabelFrame({ parts, capabilityId, children }) {
       <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', margin: '0 0 4px' }}>{headline?.headline || title}</h3>
       {read && <p style={{ fontSize: '13px', color: 'var(--ink-secondary)', margin: '0 0 4px' }}>{read}</p>}
       <div style={{ fontSize: '20px', fontVariantNumeric: 'tabular-nums', fontFamily: 'var(--font-mono)', color: isBreached ? 'var(--accent-standfirst)' : 'var(--ink-primary)' }}>
-        {title}
+        {isAccumulating && state.observations != null ? `${state.observations} of ${state.required ?? '—'}` : value ?? title}
       </div>
       {reference && <p style={{ fontSize: '12px', color: 'var(--ink-faint)' }}>{reference}</p>}
       <p style={{ fontSize: '11px', color: 'var(--ink-faint)', fontStyle: 'italic' }}>

@@ -62,4 +62,29 @@ export default [
       }],
     },
   },
+  {
+    // Phase 3 harness determinism rule: `networkidle`/`waitForTimeout` are both banned under
+    // tests/e2e/** (the rebuild plan's own instruction) — neither actually promises the fonts
+    // and data a numeral-legibility or visual-regression assertion reads are done settling.
+    // Every spec waits on `[data-app-ready="true"]` (`tests/e2e/utils/mockData.mjs`'s
+    // `waitForAppReady`) instead.
+    files: ['tests/e2e/**/*.{js,mjs}'],
+    languageOptions: { globals: { ...globals, process: 'readonly' } },
+    rules: {
+      'no-restricted-syntax': ['error',
+        {
+          selector: "CallExpression[callee.property.name='waitForTimeout']",
+          message: 'waitForTimeout is banned in tests/e2e/** — wait on [data-app-ready="true"] via waitForAppReady() instead.',
+        },
+        {
+          selector: "CallExpression[callee.property.name='waitForLoadState'] > Literal[value='networkidle']",
+          message: "waitForLoadState('networkidle') is banned in tests/e2e/** — wait on [data-app-ready=\"true\"] via waitForAppReady() instead.",
+        },
+        {
+          selector: "Property[key.name='waitUntil'] > Literal[value='networkidle']",
+          message: "goto's waitUntil: 'networkidle' is banned in tests/e2e/** — wait on [data-app-ready=\"true\"] via waitForAppReady() instead.",
+        },
+      ],
+    },
+  },
 ]

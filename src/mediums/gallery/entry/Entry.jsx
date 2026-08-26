@@ -1,4 +1,5 @@
 import { useData } from '../../../lib/useData.js'
+import { cap } from '../../core/capability.js'
 
 /** A foyer, listing the current exhibition and its dates from the live as-of timestamp. */
 export default function Entry({ onContinue }) {
@@ -12,6 +13,7 @@ export default function Entry({ onContinue }) {
       <p data-gallery-plaque="true">Open through {asOf}</p>
       <button
         onClick={onContinue}
+        {...cap('nav.chrome.mobile-tab-bar')}
         style={{ minHeight: '44px', padding: '10px 24px', background: 'transparent', border: '1px solid var(--frame-plain)', fontFamily: 'var(--font-body)' }}
       >
         Enter the gallery

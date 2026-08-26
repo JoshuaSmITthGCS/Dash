@@ -8,7 +8,7 @@ import { STATES } from '../../core/states.js'
  * (DESIGN.md §6).
  */
 export default function LabelFrame({ parts, capabilityId, children }) {
-  const { title, mediumLine, read, reference, state, confidence, reason, action } = parts
+  const { title, mediumLine, value, read, reference, state, confidence, reason, action } = parts
   const isBreached = state.state === STATES.BREACHED
   const isAccumulating = state.state === STATES.ACCUMULATING
   const isUnavailable = state.state === STATES.UNAVAILABLE
@@ -46,8 +46,9 @@ export default function LabelFrame({ parts, capabilityId, children }) {
           display: 'inline-block', paddingBottom: '2px',
         }}
       >
-        {isAccumulating && state.observations != null ? `${state.observations} / ${state.required ?? '—'}` : read || title}
+        {isAccumulating && state.observations != null ? `${state.observations} / ${state.required ?? '—'}` : value ?? read ?? title}
       </div>
+      {value != null && read && <p style={{ fontSize: '11px', color: 'var(--ink-faint)' }}>{read}</p>}
       {reference && <p style={{ fontSize: '10px', color: 'var(--rule-cyan)' }}>TOL: {reference}</p>}
       {isBreached && reason && <p style={{ fontSize: '10px', color: 'var(--state-breach)' }}>OUT OF TOLERANCE — {reason}</p>}
       {action}

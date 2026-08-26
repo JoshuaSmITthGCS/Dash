@@ -57,7 +57,9 @@ describe('newspaper components', () => {
     const metric = { id: 'x', label: 'Rank IC', status: 'provisional', observations: 17, required_observations: 24, cadence: 'Weekly' }
     render(<LabelFrame parts={partsFor(metric)} capabilityId="x" />)
     expect(screen.getByText(/^Is /)).toBeInTheDocument()
-    expect(screen.getByText(/17 of 24/)).toBeInTheDocument()
+    // Appears twice, correctly: once in the generated headline sentence, once as the standalone
+    // numeral stat beneath it — not a duplicate, two different disclosure devices agreeing.
+    expect(screen.getAllByText(/17 of 24/).length).toBeGreaterThanOrEqual(2)
   })
 
   it('a breached metric renders a standfirst flag line above the headline', () => {

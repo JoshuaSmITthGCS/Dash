@@ -1,0 +1,854 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-25T19:55:30.838389+00:00",
+  "model_version": "3.2.0",
+  "code_commit_hash": "a8015681c21d886e074df2701d409e9c71524f27",
+  "config_hash": "ae4d188f2c6d6808ee2edcf2da308b051842737c393d266691484a1203456902",
+  "headline": {
+    "validation_status": "no calibration history yet",
+    "ic_periods_accumulated": 0,
+    "ic_periods_required": 24,
+    "forecast_target": {
+      "definition": "sector_residual_return_over_trading_sessions",
+      "primary_horizon": "3M",
+      "primary_horizon_sessions": 63
+    },
+    "score_is_not_a_probability": "The Research Score ranks attractiveness. Confidence measures how reliable that rank's evidence is. Neither is a probability that the stock rises, and no score bucket has enough closed forward windows to state one."
+  },
+  "benchmarks": {
+    "status": "measured",
+    "window": {
+      "end": "2026-08-13",
+      "initial_capital": 100000,
+      "start": "2021-09-01"
+    },
+    "strategy": {
+      "cagr": 0.156149,
+      "final_value": 204997.55,
+      "max_drawdown": -0.189802,
+      "sharpe": 0.9205,
+      "volatility": 0.175384
+    },
+    "rows": [
+      {
+        "name": "SPY",
+        "description": "S&P 500 -- the published, least representative comparison",
+        "cagr": 0.131209,
+        "volatility": 0.172675,
+        "sharpe": 0.8048,
+        "max_drawdown": -0.244964,
+        "beta": 0.76,
+        "annualized_alpha_pct": 5.972,
+        "newey_west_t_statistic": 1.174,
+        "significant": false
+      },
+      {
+        "name": "VTV",
+        "description": "CRSP US large value",
+        "cagr": 0.127104,
+        "volatility": 0.138584,
+        "sharpe": 0.9384,
+        "max_drawdown": -0.17039,
+        "beta": 1.0051,
+        "annualized_alpha_pct": 3.111,
+        "newey_west_t_statistic": 0.796,
+        "significant": false
+      },
+      {
+        "name": "VUG",
+        "description": "CRSP US large growth",
+        "cagr": 0.125674,
+        "volatility": 0.226285,
+        "sharpe": 0.6395,
+        "max_drawdown": -0.35613,
+        "beta": 0.439,
+        "annualized_alpha_pct": 10.8,
+        "newey_west_t_statistic": 1.756,
+        "significant": false
+      },
+      {
+        "name": "IWF",
+        "description": "Russell 1000 Growth",
+        "cagr": 0.122776,
+        "volatility": 0.21846,
+        "sharpe": 0.6426,
+        "max_drawdown": -0.327226,
+        "beta": 0.4749,
+        "annualized_alpha_pct": 10.408,
+        "newey_west_t_statistic": 1.691,
+        "significant": false
+      },
+      {
+        "name": "IWD",
+        "description": "Russell 1000 Value",
+        "cagr": 0.1191,
+        "volatility": 0.148534,
+        "sharpe": 0.8369,
+        "max_drawdown": -0.190394,
+        "beta": 0.9355,
+        "annualized_alpha_pct": 4.71,
+        "newey_west_t_statistic": 1.189,
+        "significant": false
+      },
+      {
+        "name": "IJH+IWD 50/50",
+        "description": "matches the realized beta 0.79 / SMB 0.455 profile the six-factor regression measured, using a fixed 50/50 rather than a fitted mix",
+        "cagr": 0.104535,
+        "volatility": 0.169128,
+        "sharpe": 0.6764,
+        "max_drawdown": -0.204946,
+        "beta": 0.8724,
+        "annualized_alpha_pct": 6.545,
+        "newey_west_t_statistic": 1.721,
+        "significant": false
+      },
+      {
+        "name": "SCHD",
+        "description": "Dow Jones US Dividend 100 -- quality/dividend screen",
+        "cagr": 0.098943,
+        "volatility": 0.144188,
+        "sharpe": 0.731,
+        "max_drawdown": -0.168443,
+        "beta": 0.8865,
+        "annualized_alpha_pct": 7.2,
+        "newey_west_t_statistic": 1.624,
+        "significant": false
+      },
+      {
+        "name": "RSP",
+        "description": "S&P 500 equal weight -- breadth-matched",
+        "cagr": 0.092176,
+        "volatility": 0.162212,
+        "sharpe": 0.6285,
+        "max_drawdown": -0.213844,
+        "beta": 0.8642,
+        "annualized_alpha_pct": 7.779,
+        "newey_west_t_statistic": 1.833,
+        "significant": false
+      },
+      {
+        "name": "IJH",
+        "description": "S&P MidCap 400 -- the strategy's actual size band",
+        "cagr": 0.08917,
+        "volatility": 0.197273,
+        "sharpe": 0.5346,
+        "max_drawdown": -0.241047,
+        "beta": 0.7647,
+        "annualized_alpha_pct": 8.775,
+        "newey_west_t_statistic": 2.213,
+        "significant": true
+      },
+      {
+        "name": "VB",
+        "description": "CRSP US small cap",
+        "cagr": 0.079278,
+        "volatility": 0.207505,
+        "sharpe": 0.474,
+        "max_drawdown": -0.281541,
+        "beta": 0.7131,
+        "annualized_alpha_pct": 10.101,
+        "newey_west_t_statistic": 2.389,
+        "significant": true
+      },
+      {
+        "name": "IJR",
+        "description": "S&P SmallCap 600",
+        "cagr": 0.075671,
+        "volatility": 0.212564,
+        "sharpe": 0.4519,
+        "max_drawdown": -0.280241,
+        "beta": 0.6486,
+        "annualized_alpha_pct": 11.047,
+        "newey_west_t_statistic": 2.463,
+        "significant": true
+      },
+      {
+        "name": "IWM",
+        "description": "Russell 2000 -- small cap",
+        "cagr": 0.07325,
+        "volatility": 0.22504,
+        "sharpe": 0.4289,
+        "max_drawdown": -0.319116,
+        "beta": 0.6263,
+        "annualized_alpha_pct": 11.255,
+        "newey_west_t_statistic": 2.481,
+        "significant": true
+      },
+      {
+        "name": "VXF",
+        "description": "Extended market (completion index) -- everything outside the S&P 500",
+        "cagr": 0.068344,
+        "volatility": 0.224805,
+        "sharpe": 0.4087,
+        "max_drawdown": -0.363936,
+        "beta": 0.6181,
+        "annualized_alpha_pct": 11.59,
+        "newey_west_t_statistic": 2.294,
+        "significant": true
+      },
+      {
+        "name": "NOBL",
+        "description": "S&P 500 Dividend Aristocrats -- quality proxy",
+        "cagr": 0.06709,
+        "volatility": 0.14524,
+        "sharpe": 0.5232,
+        "max_drawdown": -0.179209,
+        "beta": 0.9102,
+        "annualized_alpha_pct": 9.296,
+        "newey_west_t_statistic": 2.014,
+        "significant": true
+      }
+    ],
+    "summary": {
+      "beaten_on_cagr": [
+        "IJH",
+        "IJH+IWD 50/50",
+        "IJR",
+        "IWD",
+        "IWF",
+        "IWM",
+        "NOBL",
+        "RSP",
+        "SCHD",
+        "SPY",
+        "VB",
+        "VTV",
+        "VUG",
+        "VXF"
+      ],
+      "beaten_on_cagr_count": "14 of 14",
+      "benchmarks_compared": 14,
+      "honesty_disclosure": "Six-factor regression (market, size, value, profitability, investment, momentum controlled for jointly, n=57 months): no significant residual alpha, t=0.68. Pairwise vs. each of 14 individual benchmarks, unadjusted for testing that many at once: significant positive alpha against 6 of 14 benchmark(s) in an unadjusted pairwise test.",
+      "significant_positive_alpha_against": [
+        "IJH",
+        "IJR",
+        "IWM",
+        "NOBL",
+        "VB",
+        "VXF"
+      ],
+      "six_factor_alpha_context": {
+        "factors_controlled": [
+          "investment",
+          "market_excess",
+          "momentum",
+          "profitability",
+          "size",
+          "value"
+        ],
+        "newey_west_t_statistic": 0.68,
+        "observations": 57,
+        "significant": false
+      },
+      "verdict": "significant positive alpha against 6 of 14 benchmark(s) in an unadjusted pairwise test"
+    }
+  },
+  "factor_exposures": {
+    "status": "measured",
+    "months": 57,
+    "r_squared": 0.6523518189288242,
+    "annualized_alpha_pct": 3.0604652652704845,
+    "loadings": [
+      {
+        "factor": "alpha",
+        "estimate": 0.0025152973500496057,
+        "newey_west_t_statistic": 0.6799420580089505,
+        "significant": false
+      },
+      {
+        "factor": "market_excess",
+        "estimate": 0.8097074608527671,
+        "newey_west_t_statistic": 8.320843400126732,
+        "significant": true
+      },
+      {
+        "factor": "size",
+        "estimate": 0.5247002523008238,
+        "newey_west_t_statistic": 3.852528173565139,
+        "significant": true
+      },
+      {
+        "factor": "value",
+        "estimate": 0.1056522427314743,
+        "newey_west_t_statistic": 0.5157486800638622,
+        "significant": false
+      },
+      {
+        "factor": "profitability",
+        "estimate": 0.21083462121141305,
+        "newey_west_t_statistic": 1.3841798161527075,
+        "significant": false
+      },
+      {
+        "factor": "investment",
+        "estimate": 0.14820779733450007,
+        "newey_west_t_statistic": 0.6284629884713551,
+        "significant": false
+      },
+      {
+        "factor": "momentum",
+        "estimate": 0.37956613308383347,
+        "newey_west_t_statistic": 2.923760985827792,
+        "significant": true
+      }
+    ]
+  },
+  "strategy_diagnostics": {
+    "status": "measured",
+    "unit_of_account": {
+      "not_measured": [
+        "per-position R-multiples",
+        "per-name win rate",
+        "per-name maximum adverse excursion"
+      ],
+      "trade": "one monthly rebalance period holding a 20-name book",
+      "why": "the committed backtest stores per-rebalance picks and the portfolio value path but not per-name entry and exit prices, so position-level statistics cannot be computed from it"
+    },
+    "sample": {
+      "first": "2021-10",
+      "last": "2026-08",
+      "months": 59
+    },
+    "expectancy": {
+      "average_loss": 0.03848,
+      "average_win": 0.04326,
+      "expectancy_per_period": 0.01416,
+      "mean_return_per_period": 0.01416,
+      "payoff_ratio": 1.124,
+      "periods": 59,
+      "win_rate": 0.6441
+    },
+    "profit_factor": {
+      "gross_loss": 0.80816,
+      "gross_profit": 1.64375,
+      "profit_factor": 2.034
+    },
+    "streaks": {
+      "longest_losing_streak": 3,
+      "longest_winning_streak": 7
+    },
+    "risk_adjusted": {
+      "annualized_return": 0.16628,
+      "annualized_volatility": 0.17408,
+      "calmar": 1.087,
+      "recovery_factor": 1.087,
+      "sharpe_zero_rate": 0.976,
+      "sortino_zero_rate": 1.508
+    },
+    "turnover": {
+      "annualized_cost_drag": 0.0061,
+      "annualized_turnover": 6.096,
+      "mean_cost_drag_per_rebalance": 0.000508,
+      "mean_monthly_turnover": 0.508,
+      "median_monthly_turnover": 0.5019,
+      "rebalances": 60
+    },
+    "turnover_adjusted_return": {
+      "annualized_cost_drag": 0.0061,
+      "implied_gross_annualized_return": 0.17238,
+      "net_annualized_return": 0.16628,
+      "share_of_gross_return_consumed_by_costs": 0.0354
+    },
+    "regime_definitions": {
+      "market_direction": "benchmark above/below its trailing 200-session mean",
+      "preregistration": "all three rules are functions of benchmark or macro series only, never of strategy performance",
+      "rates": "6-month change in the Ken French risk-free series",
+      "volatility": "trailing 63-session realized volatility of the benchmark, split at the sample median"
+    },
+    "regime_attribution": {
+      "market_direction": {
+        "bear": {
+          "benchmark_annualized": -0.26491,
+          "excess_annualized": 0.11134,
+          "months": 10,
+          "strategy_annualized": -0.15358,
+          "strategy_mean_monthly": -0.01179,
+          "win_rate": 0.3
+        },
+        "bull": {
+          "benchmark_annualized": 0.31961,
+          "excess_annualized": -0.0459,
+          "months": 41,
+          "strategy_annualized": 0.27371,
+          "strategy_mean_monthly": 0.02127,
+          "win_rate": 0.7317
+        }
+      },
+      "rates": {
+        "falling_rates": {
+          "benchmark_annualized": 0.10935,
+          "excess_annualized": 0.09637,
+          "months": 31,
+          "strategy_annualized": 0.20573,
+          "strategy_mean_monthly": 0.01696,
+          "win_rate": 0.6452
+        },
+        "rising_rates": {
+          "benchmark_annualized": 0.17547,
+          "excess_annualized": -0.06657,
+          "months": 26,
+          "strategy_annualized": 0.1089,
+          "strategy_mean_monthly": 0.01001,
+          "win_rate": 0.6154
+        }
+      },
+      "volatility": {
+        "high_volatility": {
+          "benchmark_annualized": 0.06779,
+          "excess_annualized": -0.03369,
+          "months": 28,
+          "strategy_annualized": 0.03409,
+          "strategy_mean_monthly": 0.00403,
+          "win_rate": 0.6071
+        },
+        "low_volatility": {
+          "benchmark_annualized": 0.20289,
+          "excess_annualized": 0.10142,
+          "months": 29,
+          "strategy_annualized": 0.3043,
+          "strategy_mean_monthly": 0.02361,
+          "win_rate": 0.6897
+        }
+      }
+    }
+  },
+  "costs": {
+    "status": "measured",
+    "turnover": {
+      "rebalances": 60,
+      "mean_turnover": 0.508,
+      "total_turnover": 30.4821,
+      "source": "pipeline/backtest_monthly_results.json portfolio.rebalances (already committed, real)"
+    },
+    "realized_flat_10bps": {
+      "cost_bps": 10,
+      "total_cost": 3778.2,
+      "final_value": 204997.55,
+      "cagr": 0.156149
+    },
+    "scenarios": [
+      {
+        "scenario": "gross",
+        "cost_bps": 0,
+        "total_cost": 0,
+        "drag_vs_realized_flat": -3778.2
+      },
+      {
+        "scenario": "optimistic",
+        "cost_bps": 6.25,
+        "total_cost": 2361.37,
+        "drag_vs_realized_flat": -1416.83
+      },
+      {
+        "scenario": "base",
+        "cost_bps": 12.5,
+        "total_cost": 4722.74,
+        "drag_vs_realized_flat": 944.54
+      },
+      {
+        "scenario": "stress",
+        "cost_bps": 25,
+        "total_cost": 9445.5,
+        "drag_vs_realized_flat": 5667.3
+      }
+    ],
+    "per_name_liquidity_legs": {
+      "status": "not_measured_inputs_available",
+      "measures": [
+        "adv_participation_pct",
+        "estimated_spread_bps_by_name",
+        "estimated_market_impact_bps_by_name",
+        "days_to_liquidate"
+      ],
+      "reason": "costs.estimate_cost_bps's tiered/impact legs need each traded name's own median_dollar_volume_60d and annualized_volatility on the rebalance date. The committed pipeline/data/backtest_cache contains those inputs, but the three tiered scenario reruns are separate experiments and are not inferred from this flat-rate repricing.",
+      "reproduction_command": "python pipeline/backtest_monthly.py --cost-model tiered --cost-scenario {optimistic,base,stress} --out pipeline/reports/backtest_tiered_<scenario>.json"
+    },
+    "never_present_gross_as_net": true
+  },
+  "calibration": {
+    "status": "insufficient_data",
+    "observations": 0,
+    "target": "sector_residual_return",
+    "horizon_sessions": 63,
+    "fixed_score_bands": [
+      {
+        "bucket": "80+",
+        "minimum_observations": 30,
+        "observations": 0,
+        "shortfall": 30,
+        "status": "insufficient_data"
+      },
+      {
+        "bucket": "75-79",
+        "minimum_observations": 30,
+        "observations": 0,
+        "shortfall": 30,
+        "status": "insufficient_data"
+      },
+      {
+        "bucket": "70-74",
+        "minimum_observations": 30,
+        "observations": 0,
+        "shortfall": 30,
+        "status": "insufficient_data"
+      },
+      {
+        "bucket": "65-69",
+        "minimum_observations": 30,
+        "observations": 0,
+        "shortfall": 30,
+        "status": "insufficient_data"
+      },
+      {
+        "bucket": "60-64",
+        "minimum_observations": 30,
+        "observations": 0,
+        "shortfall": 30,
+        "status": "insufficient_data"
+      },
+      {
+        "bucket": "0-59",
+        "minimum_observations": 30,
+        "observations": 0,
+        "shortfall": 30,
+        "status": "insufficient_data"
+      }
+    ],
+    "publishable": false,
+    "what_would_populate_this": "24 monthly point-in-time periods whose 63-session forward windows have closed; roughly two years of production refreshes, or a point-in-time reconstruction from SEC EDGAR filing dates"
+  },
+  "experiments": {
+    "status": "measured",
+    "summary": {
+      "experiments": 34,
+      "total_variants_tested": 73,
+      "by_decision": {
+        "ABANDON": 5,
+        "INCONCLUSIVE": 2,
+        "KEEP_AS_CHALLENGER": 4,
+        "PROMOTE": 23
+      },
+      "promoted_to_champion": [
+        "WO-1",
+        "WO-2",
+        "WO-3",
+        "A1-NEWS-NEUTRAL",
+        "C6-applicability-unification",
+        "R8-evidence-confidence-gate",
+        "R8-2-publication-gate-not-enforced",
+        "R11-P2-shadow-portfolio-registry-cap",
+        "R11-P3-deflated-sharpe-trial-count-undercount",
+        "R11-P4-edgar-pit-growth-reconstruction-feasibility",
+        "R11-P4-2-edgar-pit-wired-into-backtest-historical",
+        "R11-P3-2-trial-count-logs-are-not-actually-fragmented",
+        "R11-P5-swing-domain-and-auto-search",
+        "R11-P6-coverage-weighted-formula-and-elo-tournament",
+        "R11-P7-edgar-pit-statement-fallback-beyond-growth",
+        "R11-P8-metric-level-sector-breakdown",
+        "R11-P9-sector-candidate-validation-check",
+        "R11-P10-sector-verdict-gates-and-growth-quality-focus",
+        "R11-P11-per-sector-weight-search",
+        "R11-P12-fama-macbeth-ridge-candidates"
+      ]
+    },
+    "experiments": [
+      {
+        "id": "WO-1",
+        "hypothesis": "run_manifest.score_distribution reports the champion score shown in the UI and used for ranking, not a shadow scoring variant.",
+        "category": "data_integrity",
+        "result": "Defect confirmed by direct source read: line 30 pulled the wrong field.",
+        "decision": "PROMOTE",
+        "reason": "One-line fix; pipeline/tests/test_observability.py locks score_distribution to row['score'] with a synthetic divergence case and a full advisor.json replay.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "WO-2",
+        "hypothesis": "The insider (SEC Form 4) layer is dark because SEC_USER_AGENT is unset, and unavailable insider evidence is read as neutral rather than absent.",
+        "category": "data_integrity",
+        "result": "insider_signal.py already returned 0.0 points with available: False on empty input (correct behavior); the gate is genuinely just the missing secret, which is the repository owner's action, not a code defect.",
+        "decision": "PROMOTE",
+        "reason": "Locked with pipeline/tests/test_insider_signal.py::test_no_transactions_reports_unavailable_rather_than_neutral_zero. A3 session additionally split source_status.sec_form4.status into unavailable_not_configured vs. unavailable_provider_error so confidence.py never conflates the two.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "WO-3",
+        "hypothesis": "ic_harness.py and backtest_monthly.py price every trade at a flat 10bps, ignoring costs.py's liquidity- and volatility-aware cost model entirely.",
+        "category": "validation_infrastructure",
+        "result": "Confirmed and wired. The three-regime backtest re-run under tiered costs remains blocked_network_policy: no committed per-name price/volume cache exists to price the tiered leg without a live fetch.",
+        "decision": "PROMOTE",
+        "reason": "7 new regression tests (4 in test_backtest_monthly.py, 3 in test_ic_harness.py); flat model proved byte-identical to the pre-existing formula.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "WO-4",
+        "hypothesis": "After controlling for the six standard factors (market, size, value, profitability, investment, momentum), ValueSignal's realized return stream shows residual alpha.",
+        "category": "factor_regression",
+        "result": "|t| = 0.437, below the brief's own 1.0 threshold for 'no residual alpha, factor tilt is the leading candidate' (Verdict B). Significant loadings are market, size, and momentum -- not value or profitability, despite the score being 78% fundamentals by construction.",
+        "decision": "ABANDON",
+        "reason": "The hypothesis under test -- 'ValueSignal generates residual alpha beyond known factor exposure' -- is rejected by this sample. This is the decisive result the rest of this session's honesty framing (docs/ALGORITHM-RESEARCH-RESULTS.md) is built on.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "WO-5",
+        "hypothesis": "Band/quantization artifacts (a metric crossing a scoring-band boundary on a small raw move) are the primary driver of the backtest's 64.9%-per-month rank churn.",
+        "category": "turnover_attribution",
+        "result": "Availability flicker dominates every single transition (96.7% of events), not band quantization (0.4%). The brief's leading hypothesis is very likely wrong, though this measures live intraday churn as a proxy for the blocked monthly-backtest churn, not the backtest itself.",
+        "decision": "ABANDON",
+        "reason": "Band-quantization hypothesis rejected by the closest available evidence. Availability flicker is the real driver and needs its own follow-up (why does per-name data availability flip refresh-to-refresh?), out of scope for this registry entry.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "A1-NEWS-NEUTRAL",
+        "hypothesis": "news_intelligence.py::weighted_sentiment returning the configured neutral_score (50.0) for zero-coverage names, instead of signaling unavailability, distorts published scores for the 373 of 374 screen-universe names with no cleared news coverage.",
+        "category": "data_integrity",
+        "result": "See pipeline/reports/news_fix_score_delta.json (generated by pipeline/rescore.py) for the measured before/after score delta on the committed universe.",
+        "decision": "PROMOTE",
+        "reason": "Lands on the champion per explicit user decision, with the before/after delta committed alongside it, not silently applied.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "A3-FULL-UNIVERSE-ENRICHMENT",
+        "hypothesis": "Seeding statement enrichment from the prior refresh's top 20 + 5 challengers (select_enrichment_priority) starves the model of statement-derived metrics for names a weaker prior model never surfaced, biasing which names can ever earn a high capital_allocation/accounting_quality score.",
+        "category": "selection_bias",
+        "result": "Offline coverage/composition gap confirmed and quantified (docs/ENRICHMENT-BIAS-ANALYSIS.md). The causal question -- would full-universe enrichment surface different top-40 names -- is blocked_network_policy.",
+        "decision": "INCONCLUSIVE",
+        "reason": "Code path implemented and unit-tested (byte-identical priority regardless of previous_top, in pipeline/tests/test_fetch_advisor.py). The measurement that would resolve PROMOTE vs. ABANDON needs a live run: FULL_UNIVERSE_RESEARCH=true python pipeline/fetch_advisor.py.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "C1-benchmark-suite",
+        "hypothesis": "The strategy delivers something a liquid, tradeable style ETF could not -- a blunter bar than the academic factor model, and the one a user of this product actually faces.",
+        "category": "signal_evidence",
+        "result": "No benchmark in the set is beaten with statistically significant alpha; the largest |t| is 1.11. VTV returns more at lower volatility with a shallower drawdown -- better on every dimension.",
+        "decision": "ABANDON",
+        "reason": "The 'beats the market' framing is not supported against any tradeable alternative. Reposition as a transparent factor tilt. Also caught a defect before publishing: the alpha t-statistic was read under a key ols_newey_west does not emit, and the .get() default published 0.00 for all 14 benchmarks, which reads as a confident null.",
+        "number_of_variants_tested": 14
+      },
+      {
+        "id": "C2-strategy-diagnostics-and-regimes",
+        "hypothesis": "The strategy's edge is stable across market-direction, volatility and rate regimes.",
+        "category": "signal_evidence",
+        "result": "The edge is not stable. This is a duration-sensitive, defensive book: +10.3pp annualized against SPY in bear markets and in falling rates, -16.9pp in rising rates.",
+        "decision": "KEEP_AS_CHALLENGER",
+        "reason": "A coherent and useful description of what the strategy is, and it belongs in the model card. Not actionable as a timing overlay without out-of-sample evidence, and turning regimes into an optimization layer is exactly what the brief rules out.",
+        "number_of_variants_tested": 3
+      },
+      {
+        "id": "C3-cost-sensitivity-at-realized-turnover",
+        "hypothesis": "A realistic tiered cost model gives up more than 200bps a year relative to the published flat 10bps.",
+        "category": "cost_realism",
+        "result": "Resolved, and it inverts the concern. Re-running the backtest with costs.py pricing every leg from its own trailing liquidity and volatility (now possible offline from the committed price cache) *lowers* total cost from $4,194 at flat 10bps to $1,002 base / $2,020 stress -- the cached book is liquid enough that the flat 10bps assumption was conservative, not optimistic. Net CAGR rises 0.55pp under base and 0.39pp under stress.",
+        "decision": "ABANDON",
+        "reason": "The hypothesis was that realistic costs would give up more than 200bps. They give up less than the flat assumption already charged. This holds for the 360-name cached universe, which is more liquid than the full 910-name configured one, so it is not the last word on the published backtest -- but the direction is the opposite of what was feared.",
+        "number_of_variants_tested": 9
+      },
+      {
+        "id": "C4-turnover-controls",
+        "hypothesis": "Rank buffering, a minimum holding period, score smoothing or a replacement margin improves net-of-cost return by suppressing trades that act on noise rather than information.",
+        "category": "portfolio_construction",
+        "result": "Measured in-sample against the 360-symbol committed price cache. Score smoothing (+2.64pp CAGR, turnover 54.7% -> 43.9%) and a 6-month holding floor (+2.46pp, turnover -> 30.9%) both improve return and cut turnover; both rank buffers *hurt* (-1.85pp) and a 3-month floor hurts (-1.19pp) while a 6-month floor helps.",
+        "decision": "KEEP_AS_CHALLENGER",
+        "reason": "The non-monotonicity is the tell: a real effect does not usually flip sign with the parameter, and a 4.5pp spread across nine configurations on one in-sample path is well inside what noise produces. Promotion needs out-of-sample rank IC, deflated Sharpe, PBO and a walk-forward split; none of that is satisfied here. Reported as a diagnostic.",
+        "number_of_variants_tested": 9
+      },
+      {
+        "id": "C5-score-calibration",
+        "hypothesis": "Score buckets carry a measurable historical outcome distribution that can give a 0-100 score empirical meaning.",
+        "category": "signal_evidence",
+        "result": "Blocked. The harness has 0 of 24 periods and the PIT store is three days deep, so every bucket reports insufficient_data with its shortfall named and confidence_detail.historical_calibration stays null.",
+        "decision": "INCONCLUSIVE",
+        "reason": "The gate is the deliverable: fabricating calibration would convert an admitted unknown into a false claim. Caught one inconsistency in testing -- publishability was gated on adaptive quintiles while confidence.py reads fixed bands, and the two can disagree.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "C6-applicability-unification",
+        "hypothesis": "The champion and v2 paths resolve metric applicability from the same authority and reach the same answers.",
+        "category": "data_integrity",
+        "result": "Defect confirmed by direct read: the legacy path checked only explicit rules (an insurer's revenue growth stayed scored against a registry that declares it inapplicable) while the v2 path's price_to_sales alias dodged the explicit sales_multiple rule, and every declaration_defaults-inheriting metric was suppressed for the semiconductor profile because the default list predated it -- CRUS's v2 structural score was computed from 3 metrics while the champion scored 26. The matrix also required price_to_book for REITs while the registry suppressed it.",
+        "decision": "PROMOTE",
+        "reason": "Consistency defect fix, not a new signal: one authority now answers both paths under both namespaces, pinned by tests (required-vs-applicability invariant, per-profile legacy/v2 agreement, semiconductor un-gutting).",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "C7-turnover-walkforward",
+        "hypothesis": "The C4 in-sample turnover-control winners (smooth07, hold6) survive the promotion gates: a walk-forward split, PBO below 0.5, and a deflated Sharpe above 0.95.",
+        "category": "signal_evidence",
+        "result": "Rejected on every gate. The variant chosen on the first half finished last of seven on the second half, PBO is 0.80-0.84 (selection is generating winners at random), and no variant's deflated Sharpe probability reached even half the 0.95 bar. The in-sample ordering also disagrees with the earlier 360-name-cache matrix (smooth07/hold6 led there; hold3/margin5 here), which is noise behavior, not a real effect.",
+        "decision": "ABANDON",
+        "reason": "The C4 challengers' in-sample edge does not survive its own selection process. Promoting smooth07 or hold6 on the earlier evidence would have shipped overfit. Turnover remains a cost problem worth attacking, but not through any of these seven selection rules.",
+        "number_of_variants_tested": 7
+      },
+      {
+        "id": "R7-leg-reweighting",
+        "hypothesis": "Zeroing the panel-dead legs (growth, news_sentiment) and the 5-period negative-IC legs (capital_allocation, accounting_quality) - proposal A - or additionally halving market_behavior (proposal B) improves the composite over the frozen champion weights.",
+        "category": "signal_evidence",
+        "result": "Proposal A's marginally better IC (0.0354 vs 0.0351) does not survive portfolio construction: its top-20 backtest is slightly WORSE than the champion's (Sharpe 0.945 vs 0.964, 15.74% vs 16.03% annualized). Proposal B backtests better (1.076, 18.55%) but its extra lever - shrinking market_behavior - rests on the drop_one_leg sample-composition artifact documented in Round 7 section 4.3, and its weights were tuned on the same 59 periods they are scored on. All variants beat the equal-weight universe (0.694).",
+        "decision": "KEEP_AS_CHALLENGER",
+        "reason": "No promotion case: the differences between champion, A, and B are within noise on 59 monthly periods, and B's apparent edge is in-sample selection on a mismeasured diagnostic. Proposal A runs prospectively as shadow reweighted_composite_a from 2026-08-21; the prospective clock, not this panel, decides. B is deliberately NOT registered as a shadow - carrying both would spend a second trial on the same idea.",
+        "number_of_variants_tested": 2
+      },
+      {
+        "id": "R8-evidence-confidence-gate",
+        "hypothesis": "Every ticker on the live v2 validation dashboard (HIG, JPM, O, NEE, BSX, MSFT, XOM, MRNA, VTI, TLT) reporting company evidence confidence below 0.40, a 0-of-0 peer sample, and 0% profile confidence -- including for large, liquid, well-covered names like MSFT and JPM -- is a wiring/data-join defect in pipeline/live_v2_validation.py, not a genuine data-coverage gap.",
+        "category": "data_integrity",
+        "result": "Confirmed a split root cause. (a) Peer sample was a pure stub -- a hardcoded literal, not a computation -- category (a)/broken-join, not data scarcity. (b) Structural/profile confidence was genuinely low GIVEN the inputs validate_live() gathered, but the reason those inputs were incomplete is itself a wiring gap: the script never invoked the enrichment stage production uses. Confirmed against production: public/data/advisor.json shows HIG at data_coverage 0.82 the same week this view published structural.coverage 0.35 for the identical company -- the gap is the validation harness's scope, not HIG's real-world coverage. Regression test (test_live_v2_validation.py) shows wiring the same yahoo_extended() call production already uses raises a synthetic company's structural confidence from 0.21 to 0.41, crossing the action gate from insufficient_evidence to watch, with identical quote data on both sides -- isolating the enrichment step as the swing factor. (c) The timeliness layer's effective_score: None is a separate, correctly-reported, already-documented gap (scoring_v2.py's own unavailable_reason string: no free provider supplies broad forward-estimate revisions, earnings-surprise collection is opt-in) and is deliberately left untouched.",
+        "decision": "PROMOTE",
+        "reason": "Two wiring defects fixed at the source (pipeline/live_v2_validation.py), not a display-only patch: peer sample now calls peer_groups.canonical_percentiles() over the real validated batch, and statement enrichment now runs identically to fetch_advisor.enrich(). Locked by pipeline/tests/test_live_v2_validation.py (3 tests: peer sample computed not hardcoded, enrichment wired in and raises confidence, a genuinely statement-starved company still correctly gates low). A live re-run of pipeline/live_v2_validation.py to refresh the committed public/data/validation/live_v2_validation.json artifact with real Yahoo data is blocked_network_policy in this environment, same as A3-FULL-UNIVERSE-ENRICHMENT -- the fix is verified against a controlled fixture and against the committed production advisor.json, not yet against a fresh live pull for this exact artifact.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "R8-2-publication-gate-not-enforced",
+        "hypothesis": "A recurring pipeline/validate_data.py CI failure -- 'ranked company lacks a fundamental score' / 'low resolved evidence weight must classify as insufficient evidence', hitting a different research row index on 2026-08-22T00:05 (run #190, research.38) and 2026-08-23T19:47 (run #192, research.36) -- is downstream of the same confidence-gate defect class as R8-evidence-confidence-gate, and NOT an enrichment-coverage gap: the enrichment status check for this same round confirmed MSFT and JPM (the Round 8 P1 sample's large-caps) both resolve real statement-derived fundamental_categories in production advisor.json, so enrichment reaching a name was never the question here.",
+        "category": "data_integrity",
+        "result": "Defect confirmed by direct source read, not an enrichment gap. data_health.publication_gate's own docstring: 'Names failing the gate keep their diagnostics and challenger output; only the ranked champion score is withheld' -- and docs/AUDIT-ROUND-4-FINDINGS.md Task 6: a name below the 0.35 floor 'publishes as INSUFFICIENT DATA, not as a ranked stance.' The call site only ever set row['stance'] = 'INSUFFICIENT DATA'; nothing excluded the row from `research.sort(key=score)` / `research[:publish_limit]`. A company with zero usable fundamentals but a high momentum-only score (renormalized fully onto market_behavior once fundamentals coverage hits 0) could still out-rank real-coverage names into the published top publish_limit, contradicting the product's own fundamentals-first framing (CLAUDE.md) and tripping validate_data.py's schema/invariant checks on every run where this occurred. Enrichment itself was never the cause: production's select_enrichment_priority already reaches MSFT (via ADVISOR_PORTFOLIO_SYMBOLS + ADVISOR_FOCUS_SYMBOLS, both force-included every run) and JPM (via incumbents/challengers/rotation) alike, and both show real statement-derived category scores in the current committed advisor.json -- confirming this is a downstream ranking-eligibility defect, not an upstream enrichment-coverage one.",
+        "decision": "PROMOTE",
+        "reason": "One-function fix restoring an already-documented, already-committed contract (publication_gate's docstring, AUDIT-ROUND-4-FINDINGS.md) that the ranking slice never actually enforced -- not a change to confidence.py, valuation_score, blend_research_components, or any scoring weight. Locked with 4 new tests in test_fetch_advisor.py: a gate-failing row never takes a ranked slot even at the highest score, every row lands in ranked or is excluded (none silently dropped, the screen_universe positional-slice bug this also fixes), filtering preserves the caller's sort order rather than re-deriving one, and a low-coverage run with fewer than publish_limit gate-passing rows shrinks the leaderboard instead of backfilling with gate-failures. Full pipeline suite (2239 tests) and validate_data.py both green after the change.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "R11-P1-optimization-harness",
+        "hypothesis": "A reusable parameter-search harness that enforces train/validation/holdout splitting in code (not a process doc), gated by walk-forward efficiency, PBO via CSCV, and deflated Sharpe against the real cumulative trial count, would reproduce Round 10's finding that champion and the reweighted_composite_a shadow proposal (R7-leg-reweighting) are statistically indistinguishable in this panel -- and would show neither clears the promotion bar on backtest evidence alone, consistent with reweighted_composite_a still only running on the prospective clock, not promoted.",
+        "category": "infrastructure",
+        "result": "champion and proposal_a produced byte-identical validation-period IC series (0.0518 mean IC both), confirming Round 10's finding under a genuinely split, gated protocol rather than R7's original un-split full-panel script: growth and news_sentiment contribute exactly 0% of the composite in this panel and capital_allocation/accounting_quality contribute only 6.5-6.7%, so zeroing them (proposal_a) versus keeping them (champion) is arithmetically indistinguishable here. Search-wide PBO of 0.0 follows trivially from the two configurations being identical, not from either one being genuinely dominant. Neither configuration ships: deflated Sharpe probability 0.2077 is well under the 0.95 bar even before this comparison's own selection is charged against it, and validation IC's t-statistic does not clear 3.0. Walk-forward efficiency of 1.97 (validation IC exceeding train IC) is itself a caution sign worth naming, not a good sign -- a ratio that far from 1.0 in either direction on a short, 30/15-period split reads as small-sample noise, not evidence the signal generalizes unusually well out-of-sample.",
+        "decision": "KEEP_AS_CHALLENGER",
+        "reason": "Matches R7-leg-reweighting's own standing decision and does not change it: reweighted_composite_a continues on the prospective clock (started 2026-08-21) exactly as before, this round supplies an independent, more rigorous backtest-side confirmation that neither backtest alone would have promoted it, so the prospective clock remains the only path to a promotion decision here. No production weight or composite construction changed. The harness itself (not this one comparison) is what ships: locked with 12 tests in pipeline/tests/test_optimization_harness.py covering split disjointness/chronology, holdout non-access, registry-floored trial count, PBO on synthetic noise vs. a genuinely dominant configuration, and classification's search-wide-overfit-abandons-everything rule. Full pipeline suite green after the change (2267 tests).",
+        "number_of_variants_tested": 2
+      },
+      {
+        "id": "R11-P2-shadow-portfolio-registry-cap",
+        "hypothesis": "pipeline/shadow_portfolios.py already runs multiple strategies concurrently, but nothing distinguished permanent product sleeves/baselines (production, SPY, momentum, and so on -- always live since ACTIVATION_DATE, never subject to a promotion decision) from genuine research-candidate shadows (strategies with their own later activation date, like reweighted_composite_a, each one taxing the deflated Sharpe correction charged against every other concurrent candidate), and nothing enforced the brief's stated 3-4 concurrent-candidate cap in code.",
+        "category": "infrastructure",
+        "result": "Exactly one research-candidate shadow (reweighted_composite_a) is currently registered, well under the cap; this round's optimization-harness run (R11-P1) found no new candidate that cleared the promotion bar with enough margin to warrant registering a second one, so the cap-enforcement scaffolding ships without a new candidate behind it -- adding one that does not deserve to exist yet, just to demonstrate the plumbing, would itself be the kind of dishonest bookkeeping this registry exists to prevent.",
+        "decision": "PROMOTE",
+        "reason": "Structural, in-code cap enforcement matching the brief's explicit 'not a process doc' requirement, at effectively zero risk: the guard only ever fails a future violation, and the live registry already passes it. Locked with 5 tests in test_shadow_portfolios.py covering the live registry passing its own guard, permanent sleeves being correctly excluded from the candidate count, a cap violation being refused, an at-cap registry still passing, and a caller-supplied tighter limit being honored.",
+        "number_of_variants_tested": 1
+      },
+      {
+        "id": "R11-P3-deflated-sharpe-trial-count-undercount",
+        "hypothesis": "Round 9 found the tear-sheet's Deflated Sharpe reads 'Insufficient, variance of Sharpes across registered trials is not recorded' on one view while another shows 0.238 -- the brief attributed this to no single complete trial log existing. Direct source read found the sharper, more specific defect: signal_metrics.py's honesty_metrics() computed its own trials count from just the currently-loaded backtest's optimizer sweep categories (falling back to 1 if none), never reading experiment_registry.total_variants_tested() at all -- the exact undercount ic_harness.py's research_trial_count() (validation/ic_harness.py:348) already guards against for the audit-dashboard view, floored via max(configured, registry total). Whatever the specific 'Insufficient' framing traces to (not found verbatim in the repo; may be UI copy for the null-DSR case rather than committed data), the undercount itself was real and reproducible.",
+        "category": "data_integrity",
+        "result": "Confirmed by direct source read (pipeline/signal_metrics.py honesty_metrics, trials line) and reproduced with a regression test: a synthetic one-category optimizer sweep now reports trials equal to the live registry total (55, and asserted > 1), not 1.",
+        "decision": "PROMOTE",
+        "reason": "One-line fix restoring the same floor discipline ic_harness.py already enforces elsewhere, closing the gap Round 9 flagged between the tear-sheet and audit-dashboard Deflated Sharpe views without inventing a third calculation or touching evaluation.py's math. backtest_swing.py's separate DSR_TRIALS=3 was investigated and deliberately left unchanged: its comment and pipeline/validation/harness_freeze.json both document it as the swing-reversal family's own registered trial count (a narrower, family-scoped denominator, not a forgotten repo-wide count), a different and defensible design this round did not have grounds to override. Full signal_metrics test suite green (57 tests, 1 new) after the change.",
+        "number_of_variants_tested": 1
+      }
+    ]
+  },
+  "enrichment_bias": {
+    "status": "measured",
+    "coverage_by_collection": {
+      "research": {
+        "collection": "research",
+        "total_rows": 40,
+        "categories": {
+          "accounting_quality": {
+            "scored": 40,
+            "total": 40
+          },
+          "capital_allocation": {
+            "scored": 40,
+            "total": 40
+          },
+          "financial_health": {
+            "scored": 29,
+            "total": 40
+          },
+          "growth": {
+            "scored": 40,
+            "total": 40
+          },
+          "profitability": {
+            "scored": 40,
+            "total": 40
+          },
+          "valuation": {
+            "scored": 40,
+            "total": 40
+          }
+        }
+      },
+      "screen_universe": {
+        "collection": "screen_universe",
+        "total_rows": 839,
+        "categories": {
+          "accounting_quality": {
+            "scored": 836,
+            "total": 839
+          },
+          "capital_allocation": {
+            "scored": 836,
+            "total": 839
+          },
+          "financial_health": {
+            "scored": 802,
+            "total": 839
+          },
+          "growth": {
+            "scored": 835,
+            "total": 839
+          },
+          "profitability": {
+            "scored": 836,
+            "total": 839
+          },
+          "valuation": {
+            "scored": 836,
+            "total": 839
+          }
+        }
+      }
+    },
+    "enriched_vs_non_enriched": {
+      "enriched_count": 876,
+      "non_enriched_count": 3,
+      "score": {
+        "enriched": {
+          "n": 876,
+          "mean": 63.41,
+          "median": 65,
+          "stdev": 11.21
+        },
+        "non_enriched": {
+          "n": 3,
+          "mean": 63.7,
+          "median": 68,
+          "stdev": 7.39
+        }
+      },
+      "sector_distribution": {
+        "enriched": {
+          "Technology": 152,
+          "Industrials": 138,
+          "Financial Services": 125,
+          "Consumer Cyclical": 113,
+          "Healthcare": 100,
+          "Consumer Defensive": 56,
+          "Real Estate": 53,
+          "Energy": 39,
+          "Basic Materials": 38,
+          "Utilities": 34,
+          "Communication Services": 27,
+          "Unknown": 1
+        },
+        "non_enriched": {
+          "ETF": 2,
+          "Unknown": 1
+        }
+      },
+      "market_cap_comparison": {
+        "status": "not_measurable",
+        "rows_with_market_cap": 40,
+        "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
+      },
+      "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
+    },
+    "unconstrained_comparison_status": "blocked_network_policy",
+    "method": "Computed entirely from public/data/advisor.json as committed -- no network calls."
+  },
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "a8015681c21d886e074df2701d409e9c71524f27",
+    "config_hash": "ae4d188f2c6d6808ee2edcf2da308b051842737c393d266691484a1203456902",
+    "generated_at": "2026-08-25T19:55:30.838389+00:00"
+  }
+}

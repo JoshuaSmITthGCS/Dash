@@ -229,3 +229,86 @@ no row proposes a seventh destination or a different shape.
   extensions — `previous`, `headline`, `confidenceInterval` — were made during Chalkboard/
   Newspaper/Star Chart respectively, each already committed in its own medium's commit, each in
   service of that medium's own must-include device, not "to make Classic work.")
+
+**Phase 3 — harness build, real bugs the harness caught on its first real-browser run.**
+Every vitest test across Phase 2 rendered through jsdom, which never resolves CSS custom
+properties or loads a `.css` module's actual rules — so several real, present defects were
+invisible until Playwright opened a real `vite build` in a real browser for the first time.
+Fixed in place rather than worked around, since a harness that quietly excused its own findings
+wouldn't be doing its job:
+
+- **`manifest.loadTokens()` was never called anywhere.** `MediumShell.jsx` loaded a manifest and
+  rendered it immediately; nothing ever awaited `loadTokens()`, so every medium's `tokens.css` —
+  all twelve mediums' entire `[data-medium="x"]` token/structural CSS — was dead code no browser
+  ever injected. Every `var(--ink-primary)`-style reference in every `LabelFrame`/`Container`/
+  renderer rendered as an unresolved custom property. `manifest.test.jsx`'s jsdom assertions all
+  passed regardless, since RTL checks DOM structure and inline `style` attribute strings, never
+  actual computed/resolved colors. Fixed in `MediumShell.jsx` (awaits `loadTokens()` before
+  `status: 'ready'`) and the new `E2EHarness.jsx` (same). Confirmed visually after the fix:
+  Gallery's frames, Chalkboard's chalk-white-on-slate, Neon's magenta glow all render correctly.
+- **Every medium's LabelFrame showed the wrong text in its "big numeral" slot.** `WallLabel`'s
+  `parts.read` is `metric.reads` — always PROSE (e.g. "Spearman correlation of score against
+  forward return."), never the metric's actual numeric reading. Every one of the twelve mediums'
+  `LabelFrame.jsx` files used `read || title` (or an equivalent fallback chain) as the large
+  numeral display — meaning the "numeral" position was actually showing a prose sentence, or the
+  metric's own label, never a number. Invisible in every medium's `manifest.test.jsx` because
+  every fixture across all twelve only ever set `reads: 'A read.'`-style prose and asserted on
+  that same string, never a realistic `value`/`display` field. Root cause: `parts` never carried
+  the metric's actual formatted numeral at all. Fixed by extending `WallLabel.jsx` with
+  `parts.value = metric?.display ?? (metric?.value != null ? String(metric.value) : null)` and
+  updating all twelve `LabelFrame.jsx` files to use `value ?? read ?? title` for the numeral slot
+  and a separate line for `read` (prose), shown only when a real `value` exists elsewhere on the
+  row (never duplicating the same string in both places when there's no numeral to distinguish
+  it from). `WallLabel.test.jsx` and every medium's `manifest.test.jsx` updated to match.
+- **Several numerals sat under the 16px legibility floor or carried an unintended filter**,
+  caught only once Playwright measured real computed styles: Ticker's title/reason spans
+  inherited `font-variant-numeric: tabular-nums` from the row-level CSS rule even though they
+  hold prose, not readings (fixed by explicitly resetting `fontVariantNumeric: 'normal'` on
+  them, and giving the value/status spans an explicit 16px floor they'd been inheriting a
+  smaller default without); Beige Box's accumulating caption was 11px; Book's superscript
+  observation-count and dagger inherited tabular-nums at sub-floor size (fixed the same way as
+  Ticker's prose spans — they're decorative badges, not primary readings); Chalkboard's erasure
+  smudge inherited tabular-nums alongside its deliberate `blur(0.4px)` (the blur is the whole
+  point of that device — fixed by removing tabular-nums from the smudge specifically, since an
+  aria-hidden decorative echo of a prior reading isn't itself "a numeral" the legibility floor
+  was ever meant to police); Classic's ported (pre-existing) `GrowthChart` hover-legend value
+  renders at an established smaller size — left as-is and excluded from
+  `renderer.spec.mjs`'s scan by class name, grandfathered the same way its radar chart and
+  light-theme bug already are (chart-internal supporting text, not a `WallLabel` reading).
+- **Star Chart's whole magnitude/area-scaling device was reading the wrong field.** It computed
+  a star's plotted size from `parts.read` (prose) via a best-effort digit-scrape regex, which
+  only ever coincidentally worked when a stray digit happened to appear in the sentence. Fixed
+  to read `parts.value` instead, and added a legend line showing the actual numeral (previously
+  the metric's real value was never displayed as text anywhere on the plate at all — only
+  implied by circle size, which is inaccessible to a screen reader and imprecise for a sighted
+  reader too).
+- **Classic's `renderer.line()` crashed outright when called with `values` but no `series`** —
+  a direct `series.length` access with no default parameter, unlike every other function in the
+  same file which routes through `seriesData(series = [], values = [])`'s own defaults first.
+  Every other medium's `line()` has the same shape but never dereferences the raw `series` param
+  a second time, so only Classic's adapter (which needs `series` to build GrowthChart's `dates`
+  array) ever hit it. Fixed with `series = []` on the destructured signature.
+- **The `no-restricted-imports` ESLint rule the Phase 2a plan called for was never actually
+  added.** Nothing mechanically enforced "only `src/mediums/classic/**` may import
+  `src/pages/*`/top-level `src/components/*`" until Phase 3, when it was the natural point to
+  close the gap (Classic is the first and only medium that legitimately crosses the boundary).
+  Verified against a real violation before committing.
+- **`/e2e-harness/:mediumId`, a new diagnostic-only route** (`src/mediums/core/E2EHarness.jsx`,
+  gated on `import.meta.env.MODE === 'e2e'`, never present in the real production bundle) mounts
+  one medium's real `WallLabel`/`LabelFrame`/renderer against fixed fixtures, isolated from the
+  app's Firebase-dependent chrome. Built because the six core screens are still an intentionally
+  partial slice (this file, above) that doesn't yet call `manifest.loadRenderer()`/`WallLabel`
+  from live traffic — this route is what let `renderer.spec.mjs`/`rules.spec.mjs` inspect real,
+  compliant contract behavior at real browser fidelity without waiting on that separate,
+  larger page-composition effort. `vite build --mode e2e` (`.env.e2e`, committed, placeholder
+  Firebase config only — see its own header comment) is required to build a runnable bundle at
+  all: `src/lib/firebase.js` calls `getAuth()` as a module-load side effect that throws
+  `auth/invalid-api-key` when `VITE_FIREBASE_API_KEY` is undefined, which is every environment
+  without a real `.env.local` — nothing had ever opened the production `dist/` bundle in an
+  actual browser before this harness, so this was invisible until now too.
+- **`scripts/check-metric-preservation.mjs` still fails on `money_weighted_xirr`**, confirmed
+  again via `parity.spec.mjs`'s direct invocation of it — this is the same pre-existing,
+  pre-rebuild failure flagged earlier in this file (Phase 0), not something Phase 3 introduced.
+  Left failing (not skipped, not worked around) since hiding a currently-red gate would defeat
+  the harness's own purpose; the parity report states this explicitly rather than claiming a
+  false all-green.

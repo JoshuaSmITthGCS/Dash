@@ -34,7 +34,7 @@ function toneFor(state) {
 function seriesData(series = [], values = []) { return series.length ? series.map((p) => p.y ?? p.value) : values }
 
 /** GrowthChart wants `dates` + `series: [{values, label}]` — adapts the shared flat shape. */
-function line({ series, values, ariaLabel }) {
+function line({ series = [], values, ariaLabel }) {
   const data = seriesData(series, values)
   if (!data.length) return null
   const dates = series.length ? series.map((p, i) => p.x ?? String(i)) : data.map((_, i) => String(i))

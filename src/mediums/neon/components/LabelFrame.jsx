@@ -14,7 +14,7 @@ function TubeRow({ total = 8, lit = 0, chroma = 1, breached = false }) {
 }
 
 export default function LabelFrame({ parts, capabilityId, children }) {
-  const { title, mediumLine, read, reference, state, confidence, reason, action } = parts
+  const { title, mediumLine, value, read, reference, state, confidence, reason, action } = parts
   const isBreached = state.state === STATES.BREACHED
   const isAccumulating = state.state === STATES.ACCUMULATING
   const isUnavailable = state.state === STATES.UNAVAILABLE
@@ -27,8 +27,9 @@ export default function LabelFrame({ parts, capabilityId, children }) {
         {title}{mediumLine ? ` · ${mediumLine}` : ''}
       </header>
       <div style={{ fontSize: '18px', fontVariantNumeric: 'tabular-nums', color: 'var(--ink-primary)' }}>
-        {read || (isAccumulating ? `${state.observations ?? 0} / ${state.required ?? '—'}` : title)}
+        {isAccumulating ? `${state.observations ?? 0} / ${state.required ?? '—'}` : value ?? read ?? title}
       </div>
+      {value != null && read && <div style={{ fontSize: '11px', color: 'var(--ink-secondary)' }}>{read}</div>}
       <TubeRow total={total} lit={lit} chroma={confidence.level} breached={isBreached} />
       {reference && <div style={{ fontSize: '11px', color: 'var(--ink-faint)' }}>{reference}</div>}
       {isUnavailable && reason && <div style={{ fontSize: '11px', color: 'var(--ink-faint)' }}>dead tube — {reason}</div>}

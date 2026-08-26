@@ -1,4 +1,5 @@
 import { useData } from '../../../lib/useData.js'
+import { cap } from '../../core/capability.js'
 
 const PLATES = [
   { label: 'Home', plate: 'I' },
@@ -23,6 +24,7 @@ export default function Entry({ onContinue }) {
           <button
             key={p.label}
             onClick={onContinue}
+            {...cap('nav.chrome.mobile-tab-bar')}
             style={{
               display: 'flex', justifyContent: 'space-between', background: 'transparent',
               border: '1px solid var(--graticule)', color: 'inherit', fontFamily: 'var(--font-mono)', fontSize: '12px',

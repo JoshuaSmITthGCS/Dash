@@ -10,9 +10,14 @@
 **/node_modules/
 **/dist/
 **/coverage/
+# Playwright's own run output (traces, HTML report, screenshot diffs) — regenerated per run,
+# never the committed baselines themselves (those live under tests/e2e/**/__screenshots__/).
+/test-results/
+/playwright-report/
 .env
 .env.*
 !.env.example
+!.env.e2e
 pipeline/logs/
 pipeline/cache/
 # Downloaded payloads. Regenerable by definition, and stale on purpose once expired.

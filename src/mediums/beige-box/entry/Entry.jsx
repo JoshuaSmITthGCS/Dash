@@ -1,4 +1,5 @@
 import { useData } from '../../../lib/useData.js'
+import { cap } from '../../core/capability.js'
 
 const ICONS = [
   { label: 'Home', glyph: '🏠' },
@@ -22,6 +23,7 @@ export default function Entry({ onContinue }) {
           <button
             key={icon.label}
             onClick={onContinue}
+            {...cap('nav.chrome.mobile-tab-bar')}
             style={{
               background: 'transparent', border: 'none', color: 'inherit',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
@@ -36,6 +38,7 @@ export default function Entry({ onContinue }) {
       <button
         onClick={onContinue}
         data-beige-bevel="true"
+        {...cap('nav.chrome.mobile-tab-bar')}
         style={{ alignSelf: 'flex-start', minHeight: '44px', padding: '8px 16px', fontFamily: 'var(--font-mono)', color: 'var(--ink-primary)', marginTop: 'auto' }}
       >
         Start

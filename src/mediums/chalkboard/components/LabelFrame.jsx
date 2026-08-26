@@ -8,7 +8,7 @@ import { STATES } from '../../core/states.js'
  * check both facts mechanically — never just hoped for visually.
  */
 export default function LabelFrame({ parts, capabilityId, children }) {
-  const { title, mediumLine, read, reference, state, confidence, reason, previous, action } = parts
+  const { title, mediumLine, value, read, reference, state, confidence, reason, previous, action } = parts
   const isBreached = state.state === STATES.BREACHED
   const isAccumulating = state.state === STATES.ACCUMULATING
   const isUnavailable = state.state === STATES.UNAVAILABLE
@@ -34,10 +34,13 @@ export default function LabelFrame({ parts, capabilityId, children }) {
               data-state-mark="prior"
               aria-hidden="true"
               style={{
+                // Deliberately NOT fontVariantNumeric/tabular-nums: this is a decorative echo of
+                // a prior reading (aria-hidden, never the primary content), not itself a numeral
+                // subject to the numerals-stay-clean legibility floor — the blur is the point.
                 position: 'absolute', right: 0, top: 0,
                 opacity: 0.28, filter: 'blur(0.4px)',
                 color: 'var(--ink-faint)',
-                fontSize: '20px', fontVariantNumeric: 'tabular-nums',
+                fontSize: '20px',
                 zIndex: 0,
               }}
             >
@@ -54,10 +57,11 @@ export default function LabelFrame({ parts, capabilityId, children }) {
               textDecorationStyle: isBreached ? 'double' : undefined,
             }}
           >
-            {isAccumulating && state.observations != null ? `${state.observations}/${state.required ?? '—'}` : read || title}
+            {isAccumulating && state.observations != null ? `${state.observations}/${state.required ?? '—'}` : value ?? read ?? title}
           </span>
         </span>
       </div>
+      {value != null && read && <div style={{ fontSize: '13px', color: 'var(--ink-faint)' }}>{read}</div>}
       {mediumLine && <div style={{ fontSize: '11px', color: 'var(--ink-faint)' }}>{mediumLine}</div>}
       {reference && <div style={{ fontSize: '11px', color: 'var(--ink-faint)' }}>{reference}</div>}
       {isBreached && reason && <div style={{ fontSize: '11px', color: 'var(--chalk-alert)' }}>{reason}</div>}

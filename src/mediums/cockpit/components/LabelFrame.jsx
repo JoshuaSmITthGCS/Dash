@@ -7,7 +7,7 @@ import { STATES } from '../../core/states.js'
  * itself — the glyph is a separate mark).
  */
 export default function LabelFrame({ parts, capabilityId, children }) {
-  const { title, mediumLine, read, reference, provenance, state, confidence, reason, action } = parts
+  const { title, mediumLine, value, read, reference, provenance, state, confidence, reason, action } = parts
   const isLive = state.state === STATES.ESTABLISHED
   const isBreached = state.state === STATES.BREACHED
   const isAccumulating = state.state === STATES.ACCUMULATING
@@ -29,8 +29,9 @@ export default function LabelFrame({ parts, capabilityId, children }) {
       <div style={{ fontSize: '20px', color: isBreached ? 'var(--state-breach)' : 'var(--ink-primary)', fontVariantNumeric: 'tabular-nums' }}>
         {isAccumulating && state.observations != null
           ? `${state.observations} / ${state.required ?? '—'}`
-          : read || title}
+          : value ?? read ?? title}
       </div>
+      {value != null && read && <p style={{ fontSize: '11px', color: 'var(--ink-faint)' }}>{read}</p>}
 
       {reference && <div style={{ fontSize: '12px', color: 'var(--ink-faint)' }}>LIMIT · {reference}</div>}
       {reason && <div style={{ fontSize: '12px', color: isBreached ? 'var(--state-breach)' : 'var(--ink-faint)' }}>{reason}</div>}

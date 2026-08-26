@@ -1,4 +1,5 @@
 import { useData } from '../../../lib/useData.js'
+import { cap } from '../../core/capability.js'
 
 const CHAPTERS = [
   { label: 'Home', folio: 1 },
@@ -23,6 +24,7 @@ export default function Entry({ onContinue }) {
           <button
             key={c.label}
             onClick={onContinue}
+            {...cap('nav.chrome.mobile-tab-bar')}
             style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
               background: 'transparent', border: 'none', color: 'inherit', fontFamily: 'var(--font-body)', fontSize: '15px',

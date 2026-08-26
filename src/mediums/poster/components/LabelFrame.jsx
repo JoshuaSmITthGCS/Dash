@@ -4,7 +4,7 @@ import { seededRange } from '../../core/seed.js'
 const MAX_OFFSET_PX = 1.5
 
 export default function LabelFrame({ parts, capabilityId, children }) {
-  const { title, mediumLine, read, reference, state, confidence, reason, action } = parts
+  const { title, mediumLine, value, read, reference, state, confidence, reason, action } = parts
   const isBreached = state.state === STATES.BREACHED
   const isAccumulating = state.state === STATES.ACCUMULATING
   const isUnavailable = state.state === STATES.UNAVAILABLE
@@ -28,8 +28,9 @@ export default function LabelFrame({ parts, capabilityId, children }) {
         {title}{mediumLine ? ` · ${mediumLine}` : ''}
       </header>
       <div style={{ fontSize: '20px', fontVariantNumeric: 'tabular-nums', color: isBreached ? 'var(--ink-spot-1)' : 'var(--ink-black)' }}>
-        {isAccumulating && state.observations != null ? `${state.observations} / ${state.required ?? '—'}` : read || title}
+        {isAccumulating && state.observations != null ? `${state.observations} / ${state.required ?? '—'}` : value ?? read ?? title}
       </div>
+      {value != null && read && <div style={{ fontSize: '12px', color: 'var(--ink-secondary)' }}>{read}</div>}
       {reference && <div style={{ fontSize: '12px', color: 'var(--ink-faint)' }}>{reference}</div>}
       {reason && <div style={{ fontSize: '12px', color: 'var(--ink-faint)' }}>{reason}</div>}
       {action}

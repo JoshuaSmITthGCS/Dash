@@ -4,8 +4,8 @@ import { seededRange } from '../../core/seed.js'
 const PLATE_W = 120
 const PLATE_H = 70
 
-function magnitudeFrom(read) {
-  const parsed = read != null ? parseFloat(String(read).replace(/[^0-9.-]/g, '')) : NaN
+function magnitudeFrom(value) {
+  const parsed = value != null ? parseFloat(String(value).replace(/[^0-9.-]/g, '')) : NaN
   return Number.isFinite(parsed) ? Math.abs(parsed) : 1
 }
 
@@ -18,14 +18,14 @@ function magnitudeFrom(read) {
  * interval instead of a circle — never invented for a metric that doesn't publish one.
  */
 export default function LabelFrame({ parts, capabilityId, children }) {
-  const { title, read, reference, state, confidence, reason, confidenceInterval, action } = parts
+  const { title, value, read, reference, state, confidence, reason, confidenceInterval, action } = parts
   const isBreached = state.state === STATES.BREACHED
   const isAccumulating = state.state === STATES.ACCUMULATING
   const isUnavailable = state.state === STATES.UNAVAILABLE
 
   const cx = seededRange(capabilityId || title, 20, PLATE_W - 20, 'x')
   const cy = seededRange(capabilityId || title, 16, PLATE_H - 16, 'y')
-  const magnitude = magnitudeFrom(read)
+  const magnitude = magnitudeFrom(value)
   const radius = 3 + Math.sqrt(magnitude) * 2.4 // area-proportional: r ~ sqrt(value)
   const ellipseWidth = confidenceInterval ? Math.max(4, Math.abs(confidenceInterval[1] - confidenceInterval[0]) * 200) : null
 
@@ -59,6 +59,12 @@ export default function LabelFrame({ parts, capabilityId, children }) {
       </svg>
       <div data-sc-legend="true">
         <p data-sc-smallcaps="true" style={{ margin: 0 }}>{title}</p>
+        {!isUnavailable && (value != null || isAccumulating) && (
+          <p style={{ margin: 0, fontSize: '16px', fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums', color: isBreached ? 'var(--state-breach)' : 'var(--ink-primary)' }}>
+            {isAccumulating && state.observations != null ? `${state.observations} of ${state.required ?? '—'} observed` : value}
+          </p>
+        )}
+        {!isUnavailable && read && <p style={{ color: 'var(--ink-faint)', margin: 0 }}>{read}</p>}
         {isUnavailable && <p style={{ color: 'var(--ink-faint)', margin: 0 }}>catalogued, unplotted — {reason}</p>}
         {reference && <p style={{ color: 'var(--ink-faint)', margin: 0 }}>{reference}</p>}
         <p style={{ color: 'var(--ink-faint)', fontStyle: 'italic', margin: 0 }}>

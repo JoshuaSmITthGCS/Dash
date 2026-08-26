@@ -1,0 +1,1451 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-25T19:59:54.942515+00:00",
+  "groups": [
+    {
+      "id": "signal",
+      "letter": "A",
+      "title": "Signal quality",
+      "summary": "Does the composite predict anything, and which legs earn their weight.",
+      "requires_live_sample": false
+    },
+    {
+      "id": "construction",
+      "letter": "B",
+      "title": "Construction diagnostics",
+      "summary": "The factor and concentration bets being made whether or not they were intended.",
+      "requires_live_sample": false
+    },
+    {
+      "id": "cost",
+      "letter": "C",
+      "title": "Cost and capacity",
+      "summary": "What the signal must earn before trading it is worth doing.",
+      "requires_live_sample": false
+    },
+    {
+      "id": "honesty",
+      "letter": "D",
+      "title": "Statistical honesty",
+      "summary": "What the search that produced these weights costs in credibility.",
+      "requires_live_sample": false
+    },
+    {
+      "id": "distribution",
+      "letter": "E",
+      "title": "Distribution shape",
+      "summary": "Tail and drawdown behaviour. Wired now, readable after roughly six months live.",
+      "requires_live_sample": true
+    },
+    {
+      "id": "monitoring",
+      "letter": "F",
+      "title": "Drift alarms",
+      "summary": "Live behaviour against the backtest that predicted it.",
+      "requires_live_sample": true
+    },
+    {
+      "id": "risk_adjusted",
+      "letter": "G",
+      "title": "Classic risk-adjusted return",
+      "summary": "Return per unit of systematic risk, and the single-factor alpha left once beta is priced in.",
+      "requires_live_sample": false
+    },
+    {
+      "id": "tax_stress",
+      "letter": "H",
+      "title": "Tax and stress",
+      "summary": "After-tax reality, and how this book's own exposures fared in a known stress window.",
+      "requires_live_sample": false
+    }
+  ],
+  "cadence": [
+    {
+      "frequency": "Daily",
+      "items": "Reconciliation, data quality, fill rate, shortfall bps, exposure drift"
+    },
+    {
+      "frequency": "Weekly",
+      "items": "Rolling IC, turnover, factor betas, effective N"
+    },
+    {
+      "frequency": "Monthly",
+      "items": "Per-leg IC, quantile spreads, cost versus breakeven, PSI"
+    },
+    {
+      "frequency": "Quarterly",
+      "items": "DSR, PSR, MinTRL, factor attribution, distribution shape once the sample allows"
+    },
+    {
+      "frequency": "Annually or on any refit",
+      "items": "PBO, drop-one-leg, re-derived weights"
+    }
+  ],
+  "live_sample": {
+    "days": 18,
+    "refreshes": 80,
+    "first_date": "2026-08-05",
+    "last_date": "2026-08-25"
+  },
+  "metrics": [
+    {
+      "id": "rank_ic_1d",
+      "group": "signal",
+      "label": "Rank IC (1d)",
+      "value": -0.0383,
+      "display": "-0.038",
+      "reads": "Spearman correlation of score against forward return.",
+      "kill_threshold": "Mean IC < 0.02",
+      "kill_threshold_value": 0.02,
+      "comparison": "lt",
+      "breached": true,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 60,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "periods": 60,
+        "mean_ic": -0.0383,
+        "ic_std": 0.2033,
+        "icir": -0.653,
+        "t_stat": -1.46,
+        "hit_rate": 0.467,
+        "meaningful": true,
+        "clears_multiple_testing_bar": false,
+        "series": [
+          0.007648270304341522,
+          0.016470295947130346,
+          0.1081810918683597,
+          0.009553006248661776,
+          0.02399583361918554,
+          0.37305433159004026,
+          0.09637472138694132,
+          -0.3289271483657672,
+          0.12328135488187136,
+          -0.4324087287277659,
+          -0.5692941791227676,
+          -0.03109047684017392,
+          0.11894097553610926,
+          -0.371186407338691,
+          0.40081185967838084,
+          0.23666403621861748,
+          -0.4710655629347063,
+          -0.5749045623426412,
+          -0.017051746703652382,
+          -0.16883146766925305
+        ]
+      },
+      "source": "backtest panel"
+    },
+    {
+      "id": "rank_ic_5d",
+      "group": "signal",
+      "label": "Rank IC (5d)",
+      "value": 0.0067,
+      "display": "0.007",
+      "reads": "Spearman correlation of score against forward return.",
+      "kill_threshold": "Mean IC < 0.02",
+      "kill_threshold_value": 0.02,
+      "comparison": "lt",
+      "breached": true,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 59,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "periods": 59,
+        "mean_ic": 0.0067,
+        "ic_std": 0.1766,
+        "icir": 0.132,
+        "t_stat": 0.292,
+        "hit_rate": 0.61,
+        "meaningful": false,
+        "clears_multiple_testing_bar": false,
+        "series": [
+          0.059455263829761476,
+          0.043335944199487594,
+          0.061897913113897134,
+          -0.20798782633045382,
+          -0.1050256723604584,
+          0.11207546593309048,
+          0.36488398052446624,
+          0.28658689306194757,
+          0.16796975335916087,
+          -0.11344001785430131,
+          -0.21515473715670566,
+          -0.3024581586209006,
+          -0.3390635972641434,
+          0.2050227146254747,
+          0.12302057680729438,
+          0.206209778603064,
+          -0.3266792248418176,
+          0.015843263520858533,
+          0.055907406698596986,
+          -0.17014946501185096
+        ]
+      },
+      "source": "backtest panel"
+    },
+    {
+      "id": "rank_ic_21d",
+      "group": "signal",
+      "label": "Rank IC (21d)",
+      "value": 0.0356,
+      "display": "0.036",
+      "reads": "Spearman correlation of score against forward return.",
+      "kill_threshold": "Mean IC < 0.02",
+      "kill_threshold_value": 0.02,
+      "comparison": "lt",
+      "breached": false,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 59,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "periods": 59,
+        "mean_ic": 0.0356,
+        "ic_std": 0.1753,
+        "icir": 0.703,
+        "t_stat": 1.559,
+        "hit_rate": 0.661,
+        "meaningful": true,
+        "clears_multiple_testing_bar": false,
+        "series": [
+          -0.06293025112335983,
+          0.11070023322328856,
+          0.09953829794503806,
+          -0.15704197474258907,
+          -0.06077871077676563,
+          0.09152367873427558,
+          0.19295559552366912,
+          0.04646262017190706,
+          0.1455266179683506,
+          0.11109541583556484,
+          -0.2942722211828595,
+          0.27524100253048134,
+          0.2589928289299769,
+          0.19556891689558076,
+          -0.3175164271209216,
+          0.10768583318195353,
+          -0.6341534995588162,
+          0.19440493552935587,
+          0.10388854854163651,
+          0.12540222438197324
+        ]
+      },
+      "source": "backtest panel"
+    },
+    {
+      "id": "rank_ic_63d",
+      "group": "signal",
+      "label": "Rank IC (63d)",
+      "value": 0.0379,
+      "display": "0.038",
+      "reads": "Spearman correlation of score against forward return.",
+      "kill_threshold": "Mean IC < 0.02",
+      "kill_threshold_value": 0.02,
+      "comparison": "lt",
+      "breached": false,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 57,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "periods": 57,
+        "mean_ic": 0.0379,
+        "ic_std": 0.1594,
+        "icir": 0.824,
+        "t_stat": 1.796,
+        "hit_rate": 0.632,
+        "meaningful": true,
+        "clears_multiple_testing_bar": false,
+        "series": [
+          0.11245884105516235,
+          0.061909040091146984,
+          -0.041907175087087155,
+          -0.17164447698119922,
+          -0.12488258622855883,
+          0.13785700739568488,
+          0.26636562102375944,
+          0.03088500243490134,
+          0.031612873367687595,
+          0.07898626510731978,
+          0.0911312679313647,
+          0.30022196216226926,
+          0.0840171392199828,
+          -0.0034497707995075105,
+          -0.6084650497353996,
+          -0.24401616272277976,
+          -0.23725795723509308,
+          0.23346212168435793,
+          -0.024923572757221263,
+          -0.08659386844552855
+        ]
+      },
+      "source": "backtest panel"
+    },
+    {
+      "id": "ic_ir",
+      "group": "signal",
+      "label": "IC-IR (annualized)",
+      "value": 0.703,
+      "display": "0.703",
+      "reads": "Consistency of prediction, not just its average.",
+      "kill_threshold": "IC-IR < 0.3",
+      "kill_threshold_value": 0.3,
+      "comparison": "lt",
+      "breached": false,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 59,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "horizon": "21d",
+        "t_stat": 1.559,
+        "hit_rate": 0.661
+      },
+      "source": "backtest panel"
+    },
+    {
+      "id": "ic_bootstrap_ci",
+      "group": "signal",
+      "label": "Bootstrap IC confidence interval",
+      "value": 0.0356,
+      "display": "0.036 (95% CI -0.010 to 0.078)",
+      "reads": "Nonparametric confidence interval on mean rank IC -- doesn't assume the period IC series is normal, unlike IC-IR's t-statistic.",
+      "kill_threshold": "95% CI includes zero",
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": true,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 59,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "observations": 59,
+        "block_size": 1,
+        "samples": 2000,
+        "mean_ic": 0.0356,
+        "ic_ci_95": [
+          -0.01,
+          0.0777
+        ],
+        "probability_ic_positive": 0.9405
+      },
+      "source": "block bootstrap of the backtest panel's per-period rank IC"
+    },
+    {
+      "id": "ic_decay",
+      "group": "signal",
+      "label": "IC decay curve",
+      "value": "63d",
+      "display": "63d",
+      "reads": "Which horizon the edge lives at, against the cost of trading it.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Monthly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "1d": -0.0383,
+        "5d": 0.0067,
+        "21d": 0.0356,
+        "63d": 0.0379
+      },
+      "source": "backtest panel"
+    },
+    {
+      "id": "per_leg_ic",
+      "group": "signal",
+      "label": "Per-leg IC",
+      "value": 3,
+      "display": "3 of 8 legs below 0.02",
+      "reads": "Which legs predict on their own rather than riding the blend.",
+      "kill_threshold": "Any leg IC below 0.02",
+      "kill_threshold_value": 0,
+      "comparison": "gt",
+      "breached": true,
+      "cadence": "Monthly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "valuation": 0.0857,
+        "profitability": -0.0168,
+        "financial_health": 0.031,
+        "growth": null,
+        "capital_allocation": -0.0424,
+        "accounting_quality": -0.0468,
+        "market_behavior": 0.0208,
+        "news_sentiment": null
+      },
+      "source": "backtest panel"
+    },
+    {
+      "id": "drop_one_leg",
+      "group": "signal",
+      "label": "Drop-one-leg delta IC",
+      "value": 4,
+      "display": "4 legs hurting the composite",
+      "reads": "Marginal contribution of each leg. The test that says whether assigned weights are defensible.",
+      "kill_threshold": "Negative delta means the leg is hurting the composite",
+      "kill_threshold_value": 0,
+      "comparison": "gt",
+      "breached": true,
+      "cadence": "Annually or on any refit",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "composite": {
+          "periods": 59,
+          "mean_ic": 0.0351,
+          "ic_std": 0.1769,
+          "icir": 0.687,
+          "t_stat": 1.523,
+          "hit_rate": 0.678,
+          "meaningful": true,
+          "clears_multiple_testing_bar": false,
+          "series": [
+            -0.05840447674877998,
+            0.1137091642280677,
+            0.10135383328901454,
+            -0.15744802460007903,
+            -0.06112928078502904,
+            0.09704620218667216,
+            0.1930773669062656,
+            0.046770704005846216,
+            0.14860937364295762,
+            0.11388269199951409,
+            -0.29341048287816524,
+            0.27451867767488153,
+            0.2621135701698056,
+            0.20161459377921342,
+            -0.3151138467157156,
+            0.10659285977927264,
+            -0.6315796968452009,
+            0.1984017381481506,
+            0.10072302743157907,
+            0.12457014850649084
+          ]
+        },
+        "legs": {
+          "valuation": {
+            "weight": 0.2184,
+            "mean_ic_without_leg": 0.0262,
+            "delta_ic": 0.0089,
+            "hurts_composite": false
+          },
+          "profitability": {
+            "weight": 0.2028,
+            "mean_ic_without_leg": 0.0356,
+            "delta_ic": -0.0005,
+            "hurts_composite": true
+          },
+          "financial_health": {
+            "weight": 0.117,
+            "mean_ic_without_leg": 0.0338,
+            "delta_ic": 0.0013,
+            "hurts_composite": false
+          },
+          "growth": {
+            "weight": 0.0858,
+            "mean_ic_without_leg": 0.0351,
+            "delta_ic": 0,
+            "hurts_composite": false
+          },
+          "capital_allocation": {
+            "weight": 0.078,
+            "mean_ic_without_leg": 0.0352,
+            "delta_ic": -0.0001,
+            "hurts_composite": true
+          },
+          "accounting_quality": {
+            "weight": 0.078,
+            "mean_ic_without_leg": 0.0352,
+            "delta_ic": -0.0001,
+            "hurts_composite": true
+          },
+          "market_behavior": {
+            "weight": 0.18,
+            "mean_ic_without_leg": 0.0749,
+            "delta_ic": -0.0398,
+            "hurts_composite": true
+          },
+          "news_sentiment": {
+            "weight": 0.04,
+            "mean_ic_without_leg": 0.0351,
+            "delta_ic": 0,
+            "hurts_composite": false
+          }
+        }
+      },
+      "source": "backtest panel"
+    },
+    {
+      "id": "leg_correlation",
+      "group": "signal",
+      "label": "Leg correlation matrix",
+      "value": 0,
+      "display": "0 redundant pairs",
+      "reads": "Redundancy between legs. Two correlated legs are one leg counted twice.",
+      "kill_threshold": "Correlation above 0.7",
+      "kill_threshold_value": 0,
+      "comparison": "gt",
+      "breached": false,
+      "cadence": "Monthly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "legs": [
+          "valuation",
+          "profitability",
+          "financial_health",
+          "growth",
+          "capital_allocation",
+          "accounting_quality",
+          "market_behavior",
+          "news_sentiment"
+        ],
+        "matrix": {
+          "valuation": {
+            "valuation": 1,
+            "profitability": 0.2101,
+            "financial_health": 0.1058,
+            "growth": null,
+            "capital_allocation": 0.2231,
+            "accounting_quality": -0.0586,
+            "market_behavior": -0.2379,
+            "news_sentiment": null
+          },
+          "profitability": {
+            "valuation": 0.2101,
+            "profitability": 1,
+            "financial_health": 0.4779,
+            "growth": null,
+            "capital_allocation": 0.1063,
+            "accounting_quality": 0.0982,
+            "market_behavior": -0.0745,
+            "news_sentiment": null
+          },
+          "financial_health": {
+            "valuation": 0.1058,
+            "profitability": 0.4779,
+            "financial_health": 1,
+            "growth": null,
+            "capital_allocation": -0.0098,
+            "accounting_quality": -0.0353,
+            "market_behavior": -0.0113,
+            "news_sentiment": null
+          },
+          "growth": {
+            "valuation": null,
+            "profitability": null,
+            "financial_health": null,
+            "growth": null,
+            "capital_allocation": null,
+            "accounting_quality": null,
+            "market_behavior": null,
+            "news_sentiment": null
+          },
+          "capital_allocation": {
+            "valuation": 0.2231,
+            "profitability": 0.1063,
+            "financial_health": -0.0098,
+            "growth": null,
+            "capital_allocation": 1,
+            "accounting_quality": 0.1047,
+            "market_behavior": 0.1172,
+            "news_sentiment": null
+          },
+          "accounting_quality": {
+            "valuation": -0.0586,
+            "profitability": 0.0982,
+            "financial_health": -0.0353,
+            "growth": null,
+            "capital_allocation": 0.1047,
+            "accounting_quality": 1,
+            "market_behavior": 0.0009,
+            "news_sentiment": null
+          },
+          "market_behavior": {
+            "valuation": -0.2379,
+            "profitability": -0.0745,
+            "financial_health": -0.0113,
+            "growth": null,
+            "capital_allocation": 0.1172,
+            "accounting_quality": 0.0009,
+            "market_behavior": 1,
+            "news_sentiment": null
+          },
+          "news_sentiment": {
+            "valuation": null,
+            "profitability": null,
+            "financial_health": null,
+            "growth": null,
+            "capital_allocation": null,
+            "accounting_quality": null,
+            "market_behavior": null,
+            "news_sentiment": null
+          }
+        },
+        "redundant_pairs": []
+      },
+      "source": "backtest panel"
+    },
+    {
+      "id": "quantile_spread",
+      "group": "signal",
+      "label": "Quantile spread and monotonicity",
+      "value": 0.0048,
+      "display": "0.48% top minus bottom",
+      "reads": "Whether the whole ranking works or one tail is doing all of it.",
+      "kill_threshold": "Non-monotonic quantiles are fragile",
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": true,
+      "cadence": "Monthly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 59,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "periods": 59,
+        "horizon": "21d",
+        "mean_spread": 0.0048,
+        "monotonic_periods": 10,
+        "monotonic": false
+      },
+      "source": "backtest panel"
+    },
+    {
+      "id": "score_autocorrelation",
+      "group": "signal",
+      "label": "Score autocorrelation",
+      "value": 0.8914,
+      "display": "0.891",
+      "reads": "Turnover the signal implies before a single trade is placed.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 59,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "periods": 59,
+        "mean_autocorrelation": 0.8914,
+        "implied_period_turnover": 0.1086,
+        "series": [
+          0.832,
+          0.8632,
+          0.8526,
+          0.8994,
+          0.8643,
+          0.8528,
+          0.8926,
+          0.925,
+          0.9198,
+          0.9251,
+          0.9439,
+          0.9518,
+          0.9526,
+          0.9315,
+          0.9533,
+          0.9656,
+          0.9124,
+          0.9179,
+          0.9014,
+          0.9168
+        ]
+      },
+      "source": "backtest panel"
+    },
+    {
+      "id": "rolling_ic_regime",
+      "group": "signal",
+      "label": "Rolling 12-period IC (regime monitor)",
+      "value": 0.0665,
+      "display": "+0.0665 trailing 12 periods as of 2026-07-01",
+      "reads": "Trailing-year mean rank IC of the published composite. The regime-turn alarm: R11-P13's regime diagnosis found the score anti-predicted through the 2018-2020 regime and flipped positive at the 2021-03 rotation -- a sustained negative reading here is the signature of that regime returning, visible within months instead of in a future backtest.",
+      "kill_threshold": "Rolling 12-period mean IC < 0",
+      "kill_threshold_value": 0,
+      "comparison": "lt",
+      "breached": false,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 59,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "window": 12,
+        "horizon": "21d",
+        "resolved_periods": 59,
+        "series": [
+          {
+            "date": "2022-08-01",
+            "rolling_mean_ic": 0.0415
+          },
+          {
+            "date": "2022-09-01",
+            "rolling_mean_ic": 0.0683
+          },
+          {
+            "date": "2022-10-03",
+            "rolling_mean_ic": 0.0754
+          },
+          {
+            "date": "2022-11-01",
+            "rolling_mean_ic": 0.0406
+          },
+          {
+            "date": "2022-12-01",
+            "rolling_mean_ic": 0.0627
+          },
+          {
+            "date": "2023-01-03",
+            "rolling_mean_ic": 0.0149
+          },
+          {
+            "date": "2023-02-01",
+            "rolling_mean_ic": 0.0235
+          },
+          {
+            "date": "2023-03-01",
+            "rolling_mean_ic": 0.0161
+          },
+          {
+            "date": "2023-04-03",
+            "rolling_mean_ic": 0.0227
+          },
+          {
+            "date": "2023-05-01",
+            "rolling_mean_ic": 0.0068
+          },
+          {
+            "date": "2023-06-01",
+            "rolling_mean_ic": -0.0066
+          },
+          {
+            "date": "2023-07-03",
+            "rolling_mean_ic": -0.0012
+          },
+          {
+            "date": "2023-08-01",
+            "rolling_mean_ic": -0.0131
+          },
+          {
+            "date": "2023-09-01",
+            "rolling_mean_ic": -0.0256
+          },
+          {
+            "date": "2023-10-02",
+            "rolling_mean_ic": -0.039
+          },
+          {
+            "date": "2023-11-01",
+            "rolling_mean_ic": -0.0243
+          },
+          {
+            "date": "2023-12-01",
+            "rolling_mean_ic": -0.0576
+          },
+          {
+            "date": "2024-01-02",
+            "rolling_mean_ic": 0.0299
+          },
+          {
+            "date": "2024-02-01",
+            "rolling_mean_ic": 0.0371
+          },
+          {
+            "date": "2024-03-01",
+            "rolling_mean_ic": 0.0185
+          }
+        ],
+        "negative_windows": 7,
+        "last_negative_date": "2023-12-01",
+        "regime_reference": "R11-P13 regime diagnosis: break at 2021-03 (permutation p=0.019); champion mean IC -0.023 before, +0.038 after"
+      },
+      "source": "backtest panel"
+    },
+    {
+      "id": "factor_betas",
+      "group": "construction",
+      "label": "FF5 + momentum loadings",
+      "value": 0.38,
+      "display": "market +0.81 size +0.53 value +0.11 profitability +0.21 investment +0.15 momentum +0.38",
+      "reads": "The factor bets the portfolio is making, intended or not.",
+      "kill_threshold": "Persistent negative momentum loading explains a capture spread",
+      "kill_threshold_value": -0.1,
+      "comparison": "lt",
+      "breached": false,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 57,
+      "required_observations": 24,
+      "backtest_reference": null,
+      "detail": {
+        "months": 57,
+        "alpha_annualized_pct": 3.02,
+        "loadings": {
+          "market_excess": 0.81,
+          "size": 0.525,
+          "value": 0.106,
+          "profitability": 0.211,
+          "investment": 0.148,
+          "momentum": 0.38
+        },
+        "r_squared": 0.652
+      },
+      "source": "backtest equity curve versus Fama-French"
+    },
+    {
+      "id": "effective_n",
+      "group": "construction",
+      "label": "Effective N (1 / sum of squared weights)",
+      "value": 19.99,
+      "display": "20.0 of 20",
+      "reads": "How many equally sized bets the book really is.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "positions": 20,
+        "history": [
+          19.96,
+          19.97,
+          19.98,
+          19.98,
+          19.97,
+          19.97,
+          19.99,
+          19.99,
+          20,
+          19.99,
+          19.99,
+          19.99
+        ]
+      },
+      "source": "backtest rebalances"
+    },
+    {
+      "id": "top_10_weight",
+      "group": "construction",
+      "label": "Top-10 weight",
+      "value": 50.59,
+      "display": "50.6%",
+      "reads": "Concentration the effective-N number can hide.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": null,
+      "source": "backtest rebalances"
+    },
+    {
+      "id": "rolling_beta_60d",
+      "group": "construction",
+      "label": "Rolling 60-day beta",
+      "value": 0.21,
+      "display": "0.21 (range 0.19–1.31)",
+      "reads": "A point-estimate beta hides how unstable every beta-adjusted number on the dashboard is.",
+      "kill_threshold": "A swing wider than 0.3 makes excess-return figures unstable",
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": true,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "window": 60,
+        "observations": 1182,
+        "swing": 1.12,
+        "series": [
+          0.52,
+          0.53,
+          0.53,
+          0.55,
+          0.54,
+          0.55,
+          0.54,
+          0.53,
+          0.52,
+          0.48,
+          0.5,
+          0.51,
+          0.45,
+          0.46,
+          0.45,
+          0.43,
+          0.45,
+          0.44,
+          0.4,
+          0.41
+        ],
+        "series_note": "most recent 60 of 1182 observations; swing and beta_range span the full history"
+      },
+      "source": "backtest equity curve"
+    },
+    {
+      "id": "rolling_beta_swing",
+      "group": "construction",
+      "label": "Rolling beta swing (60d window)",
+      "value": 1.12,
+      "display": "1.12 (max − min over the window)",
+      "reads": "How unstable the 60-day beta estimate itself has been -- the number rolling_beta_60d's point estimate can't show on its own.",
+      "kill_threshold": "Swing wider than 0.3 makes excess-return figures unstable",
+      "kill_threshold_value": 0.3,
+      "comparison": "gt",
+      "breached": true,
+      "cadence": "Weekly",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "window": 60,
+        "observations": 1182,
+        "beta_range": [
+          0.19,
+          1.31
+        ]
+      },
+      "source": "backtest equity curve"
+    },
+    {
+      "id": "net_exposure_drift",
+      "group": "construction",
+      "label": "Net exposure drift",
+      "value": 0,
+      "display": "1.000–1.000 invested",
+      "reads": "Whether planned weights sum where they are supposed to.",
+      "kill_threshold": null,
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": null,
+      "cadence": "Daily",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": null,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "rebalances": 60
+      },
+      "source": "backtest rebalances"
+    },
+    {
+      "id": "sector_active_weights",
+      "group": "construction",
+      "label": "Sector active weights",
+      "value": 52.76,
+      "display": "Financial Services +52.8pp largest",
+      "reads": "Current production-sector weights minus SPY, retained prospectively by date.",
+      "kill_threshold": "Strategy sector classification coverage below 80%",
+      "kill_threshold_value": null,
+      "comparison": null,
+      "breached": false,
+      "cadence": "Daily",
+      "requires_live_sample": false,
+      "status": "ready",
+      "status_message": null,
+      "observations": 35,
+      "required_observations": null,
+      "backtest_reference": null,
+      "detail": {
+        "as_of": "2026-08-25T19:55:30.838389+00:00",
+        "strategy": "production_shadow_equal_weight_top20",
+        "benchmark": "SPY",
+        "active_sector_weights": {
+          "basic_materials": 0.0338,
+          "communication_services": -0.0991,
+          "consumer_cyclical": -0.0957,
+          "consumer_defensive": -0.0461,
+          "energy": 0.1664,
+          "financial_services": 0.5276,
+          "healthcare": -0.041,
+          "industrials": -0.0316,
+          "real_estate": -0.0188,
+          "technology": -0.374,
+          "utilities": -0.0215
+        },
+        "strategy_sector_weights": {
+          "basic_materials": 0.05,
+          "energy": 0.2,
+          "financial_services": 0.65,
+          "healthcare": 0.05,
+          "industrials": 0.05
+        },
+        "benchmark_sector_weights": {
+          "basic_materials": 0.0162,
+          "communication_services": 0.0991,
+          "consumer_cyclical": 0.0957,
+          "consumer_defensive": 0.0461,
+          "energy": 0.0336,
+          "financial_services": 0.1224,
+          "healthcare": 0.091,
+          "industrials": 0.0816,
+          "real_estate": 0.0188,
+          "technology": 0.374,
+          "utilities": 0.0215
+        },
+        "strategy_classified_weight": 1,
+        "benchmark_classified_weight": 1,
+        "history": [
+          {
+            "as_of": "2026-08-14T01:42:25.509457+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0457,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1664,
+              "financial_services": 0.5276,
+              "healthcare": -0.091,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-14T05:03:55.716953+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0457,
+              "consumer_defensive": -0.0461,
+              "energy": 0.2164,
+              "financial_services": 0.4776,
+              "healthcare": -0.091,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-14T12:19:52.653192+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0457,
+              "consumer_defensive": -0.0461,
+              "energy": 0.2164,
+              "financial_services": 0.4776,
+              "healthcare": -0.091,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-14T20:07:12.936573+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0457,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1664,
+              "financial_services": 0.5276,
+              "healthcare": -0.091,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-17T04:28:24.136988+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0957,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1164,
+              "financial_services": 0.5776,
+              "healthcare": -0.041,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-17T11:59:57.713230+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0457,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1664,
+              "financial_services": 0.4276,
+              "healthcare": -0.041,
+              "industrials": -0.0316,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-17T16:53:48.144521+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0457,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1164,
+              "financial_services": 0.5276,
+              "healthcare": -0.041,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-17T19:51:21.650513+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0957,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1664,
+              "financial_services": 0.5276,
+              "healthcare": -0.041,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-17T23:19:14.606061+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0457,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1664,
+              "financial_services": 0.4276,
+              "healthcare": -0.041,
+              "industrials": -0.0316,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-18T09:12:10.754849+00:00",
+            "active_sector_weights": {
+              "basic_materials": -0.0162,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0957,
+              "consumer_defensive": -0.0461,
+              "energy": 0.2664,
+              "financial_services": 0.2276,
+              "healthcare": 0.009,
+              "industrials": -0.0316,
+              "real_estate": -0.0188,
+              "technology": -0.174,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-18T12:05:28.239387+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": 0.0043,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1164,
+              "financial_services": 0.4776,
+              "healthcare": -0.041,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-18T15:22:38.092716+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0457,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1164,
+              "financial_services": 0.4776,
+              "healthcare": -0.041,
+              "industrials": -0.0316,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-18T16:59:04.905216+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0957,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1664,
+              "financial_services": 0.5276,
+              "healthcare": -0.041,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-18T19:49:32.584827+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0957,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1664,
+              "financial_services": 0.5276,
+              "healthcare": -0.041,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-19T03:10:42.512500+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0457,
+              "consumer_defensive": -0.0461,
+              "energy": 0.2664,
+              "financial_services": 0.3276,
+              "healthcare": -0.041,
+              "industrials": -0.0316,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-19T12:19:16.293738+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0457,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1664,
+              "financial_services": 0.4776,
+              "healthcare": -0.041,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-19T16:56:49.968454+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0457,
+              "consumer_defensive": -0.0461,
+              "energy": 0.0664,
+              "financial_services": 0.5776,
+              "healthcare": -0.041,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-19T19:48:56.399965+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0957,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1164,
+              "financial_services": 0.5776,
+              "healthcare": -0.041,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-20T11:59:53.943656+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": 0.0043,
+              "consumer_defensive": -0.0461,
+              "energy": 0.2164,
+              "financial_services": 0.3276,
+              "healthcare": -0.041,
+              "industrials": -0.0316,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          },
+          {
+            "as_of": "2026-08-20T17:11:29.685708+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0957,
+              "consumer_defensive": -0.0461,
+              "energy": 0.1164,
+              "financial_services": 0.5276,
+              "healthcare": -0.041,
+              "industrials": -0.0316,
+              "real_estate": -0.0188,
+              "technology": -0.324,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1,
+            "benchmark_classified_weight": 1
+          }
+        ]
+      },
+      "source": "prospective sector-weight history"
+    }
+  ],
+  "summary": {
+    "total": 64,
+    "ready": 44,
+    "breached": 9,
+    "sample_free_total": 46,
+    "sample_free_ready": 42,
+    "needs_sample_total": 18
+  },
+  "sources": {
+    "backtest": "backtest_monthly_results.json",
+    "optimizer": "optimize_weights_results.json",
+    "panel": "backtest_signal_panel.json",
+    "factors": "factors/french.json",
+    "sector_history": "data/validation/sector_weight_history.jsonl",
+    "execution": null,
+    "live_returns": "shadow_store/production"
+  },
+  "model_version": "3.2.0",
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "a8015681c21d886e074df2701d409e9c71524f27",
+    "config_hash": "ae4d188f2c6d6808ee2edcf2da308b051842737c393d266691484a1203456902",
+    "generated_at": "2026-08-25T19:59:54.942515+00:00"
+  }
+}

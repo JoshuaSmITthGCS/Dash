@@ -1,4 +1,5 @@
 import { useData } from '../../../lib/useData.js'
+import { cap } from '../../core/capability.js'
 
 /** A front page with a lead story — the actual top-ranked/most-actionable name, never a placeholder. */
 export default function Entry({ onContinue }) {
@@ -28,6 +29,7 @@ export default function Entry({ onContinue }) {
       )}
       <button
         onClick={onContinue}
+        {...cap('nav.chrome.mobile-tab-bar')}
         style={{ marginTop: 'auto', minHeight: '44px', padding: '10px 24px', background: 'var(--ink-primary)', color: 'var(--surface-ground)', border: 'none', fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}
       >
         Read the full report

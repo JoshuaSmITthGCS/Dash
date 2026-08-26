@@ -8,7 +8,7 @@ import { STATES } from '../../core/states.js'
  * from the four typographic weights above it.
  */
 export default function LabelFrame({ parts, capabilityId, children }) {
-  const { title, mediumLine, read, reference, state, confidence, reason, action } = parts
+  const { title, mediumLine, value, read, reference, state, confidence, reason, action } = parts
   const isBreached = state.state === STATES.BREACHED
   const isAccumulating = state.state === STATES.ACCUMULATING
   const isUnavailable = state.state === STATES.UNAVAILABLE
@@ -28,18 +28,19 @@ export default function LabelFrame({ parts, capabilityId, children }) {
       </p>
       <p
         style={{
-          fontFamily: 'var(--font-mono)', fontSize: '20px', margin: '0 0 2px',
+          fontFamily: 'var(--font-mono)', fontSize: '20px', margin: '0 0 2px', fontVariantNumeric: 'tabular-nums',
           fontStyle: isAccumulating ? 'italic' : 'normal',
           fontWeight: isBreached ? 700 : 400,
           color: isBreached ? 'var(--ink-editorial)' : 'var(--ink-primary)',
         }}
       >
         {isAccumulating && state.observations != null ? (
-          <>{state.observations}/{state.required ?? '—'}<sup>{state.observations}</sup></>
+          <>{state.observations}/{state.required ?? '—'}<sup style={{ fontVariantNumeric: 'normal' }} aria-hidden="true">{state.observations}</sup></>
         ) : (
-          <>{read || title}{isBreached && <sup data-book-dagger="true">†</sup>}</>
+          <>{value ?? read ?? title}{isBreached && <sup data-book-dagger="true" style={{ fontVariantNumeric: 'normal' }}>†</sup>}</>
         )}
       </p>
+      {value != null && read && <p style={{ fontSize: '13px', color: 'var(--ink-secondary)' }}>{read}</p>}
       {reference && <p style={{ fontSize: '12px', color: 'var(--ink-faint)' }}>{reference}</p>}
       {isBreached && reason && (
         <p data-book-footnote="true"><sup data-book-dagger="true">†</sup> {reason}</p>

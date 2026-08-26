@@ -9,10 +9,13 @@
     "dev:cloud": "netlify dev",
     "prebuild": "node scripts/build-ledger-ids.mjs",
     "build": "vite build",
+    "build:e2e": "node scripts/build-ledger-ids.mjs && vite build --mode e2e",
     "ledger:ids": "node scripts/build-ledger-ids.mjs",
     "docs:breakdown": "node scripts/generate-app-breakdown.mjs",
     "preview": "vite preview",
     "test": "vitest run",
+    "e2e": "playwright test",
+    "e2e:update-baselines": "playwright test visual.spec.mjs --update-snapshots",
     "lint": "eslint .",
     "screenshots:mobile": "node scripts/mobile-screenshots.mjs",
     "evidence:factors": "node scripts/factor-regression-evidence.mjs",
@@ -31,7 +34,9 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.62.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

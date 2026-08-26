@@ -47,6 +47,9 @@ const HUDDemo = lazy(() => import('./pages/HUDDemo.jsx'))
 // for it until someone actually visits /v2 (most of the twelve medium manifests don't exist
 // on disk yet; each one is its own lazy chunk loaded only when that medium is active).
 const MediumShell = lazy(() => import('./mediums/core/MediumShell.jsx'))
+// Phase 3 Playwright-only diagnostic route — see E2EHarness.jsx's own header for why it's
+// gated on build mode rather than DEV. Lazy for the same reason MediumShell is.
+const E2EHarness = lazy(() => import('./mediums/core/E2EHarness.jsx'))
 
 // Flat strategy paths that predate the Options tab, kept alive as redirects into it.
 const OPTIONS_STRATEGY_IDS = [
@@ -230,6 +233,14 @@ function AppContent() {
   const cloudPage = (feature, pathname, page) => loading
     ? <RouteLoading pathname={pathname} />
     : currentUser || (portfolioPreview && feature.startsWith('Portfolio')) ? page : <CloudDataUnavailable feature={feature} />
+
+  // Phase 3 harness diagnostic route: bypasses the whole app chrome (sidebar, DataStatus,
+  // Firebase-offline banner) for a clean mount of one medium's real LabelFrame/renderer against
+  // fixed fixtures — see E2EHarness.jsx. Never present in the real production bundle (MODE is
+  // always 'production' there, never 'e2e'), so this branch dead-code-eliminates away.
+  if (import.meta.env.MODE === 'e2e' && pathname.startsWith('/e2e-harness/')) {
+    return <Suspense fallback={null}><E2EHarness /></Suspense>
+  }
 
   return (
     <div className={`shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}`} data-auth-resolving={loading ? 'true' : 'false'}>

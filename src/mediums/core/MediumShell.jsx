@@ -12,6 +12,27 @@ import EvidenceScreen from './screens/EvidenceScreen.jsx'
 
 export const MEDIUM_ROOT_PATH = '/v2'
 
+/**
+ * True once the active medium's fonts have settled — the Phase 3 Playwright harness waits on
+ * `[data-app-ready="true"]` instead of `networkidle`/`waitForTimeout` (both banned in
+ * `tests/e2e/**`, since neither actually promises the fonts a numeral-legibility assertion reads
+ * are done swapping in). Guarded for test environments where `document.fonts` doesn't exist.
+ */
+function useAppReady() {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    const settle = () => { if (!cancelled) setReady(true) }
+    if (globalThis.document?.fonts?.ready) {
+      document.fonts.ready.then(settle).catch(settle)
+    } else {
+      settle()
+    }
+    return () => { cancelled = true }
+  }, [])
+  return ready
+}
+
 function MediumLoadError({ mediumId, error }) {
   return (
     <div role="alert" data-medium-load-error="true">
@@ -41,6 +62,12 @@ export default function MediumShell({ mediumId, entrySkip = false }) {
     let cancelled = false
     setState({ status: 'loading', manifest: null, error: null })
     loadMedium(mediumId)
+      // `loadTokens()` is awaited before the medium ever renders — its whole `[data-medium="x"]`
+      // token/structural CSS is otherwise dead code nothing ever injects into the page (every
+      // `var(--ink-primary)`-style reference would resolve to nothing). Phase 3's harness caught
+      // this the first time anything opened `/v2` in a real browser rather than jsdom, where a
+      // bare `var(--x)` reference in a `style` attribute "passes" without ever resolving.
+      .then((manifest) => manifest.loadTokens().then(() => manifest))
       .then((manifest) => { if (!cancelled) setState({ status: 'ready', manifest, error: null }) })
       .catch((error) => { if (!cancelled) setState({ status: 'error', manifest: null, error }) })
     return () => { cancelled = true }
@@ -69,15 +96,20 @@ function MediumShellReady({ manifest, mediumId, entrySkip }) {
   const { showEntry, dismiss } = useEntryDecision({
     mediumId, hasEntry: Boolean(manifest.entry), rootPath: MEDIUM_ROOT_PATH, entrySkip,
   })
+  const appReady = useAppReady()
   const NavComponent = manifest.nav?.Component
   const EntryComponent = manifest.entry?.Component
 
   if (showEntry && EntryComponent) {
-    return <EntryComponent onContinue={dismiss} />
+    return (
+      <div data-app-ready={appReady ? 'true' : undefined}>
+        <EntryComponent onContinue={dismiss} />
+      </div>
+    )
   }
 
   return (
-    <div data-medium-shell="true">
+    <div data-medium-shell="true" data-app-ready={appReady ? 'true' : undefined}>
       {NavComponent && <NavComponent />}
       <main id="main-content" tabIndex="-1">
         <Routes>

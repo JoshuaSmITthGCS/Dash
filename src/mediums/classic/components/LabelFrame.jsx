@@ -21,13 +21,13 @@ const STATUS_LABEL = { breached: 'Breached', ready: 'Ready', accumulating: 'Accu
  * deliberately doesn't pass through.
  */
 export default function LabelFrame({ parts, capabilityId, children }) {
-  const { title, mediumLine, read, reference, state, confidence, reason, action } = parts
+  const { title, mediumLine, value, read, reference, state, confidence, reason, action } = parts
   const tone = toneFor(state.state)
   const isAccumulating = state.state === STATES.ACCUMULATING
   const isBreached = state.state === STATES.BREACHED
   const text = isAccumulating && state.observations != null
     ? `${state.observations} of ${state.required ?? '—'}`
-    : read || title
+    : value ?? read ?? title
 
   return (
     <article className={`signal-metric tone-${tone}`} data-capability-id={capabilityId}>
@@ -37,10 +37,11 @@ export default function LabelFrame({ parts, capabilityId, children }) {
           {mediumLine && <small>{mediumLine}</small>}
         </div>
         <div className="signal-metric-value">
-          <b>{text}</b>
+          <b style={{ fontVariantNumeric: 'tabular-nums' }}>{text}</b>
           <span className={`chip signal-status-${tone}`}>{STATUS_LABEL[tone]}</span>
         </div>
       </header>
+      {value != null && read && <small>{read}</small>}
       {reason && <p className="signal-metric-state">{reason}</p>}
       {reference && (
         <footer>

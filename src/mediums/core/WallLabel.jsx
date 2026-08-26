@@ -31,6 +31,11 @@ export default function WallLabel({ metric, action = null, capabilityId = null, 
   const parts = {
     title: metric?.label || 'Untitled metric',
     mediumLine: [metric?.unit, metric?.cadence].filter(Boolean).join(' · ') || null,
+    // The actual numeral — `display` (pre-formatted, e.g. "-0.038" or "0.036 (95% CI -0.010 to
+    // 0.078)") when the row publishes one, else the raw `value`. Distinct from `read`, which is
+    // always prose (the metric's `reads` sentence) — a medium's "big numeral" slot must render
+    // `value`, never `read`, or it silently shows a sentence where a number belongs.
+    value: metric?.display ?? (metric?.value != null ? String(metric.value) : null),
     read: metric?.reads || null,
     reference: metric?.kill_threshold || metric?.backtest_reference || null,
     provenance: metric?.source || null,

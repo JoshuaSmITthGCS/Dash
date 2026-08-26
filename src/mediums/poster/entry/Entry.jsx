@@ -1,4 +1,5 @@
 import { useData } from '../../../lib/useData.js'
+import { cap } from '../../core/capability.js'
 
 /** A cover, carrying an issue number and the live as-of date. */
 export default function Entry({ onContinue }) {
@@ -12,6 +13,7 @@ export default function Entry({ onContinue }) {
       <p style={{ fontSize: '13px', color: 'var(--ink-secondary)' }}>AS OF {asOf}</p>
       <button
         onClick={onContinue}
+        {...cap('nav.chrome.mobile-tab-bar')}
         style={{ minHeight: '44px', padding: '10px 24px', background: 'var(--ink-black)', color: 'var(--surface-paper)', border: 'none', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}
       >
         OPEN

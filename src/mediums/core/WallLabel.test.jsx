@@ -10,6 +10,7 @@ function FakeLabelFrame({ parts, capabilityId, children }) {
     <section data-testid="fake-label" data-capability-id={capabilityId}>
       <h3>{parts.title}</h3>
       {parts.mediumLine && <p data-testid="medium-line">{parts.mediumLine}</p>}
+      {parts.value != null && <p data-testid="value">{parts.value}</p>}
       {parts.read && <p data-testid="read">{parts.read}</p>}
       <p data-testid="state">{parts.state.state}</p>
       <p data-testid="confidence">{parts.confidence.level}</p>
@@ -40,6 +41,22 @@ describe('WallLabel', () => {
     expect(screen.getByTestId('medium-line')).toHaveTextContent('correlation · Weekly')
     expect(screen.getByTestId('read')).toHaveTextContent('Spearman correlation')
     expect(screen.getByTestId('state')).toHaveTextContent('breached')
+  })
+
+  it('exposes the actual numeral separately from the prose read — display wins over a raw value', () => {
+    renderWithMedium(<WallLabel metric={{ id: 'x', label: 'X', status: 'ready', value: -0.038, display: '-0.038', reads: 'A prose sentence, never the numeral.' }} />)
+    expect(screen.getByTestId('value')).toHaveTextContent('-0.038')
+    expect(screen.getByTestId('read')).toHaveTextContent('A prose sentence, never the numeral.')
+  })
+
+  it('falls back to the raw numeric value when the row has no pre-formatted display', () => {
+    renderWithMedium(<WallLabel metric={{ id: 'x', label: 'X', status: 'ready', value: 0.62 }} />)
+    expect(screen.getByTestId('value')).toHaveTextContent('0.62')
+  })
+
+  it('never fabricates a numeral when the row publishes neither value nor display', () => {
+    renderWithMedium(<WallLabel metric={{ id: 'x', label: 'X', status: 'ready' }} />)
+    expect(screen.queryByTestId('value')).not.toBeInTheDocument()
   })
 
   it('passes through a genuinely published previous value, additive and optional', () => {

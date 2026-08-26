@@ -17,8 +17,9 @@ function FakeEntry({ onContinue }) {
   return <div><p>Entry card</p><button onClick={onContinue}>Continue</button></div>
 }
 
-const fakeManifestNoEntry = { components: {}, nav: { Component: FakeNav }, entry: null }
-const fakeManifestWithEntry = { components: {}, nav: { Component: FakeNav }, entry: { Component: FakeEntry } }
+const loadTokens = () => Promise.resolve()
+const fakeManifestNoEntry = { components: {}, nav: { Component: FakeNav }, entry: null, loadTokens }
+const fakeManifestWithEntry = { components: {}, nav: { Component: FakeNav }, entry: { Component: FakeEntry }, loadTokens }
 
 function renderShell(path, mediumId = 'gallery', entrySkip = false) {
   return render(
@@ -91,5 +92,20 @@ describe('MediumShell', () => {
     renderShell('/v2', 'gallery', true)
     await waitFor(() => expect(screen.getByRole('navigation')).toBeInTheDocument())
     expect(screen.queryByText('Entry card')).not.toBeInTheDocument()
+  })
+
+  it('sets data-app-ready once fonts settle — the Playwright harness waits on this, never networkidle/waitForTimeout', async () => {
+    loadMedium.mockResolvedValue(fakeManifestNoEntry)
+    useData.mockReturnValue({ data: { research: [] }, loading: false })
+    const { container } = renderShell('/v2')
+    await waitFor(() => expect(container.querySelector('[data-medium-shell]')).toHaveAttribute('data-app-ready', 'true'))
+  })
+
+  it('sets data-app-ready on the entry page too, once fonts settle', async () => {
+    loadMedium.mockResolvedValue(fakeManifestWithEntry)
+    useData.mockReturnValue({ data: { research: [] }, loading: false })
+    const { container } = renderShell('/v2')
+    await waitFor(() => expect(container.querySelector('[data-app-ready="true"]')).toBeInTheDocument())
+    expect(screen.getByText('Entry card')).toBeInTheDocument()
   })
 })

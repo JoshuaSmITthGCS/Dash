@@ -9,7 +9,7 @@ import { ditherBackground } from './dither.js'
  * hue alone.
  */
 export default function LabelFrame({ parts, capabilityId, children }) {
-  const { title, mediumLine, read, reference, state, confidence, reason, action } = parts
+  const { title, mediumLine, value, read, reference, state, confidence, reason, action } = parts
   const isBreached = state.state === STATES.BREACHED
   const isAccumulating = state.state === STATES.ACCUMULATING
   const isUnavailable = state.state === STATES.UNAVAILABLE
@@ -38,13 +38,14 @@ export default function LabelFrame({ parts, capabilityId, children }) {
       {isAccumulating && state.observations != null ? (
         <div style={{ position: 'relative' }}>
           <progress value={state.observations} max={state.required ?? 1} style={{ width: '100%', height: '10px' }} />
-          <div style={{ fontSize: '11px', fontVariantNumeric: 'tabular-nums' }}>{state.observations} of {state.required ?? '—'}</div>
+          <div style={{ fontSize: '16px', fontVariantNumeric: 'tabular-nums' }}>{state.observations} of {state.required ?? '—'}</div>
         </div>
       ) : (
         <div style={{ fontSize: '20px', fontVariantNumeric: 'tabular-nums', color: isBreached ? 'var(--state-breach)' : 'var(--ink-primary)', position: 'relative' }}>
-          {read || title}
+          {value ?? read ?? title}
         </div>
       )}
+      {value != null && read && <div style={{ fontSize: '12px', color: 'var(--ink-secondary)' }}>{read}</div>}
       {reference && <div style={{ fontSize: '11px', color: 'var(--ink-faint)' }}>{reference}</div>}
       {isBreached && reason && <div style={{ fontSize: '11px', color: 'var(--state-breach)' }}>{reason}</div>}
       {action}
