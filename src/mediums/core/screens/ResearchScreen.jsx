@@ -245,8 +245,15 @@ function ResearchScreenContent() {
   const view = searchParams.get('view') || 'picks'
   const [query, setQuery] = useState(searchParams.get('q') || '')
 
-  const { data: report, loading } = useData('report.json')
-  const { data: etfData } = useData('etfs.json')
+  const { data: report, loading: reportLoading } = useData('report.json')
+  const { data: etfData, loading: etfLoading } = useData('etfs.json')
+  // Gated on both fetches, not just report.json: the ranked pool below mixes stock rows
+  // (report.json) with ETF rows (etfs.json) as soon as both resolve. Gating on report.json alone
+  // let the pool render once, then silently grow a moment later when etfs.json caught up — a
+  // real UX inconsistency (the list visibly changes shape after first paint), and what caused
+  // MediumShell's data-app-ready flag (which only tracks font settling, not in-flight fetches) to
+  // fire before this screen's content had actually finished arriving.
+  const loading = reportLoading || etfLoading
   const { positions, addPosition } = useFirebasePortfolio()
   const watchlist = useWatchlist()
   const { createRule } = useAlerts()

@@ -38,7 +38,11 @@ test.describe('visual', () => {
       // [data-volatile] would mask live timestamps/prices if any screen rendered them directly
       // outside the frozen fixtures — none currently do, but the mask is here so a future screen
       // that does add one doesn't silently reintroduce baseline churn.
-      await expect(page).toHaveScreenshot(`${dest.name}.png`, { fullPage: true, mask: [page.locator('[data-volatile]')] })
+      // Research's screenshot (Phase 4b) runs long and tall enough (a full ranked pool, dozens of
+      // richly-disclosed cards) that the default 10s stability window can catch a heavier medium
+      // (e.g. neon's per-card glow effects) still mid-layout — bumped to 20s here rather than
+      // globally, since every other destination settles well inside the default.
+      await expect(page).toHaveScreenshot(`${dest.name}.png`, { fullPage: true, mask: [page.locator('[data-volatile]')], timeout: 20_000 })
     })
 
     test(`${dest.name} — greyscale (color-independent legibility)`, async ({ page }, testInfo) => {
@@ -47,7 +51,7 @@ test.describe('visual', () => {
       await page.goto(dest.path)
       await waitForAppReady(page)
       await page.addStyleTag({ content: 'html { filter: grayscale(1) !important; }' })
-      await expect(page).toHaveScreenshot(`${dest.name}-greyscale.png`, { fullPage: true, mask: [page.locator('[data-volatile]')] })
+      await expect(page).toHaveScreenshot(`${dest.name}-greyscale.png`, { fullPage: true, mask: [page.locator('[data-volatile]')], timeout: 20_000 })
     })
   }
 
