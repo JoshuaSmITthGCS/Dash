@@ -1,0 +1,49 @@
+/* Gallery — paintings on a wall. Default medium, light. See DESIGN.md §11. */
+:root[data-medium="gallery"] {
+  color-scheme: light;
+  --ink-primary: #1c1a17;
+  --ink-secondary: #4a453d;
+  --ink-faint: #8a8377;
+
+  --surface-wall: #f2ede2;
+  --surface-panel: #fbf9f4;
+
+  --frame-plain: #6b6459;
+  --frame-gilt: #b08d3e;
+
+  --state-established: #1c1a17;
+  --state-accumulating: #8a8377;
+  --state-breach: #a53b2c;
+  --state-unavailable: #c9c2b2;
+
+  --rule-hairline: #ded6c4;
+
+  --font-display: 'Playfair Display', 'Libre Baskerville', serif;
+  --font-body: 'Libre Baskerville', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+[data-medium="gallery"] body { background: var(--surface-wall); color: var(--ink-primary); font-family: var(--font-body); }
+
+[data-medium="gallery"] [data-gallery-frame] {
+  background: var(--surface-panel);
+  border: 3px solid var(--frame-plain);
+  padding: 14px 16px;
+  margin: 4px 0;
+}
+
+[data-medium="gallery"] [data-gallery-frame][data-primary="true"] {
+  border-color: var(--frame-gilt);
+  border-width: 5px;
+}
+
+[data-medium="gallery"] [data-gallery-frame][data-breached="true"] {
+  border-color: var(--state-breach);
+}
+
+[data-medium="gallery"] [data-gallery-plaque] {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: var(--ink-faint);
+}
