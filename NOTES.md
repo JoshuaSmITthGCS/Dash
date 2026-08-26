@@ -126,6 +126,50 @@ explanatory-only) is a pipeline-facing concern, not a rendering one. If a future
 per-feature IDs for finer Phase-3 parity checking, they can be split out of `factor-bars` without
 changing any other row.
 
+**Font self-hosting deferred, not faked.** The Phase 2a shared-layer plan called for
+self-hosting Geist Sans/Mono (replacing the current render-blocking jsdelivr link) and each
+medium's display face as build-time-subsetted assets. This session has no font-fetching/
+subsetting tooling available (`pyftsubset` and a source for the actual font files), and
+fabricating placeholder font files would be worse than leaving the current jsdelivr link in
+place. **Deferred to whichever Phase 2b commit first needs a self-hosted display face** — that
+commit adds the subsetting step for real, for that one face, rather than this session guessing
+at binary assets it can't verify. The jsdelivr link stays untouched for now.
+
+**`/v2` mounted at the app-router level, medium loading proven end-to-end.** `src/App.jsx` now
+routes `/v2/*` to `MediumShell` (lazy-loaded — confirmed as its own ~13 kB chunk in the
+production build, not bundled into the entry chunk). `registry.js` uses `import.meta.glob`
+rather than a template-literal dynamic import specifically so the build succeeds cleanly with
+zero medium manifests on disk (confirmed: `npm run build` succeeds with `MEDIUM_META` listing
+all twelve while `isMediumImplemented()` is `false` for all of them) — Phase 2b adds each
+`manifest.js` file and the glob picks it up automatically, no registry edit required.
+
+**The six core screens are a real, working, intentionally partial slice — not full ports.**
+Phase 2a's job was proving the manifest/WallLabel/capability-id/canonical-state pattern works
+end-to-end against real data, not porting all ~600 remaining `CAPABILITY-LEDGER.md` rows into
+JSX before any medium exists to render them through. What's actually wired, with real data
+fetching (no mocked/fake data in the shipped code, only in tests):
+- **HomeScreen**: the full three-item first viewport (portfolio hero + today's delta + as-of,
+  a growth-chart summary, the live evidence/provenance strip with the promotion disclosure).
+  Uses the same current-holdings-applied-to-published-closes computation Dashboard.jsx already
+  uses for its own hero (`enrichPortfolio` + `currentHoldingsSeries` + `buildPortfolioPriceData`
+  + `liveTodayPortfolioReturn`) — real and correct, but not yet the live-quote-overlaid or true
+  TWR chart DESIGN.md's first-viewport recommendation named as the ideal (that chart lives in
+  `Portfolio.jsx`'s `?view=performance` today and needs `usePortfolioTracking` +
+  `modifiedDietzReturn` wiring — tracked here as follow-on work, not silently approximated).
+- **ResearchScreen**: real search over `report.json`, and critically, **the `?q=` param is read
+  on mount** — the concrete fix for the Alerts-produces-but-Search-never-reads bug.
+- **ScreensScreen**: resolves `?recipe=` to its real published file and renders the artifact's
+  own build-status state correctly (gated-is-a-feature for early-session, partial-collection
+  alert for politics, success-with-empty-results distinct from failure).
+- **PortfolioScreen, MarketsScreen, EvidenceScreen**: each fetches its real primary data source
+  and renders one representative, correctly-stated capability (portfolio KPI row, market
+  session badge, and — closing the docs-only gap — the live no-signal-promoted disclosure with
+  real IC period counts).
+Every screen composes only through `manifest.components` (with plain-DOM fallbacks when a key is
+absent, matching `WallLabel`'s own fallback pattern) and never imports `src/pages/*` or
+page-level `src/components/*`, so nothing here needs to change when Phase 2b starts supplying
+real manifests — the screens just start rendering richer material automatically.
+
 **Consolidation shape decided once, not re-litigated per section.** The six-destination set
 (Home / Research / Screens / Portfolio / Markets / Evidence) was fixed in the approved execution
 plan before ledger authoring began, per the plan's own instruction ("refine during authoring,
