@@ -1,0 +1,61 @@
+/* Book — printed reference. Ivory page, old-style figures, generous leading. See DESIGN.md §5. */
+:root[data-medium="book"] {
+  color-scheme: light;
+
+  --ink-primary: #1c1a17;
+  --ink-secondary: #4a4438;
+  --ink-faint: #8a8272;
+
+  --surface-page: #f7f4ec;
+  --surface-panel: #fdfbf5;
+
+  --ink-editorial: #8a1f11;
+
+  --state-established: var(--ink-primary);
+  --state-accumulating: var(--ink-secondary);
+  --state-breach: var(--ink-editorial);
+  --state-unavailable: var(--ink-faint);
+
+  --rule-hairline: #c9c2b2;
+
+  --font-display: 'Libre Baskerville', 'Playfair Display', serif;
+  --font-body: 'Source Serif 4', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+[data-medium="book"] body {
+  background: var(--surface-page);
+  color: var(--ink-primary);
+  font-family: var(--font-body);
+  line-height: 1.6;
+}
+
+/* Ruled tables with folios — the container device. */
+[data-medium="book"] [data-book-table] {
+  border-top: 1px solid var(--rule-hairline);
+  border-bottom: 1px solid var(--rule-hairline);
+  padding: 10px 0;
+}
+
+[data-medium="book"] [data-book-folio] {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+[data-medium="book"] [data-book-footnote] {
+  font-size: 13px;
+  border-top: 1px solid var(--rule-hairline);
+  padding-top: 4px;
+  margin-top: 6px;
+}
+
+[data-medium="book"] [data-book-dagger] {
+  color: var(--ink-editorial);
+  font-weight: 700;
+}
+
+[data-medium="book"] [data-book-index] {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
