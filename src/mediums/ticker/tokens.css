@@ -2,7 +2,7 @@
 :root[data-medium="ticker"] {
   color-scheme: dark;
   --ink-primary: #e4e4e4;
-  --ink-faint: #6b6b6b;
+  --ink-faint: #8a8a8a; /* was #6b6b6b — 3.82:1 on --surface-ground, under WCAG AA's 4.5:1 text floor */
   --surface-ground: #050505;
   --rule-hairline: #232323;
   --state-established: #e4e4e4;
@@ -19,6 +19,8 @@
   border-bottom: 1px solid var(--rule-hairline);
   padding: 8px 4px;
   display: flex;
+  flex-wrap: wrap; /* the optional `reason` line (width: 100%) wraps onto its own row instead of
+                       forcing the title/value/status line past the viewport */
   justify-content: space-between;
   font-variant-numeric: tabular-nums;
 }

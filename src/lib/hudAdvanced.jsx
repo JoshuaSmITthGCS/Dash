@@ -303,3 +303,12 @@ export function initAdvancedHUD() {
 
   root.insertBefore(bgContainer, root.firstChild);
 }
+
+/**
+ * Undo initAdvancedHUD() — removes the injected background layer, if present.
+ */
+export function removeAdvancedHUD() {
+  if (typeof document === 'undefined') return;
+  const overlay = document.getElementById('root')?.querySelector('.data-stream-overlay');
+  overlay?.parentElement?.remove();
+}

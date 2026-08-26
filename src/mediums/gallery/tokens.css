@@ -3,7 +3,7 @@
   color-scheme: light;
   --ink-primary: #1c1a17;
   --ink-secondary: #4a453d;
-  --ink-faint: #8a8377;
+  --ink-faint: #5c564a; /* was #8a8377 — 3.57:1 on --surface-panel at full opacity, under WCAG AA's 4.5:1 text floor */
 
   --surface-wall: #f2ede2;
   --surface-panel: #fbf9f4;
@@ -12,7 +12,7 @@
   --frame-gilt: #b08d3e;
 
   --state-established: #1c1a17;
-  --state-accumulating: #8a8377;
+  --state-accumulating: #5c564a; /* kept in sync with the --ink-faint contrast fix above */
   --state-breach: #a53b2c;
   --state-unavailable: #c9c2b2;
 

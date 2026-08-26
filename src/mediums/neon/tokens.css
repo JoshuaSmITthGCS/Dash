@@ -4,7 +4,7 @@
 
   --ink-primary: #eafcff;
   --ink-secondary: #9fb0c9;
-  --ink-faint: #5c6a86;
+  --ink-faint: #8894b0; /* was #5c6a86 — 3.29:1 on --surface-panel, under WCAG AA's 4.5:1 text floor */
 
   --surface-ground: #0d0a2e;
   --surface-panel: #14103d;
@@ -19,7 +19,7 @@
   --state-breach: var(--brand-magenta);
   --state-unavailable: #322c5c;
 
-  --rule-hairline: #241c4d;
+  --rule-hairline: #6858b0; /* was #241c4d — 1.23:1 against --surface-ground, under the 3:1 graphical-contrast floor */
 
   /* The ONE glow token in the theme. Applied only where state === 'breached'. */
   --glow-breach: 0 0 10px rgba(255, 63, 216, 0.75), 0 0 2px rgba(255, 63, 216, 0.9);

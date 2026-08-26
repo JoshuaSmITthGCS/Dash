@@ -33,12 +33,15 @@ function toneFor(state) {
 
 function seriesData(series = [], values = []) { return series.length ? series.map((p) => p.y ?? p.value) : values }
 
-/** GrowthChart wants `dates` + `series: [{values, label}]` — adapts the shared flat shape. */
-function line({ series = [], values, ariaLabel }) {
+/** GrowthChart wants `dates` + `series: [{values, label, color}]` — adapts the shared flat shape. */
+function line({ series = [], values, ariaLabel, state }) {
   const data = seriesData(series, values)
   if (!data.length) return null
   const dates = series.length ? series.map((p, i) => p.x ?? String(i)) : data.map((_, i) => String(i))
-  return <GrowthChartImpl dates={dates} series={[{ values: data, label: ariaLabel || 'value' }]} valueFormatter={ratio} minimal />
+  // GrowthChartImpl requires a per-series `color` (no internal default — its own real callers
+  // always pass one); omitting it left the SVG stroke unset, which a11y.spec.mjs's chart-ink
+  // contrast check caught rendering as literal black against Classic's near-black background.
+  return <GrowthChartImpl dates={dates} series={[{ values: data, label: ariaLabel || 'value', color: toneFor(state) }]} valueFormatter={ratio} minimal />
 }
 
 function sparkline({ series, values, ariaLabel }) {

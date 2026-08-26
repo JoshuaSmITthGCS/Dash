@@ -1,24 +1,27 @@
 /**
  * motion.spec.mjs — Phase 3 assertions #8-#9 (rebuild plan).
  *
- * Every one of the twelve mediums' own DESIGN.md "Motion + reduced-motion" section claims
+ * Eleven of the twelve mediums' own DESIGN.md "Motion + reduced-motion" sections claim
  * "None — trivially compliant" (the two governed exceptions the master permits — an index
  * ticker, Ticker's flip-and-reorder — are labeled in `manifest.motion.profile` but have no
- * implemented animated behavior yet; see NOTES.md). Given that actual, verified state, these
- * assertions check what the codebase can honestly be held to right now: no medium applies a
- * real CSS transition/animation to anything, and — the substance of the "value never hidden"
- * rule #8/#9 exist to enforce — toggling `prefers-reduced-motion`/`prefers-reduced-transparency`
- * never changes what content is present, only (were an animation to exist) how it arrives.
+ * implemented animated behavior yet; see NOTES.md). Classic is the one exception: its own
+ * section (DESIGN.md, "Existing motion profile, already state-driven...") explicitly keeps its
+ * pre-existing, correctly-gated hover transitions rather than claiming zero motion — 0f forbids
+ * reopening that shared styling for this rebuild, so the "applies no motion" assertion below
+ * excludes it (NO_MOTION_CLAIM_EXEMPT). The "reduced motion never hides content" assertion
+ * still applies universally — Classic's grandfathered motion doesn't grandfather that.
  */
 import { test, expect } from '@playwright/test'
 import { MEDIUM_IDS } from './utils/mediums.mjs'
+
+const NO_MOTION_CLAIM_EXEMPT = new Set(['classic'])
 
 async function gotoHarness(page, mediumId) {
   await page.goto(`/e2e-harness/${mediumId}`)
   await page.locator('[data-app-ready="true"]').first().waitFor({ state: 'attached' })
 }
 
-for (const mediumId of MEDIUM_IDS) {
+for (const mediumId of MEDIUM_IDS.filter((id) => !NO_MOTION_CLAIM_EXEMPT.has(id))) {
   test(`#8/#9 motion — ${mediumId} applies no real CSS transition/animation anywhere`, async ({ page }) => {
     await gotoHarness(page, mediumId)
     const animated = await page.evaluate(() => {
@@ -34,7 +37,11 @@ for (const mediumId of MEDIUM_IDS) {
     })
     expect(animated, `${mediumId} applies motion where its own DESIGN.md section claims none: ${JSON.stringify(animated)}`).toEqual([])
   })
+}
 
+// "Reduced motion never hides content" applies to every medium, Classic included — its
+// grandfathered motion (see header comment) doesn't grandfather hiding content from that check.
+for (const mediumId of MEDIUM_IDS) {
   test(`#8/#9 motion — ${mediumId} renders identical content whether or not reduced motion is requested`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await gotoHarness(page, mediumId)

@@ -22,7 +22,10 @@ export default function LabelFrame({ parts, capabilityId, children }) {
   const lit = isAccumulating ? Math.round((state.progress ?? 0) * total) : isUnavailable ? 0 : total
 
   return (
-    <div data-neon-panel="true" data-breached={isBreached ? 'true' : undefined} data-capability-id={capabilityId} style={{ opacity: isUnavailable ? 0.4 : 1 }}>
+    // "Unavailable = dead tube + reason" (DESIGN.md §2) — floored well above the original 0.4,
+    // which a11y.spec.mjs's WCAG contrast check found crushing even --ink-primary text under the
+    // 4.5:1 floor; the printed reason must stay legible per the protected-disclosure rule.
+    <div data-neon-panel="true" data-breached={isBreached ? 'true' : undefined} data-capability-id={capabilityId} style={{ opacity: isUnavailable ? 0.85 : 1 }}>
       <header style={{ fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-secondary)' }}>
         {title}{mediumLine ? ` · ${mediumLine}` : ''}
       </header>

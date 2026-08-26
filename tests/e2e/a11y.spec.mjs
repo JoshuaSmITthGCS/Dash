@@ -65,12 +65,19 @@ for (const mediumId of MEDIUM_IDS) {
     const chart = page.locator('[data-capability-id="e2e-harness.chart-line"] svg').first()
     await expect(chart).toBeVisible()
     const ratios = await chart.evaluate((svg) => {
-      const bg = getComputedStyle(svg.closest('[data-e2e-harness]')).backgroundColor
+      // Every medium sets its ground color via `[data-medium="x"] body { background: ... }`
+      // (Classic is the one exception, via the shared legacy stylesheet) — [data-e2e-harness]
+      // itself never carries its own background-color, so checking it directly always resolved
+      // to transparent and silently compared chart ink against fake black instead of the
+      // medium's real background.
+      const bg = getComputedStyle(document.body).backgroundColor
       const results = []
       for (const shape of svg.querySelectorAll('path, line, circle, rect, polyline')) {
         const style = getComputedStyle(shape)
         const stroke = style.stroke !== 'none' ? style.stroke : null
-        const fill = style.fill !== 'none' && style.fill !== 'rgba(0, 0, 0, 0)' ? style.fill : null
+        // <line> has no enclosed area — SVG never paints its `fill`, so a computed fill (often
+        // the CSS-initial black, whether or not one was ever set) is inert, not real chart ink.
+        const fill = shape.tagName !== 'line' && style.fill !== 'none' && style.fill !== 'rgba(0, 0, 0, 0)' ? style.fill : null
         if (stroke) results.push({ color: stroke, bg })
         if (fill) results.push({ color: fill, bg })
       }

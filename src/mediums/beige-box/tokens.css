@@ -23,7 +23,9 @@
      against --surface-window, both above the 4.5:1 WCAG AA floor. */
   --state-unavailable: #58524a;
 
-  --rule-hairline: #b3ac9c;
+  /* Same #b3ac9c risk named above — 1.51:1 against --surface-plastic, under even the 3:1
+     graphical-contrast floor a11y.spec.mjs's chart-ink check applies to axis/gridlines. */
+  --rule-hairline: #726a5a;
 
   --font-display: 'IBM Plex Mono', ui-monospace, monospace;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;

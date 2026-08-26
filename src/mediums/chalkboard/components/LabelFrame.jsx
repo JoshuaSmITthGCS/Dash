@@ -12,11 +12,14 @@ export default function LabelFrame({ parts, capabilityId, children }) {
   const isBreached = state.state === STATES.BREACHED
   const isAccumulating = state.state === STATES.ACCUMULATING
   const isUnavailable = state.state === STATES.UNAVAILABLE
-  const pressure = 0.4 + confidence.level * 0.6 // chalk pressure — confidence channel, distinct from completeness
+  // Chalk pressure — confidence channel, distinct from completeness (DESIGN.md §9). Floored at
+  // 0.85 (not the original 0.4/0.5) — a11y.spec.mjs's WCAG contrast check found --ink-faint text
+  // dropping under the 4.5:1 floor at low pressure against this medium's slate background.
+  const pressure = 0.85 + confidence.level * 0.15
 
   if (isUnavailable) {
     return (
-      <div data-chalk-box="true" data-capability-id={capabilityId} style={{ opacity: 0.5 }}>
+      <div data-chalk-box="true" data-capability-id={capabilityId} style={{ opacity: 0.85 }}>
         <div style={{ fontSize: '20px' }}>?</div>
         <div style={{ fontSize: '12px', color: 'var(--ink-faint)' }}>{reason}</div>
       </div>

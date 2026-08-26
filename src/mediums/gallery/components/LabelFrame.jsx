@@ -12,7 +12,10 @@ export default function LabelFrame({ parts, capabilityId, children }) {
       data-gallery-frame="true"
       data-breached={isBreached ? 'true' : undefined}
       data-capability-id={capabilityId}
-      style={{ opacity: isUnavailable ? 0.5 : 1 - (1 - confidence.level) * 0.35 }}
+      // Confidence channel: transparency wash (DESIGN.md §11). Floored at 0.85 — a11y.spec.mjs's
+      // WCAG contrast check found the plaque ink and breach-red numeral both dropping under the
+      // 4.5:1 text floor at the original 0.5/0.65 low ends against this medium's cream panel.
+      style={{ opacity: isUnavailable ? 0.85 : 0.85 + confidence.level * 0.15 }}
     >
       <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontStyle: isAccumulating ? 'italic' : 'normal' }}>
         {title}

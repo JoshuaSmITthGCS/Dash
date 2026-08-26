@@ -19,7 +19,10 @@ export default function LabelFrame({ parts, capabilityId, children }) {
       data-live={isLive ? 'true' : undefined}
       data-breached={isBreached ? 'true' : undefined}
       data-capability-id={capabilityId}
-      style={{ opacity: isUnavailable ? 0.45 : 1 }}
+      // "Unavailable = unlit channel" (DESIGN.md §1) — but a11y.spec.mjs's WCAG contrast check
+      // found 0.45 crushing even --ink-primary text under the 4.5:1 floor; the printed reason
+      // must stay legible per the protected-disclosure rule, so the unlit look is much subtler.
+      style={{ opacity: isUnavailable ? 0.9 : 1 }}
     >
       <header style={{ display: 'flex', justifyContent: 'space-between', letterSpacing: '0.06em', fontSize: '11px', textTransform: 'uppercase', color: 'var(--ink-secondary)' }}>
         <span>{title}</span>

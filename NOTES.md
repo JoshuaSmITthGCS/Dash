@@ -312,3 +312,35 @@ wouldn't be doing its job:
   Left failing (not skipped, not worked around) since hiding a currently-red gate would defeat
   the harness's own purpose; the parity report states this explicitly rather than claiming a
   false all-green.
+
+**Phase 3 — motion/a11y/budget spec pass, more real bugs the harness caught.** Full detail (exact
+contrast numbers, colors, fixes per medium) is in `PARITY-REPORT.md`'s "Real bugs the harness
+found and this session fixed" section — this entry is the short version. Fixed: `main.jsx`
+unconditionally injecting an animated HUD overlay into every route regardless of medium (violated
+every medium's own "no motion" claim); `/v2/*` nested inside Classic's entire app shell instead of
+mounting standalone (sidebar, mobile nav, `Dashboard`, and unconditional idle-preloading of
+Classic-only page chunks all loading on every medium); Classic's global ~340 kB stylesheet loading
+unconditionally for every route; Ticker's confidence-via-opacity direction inverted relative to
+every other medium's stated DESIGN.md convention (low confidence should fade, Ticker's original
+formula faded *high*-confidence numerals instead); Ticker's 127px horizontal overflow at 390px
+(missing `flex-wrap` + no min-width/overflow clipping on the value column); eight mediums'
+`--ink-faint` token failing WCAG AA text contrast at full opacity, before any confidence-wash;
+four mediums' confidence-wash/unavailable opacity floors crushing even `--ink-primary` text below
+3:1 in the worst case; three mediums' hairline/graticule chart-gridline colors failing the 3:1
+graphical floor; Classic's `line` chart adapter never passing a `color` to the reused
+`GrowthChartImpl` (its real callers always do — this is this rebuild's own adapter bug, not a
+pre-existing one), rendering the SVG stroke as literal black. Also found and fixed two bugs in the
+harness itself (not the app): `a11y.spec.mjs`'s chart-ink check resolved the wrong background
+element (`[data-e2e-harness]` never carries its own `background-color` — every medium sets it on
+`body`), and separately checked `fill` on `<line>` elements, which SVG never renders (no enclosed
+area) but which still resolves a computed default. Both test fixes make the assertion more
+correct, not weaker. `motion.spec.mjs` also gained one narrow, explicit exemption: Classic's own
+DESIGN.md section (unlike the other eleven) does not claim zero motion — it explicitly keeps its
+pre-existing, correctly-gated hover transitions, and 0f forbids reopening that shared styling to
+force a false "zero motion" claim onto it. The "reduced motion never hides content" half of the
+same assertion still applies to Classic. One real, large, unresolved item: `budget.spec.mjs`'s
+500 kB ceiling is still red for all twelve mediums after these fixes (cut from ~1.88 MB to ~1.26
+MB) — the remainder is Firebase's SDK (~610 kB) plus the core JS runtime (~550 kB), both genuinely
+used by the new mediums' core screens, not medium-specific chrome. Getting under budget needs
+deferred Firebase loading behind first real auth use, scoped as this rebuild's next piece of work
+rather than attempted in this pass.

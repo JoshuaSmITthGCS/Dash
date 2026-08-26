@@ -9,6 +9,7 @@ import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAut
 import { usePreferences } from './lib/PreferencesContext.jsx'
 import ModelVersionFooter from './components/ModelVersionFooter.jsx'
 import AlertBadge from './components/AlertBadge.jsx'
+import { initAdvancedHUD, removeAdvancedHUD } from './lib/hudAdvanced.jsx'
 
 // Dashboard is the landing route on a phone opening this cold on cellular, so it ships eager.
 // Every other page loads on demand – keeps first paint off the weight of pages the visit may
@@ -217,8 +218,33 @@ function AppContent() {
 
   useEffect(() => { setMoreMenuOpen(false) }, [pathname])
 
+  // The legacy HUD background overlay (data-stream/grid animation) is Classic-only chrome —
+  // none of the twelve medium manifests' own DESIGN.md sections claim any motion, so it must
+  // never bleed into /v2/* or the e2e harness route. Gate by route rather than deleting it,
+  // per the rebuild's zero-deletion rule; Classic keeps its existing behavior unchanged.
+  useEffect(() => {
+    const isMediumRoute = pathname.startsWith('/v2') || pathname.startsWith('/e2e-harness')
+    // The HUD overlay is suppressed on every /v2 medium, classic-as-medium included — matches
+    // the harness's own expectation that no medium (twelve manifests, all claiming zero motion
+    // in their own DESIGN.md) shows it. The stylesheet, unlike the overlay, is still needed
+    // when the active medium is classic — see the matching comment in main.jsx's bootstrap.
+    if (isMediumRoute) removeAdvancedHUD()
+    else initAdvancedHUD()
+    if (!isMediumRoute || preferences.medium === 'classic') {
+      // No-op once already loaded (main.jsx's bootstrap covers a cold Classic entry) — this
+      // covers navigating into Classic from /v2 without a full page reload.
+      import('./styles/index.css')
+    }
+  }, [pathname, preferences.medium])
+
   useEffect(() => {
     const preload = () => {
+      // Classic-only chunks (Picks.jsx, Portfolio.jsx + its transitive StockDetailModal
+      // import) — preloading them under a medium route blew the /v2 500 kB entry budget for
+      // every medium (found by budget.spec.mjs). window.location, not the pathname var above,
+      // since this effect intentionally runs once per mount regardless of later navigation.
+      const isMediumRoute = window.location.pathname.startsWith('/v2') || window.location.pathname.startsWith('/e2e-harness')
+      if (isMediumRoute) return
       preloadRoute('/research')
       preloadRoute('/portfolio')
     }
@@ -240,6 +266,24 @@ function AppContent() {
   // always 'production' there, never 'e2e'), so this branch dead-code-eliminates away.
   if (import.meta.env.MODE === 'e2e' && pathname.startsWith('/e2e-harness/')) {
     return <Suspense fallback={null}><E2EHarness /></Suspense>
+  }
+
+  // /v2/* is the medium-manifest shell (rebuild plan Phase 2a) — it mounts its own nav and
+  // chrome per medium and must never be nested inside Classic's sidebar/rail/mobile-nav shell
+  // below (found by budget.spec.mjs: without this bypass, every /v2 load also pulled in
+  // Dashboard, the full nav chrome, and Classic's global CSS, blowing the 500 kB entry budget
+  // for every medium regardless of size).
+  if (pathname.startsWith('/v2')) {
+    // MediumShell's own inner <Routes> uses paths relative to "/v2" (see MediumShell.jsx), which
+    // React Router only resolves correctly when it's nested under a matching <Route path="/v2/*">
+    // — hence the standalone <Routes> here rather than rendering <MediumShell> directly.
+    return <Suspense fallback={<RouteLoading pathname={pathname} />}>
+      <Routes>
+        <Route path="/v2/*" element={
+          <MediumShell mediumId={preferences.medium} entrySkip={Boolean(preferences.entrySkip?.[preferences.medium])} />
+        } />
+      </Routes>
+    </Suspense>
   }
 
   return (
@@ -345,9 +389,6 @@ function AppContent() {
           <Route path="/glossary" element={<Glossary />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/alerts" element={cloudPage('Alerts', '/alerts', <Alerts />)} />
-          <Route path="/v2/*" element={
-            <MediumShell mediumId={preferences.medium} entrySkip={Boolean(preferences.entrySkip?.[preferences.medium])} />
-          } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
