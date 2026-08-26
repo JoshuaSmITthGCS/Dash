@@ -1,0 +1,75 @@
+import { render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import WallLabel from './WallLabel.jsx'
+import { MediumProvider } from './MediumContext.jsx'
+
+// A minimal fake medium — real mediums supply their own LabelFrame in Phase 2b; this proves
+// the contract works generically for any medium that implements it.
+function FakeLabelFrame({ parts, capabilityId, children }) {
+  return (
+    <section data-testid="fake-label" data-capability-id={capabilityId}>
+      <h3>{parts.title}</h3>
+      {parts.mediumLine && <p data-testid="medium-line">{parts.mediumLine}</p>}
+      {parts.read && <p data-testid="read">{parts.read}</p>}
+      <p data-testid="state">{parts.state.state}</p>
+      <p data-testid="confidence">{parts.confidence.level}</p>
+      {parts.reason && <p data-testid="reason">{parts.reason}</p>}
+      {children}
+    </section>
+  )
+}
+
+const fakeManifest = { components: { LabelFrame: FakeLabelFrame } }
+
+function renderWithMedium(ui, manifest = fakeManifest) {
+  return render(<MediumProvider value={manifest}>{ui}</MediumProvider>)
+}
+
+describe('WallLabel', () => {
+  it('derives every wall-label part from the metric row and renders through the medium', () => {
+    renderWithMedium(
+      <WallLabel metric={{
+        id: 'rank_ic_1d', label: 'Rank IC (1d)', reads: 'Spearman correlation of score against forward return.',
+        unit: 'correlation', cadence: 'Weekly', kill_threshold: 'Mean IC < 0.02', status: 'ready', breached: true,
+      }} />
+    )
+    expect(screen.getByText('Rank IC (1d)')).toBeInTheDocument()
+    expect(screen.getByTestId('medium-line')).toHaveTextContent('correlation · Weekly')
+    expect(screen.getByTestId('read')).toHaveTextContent('Spearman correlation')
+    expect(screen.getByTestId('state')).toHaveTextContent('breached')
+  })
+
+  it('never emits a numeral or label the metric did not publish (blank fields stay blank)', () => {
+    renderWithMedium(<WallLabel metric={{ id: 'pbo', label: 'PBO', status: 'provisional', breached: false }} />)
+    expect(screen.queryByTestId('medium-line')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('read')).not.toBeInTheDocument()
+  })
+
+  it('sets data-capability-id derived from the metric id', () => {
+    renderWithMedium(<WallLabel metric={{ id: 'deflated_sharpe', label: 'Deflated Sharpe', status: 'ready' }} />)
+    expect(screen.getByTestId('fake-label')).toHaveAttribute('data-capability-id', 'metric.report.deflated-sharpe')
+  })
+
+  it('respects an explicit capabilityId override', () => {
+    renderWithMedium(<WallLabel metric={{ id: 'x', label: 'X', status: 'ready' }} capabilityId="figure.home.custom" />)
+    expect(screen.getByTestId('fake-label')).toHaveAttribute('data-capability-id', 'figure.home.custom')
+  })
+
+  it('renders an unavailable metric with its reason, never a zero', () => {
+    renderWithMedium(<WallLabel metric={{ id: 'x', label: 'X', status: 'unavailable', status_message: 'No data yet.' }} />)
+    expect(screen.getByTestId('state')).toHaveTextContent('unavailable')
+    expect(screen.getByTestId('reason')).toHaveTextContent('No data yet.')
+  })
+
+  it('falls back to a legible plain render when the medium has no LabelFrame yet (dev-time)', () => {
+    renderWithMedium(<WallLabel metric={{ id: 'x', label: 'In Progress Metric', status: 'ready', reads: 'A read.' }} />, { components: {} })
+    expect(screen.getByText('In Progress Metric')).toBeInTheDocument()
+    expect(screen.getByText('A read.')).toBeInTheDocument()
+  })
+
+  it('throws a clear error when rendered outside a MediumProvider', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    expect(() => render(<WallLabel metric={{ id: 'x', label: 'X', status: 'ready' }} />)).toThrow(/MediumProvider/)
+    spy.mockRestore()
+  })
+})

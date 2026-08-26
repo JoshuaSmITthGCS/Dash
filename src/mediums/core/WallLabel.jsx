@@ -1,0 +1,58 @@
+import { canonicalMetricState, confidenceOf } from './states.js'
+import { cap, warnIfUnknownCapability } from './capability.js'
+import { useMedium } from './MediumContext.jsx'
+
+/**
+ * The wall-label contract (master doc): every chart, table, and headline number carries what it
+ * measures in plain language, its period/unit, a reference point, the read (one line from
+ * evidence on screen), the quantitative state per the active medium, qualitative confidence as
+ * a separate channel, and the action where one exists.
+ *
+ * `<WallLabel metric={row} action={optionalControl}>{chartElement}</WallLabel>` derives all of
+ * that itself from the metric row — a page never composes label copy by hand, which is what
+ * makes hand-written disclosure strings structurally impossible. It renders through the active
+ * medium's `components.LabelFrame(parts)` render prop, so every medium gets the same structured
+ * data and decides its own typography/material for it.
+ *
+ * `metric` is expected to be shaped like a `signal_metrics.json` row: { id, label, reads, unit,
+ * cadence, kill_threshold, kill_threshold_value, backtest_reference, source, status, breached,
+ * observations, required_observations, status_message }. Any object with that shape works —
+ * this component doesn't care which published file it came from.
+ */
+export default function WallLabel({ metric, action = null, capabilityId = null, children = null }) {
+  const manifest = useMedium()
+  const canonical = canonicalMetricState(metric)
+  const confidence = confidenceOf({ metric })
+
+  const capId = capabilityId || (metric?.id ? `metric.report.${metric.id.replace(/_/g, '-')}` : null)
+  if (import.meta.env?.DEV) warnIfUnknownCapability(capId)
+
+  const parts = {
+    title: metric?.label || 'Untitled metric',
+    mediumLine: [metric?.unit, metric?.cadence].filter(Boolean).join(' · ') || null,
+    read: metric?.reads || null,
+    reference: metric?.kill_threshold || metric?.backtest_reference || null,
+    provenance: metric?.source || null,
+    state: canonical,
+    confidence,
+    action,
+    reason: canonical.reason,
+  }
+
+  const LabelFrame = manifest?.components?.LabelFrame
+  if (!LabelFrame) {
+    // Dev-time fallback so an in-progress medium (LabelFrame not implemented yet) still renders
+    // something legible instead of crashing the screen. Never used once a medium ships.
+    return (
+      <div {...cap(capId)} data-wall-label-fallback="true">
+        <strong>{parts.title}</strong>
+        {parts.mediumLine && <div>{parts.mediumLine}</div>}
+        {parts.read && <p>{parts.read}</p>}
+        <div>{canonical.state}{canonical.reason ? ` — ${canonical.reason}` : ''}</div>
+        {children}
+      </div>
+    )
+  }
+
+  return <LabelFrame parts={parts} capabilityId={capId}>{children}</LabelFrame>
+}
