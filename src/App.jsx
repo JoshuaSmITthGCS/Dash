@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, useCallback } from 'react'
+import { Suspense, useEffect, useState, useCallback, lazy } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
@@ -9,7 +9,8 @@ import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAut
 import { usePreferences } from './lib/PreferencesContext.jsx'
 import ModelVersionFooter from './components/ModelVersionFooter.jsx'
 import AlertBadge from './components/AlertBadge.jsx'
-import { initAdvancedHUD, removeAdvancedHUD } from './lib/hudAdvanced.jsx'
+import { initAdvancedHUD } from './lib/hudAdvanced.jsx'
+import RouteLoading from './components/RouteLoading.jsx'
 
 // Dashboard is the landing route on a phone opening this cold on cellular, so it ships eager.
 // Every other page loads on demand – keeps first paint off the weight of pages the visit may
@@ -44,13 +45,10 @@ const Insights = lazy(() => import('./pages/Insights.jsx'))
 const Alerts = lazy(() => import('./pages/Alerts.jsx'))
 const Markets = lazy(() => import('./pages/Markets.jsx'))
 const HUDDemo = lazy(() => import('./pages/HUDDemo.jsx'))
-// The twelve-medium rebuild's shell — see src/mediums/. Lazy so the entry bundle never pays
-// for it until someone actually visits /v2 (most of the twelve medium manifests don't exist
-// on disk yet; each one is its own lazy chunk loaded only when that medium is active).
-const MediumShell = lazy(() => import('./mediums/core/MediumShell.jsx'))
-// Phase 3 Playwright-only diagnostic route — see E2EHarness.jsx's own header for why it's
-// gated on build mode rather than DEV. Lazy for the same reason MediumShell is.
-const E2EHarness = lazy(() => import('./mediums/core/E2EHarness.jsx'))
+// The /v2 medium shell and the Phase 3 e2e-harness diagnostic route live in MediumApp.jsx now —
+// main.jsx's bootstrap() picks that root instead of this one for /v2 and /e2e-harness paths, so
+// App.jsx (and everything it statically imports, FirebaseAuthContext.jsx included) is never
+// bundler-reachable from a medium's cold load. See MediumApp.jsx's own header comment.
 
 // Flat strategy paths that predate the Options tab, kept alive as redirects into it.
 const OPTIONS_STRATEGY_IDS = [
@@ -111,19 +109,6 @@ function preloadRoute(path) {
   })
 }
 
-function RouteLoading({ pathname }) {
-  const label = pathname.startsWith('/portfolio')
-    ? 'Opening your portfolio'
-    : pathname.startsWith('/research') ? 'Opening research' : 'Opening page'
-  return (
-    <div className="route-loading" role="status" aria-live="polite">
-      <span className="loading-mark" aria-hidden="true" />
-      <strong>{label}…</strong>
-      <span>Loading the latest saved view.</span>
-    </div>
-  )
-}
-
 function CloudDataUnavailable({ feature }) {
   const { authError, retryAuth } = useAuth()
   return <section className="report-empty-state">
@@ -132,6 +117,20 @@ function CloudDataUnavailable({ feature }) {
     <p>{authError || 'Firebase is still connecting to your solo workspace.'}</p>
     <button type="button" className="primary-button" onClick={retryAuth}>Reconnect Firebase</button>
   </section>
+}
+
+// This root's <Routes> doesn't define /v2 or /e2e-harness at all any more (Phase 4, NOTES.md —
+// main.jsx's bootstrap() picks MediumApp.jsx for those instead), so a soft <Navigate> can't reach
+// them. No current UI links from Classic into a medium (no picker in Settings yet), but if one
+// is ever added, this hands off via the one hard reload main.jsx needs to pick the other root,
+// rather than silently swallowing it into the catch-all's default "back to Home" redirect.
+function NotFoundOrMedium() {
+  const { pathname, search } = useLocation()
+  const isMediumRoute = pathname.startsWith('/v2') || pathname.startsWith('/e2e-harness')
+  useEffect(() => {
+    if (isMediumRoute) window.location.assign(pathname + search)
+  }, [isMediumRoute, pathname, search])
+  return isMediumRoute ? <RouteLoading pathname={pathname} /> : <Navigate to="/" replace />
 }
 
 export const MOBILE_NAV = [
@@ -218,33 +217,16 @@ function AppContent() {
 
   useEffect(() => { setMoreMenuOpen(false) }, [pathname])
 
-  // The legacy HUD background overlay (data-stream/grid animation) is Classic-only chrome —
-  // none of the twelve medium manifests' own DESIGN.md sections claim any motion, so it must
-  // never bleed into /v2/* or the e2e harness route. Gate by route rather than deleting it,
-  // per the rebuild's zero-deletion rule; Classic keeps its existing behavior unchanged.
-  useEffect(() => {
-    const isMediumRoute = pathname.startsWith('/v2') || pathname.startsWith('/e2e-harness')
-    // The HUD overlay is suppressed on every /v2 medium, classic-as-medium included — matches
-    // the harness's own expectation that no medium (twelve manifests, all claiming zero motion
-    // in their own DESIGN.md) shows it. The stylesheet, unlike the overlay, is still needed
-    // when the active medium is classic — see the matching comment in main.jsx's bootstrap.
-    if (isMediumRoute) removeAdvancedHUD()
-    else initAdvancedHUD()
-    if (!isMediumRoute || preferences.medium === 'classic') {
-      // No-op once already loaded (main.jsx's bootstrap covers a cold Classic entry) — this
-      // covers navigating into Classic from /v2 without a full page reload.
-      import('./styles/index.css')
-    }
-  }, [pathname, preferences.medium])
+  // The legacy HUD background overlay (data-stream/grid animation) is Classic-only chrome. This
+  // component (App.jsx's AppContent) only ever mounts for Classic paths now — main.jsx's
+  // bootstrap() picks MediumApp.jsx instead for /v2 and /e2e-harness (Phase 4, NOTES.md), and
+  // MediumApp's own EscapeToClassic hard-reloads rather than soft-navigating here — so there's no
+  // route branch to gate on any more. Classic's stylesheet is likewise guaranteed loaded already
+  // by that same bootstrap before this component ever renders.
+  useEffect(() => { initAdvancedHUD() }, [])
 
   useEffect(() => {
     const preload = () => {
-      // Classic-only chunks (Picks.jsx, Portfolio.jsx + its transitive StockDetailModal
-      // import) — preloading them under a medium route blew the /v2 500 kB entry budget for
-      // every medium (found by budget.spec.mjs). window.location, not the pathname var above,
-      // since this effect intentionally runs once per mount regardless of later navigation.
-      const isMediumRoute = window.location.pathname.startsWith('/v2') || window.location.pathname.startsWith('/e2e-harness')
-      if (isMediumRoute) return
       preloadRoute('/research')
       preloadRoute('/portfolio')
     }
@@ -259,32 +241,6 @@ function AppContent() {
   const cloudPage = (feature, pathname, page) => loading
     ? <RouteLoading pathname={pathname} />
     : currentUser || (portfolioPreview && feature.startsWith('Portfolio')) ? page : <CloudDataUnavailable feature={feature} />
-
-  // Phase 3 harness diagnostic route: bypasses the whole app chrome (sidebar, DataStatus,
-  // Firebase-offline banner) for a clean mount of one medium's real LabelFrame/renderer against
-  // fixed fixtures — see E2EHarness.jsx. Never present in the real production bundle (MODE is
-  // always 'production' there, never 'e2e'), so this branch dead-code-eliminates away.
-  if (import.meta.env.MODE === 'e2e' && pathname.startsWith('/e2e-harness/')) {
-    return <Suspense fallback={null}><E2EHarness /></Suspense>
-  }
-
-  // /v2/* is the medium-manifest shell (rebuild plan Phase 2a) — it mounts its own nav and
-  // chrome per medium and must never be nested inside Classic's sidebar/rail/mobile-nav shell
-  // below (found by budget.spec.mjs: without this bypass, every /v2 load also pulled in
-  // Dashboard, the full nav chrome, and Classic's global CSS, blowing the 500 kB entry budget
-  // for every medium regardless of size).
-  if (pathname.startsWith('/v2')) {
-    // MediumShell's own inner <Routes> uses paths relative to "/v2" (see MediumShell.jsx), which
-    // React Router only resolves correctly when it's nested under a matching <Route path="/v2/*">
-    // — hence the standalone <Routes> here rather than rendering <MediumShell> directly.
-    return <Suspense fallback={<RouteLoading pathname={pathname} />}>
-      <Routes>
-        <Route path="/v2/*" element={
-          <MediumShell mediumId={preferences.medium} entrySkip={Boolean(preferences.entrySkip?.[preferences.medium])} />
-        } />
-      </Routes>
-    </Suspense>
-  }
 
   return (
     <div className={`shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}`} data-auth-resolving={loading ? 'true' : 'false'}>
@@ -389,7 +345,7 @@ function AppContent() {
           <Route path="/glossary" element={<Glossary />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/alerts" element={cloudPage('Alerts', '/alerts', <Alerts />)} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundOrMedium />} />
         </Routes>
         </Suspense>
         </ErrorBoundary>

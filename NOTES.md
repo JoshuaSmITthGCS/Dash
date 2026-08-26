@@ -344,3 +344,36 @@ MB) — the remainder is Firebase's SDK (~610 kB) plus the core JS runtime (~550
 used by the new mediums' core screens, not medium-specific chrome. Getting under budget needs
 deferred Firebase loading behind first real auth use, scoped as this rebuild's next piece of work
 rather than attempted in this pass.
+
+**Phase 4 — Firebase deferral, closing budget.spec.mjs for eleven of twelve mediums.** Full detail
+in `PARITY-REPORT.md`'s "Phase 4" and "Budget" sections; short version here. Root cause:
+`App.jsx` statically imported `FirebaseAuthContext.jsx`, and `AppContent()` called `useAuth()`
+unconditionally as its first hook, before the `/v2` pathname branch existed in the function —
+static imports are resolved at bundle time regardless of which branch runs, so every medium paid
+for Firebase's SDK even though only `HomeScreen.jsx` and `PortfolioScreen.jsx` (via
+`useFirebasePortfolio`) ever call it. Fixed by making `main.jsx` dynamically import one of two
+separate root components based on the entry pathname — a new `MediumApp.jsx` for `/v2`/
+`/e2e-harness`, unchanged `App.jsx` for Classic — instead of one component that branched
+internally, extending the same route-gated dynamic-import pattern already used for Classic's
+stylesheet. `HomeScreen.jsx`'s Firebase-dependent portion moved into a new lazy
+`HomePortfolioPanel.jsx`; `PortfolioScreen.jsx` (entirely Firebase-dependent) is now lazy-loaded
+from `MediumShell.jsx`. Real regression found and fixed before calling this done: the first cut of
+this split left both lazy chunks calling `useAuth()` with no `FirebaseAuthProvider` anywhere above
+them in the `/v2` tree (since `MediumApp.jsx` deliberately never mounts one) — this throws and
+silently blanked the entire page. Neither `budget.spec.mjs` nor the manual browser checks used
+while building this caught it, since neither reads `pageerror` events or confirms real content
+rendered, only that navigation completed and bytes stayed under budget; `visual.spec.mjs`'s
+pixel-diff did (Home's screenshot was ~2.7 kB instead of ~33 kB — genuinely blank). Fixed by
+wrapping each lazy chunk's own content in its own `<FirebaseAuthProvider>` — free, since
+`AuthProvider` is the other named export of the same module already being pulled in. Also found:
+one medium's Nav.jsx links to the Classic-only `/settings` route as its required "settings
+affordance" — under the new two-root split, that's a path `MediumApp.jsx`'s own `<Routes>` can't
+serve (only `/v2/*` matches). A soft `<Navigate>` can't reach `App.jsx` either, since main.jsx
+never loaded it for this pathname. Added a catch-all in each root (`EscapeToClassic` in
+`MediumApp.jsx`, `NotFoundOrMedium` in `App.jsx`, symmetric for the reverse direction even though
+nothing currently links that way) that hard-reloads through `main.jsx`'s bootstrap instead.
+Measured result: eleven of twelve mediums dropped from ~1.26 MB to ~300–310 kB per cold `/v2` load
+— confirmed via a running preview server, not just estimated. Classic-as-a-medium stays at ~660 kB,
+but the fix applies to it too (zero `firebase-*` chunks in its own budget breakdown) — its overage
+is purely its own pre-existing ~341 kB legacy stylesheet plus the shared ~220 kB vendor runtime,
+a separate, already-named, accepted tradeoff, not attempted here.

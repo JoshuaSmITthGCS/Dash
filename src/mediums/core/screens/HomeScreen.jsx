@@ -1,14 +1,19 @@
-import { useMemo } from 'react'
-import { useAuth } from '../../../lib/FirebaseAuthContext.jsx'
-import { useFirebasePortfolio } from '../../../lib/useFirebasePortfolio.js'
+import { lazy, Suspense } from 'react'
 import { useData } from '../../../lib/useData.js'
-import { enrichPortfolio, currentHoldingsSeries, selectPeriod, latestMarketDayReturn } from '../../../lib/portfolioAnalytics.js'
-import { buildPortfolioPriceData, mergePositionSnapshots } from '../../../lib/portfolioPosition.js'
-import { liveTodayPortfolioReturn } from '../../../lib/afterHoursQuotes.js'
 import { useMedium } from '../MediumContext.jsx'
 import { canonicalArtifactState, provenanceOf, promotionDisclosure } from '../states.js'
 import { cap } from '../capability.js'
 import { HOME_IDS } from './capabilityIds.js'
+
+// Lazy — the only Firebase-dependent part of Home (useAuth/useFirebasePortfolio, both of which
+// statically import FirebaseAuthContext.jsx and its eager ~610 kB SDK init) is split out here so
+// Home's cold /v2 load — the exact route budget.spec.mjs measures — never pays for it up front.
+// See HomePortfolioPanel.jsx's own header comment (Phase 4, NOTES.md).
+const HomePortfolioPanel = lazy(() => import('./HomePortfolioPanel.jsx'))
+
+function PortfolioHeroFallback({ Skeleton }) {
+  return Skeleton ? <Skeleton /> : <div role="status" aria-live="polite">Loading…</div>
+}
 
 /**
  * The primary destination. Renders the Phase 0 first-viewport recommendation
@@ -28,27 +33,9 @@ export default function HomeScreen() {
   const Skeleton = manifest.components?.Skeleton
   const EmptyState = manifest.components?.EmptyState
 
-  const { currentUser } = useAuth()
   const { data: report, loading: reportLoading } = useData('report.json')
   const { data: signalMetrics } = useData('validation/signal_metrics.json')
   const { data: researchEvidence } = useData('validation/research_evidence.json')
-  const { positions, loading: portfolioLoading } = useFirebasePortfolio()
-
-  const priceData = useMemo(() => {
-    if (!report) return {}
-    const published = buildPortfolioPriceData(report.screen_universe || [], report.portfolio_coverage || [], report.research || [])
-    return mergePositionSnapshots(published, positions, report.generated_at)
-  }, [report, positions])
-
-  const portfolio = useMemo(() => enrichPortfolio(positions, priceData), [positions, priceData])
-  const holdingsSeries = useMemo(
-    () => currentHoldingsSeries(positions, priceData, report?.benchmark_history?.dates || []),
-    [positions, priceData, report],
-  )
-  const chart = useMemo(() => selectPeriod(holdingsSeries, '1M'), [holdingsSeries])
-  const liveToday = useMemo(() => liveTodayPortfolioReturn(positions, priceData), [positions, priceData])
-  const marketDayToday = useMemo(() => latestMarketDayReturn(holdingsSeries), [holdingsSeries])
-  const today = liveToday.available ? liveToday : marketDayToday
 
   const promotion = promotionDisclosure(researchEvidence)
   const artifactState = canonicalArtifactState(report ? { status: 'success' } : null)
@@ -56,7 +43,7 @@ export default function HomeScreen() {
   const summary = signalMetrics?.summary
   const liveSample = signalMetrics?.live_sample
 
-  if (reportLoading || (currentUser && portfolioLoading)) {
+  if (reportLoading) {
     return Skeleton ? <Skeleton /> : <div role="status" aria-live="polite">Loading…</div>
   }
   if (!report?.research?.length) {
@@ -67,39 +54,9 @@ export default function HomeScreen() {
 
   return (
     <div data-screen="home">
-      {/* First-viewport item 1: portfolio value + today's delta + as-of line */}
-      <Container primary {...cap(HOME_IDS.portfolioHero)}>
-        {currentUser && positions.length ? (
-          <>
-            <strong data-testid="portfolio-value">
-              {portfolio.totalValue != null ? `$${portfolio.totalValue.toFixed(2)}` : '–'}
-            </strong>
-            <span data-testid="portfolio-today">
-              {today?.dollarReturn != null
-                ? `${today.dollarReturn >= 0 ? '+' : ''}$${today.dollarReturn.toFixed(2)} (${today.returnPct?.toFixed(2)}%) today`
-                : 'Today’s move is still building.'}
-            </span>
-          </>
-        ) : (
-          <span>Sign in and add holdings to see your portfolio value here.</span>
-        )}
-        <span {...cap(HOME_IDS.asOfEyebrow)} data-testid="as-of">
-          Latest close · {report.generated_at ? new Date(report.generated_at).toLocaleDateString() : '–'} · {report.research.length} names covered
-        </span>
-      </Container>
-
-      {/* First-viewport item 2: growth chart of current holdings */}
-      <Container {...cap(HOME_IDS.growthChart)}>
-        {chart ? (
-          <div data-testid="growth-chart" data-points={chart.values.length}>
-            Current holdings, {chart.period}: {chart.returnPct != null ? `${chart.returnPct.toFixed(2)}%` : '–'}
-          </div>
-        ) : (
-          <span data-testid="growth-chart-empty">
-            1M history is still building — two saved portfolio observations are needed.
-          </span>
-        )}
-      </Container>
+      <Suspense fallback={<PortfolioHeroFallback Skeleton={Skeleton} />}>
+        <HomePortfolioPanel report={report} />
+      </Suspense>
 
       {/* First-viewport item 3: the live evidence/provenance strip */}
       <Container {...cap(HOME_IDS.provenanceStrip)}>

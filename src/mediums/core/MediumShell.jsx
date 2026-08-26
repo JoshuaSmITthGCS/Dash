@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { loadMedium, getMediumMeta } from '../registry.js'
 import { MediumProvider } from './MediumContext.jsx'
@@ -6,9 +6,16 @@ import { useEntryDecision } from './entry.js'
 import HomeScreen from './screens/HomeScreen.jsx'
 import ResearchScreen from './screens/ResearchScreen.jsx'
 import ScreensScreen from './screens/ScreensScreen.jsx'
-import PortfolioScreen from './screens/PortfolioScreen.jsx'
 import MarketsScreen from './screens/MarketsScreen.jsx'
 import EvidenceScreen from './screens/EvidenceScreen.jsx'
+
+// Lazy, unlike the other five screens — PortfolioScreen's entire content is gated behind
+// useFirebasePortfolio() (currentUser.uid), which statically imports useAuth from
+// FirebaseAuthContext.jsx. That's the only other place under MediumShell's own static-import
+// graph, besides HomeScreen's own portfolio panel, that pulls Firebase's SDK weight into a cold
+// /v2 load (Phase 4, NOTES.md) — Home stays a static import since it's the actual cold-loaded
+// route and lazy-loading it would just add a needless round trip.
+const PortfolioScreen = lazy(() => import('./screens/PortfolioScreen.jsx'))
 
 export const MEDIUM_ROOT_PATH = '/v2'
 
@@ -112,14 +119,16 @@ function MediumShellReady({ manifest, mediumId, entrySkip }) {
     <div data-medium-shell="true" data-app-ready={appReady ? 'true' : undefined}>
       {NavComponent && <NavComponent />}
       <main id="main-content" tabIndex="-1">
-        <Routes>
-          <Route path="/" element={<HomeScreen />} />
-          <Route path="research" element={<ResearchScreen />} />
-          <Route path="screens" element={<ScreensScreen />} />
-          <Route path="portfolio" element={<PortfolioScreen />} />
-          <Route path="markets" element={<MarketsScreen />} />
-          <Route path="evidence" element={<EvidenceScreen />} />
-        </Routes>
+        <Suspense fallback={<MediumLoading />}>
+          <Routes>
+            <Route path="/" element={<HomeScreen />} />
+            <Route path="research" element={<ResearchScreen />} />
+            <Route path="screens" element={<ScreensScreen />} />
+            <Route path="portfolio" element={<PortfolioScreen />} />
+            <Route path="markets" element={<MarketsScreen />} />
+            <Route path="evidence" element={<EvidenceScreen />} />
+          </Routes>
+        </Suspense>
       </main>
     </div>
   )

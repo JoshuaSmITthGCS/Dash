@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useData } from '../../../lib/useData.js'
+import { AuthProvider as FirebaseAuthProvider } from '../../../lib/FirebaseAuthContext.jsx'
 import { useFirebasePortfolio } from '../../../lib/useFirebasePortfolio.js'
 import { enrichPortfolio } from '../../../lib/portfolioAnalytics.js'
 import { buildPortfolioPriceData, mergePositionSnapshots } from '../../../lib/portfolioPosition.js'
@@ -17,8 +18,16 @@ export const PORTFOLIO_VIEWS = Object.freeze(['summary', 'performance', 'data', 
  * TWR/reconciliation bridge, data-overview's export surface and 64-metric embed,
  * diversification's factor regression, insights' share flow, finances' budget/pools/retirement
  * tabs, planning's levers) port in per medium in Phase 2b against their own ledger sections.
+ *
+ * Lazy-loaded from MediumShell.jsx (Phase 4, NOTES.md) since it's entirely gated behind
+ * useFirebasePortfolio() — /v2's root (MediumApp.jsx) never mounts <FirebaseAuthProvider>, so
+ * this chunk provides its own, same pattern as HomePortfolioPanel.jsx.
  */
 export default function PortfolioScreen() {
+  return <FirebaseAuthProvider><PortfolioScreenContent /></FirebaseAuthProvider>
+}
+
+function PortfolioScreenContent() {
   const manifest = useMedium()
   const Container = manifest.components?.Container || 'section'
   const [searchParams] = useSearchParams()

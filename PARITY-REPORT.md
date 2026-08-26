@@ -22,7 +22,7 @@ rather than quoting the master's exact wording, which isn't available to check a
 | Every retired route redirects with params, 0 404s | **Not started** | `src/routes/redirects.js` (the 0c redirect table as data) exists from Phase 2a but is not yet consumed by `App.jsx` — no route has actually been retired, since cutover hasn't happened. This checklist item applies at cutover, not before. |
 | PWA/bookmarks intact | **Holds** | `manifest.webmanifest`'s `start_url`/`id`/scope untouched; `/v2/*` is a new, additive route, not a replacement of the app shell. |
 | Firestore additive | **Holds** | `PreferencesContext`'s v5→v6 migration (`medium`, `entrySkip`) is additive; no existing preference field was removed or repurposed. |
-| All 16 harness assertions green | **15 of 16 green** (1 documented pre-existing exception, 1 blocked on real infrastructure weight — see below) | |
+| All 16 harness assertions green | **15 of 16 green** (2 documented pre-existing exceptions; Classic-as-medium's own legacy stylesheet weight is the one remaining real gap — see below) | |
 
 ## The sixteen Playwright assertions
 
@@ -43,7 +43,7 @@ rather than quoting the master's exact wording, which isn't available to check a
 | 13 | Beige Box contrast | `rules.spec.mjs` | **Green.** |
 | 14 | axe + landmarks + tab order + 44px targets + no overflow | `a11y.spec.mjs` | **Green, eleven of twelve.** Classic's axe check is red on a pre-existing, out-of-scope production contrast bug — see "Classic's one grandfathered a11y failure" below. |
 | 15 | Chart-ink contrast + glass-over-content check | `a11y.spec.mjs` | **Green, all twelve** (including Classic). |
-| 16 | Chunk graph < 500 kB | `budget.spec.mjs` | **Red, all twelve.** Real, root-caused, and substantially reduced this pass, but not closed — see "Budget: real, large, and not this session's fix" below. |
+| 16 | Chunk graph < 500 kB | `budget.spec.mjs` | **Green, eleven of twelve** (~300 kB per medium, well under budget). Classic-as-a-medium is the one exception, at ~660 kB — its own ~340 kB legacy stylesheet plus the shared ~220 kB vendor runtime, not Firebase (confirmed: zero `firebase-*` chunks in its breakdown either). See "Budget: Firebase fixed, Classic's CSS is what's left" below. |
 
 ## Real bugs the harness found and this session fixed
 
@@ -106,6 +106,61 @@ confirm. Full narrative detail is in `NOTES.md`; this is the roll-call:
   `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at the working pre-installed binary; the config already had this
   escape hatch built in from Phase 3's initial build.
 
+## Phase 4 — Firebase deferral (assertion #16, closed for eleven of twelve mediums)
+
+Root cause: `App.jsx` statically imported `FirebaseAuthContext.jsx` at its top, and `AppContent()`
+called `useAuth()` unconditionally as its first hook — before the `/v2` pathname branch even
+existed in the function. Static imports are resolved at bundle time regardless of which branch
+executes at runtime, so every medium was forced to pay for Firebase's ~610 kB SDK (auth +
+firestore) even though only two files anywhere under `src/mediums/**` — `HomeScreen.jsx` and
+`PortfolioScreen.jsx` (via `useFirebasePortfolio`) — ever call it.
+
+Fix: `main.jsx` now dynamically imports one of two separate root components based on the entry
+pathname (`App.jsx` for Classic, a new `MediumApp.jsx` for `/v2`/`/e2e-harness`) instead of
+statically importing one component that branched internally — the same pattern already used for
+Classic's stylesheet. Neither root's module graph reaches the other's Firebase-adjacent code
+unless that specific root is chosen. `HomeScreen.jsx`'s Firebase-dependent portion (the
+portfolio-value hero + growth chart) was split into a new lazily-loaded `HomePortfolioPanel.jsx`;
+`PortfolioScreen.jsx` (entirely Firebase-dependent) is now lazy-loaded from `MediumShell.jsx`
+directly. Since `MediumApp.jsx` never mounts `<FirebaseAuthProvider>` at all, each of those two
+lazy chunks provides its own — costs nothing extra, since `AuthProvider` is the other named export
+of the same `FirebaseAuthContext.jsx` module `useFirebasePortfolio.js` already pulled in.
+
+One real regression surfaced and fixed before this was verified complete: the first version of this
+split left `HomePortfolioPanel.jsx`/`PortfolioScreen.jsx` calling `useAuth()` with no provider
+anywhere above them in the `/v2` tree, which throws (`FirebaseAuthContext.jsx`'s own guard) and
+silently blanked the entire page — `budget.spec.mjs` and the manual browser check that had been
+used to verify each earlier step both missed it, since neither one reads `pageerror` events or
+checks that real content actually rendered, only that navigation completed and bytes were under
+budget. `visual.spec.mjs`'s pixel-diff caught it: Home's screenshot was ~2.7 kB instead of ~33 kB,
+because the page really was blank. Fixed by wrapping each lazy chunk's content in its own
+`<FirebaseAuthProvider>`; confirmed via a direct reproduction (same fixtures, `pageerror` listener)
+and a full re-run of `visual.spec.mjs` (all 208 tests green) before treating this as done.
+
+Result, measured directly against a running preview server: eleven of twelve mediums dropped from
+~1.26 MB to ~300–310 kB per cold `/v2` load — well under the 500 kB ceiling, with real headroom for
+the capability-wiring work still ahead. Classic-as-a-medium remains at ~660 kB, but for a different,
+unrelated reason — see below.
+
+## Budget: Firebase fixed, Classic's CSS is what's left
+
+`budget.spec.mjs` measures actual network transfer for a cold `/v2` load per medium against a
+500 kB ceiling. Across this rebuild's sessions the number for eleven of twelve mediums went ~1.88
+MB → ~1.26 MB (fixing CSS bleed, double-chrome nesting, and unconditional Classic-chunk preloading)
+→ ~300 kB (this session's Firebase deferral, above) — now green.
+
+Classic-as-a-medium (reached via `/v2` with `medium: 'classic'`) is the one medium still over
+budget, at ~660 kB: `styles-*.css` (~341 kB, Classic's own legacy stylesheet — its `tokens.css`
+deliberately reuses `src/styles/variables.css` rather than redefining it, so this medium genuinely
+needs it) + `vendor.js` (~218 kB, the shared React/React Router runtime every medium pays) + a few
+small chunks (`index.js`, `MediumShell`, `useData`, `manifest`, `states`). **No Firebase chunk
+appears in this breakdown at all** — the fix above applies uniformly regardless of which medium is
+active, so Classic-as-a-medium no longer pays the Firebase tax either; what's left is purely its
+own CSS weight, a known, named, and already-accepted architectural tradeoff (Classic is the one
+medium permitted to reuse existing styling by design) rather than a new problem. Splitting or
+reducing that legacy stylesheet is a separate, out-of-scope effort from Firebase deferral and isn't
+attempted here.
+
 ## Two real bugs found *in the harness itself*, not the app
 
 Both were caught only because fixing the real app bugs above changed what the tests could see —
@@ -161,25 +216,6 @@ written, that CI workflow would have run "successfully" while silently committin
 time. Fixed by adding the template explicitly; the 208 files generated under the old default path
 were moved (not regenerated) to confirm the fix reproduces byte-identical results.
 
-## Budget: real, large, and not this session's fix
-
-`budget.spec.mjs` measures actual network transfer for a cold `/v2` load per medium against a
-500 kB ceiling. Before this session's fixes, every medium was ~1.88 MB (3.8× over budget). After
-fixing the CSS bleed, the double-chrome nesting, and the unconditional Classic-chunk preloading
-above, every medium is now ~1.26 MB (2.5× over) — real, verified progress, not yet enough.
-
-What remains is `index.js` (~334 kB) + `vendor.js` (~218 kB) + three `firebase-firestore` chunks
-(~526 kB combined) + `firebase-auth.js` (~86 kB) ≈ **1.16 MB of shared infrastructure weight**,
-none of it medium-specific chrome. `firebase/auth` and `firebase/firestore` load eagerly because
-`App.jsx` wraps the entire app (Classic and all twelve mediums) in one `FirebaseAuthProvider`, and
-the new mediums' own core screens (`HomeScreen.jsx`, `PortfolioScreen.jsx`) genuinely call
-`useAuth()` — Firebase isn't dead weight for `/v2`, it's actually used. Getting under 500 kB
-requires deferring Firebase's SDK import behind first real use (a loading/pending auth state
-exposed to every consumer) rather than importing it at the app root — a substantially larger,
-riskier architectural change than anything else in this list, touching auth behavior across both
-Classic and all twelve mediums. This is named as this rebuild's next scoped piece of work, not
-attempted here under the same pass as the smaller, contained fixes above.
-
 ## What's actually built (the honest scope)
 
 - **All twelve medium manifests** (Cockpit, Neon, Poster, Ticker, Book, Blueprint, Star Chart,
@@ -202,8 +238,9 @@ attempted here under the same pass as the smaller, contained fixes above.
 2. **Visual baselines (#5) generated, not yet re-verified in the pinned container.** See
    "Baseline provenance" above — a real gap only in the sense that CI's exact pixels haven't
    confirmed these locally-generated ones yet, not in the sense that the work is undone.
-3. **Budget (#16).** See "Budget" section above — real, large, requires deferred-Firebase-loading
-   work scoped as its own effort.
+3. **Budget (#16) for Classic-as-a-medium specifically.** See "Budget" section above — the
+   Firebase-driven overage is fixed for all twelve mediums; what's left is Classic's own ~341 kB
+   legacy stylesheet, a named, accepted architectural tradeoff, not attempted here.
 4. **Redirect cutover.** `src/routes/redirects.js` exists but `App.jsx` doesn't consume it yet —
    no route has been retired. Correct: cutover happens only after all 16 assertions are green
    (or named exceptions accepted), which item 3 above says hasn't happened yet.
@@ -216,8 +253,8 @@ attempted here under the same pass as the smaller, contained fixes above.
 ## Recommendation
 
 Do not cut over yet. Fifteen of sixteen assertions are green or hold their documented exception;
-the last (#16 budget) is a genuine architectural project (deferred Firebase loading) that deserves
-its own pass rather than a rushed fix bolted onto this one. Ledger coverage (~1% by row count)
-remains the largest true gate and the actual next phase of work, separate from budget. Before
-treating visual regression as fully trustworthy in CI, trigger `update-baselines.yml` once to
+the last (#16 budget) is now green for eleven of twelve mediums — only Classic-as-a-medium remains
+over, for a small, named, pre-existing CSS reason unrelated to the Firebase fix this pass closed.
+Ledger coverage (~1% by row count) remains the largest true gate and the actual next phase of work.
+Before treating visual regression as fully trustworthy in CI, trigger `update-baselines.yml` once to
 confirm the pinned-container pixels match these locally-generated ones closely enough to keep.

@@ -1,7 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import App from './App.jsx'
 import { PreferencesProvider } from './lib/PreferencesContext.jsx'
 import './lib/hudEffects.js'
 
@@ -13,8 +12,11 @@ import './lib/hudEffects.js'
 // own tokens.css instead. Loading it unconditionally here blew the /v2 500 kB entry budget
 // for every medium regardless of size (found by budget.spec.mjs). Fetching it before the
 // initial render only when the entry URL isn't a medium route keeps Classic's current,
-// zero-FOUC behavior unchanged while /v2 and the e2e harness never pay for it; App.jsx's
-// route-gated effect covers the case of navigating into Classic later without a full reload.
+// zero-FOUC behavior unchanged while /v2 and the e2e harness never pay for it. Since App.jsx and
+// MediumApp.jsx are now two separate roots chosen once here (see below) rather than branches of
+// one component, there's no soft in-app navigation between them any more — MediumApp.jsx's
+// EscapeToClassic and App.jsx's NotFoundOrMedium both hard-reload through this same check
+// instead, so this is the only place Classic's stylesheet needs to be fetched.
 async function bootstrap() {
   const isMediumRoute = window.location.pathname.startsWith('/v2') || window.location.pathname.startsWith('/e2e-harness')
   // Classic-as-a-medium (medium: 'classic' under /v2) still needs this — its own tokens.css
@@ -24,11 +26,22 @@ async function bootstrap() {
   const activeMedium = document.documentElement.dataset.medium
   if (!isMediumRoute || activeMedium === 'classic') await import('./styles/index.css')
 
+  // Two separate root components, chosen by this one runtime check, rather than one component
+  // that branches internally (as it used to) — a static top-of-file `import App from
+  // './App.jsx'` would still pull App.jsx's whole module graph, FirebaseAuthContext.jsx and its
+  // eager Firebase SDK init included, into whatever chunk this file lands in, regardless of
+  // which branch actually executes: import()-resolution happens at bundle time, not render time.
+  // This dynamic import is what actually keeps Firebase's ~610 kB out of a medium's cold load
+  // (Phase 4, NOTES.md) — MediumApp.jsx's own header comment has the full reasoning.
+  const { default: RootApp } = isMediumRoute
+    ? await import('./MediumApp.jsx')
+    : await import('./App.jsx')
+
   ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
       <PreferencesProvider>
         <BrowserRouter>
-          <App />
+          <RootApp />
         </BrowserRouter>
       </PreferencesProvider>
     </React.StrictMode>
