@@ -16,6 +16,7 @@ function FakeLabelFrame({ parts, capabilityId, children }) {
       {parts.reason && <p data-testid="reason">{parts.reason}</p>}
       {parts.previous != null && <p data-testid="previous">{parts.previous}</p>}
       <p data-testid="headline">{parts.headline.headline}</p>
+      {parts.confidenceInterval && <p data-testid="confidence-interval">{parts.confidenceInterval.join(',')}</p>}
       {children}
     </section>
   )
@@ -50,6 +51,16 @@ describe('WallLabel', () => {
     renderWithMedium(<WallLabel metric={{ id: 'x', label: 'Rank IC', status: 'provisional', observations: 17, required_observations: 24, cadence: 'Weekly' }} />)
     expect(screen.getByTestId('headline')).toHaveTextContent('Is')
     expect(screen.getByTestId('headline')).toHaveTextContent('17 of 24')
+  })
+
+  it('passes through a genuinely published bootstrap confidence interval, additive and optional', () => {
+    renderWithMedium(<WallLabel metric={{ id: 'ic_bootstrap_ci', label: 'Bootstrap IC CI', status: 'ready', detail: { ic_ci_95: [-0.01, 0.0777] } }} />)
+    expect(screen.getByTestId('confidence-interval')).toHaveTextContent('-0.01,0.0777')
+  })
+
+  it('never fabricates a confidence interval when the metric does not publish one', () => {
+    renderWithMedium(<WallLabel metric={{ id: 'x', label: 'X', status: 'ready' }} />)
+    expect(screen.queryByTestId('confidence-interval')).not.toBeInTheDocument()
   })
 
   it('never fabricates a previous value when the metric does not publish one', () => {

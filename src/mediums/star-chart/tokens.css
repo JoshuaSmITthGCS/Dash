@@ -1,0 +1,49 @@
+/* Star Chart — astronomical plate. Deep blue-black, calm. See DESIGN.md §7. */
+:root[data-medium="star-chart"] {
+  color-scheme: dark;
+
+  --ink-primary: #eef2ff;
+  --ink-faint: #6672a0;
+
+  --surface-ground: #050818;
+  --surface-panel: #0a0f28;
+
+  --graticule: #1a2440;
+  --state-breach: #ff8a65;
+
+  --state-established: var(--ink-primary);
+  --state-accumulating: var(--ink-faint);
+  --state-unavailable: #3a4368;
+
+  --font-display: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+[data-medium="star-chart"] body {
+  background: var(--surface-ground);
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+}
+
+[data-medium="star-chart"] [data-sc-plate] {
+  background: transparent;
+  border: 1px solid var(--graticule);
+  padding: 8px;
+}
+
+[data-medium="star-chart"] [data-sc-designation] {
+  font-style: italic;
+  font-family: var(--font-display);
+}
+
+[data-medium="star-chart"] [data-sc-smallcaps] {
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+}
+
+[data-medium="star-chart"] [data-sc-legend] {
+  background: var(--surface-panel);
+  border: 1px solid var(--graticule);
+  font-size: 11px;
+  padding: 8px 10px;
+}

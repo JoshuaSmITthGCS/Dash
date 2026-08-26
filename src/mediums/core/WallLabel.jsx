@@ -47,6 +47,10 @@ export default function WallLabel({ metric, action = null, capabilityId = null, 
     // stays testable independent of any renderer — Newspaper's primary consumer, but additive
     // and available to any medium's LabelFrame.
     headline: headlineFor(metric),
+    // Optional, additive: some rows genuinely publish a bootstrap confidence interval (e.g.
+    // ic_bootstrap_ci's `detail.ic_ci_95`). Passed through only when actually present — Star
+    // Chart's error-ellipse device must never invent an interval a metric doesn't publish.
+    confidenceInterval: metric?.detail?.ic_ci_95 ?? metric?.detail?.confidence_interval_95 ?? null,
   }
 
   const LabelFrame = manifest?.components?.LabelFrame
