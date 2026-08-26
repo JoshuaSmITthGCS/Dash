@@ -218,3 +218,108 @@ describe('ScreensScreen — inside-information recipe', () => {
     expect(container.querySelector('[data-capability-id="disclosure.screens.insideinfo-flagged-only"]')).toBeInTheDocument()
   })
 })
+
+const REPORT_DATA = {
+  research: [
+    {
+      ticker: 'ACME', name: 'Acme Corp', sector: 'Technology', score: 88,
+      technical_detail: { return_5d: 8, return_20d: 10 },
+      history: { closes: [10, 10.2, 10.5, 10.8, 11, 11.3, 11.6, 10.9] },
+    },
+    {
+      ticker: 'BIOX', name: 'BioX Inc', sector: 'Healthcare', score: 55,
+      technical_detail: { return_5d: 1, return_20d: 3, relative_strength_20d: 2 },
+      fundamental_detail: { revenue_growth: 0.12, operating_margin_trend: 0.01 },
+      history: { closes: [] },
+    },
+  ],
+  screen_universe: [],
+}
+
+describe('ScreensScreen — fast-growth recipe', () => {
+  it('wires the breakout view: screen-select, sector filter and breakout columns table', () => {
+    useData.mockImplementation((file) => (
+      file === 'report.json' ? { data: REPORT_DATA, loading: false } : { data: null, loading: false }
+    ))
+    const { container } = renderScreens('/v2/screens?recipe=fast-growth')
+    expect(container.querySelector('[data-capability-id="control.screens.fastgrowth-screen-select"]')).toBeInTheDocument()
+    expect(container.querySelector('[data-capability-id="control.screens.fastgrowth-sector-filter"]')).toBeInTheDocument()
+    expect(container.querySelector('[data-capability-id="column.screens.fastgrowth-breakout-columns"]')).toHaveTextContent('ACME')
+    expect(container.querySelector('[data-capability-id="figure.screens.fastgrowth-mobile-cards"]')).toHaveTextContent('ACME')
+    expect(container.querySelector('[data-capability-id="disclosure.screens.fastgrowth-footer"]')).toBeInTheDocument()
+    expect(container.querySelector('[data-capability-id="disclosure.screens.fastgrowth-unvalidated"]')).not.toBeInTheDocument()
+  })
+
+  it('wires the emerging-growth view: unvalidated disclosure and emerging columns table', () => {
+    useData.mockImplementation((file) => (
+      file === 'report.json' ? { data: REPORT_DATA, loading: false } : { data: null, loading: false }
+    ))
+    const { container } = renderScreens('/v2/screens?recipe=fast-growth&sub=emerging')
+    expect(container.querySelector('[data-capability-id="disclosure.screens.fastgrowth-unvalidated"]')).toBeInTheDocument()
+    expect(container.querySelector('[data-capability-id="column.screens.fastgrowth-emerging-columns"]')).toHaveTextContent('BIOX')
+  })
+})
+
+const ADVISOR_THEME_DATA = {
+  generated_at: '2026-08-20T00:00:00Z',
+  theme_screen: {
+    unavailable_reason: null,
+    by_ticker: {
+      NVST: [
+        { theme_id: 'aging_demographics', display_name: 'Aging Demographics', theme_exposure_score: 61, opportunity_score: 70, eligible: true, confidence: 0.8, role: 'supplier' },
+        { theme_id: 'digital_payments', display_name: 'Digital Payments', theme_exposure_score: 55, opportunity_score: 60, eligible: true, confidence: 0.5, role: 'root' },
+      ],
+    },
+    themes: [{
+      id: 'aging_demographics', display_name: 'Aging Demographics', thesis: 'The most predictable demand curve available.',
+      sectors: ['Healthcare'], industries: ['Medical Devices'],
+      count: 46, eligible_count: 19,
+      group_counts: { leaders: 1, connected: 46 },
+      rows: [
+        {
+          ticker: 'BSX', name: 'Boston Scientific', sector: 'Healthcare', industry: 'Medical Devices', role: 'root',
+          candidate_source: 'portfolio', theme_exposure_score: 85, opportunity_score: 74, eligible: true,
+          leading_signals_fired: ['filing_keyword_density_trend'], why: ['In this theme because it is one of your holdings'],
+        },
+        {
+          ticker: 'NVST', name: 'Envista Holdings', sector: 'Healthcare', industry: 'Medical Instruments', role: 'supplier',
+          candidate_source: 'sector_peer', theme_exposure_score: 61, opportunity_score: 70, eligible: true,
+          leading_signals_fired: ['backlog_growth'], why: ["In this theme because it is a peer-group neighbour"],
+        },
+      ],
+      trend: {
+        verdict: { label: 'broadening', summary: 'The group is outperforming.' },
+        direction: { relative_strength_median: 68.8 },
+        breadth: { outperforming_share: 0.978 },
+        crowding: { expensiveness_percentile_median: 50, already_priced: false },
+        roles: [{ role: 'root', members: 15, relative_strength_median: 69.1 }, { role: 'supplier', members: 16, relative_strength_median: 57.1 }],
+      },
+      biggest_players: [{ ticker: 'ABT', name: 'Abbott Laboratories', role: 'root', theme_exposure_score: 43.4, eligible: false }],
+    }],
+  },
+}
+
+describe('ScreensScreen — themes recipe', () => {
+  it('wires the theme index, per-theme block, leaders/connected tables and momentum-excluded disclosure', () => {
+    useData.mockImplementation((file) => (
+      file === 'advisor.json' ? { data: ADVISOR_THEME_DATA, loading: false, reload: vi.fn() } : { data: null, loading: false }
+    ))
+    const { container } = renderScreens('/v2/screens?recipe=themes')
+    expect(container.querySelector('[data-capability-id="nav.screens.themes-index"]')).toHaveTextContent('Aging Demographics')
+    expect(container.querySelector('[data-capability-id="figure.screens.themes-per-theme-blocks"]')).toHaveTextContent('Boston Scientific')
+    expect(container.querySelector('[data-capability-id="figure.screens.themes-per-theme-blocks"]')).toHaveTextContent('Envista Holdings')
+    expect(container.querySelector('[data-capability-id="disclosure.screens.themes-momentum-excluded"]')).toBeInTheDocument()
+    expect(container.querySelector('[data-capability-id="control.screens.themes-hide-holdings"]')).toBeInTheDocument()
+    expect(container.querySelector('[data-capability-id="figure.screens.themes-cross-theme-section"]')).toBeInTheDocument()
+  })
+
+  it('shows the unavailable-reason empty state when no theme scored any exposure', () => {
+    useData.mockImplementation((file) => (
+      file === 'advisor.json'
+        ? { data: { generated_at: 't', theme_screen: { unavailable_reason: 'No signals resolved this run.', themes: [], by_ticker: {} } }, loading: false, reload: vi.fn() }
+        : { data: null, loading: false }
+    ))
+    const { container } = renderScreens('/v2/screens?recipe=themes')
+    expect(container.querySelector('[data-capability-id="state.screens.themes-unavailable-reason"]')).toHaveTextContent('No signals resolved this run.')
+  })
+})

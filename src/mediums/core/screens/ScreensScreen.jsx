@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useData } from '../../../lib/useData.js'
 import { useMedium } from '../MediumContext.jsx'
@@ -8,7 +8,10 @@ import { SCREENS_IDS } from './capabilityIds.js'
 import { AuthProvider as FirebaseAuthProvider } from '../../../lib/FirebaseAuthContext.jsx'
 import { useWatchlist } from '../../../lib/useWatchlist.js'
 import { useScreenRefresh } from '../../../lib/useScreenRefresh.js'
+import { useAdvisorRefresh } from '../../../lib/useAdvisorRefresh.js'
+import { useFirebasePortfolio } from '../../../lib/useFirebasePortfolio.js'
 import { STRATEGY_SCREENS } from '../../../lib/strategyScreenConfigs.js'
+import { activeThemes, rankBreakoutInProgress, rankEmergingGrowth, rankThemeExposure } from '../../../lib/researchScreens.js'
 
 // Maps `?recipe=` to its published screen file — the twelve ranked-list families
 // CAPABILITY-LEDGER.md §9 consolidates. `options` and its 7 strategies share one file family;
@@ -16,13 +19,13 @@ import { STRATEGY_SCREENS } from '../../../lib/strategyScreenConfigs.js'
 // (direction/strategy selects, trade-ticket reference) are ported in Phase 2b.
 const RECIPE_FILES = Object.freeze({
   swing: 'screens/swing.json',
-  'fast-growth': null, // client-ranked from report.json, ported in Phase 2b
+  'fast-growth': null, // client-ranked from report.json — fetched by FastGrowthRecipe itself, see SELF_FETCHING_RECIPES
   options: 'screens/options.json',
   momentum: 'screens/momentum.json',
   'quality-value': 'screens/quality-value.json',
   earnings: 'screens/earnings-timeliness.json',
   matrix: 'screens/structural-tactical.json',
-  themes: null, // sourced from advisor.json + theme-peers.json, ported in Phase 2b
+  themes: null, // sourced from advisor.json + theme-peers.json — fetched by ThemesRecipe itself, see SELF_FETCHING_RECIPES
   'early-session': 'screens/early-session.json',
   politics: 'screens/congress-trades.json',
   institutional: 'screens/institutional-13f.json',
@@ -32,6 +35,12 @@ const RECIPE_FILES = Object.freeze({
 export const DEFAULT_RECIPE = 'swing'
 
 const GENERIC_FAMILY = new Set(['momentum', 'quality-value', 'earnings', 'matrix'])
+
+// Recipes whose dataSource isn't one `screens/*.json` file the shell can resolve up front —
+// each fetches its own file(s) via its own `useData(...)` call(s) and owns its own loading/
+// unavailable states (using the same LOADING_IDS/UNAVAILABLE_IDS below), so the shell's generic
+// file-gate (loading/unavailable) is skipped for them and they render unconditionally.
+const SELF_FETCHING_RECIPES = new Set(['fast-growth', 'themes'])
 
 // Per-recipe capabilityIds for the two states the shell renders itself (loading, and "no data at
 // all"), copied verbatim from CAPABILITY-LEDGER.md §9. Recipes not listed here (institutional,
@@ -399,6 +408,119 @@ function SwingRecipe({ manifest, data, searchParams, setParam }) {
 }
 
 // =================================================================================================
+// 9b — Fast Growth
+// =================================================================================================
+
+/** Tiny inline sparkline — the mobile card's own trend glance. Not a `chart.*`-class row (the
+ * ledger declares this element under `figure.screens.fastgrowth-mobile-cards`), so it does not
+ * go through the chart-renderer contract — same reasoning as `BarTimeline` below for politics. */
+function MiniSparkline({ values, label }) {
+  const usable = (values || []).filter((value) => typeof value === 'number' && Number.isFinite(value))
+  if (usable.length < 2) return null
+  const min = Math.min(...usable)
+  const max = Math.max(...usable)
+  const span = max - min || 1
+  const points = usable.map((value, index) => `${(index / (usable.length - 1)) * 100},${100 - ((value - min) / span) * 100}`).join(' ')
+  return (
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={label} width="100%" height="32">
+      <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+    </svg>
+  )
+}
+
+function FastGrowthRecipe({ manifest, searchParams, setParam }) {
+  const { data, loading } = useData('report.json')
+  const sub = searchParams.get('sub') === 'emerging' ? 'emerging' : 'breakout'
+  const sector = searchParams.get('sector') || 'all'
+
+  const universe = useMemo(() => [...new Map(
+    [...(data?.research || []), ...(data?.screen_universe || [])].map((row) => [row.ticker, row]),
+  ).values()], [data])
+
+  const breakoutRows = useMemo(() => rankBreakoutInProgress(universe, universe.length), [universe])
+  const emergingRows = useMemo(() => rankEmergingGrowth(universe, universe.length), [universe])
+  const rows = sub === 'breakout' ? breakoutRows : emergingRows
+  const sectors = useMemo(() => [...new Set(rows.map((row) => row.sector).filter(Boolean))].sort(), [rows])
+  const filtered = sector === 'all' ? rows : rows.filter((row) => row.sector === sector)
+
+  if (loading) return <div {...cap('state.screens.fastgrowth-loading')} role="status" aria-live="polite">Loading…</div>
+  if (!data) return <div {...cap('state.screens.fastgrowth-unavailable')} role="alert">Screen snapshot unavailable.</div>
+
+  const columns = sub === 'breakout' ? [
+    { key: 'ticker', label: 'Ticker', cell: (row) => <><b>{row.ticker}</b> {row.name}</> },
+    { key: 'sector', label: 'Sector', cell: (row) => row.sector || '–' },
+    { key: 'week', label: '5-day return', cell: (row) => upside(row.screen.weekReturn) },
+    { key: 'month', label: '20-day return', cell: (row) => upside(row.screen.monthReturn) },
+    { key: 'acceleration', label: 'Acceleration', cell: (row) => upside(row.screen.acceleration) },
+    { key: 'score', label: 'Score', cell: (row) => number(row.score, 1) },
+  ] : [
+    { key: 'ticker', label: 'Ticker', cell: (row) => <><b>{row.ticker}</b> {row.name}</> },
+    { key: 'sector', label: 'Sector', cell: (row) => row.sector || '–' },
+    { key: 'revenue', label: 'Revenue growth', cell: (row) => pctFrac(row.screen.revenueGrowth) },
+    { key: 'relative', label: 'Relative strength', cell: (row) => upside(row.screen.relativeStrength) },
+    { key: 'contracting', label: 'Vol. contracting', cell: (row) => row.screen.volatilityContracting == null ? '–' : row.screen.volatilityContracting ? 'Yes' : 'No' },
+    { key: 'score', label: 'Score', cell: (row) => number(row.score, 1) },
+  ]
+
+  return (
+    <>
+      <div {...cap('control.screens.fastgrowth-screen-select')}>
+        <label>Screen
+          <select value={sub} onChange={(event) => setParam('sub', event.target.value === 'breakout' ? null : event.target.value)}>
+            <option value="breakout">Breakout in progress</option>
+            <option value="emerging">Emerging growth (unvalidated)</option>
+          </select>
+        </label>
+      </div>
+
+      {sub === 'emerging' && (
+        <p {...cap('disclosure.screens.fastgrowth-unvalidated')} role="note">
+          Prospective and unvalidated. No backtest, no rank-IC, no track record backs this screen — the validation
+          harness has not accumulated enough prospective history to test it. It exists so that history can start
+          accumulating, not because it is known to work.
+        </p>
+      )}
+
+      {sectors.length > 0 && (
+        <label {...cap('control.screens.fastgrowth-sector-filter')}>Sector
+          <select value={sector} onChange={(event) => setParam('sector', event.target.value)}>
+            <option value="all">All sectors</option>{sectors.map((option) => <option key={option}>{option}</option>)}
+          </select>
+        </label>
+      )}
+
+      {!filtered.length ? (
+        <div {...cap(sub === 'breakout' ? 'state.screens.fastgrowth-empty-breakout' : 'state.screens.fastgrowth-empty-emerging')}>
+          <EmptyNote manifest={manifest} testId="fastgrowth-empty" reason={sub === 'breakout'
+            ? 'No name is accelerating sharply enough to clear this screen in the latest report.'
+            : 'No name clears the emerging-growth measurables in the latest report.'} />
+        </div>
+      ) : (
+        <>
+          <SimpleTable capId={sub === 'breakout' ? 'column.screens.fastgrowth-breakout-columns' : 'column.screens.fastgrowth-emerging-columns'}
+            columns={columns} rows={filtered} getKey={(row) => row.ticker} />
+          <section {...cap('figure.screens.fastgrowth-mobile-cards')} aria-label="Idea cards">
+            {filtered.slice(0, 10).map((row) => (
+              <article key={row.ticker}>
+                <b>{row.ticker}</b> · score {number(row.score, 1)}
+                <MiniSparkline values={(row.history?.closes || []).slice(-22)} label={`${row.ticker} one-month daily close trend`} />
+              </article>
+            ))}
+          </section>
+        </>
+      )}
+
+      <p {...cap('disclosure.screens.fastgrowth-footer')}>
+        {sub === 'breakout'
+          ? 'A breakout screen flags a change in pace, not a guaranteed continuation — a sharp run can just as easily fade or reverse the following week.'
+          : 'An emerging-growth screen flags currently-measurable conditions with no proven predictive track record in this system.'}
+        {' '}This is a research screen, not a trade instruction; confirm current price, liquidity, news, and your own risk limits before acting.
+      </p>
+    </>
+  )
+}
+
+// =================================================================================================
 // 9c — Options + 7 strategies
 // =================================================================================================
 
@@ -691,6 +813,269 @@ function GenericRecipe({ manifest, recipe, data, searchParams, setParam }) {
         Schema {data?.schema_version || '–'} · model {data?.model_version || '–'} · config {data?.config_version || '–'}.
         Rankings are hypotheses for prospective validation, not claims of outperformance.
       </p>
+    </>
+  )
+}
+
+// =================================================================================================
+// 9e — Theme Exposure
+// =================================================================================================
+
+const THEME_CROSS_MINIMUM = 2
+const THEME_CROSS_LIMIT = 15
+
+// Which structural trends each company clears the guardrails on, across every theme it was
+// scored against — reimplemented locally from `theme_screen.by_ticker` because the legacy
+// version of this (`crossThemeNames`) lives in `src/pages/ThemeExposureScreen.jsx`, which this
+// medium may not import from. Same rule as that original: a crossing is only as strong as its
+// thinnest leg, so `weakestConfidence` takes the minimum, not the average.
+function crossThemeCompanies(byTicker = {}) {
+  return Object.entries(byTicker)
+    .map(([ticker, entries]) => {
+      const eligible = (entries || []).filter((entry) => entry.eligible)
+      const scores = eligible.map((entry) => entry.opportunity_score).filter((value) => Number.isFinite(value))
+      const confidences = eligible.map((entry) => entry.confidence).filter((value) => Number.isFinite(value))
+      return {
+        ticker, themes: eligible, themeCount: eligible.length,
+        bestOpportunity: scores.length ? Math.max(...scores) : null,
+        weakestConfidence: confidences.length ? Math.min(...confidences) : null,
+      }
+    })
+    .filter((row) => row.themeCount >= THEME_CROSS_MINIMUM)
+    .sort((left, right) => (right.themeCount - left.themeCount) || ((right.bestOpportunity ?? -1) - (left.bestOpportunity ?? -1)))
+    .slice(0, THEME_CROSS_LIMIT)
+}
+
+const THEME_ROLE_LABELS = {
+  root: 'Root', enabler: 'Enabler', supplier: 'Supplier', infrastructure: 'Infrastructure', service: 'Service',
+}
+const THEME_SOURCE_LABELS = { published_leader: 'Published leader', portfolio: 'Your holding', sector_peer: 'Sector-connected' }
+const THEME_VERDICT_RANK = ['broadening', 'narrow leadership', 'strong but already priced', 'mixed', 'cooling', 'unmeasured']
+
+function themesByTrend(left, right) {
+  const rank = (theme) => { const index = THEME_VERDICT_RANK.indexOf(theme.trend?.verdict?.label); return index === -1 ? THEME_VERDICT_RANK.length : index }
+  const strength = (theme) => theme.trend?.direction?.relative_strength_median ?? -Infinity
+  return (rank(left) - rank(right)) || (strength(right) - strength(left))
+}
+
+function GroupCount({ shown, total }) {
+  if (!total || total <= shown) return null
+  return <span>Showing {shown} of {total}</span>
+}
+
+function ThemeRowsTable({ rows }) {
+  return (
+    <SimpleTable columns={[
+      { key: 'ticker', label: 'Ticker', cell: (row) => <><b>{row.ticker}</b> {row.name}{row.candidate_source ? ` (${THEME_SOURCE_LABELS[row.candidate_source] || row.candidate_source})` : ''}</> },
+      { key: 'industry', label: 'Industry', cell: (row) => row.industry || row.sector || '–' },
+      { key: 'why', label: 'Why it is here', cell: (row) => (row.why || [])[0] || '–' },
+      { key: 'exposure', label: 'Exposure', cell: (row) => number(row.theme_exposure_score, 0) },
+      { key: 'opportunity', label: 'Opportunity', cell: (row) => number(row.opportunity_score, 0) },
+      { key: 'leading', label: 'Leading signals', cell: (row) => (row.leading_signals_fired || []).length || '–' },
+      { key: 'role', label: 'Role in chain', cell: (row) => row.role ? (THEME_ROLE_LABELS[row.role] || row.role) : '–' },
+      { key: 'eligible', label: 'Eligible', cell: (row) => row.eligible ? 'Yes' : 'No' },
+    ]} rows={rows} getKey={(row) => row.ticker} />
+  )
+}
+
+function ThemeTrendBlock({ trend }) {
+  if (!trend) return null
+  const verdict = trend.verdict || {}
+  if (verdict.label === 'unmeasured') return <p>{verdict.summary}</p>
+  const { direction = {}, breadth = {}, crowding = {}, roles = [] } = trend
+  return (
+    <div>
+      <p><b>Trend: {verdict.label}</b> — {verdict.summary}</p>
+      <ul>
+        <li>Leading the market by {direction.relative_strength_median == null ? '–' : `${direction.relative_strength_median > 0 ? '+' : ''}${direction.relative_strength_median}`} (median member vs. benchmark)</li>
+        <li>{breadth.outperforming_share == null ? '–' : `${Math.round(breadth.outperforming_share * 100)}%`} of members participating</li>
+        <li>Already priced: {crowding.already_priced == null ? '–' : crowding.already_priced ? 'Yes' : 'No'} (median member at the {crowding.expensiveness_percentile_median ?? '–'}th expensiveness percentile of its sector)</li>
+      </ul>
+      {roles.length > 1 && (
+        <div>
+          <h4>Where the money is arriving in the chain</h4>
+          <ul>
+            {roles.map((role) => (
+              <li key={role.role}>{THEME_ROLE_LABELS[role.role] || role.role}: {role.relative_strength_median == null ? '–' : `${role.relative_strength_median > 0 ? '+' : ''}${role.relative_strength_median}`}
+                {' '}({role.members} {role.members === 1 ? 'name' : 'names'})</li>
+            ))}
+          </ul>
+          <p {...cap('disclosure.screens.themes-supply-chain-note')}>
+            Median relative strength per stage of the supply chain. A rotation shows up here — money moving from the
+            root outward, or the reverse — before it registers as a sector move.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ThemesRecipe({ manifest }) {
+  const { data, loading, reload } = useData('advisor.json')
+  const { data: peerScreen } = useData('theme-peers.json')
+  const [hideHoldings, setHideHoldings] = useState(false)
+  const { positions } = useFirebasePortfolio()
+
+  const holdings = useMemo(() => new Set((positions || []).map((position) => String(position.ticker || '').toUpperCase())), [positions])
+  const themeScreen = data?.theme_screen
+  const themes = useMemo(() => activeThemes(themeScreen), [themeScreen])
+  const themeTickers = useMemo(() => Object.keys(themeScreen?.by_ticker || {}), [themeScreen])
+  const refresh = useAdvisorRefresh(data?.generated_at, reload, [...holdings], themeTickers)
+
+  const visible = (rows) => hideHoldings ? rows.filter((row) => !holdings.has(String(row.ticker || '').toUpperCase())) : rows
+  const crossTheme = useMemo(() => visible(crossThemeCompanies(themeScreen?.by_ticker || {})), [themeScreen, hideHoldings, holdings])
+  const indexThemes = peerScreen?.themes?.length ? peerScreen.themes : themes
+
+  if (loading) return <div {...cap('state.screens.themes-loading')} role="status" aria-live="polite">Loading…</div>
+  if (!data) return <div {...cap('state.screens.themes-unavailable')} role="alert">Theme screen unavailable.</div>
+  if (!themes.length) {
+    return (
+      <div {...cap('state.screens.themes-unavailable-reason')}>
+        <EmptyNote manifest={manifest} testId="themes-empty" reason={themeScreen?.unavailable_reason || 'No theme produced scored exposures in the latest report.'} />
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div>
+        {refresh.available && (
+          <button type="button" {...cap('action.screens.themes-rerank-button')}
+            onClick={refresh.requestFocusedRefresh} disabled={refresh.refreshing || !themeTickers.length}
+            title={themeTickers.length ? `Re-poll and re-rank the ${themeTickers.length} companies on this screen, and nothing else` : 'No theme members are published to re-rank yet'}>
+            {refresh.refreshing ? 'Re-ranking…' : `Re-rank these ${themeTickers.length} names`}
+          </button>
+        )}
+        <label {...cap('control.screens.themes-hide-holdings')}>
+          <input type="checkbox" checked={hideHoldings} onChange={(event) => setHideHoldings(event.target.checked)} disabled={!holdings.size} />
+          {' '}Hide my holdings{holdings.size ? ` (${holdings.size})` : ''}
+        </label>
+      </div>
+      <RefreshStatus refresh={refresh} />
+
+      {hideHoldings && (
+        <p {...cap('disclosure.screens.themes-hide-holdings-note')} role="status">
+          Your holdings are hidden from the ranked lists. Each theme's trend reading is unchanged: it measures the
+          whole group — how many members participate, whether one name carries it, how expensive the group is — and
+          recomputing it over a subset would report a different theme under the same name.
+        </p>
+      )}
+
+      <nav {...cap('nav.screens.themes-index')} aria-label="Themes in this report">
+        <ul>
+          {[...indexThemes].sort(themesByTrend).map((theme) => (
+            <li key={theme.id}>
+              <a href={`#theme-${theme.id}`}>{theme.display_name}</a>
+              {theme.trend?.verdict?.label && <span> {theme.trend.verdict.label}</span>}
+              <small> — {theme.eligible_count ?? 0} of {theme.count ?? 0} cleared the guardrails</small>
+            </li>
+          ))}
+        </ul>
+        <details {...cap('detail.screens.themes-info-tags')}>
+          <summary>Reading the index</summary>
+          <p><b>Broadening</b> — the group is beating the market, most members are participating, and it is not yet
+            priced as an expensive third of its sectors.</p>
+          <p><b>Narrow leadership</b> — the group is up, but the advance belongs to a minority of it, or to one large
+            member.</p>
+          <p><b>Strong but already priced</b> — real strength, at valuations that already reflect it.</p>
+          <p><b>Cooling</b> — the group is lagging and not recovering.</p>
+        </details>
+      </nav>
+
+      <p {...cap('disclosure.screens.themes-momentum-excluded')} role="note">
+        Price momentum contributes nothing to this ranking by design — a name earns a spot from filing evidence and
+        supply-chain ties, not from having already run.
+      </p>
+
+      {crossTheme.length > 0 && (
+        <section {...cap('figure.screens.themes-cross-theme-section')} aria-label="Where the themes cross">
+          <h2>Where the themes cross</h2>
+          <details {...cap('detail.screens.themes-info-tags')}>
+            <summary>Where themes cross</summary>
+            <p>Companies that clear the guardrails on more than one structural trend at once — a name sitting in
+              three themes is the most direct expression of where those trends converge, and it is also a single
+              position carrying three correlated bets.</p>
+          </details>
+          <SimpleTable columns={[
+            { key: 'ticker', label: 'Ticker', cell: (row) => <b>{row.ticker}</b> },
+            { key: 'themeCount', label: 'Themes', cell: (row) => row.themeCount },
+            { key: 'themes', label: 'Why it crosses', cell: (row) => row.themes.map((theme) => theme.display_name || theme.theme_id).join(' · ') },
+            { key: 'bestOpportunity', label: 'Best opportunity', cell: (row) => number(row.bestOpportunity, 0) },
+            { key: 'weakestConfidence', label: 'Weakest evidence', cell: (row) => row.weakestConfidence == null ? '–' : `${Math.round(row.weakestConfidence * 100)}%` },
+          ]} rows={crossTheme} getKey={(row) => row.ticker} />
+        </section>
+      )}
+
+      {themes.map((theme) => {
+        const leaderRows = (theme.rows || []).filter((row) => row.candidate_source !== 'sector_peer')
+        const leaders = visible(rankThemeExposure({ rows: leaderRows }, leaderRows.length))
+        const widePeers = (peerScreen?.themes || []).find((entry) => entry.id === theme.id)
+        const connectedSource = widePeers?.rows?.length ? widePeers.rows : (theme.rows || []).filter((row) => row.candidate_source === 'sector_peer')
+        const connected = visible(rankThemeExposure({ rows: connectedSource }, connectedSource.length))
+        const connectedTotal = widePeers ? widePeers.group_counts?.connected : theme.group_counts?.connected
+
+        return (
+          <section {...cap('figure.screens.themes-per-theme-blocks')} id={`theme-${theme.id}`} key={theme.id}>
+            <h2>{theme.display_name}</h2>
+            <details {...cap('detail.screens.themes-info-tags')}>
+              <summary>Columns</summary>
+              <p><b>Exposure</b> — 0-100, how exposed this company is to the theme, from filing evidence, never from
+                price action.</p>
+              <p><b>Opportunity</b> — exposure × business quality × how cheap the stock still is.</p>
+              <p><b>Leading signals</b> — how many of this company's own leading signals fired.</p>
+              <p><b>Eligible</b> — "No" means the name already trades in the top valuation decile of its sector, or
+                no company-specific leading signal confirmed the exposure.</p>
+              <p><b>Research rating</b> — a name reading "Insufficient data" has no financial statements pulled for
+                it this run; the business-quality leg then rests on price-based multiples alone.</p>
+            </details>
+            <p>{theme.thesis}</p>
+            {(theme.industries || theme.sectors || []).length > 0 && (
+              <p>
+                <b>Built by:</b> {(theme.industries?.length ? theme.industries : theme.sectors).join(' · ')}
+                <details {...cap('detail.screens.themes-info-tags')}>
+                  <summary>Built by</summary>
+                  <p>The industries this theme's supply chain can sit in. A company outside them is never scored
+                    against the theme, however much its own filings talk about the trend.</p>
+                </details>
+              </p>
+            )}
+            <ThemeTrendBlock trend={theme.trend} />
+            {(theme.biggest_players || []).length > 0 && (
+              <div>
+                <h4>Biggest players</h4>
+                <ul>
+                  {visible(theme.biggest_players).map((player) => (
+                    <li key={player.ticker}><b>{player.ticker}</b> {player.name} — {player.role ? `${THEME_ROLE_LABELS[player.role] || player.role} in this chain` : 'no chain role assigned'}
+                      {' '}· exposure {player.theme_exposure_score ?? '–'}{player.eligible === false ? ' · flagged, not promoted' : ''}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <h3>Leaders <GroupCount shown={leaders.length} total={theme.group_counts?.leaders} />
+              <details {...cap('detail.screens.themes-info-tags')}>
+                <summary>Leaders</summary>
+                <p>Names already a published top research score or one of your holdings, that also cleared this
+                  theme's signal minimum.</p>
+              </details>
+            </h3>
+            {!leaders.length ? (
+              <p {...cap('state.screens.themes-no-leader')}>No published leader or holding cleared this theme's signal minimum yet.</p>
+            ) : <ThemeRowsTable rows={leaders} />}
+
+            <h3>Connected, not yet re-rated <GroupCount shown={connected.length} total={connectedTotal} />
+              <details {...cap('detail.screens.themes-info-tags')}>
+                <summary>Connected</summary>
+                <p>Sector/peer-group neighbours of this theme's anchor companies that are not already a published
+                  top research score — a sector/peer-group heuristic, not product-space matching.</p>
+              </details>
+            </h3>
+            {!connected.length ? (
+              <p {...cap('state.screens.themes-no-connected')}>No sector-connected candidate cleared this theme's signal minimum in the latest report.</p>
+            ) : <ThemeRowsTable rows={connected} />}
+          </section>
+        )
+      })}
     </>
   )
 }
@@ -1106,9 +1491,9 @@ function InsideInfoRecipe({ manifest, data, reload, searchParams, setParam }) {
  * Absorbs the twelve ranked-list-with-a-recipe screen families behind `?recipe=<id>` (see
  * ROUTE-INVENTORY.md §2 and CAPABILITY-LEDGER.md §9). This shell resolves which file to load and
  * renders the artifact's own build-status state, then hands off to one recipe-specific renderer
- * below. `fast-growth` and `themes` stay stubs — both are sourced from files this shell doesn't
- * resolve yet (`report.json`-ranked, and `advisor.json` + `theme-peers.json` respectively) — see
- * NOTES.md for that follow-on.
+ * below. `fast-growth` (`report.json`-ranked) and `themes` (`advisor.json` + `theme-peers.json`)
+ * are `SELF_FETCHING_RECIPES` — each fetches its own file(s) and owns its own loading/unavailable
+ * states, so the shell's single-file gate below is skipped for them.
  */
 export default function ScreensScreen() {
   return <FirebaseAuthProvider><ScreensScreenContent /></FirebaseAuthProvider>
@@ -1130,30 +1515,40 @@ function ScreensScreenContent() {
     setSearchParams(next, { replace: true })
   }
 
-  if (loading) return <div {...cap(LOADING_IDS[recipe] || SCREENS_IDS.loading)} role="status" aria-live="polite">Loading…</div>
+  const selfFetching = SELF_FETCHING_RECIPES.has(recipe)
 
-  if (!file || !data) {
-    return (
-      <div {...cap(UNAVAILABLE_IDS[recipe] || SCREENS_IDS.unavailable)} role="alert">
-        Screen snapshot unavailable{artifactState.reason ? `: ${artifactState.reason}` : '.'}
-      </div>
-    )
+  if (!selfFetching) {
+    if (loading) return <div {...cap(LOADING_IDS[recipe] || SCREENS_IDS.loading)} role="status" aria-live="polite">Loading…</div>
+
+    if (!file || !data) {
+      return (
+        <div {...cap(UNAVAILABLE_IDS[recipe] || SCREENS_IDS.unavailable)} role="alert">
+          Screen snapshot unavailable{artifactState.reason ? `: ${artifactState.reason}` : '.'}
+        </div>
+      )
+    }
   }
 
-  const rows = data.results ?? data.rows ?? []
+  const rows = data?.results ?? data?.rows ?? []
 
   return (
     <div data-screen="screens" data-recipe={recipe}>
       <Container>
         <h1>{recipe}</h1>
-        <span data-testid="row-count">{rows.length} name{rows.length === 1 ? '' : 's'}</span>
-        {artifactState.partial && <p role="alert" data-testid="partial-note">Collected from some sources only.</p>}
-        {artifactState.state === 'unavailable' && <p data-testid="gated-note">{artifactState.reason}</p>}
+        {!selfFetching && (
+          <>
+            <span data-testid="row-count">{rows.length} name{rows.length === 1 ? '' : 's'}</span>
+            {artifactState.partial && <p role="alert" data-testid="partial-note">Collected from some sources only.</p>}
+            {artifactState.state === 'unavailable' && <p data-testid="gated-note">{artifactState.reason}</p>}
+          </>
+        )}
       </Container>
 
       {recipe === 'swing' && <SwingRecipe manifest={manifest} data={data} searchParams={searchParams} setParam={setParam} />}
+      {recipe === 'fast-growth' && <FastGrowthRecipe manifest={manifest} searchParams={searchParams} setParam={setParam} />}
       {recipe === 'options' && <OptionsRecipe manifest={manifest} data={data} searchParams={searchParams} setParam={setParam} />}
       {GENERIC_FAMILY.has(recipe) && <GenericRecipe manifest={manifest} recipe={recipe} data={data} searchParams={searchParams} setParam={setParam} />}
+      {recipe === 'themes' && <ThemesRecipe manifest={manifest} />}
       {recipe === 'early-session' && <EarlySessionRecipe data={data} />}
       {recipe === 'politics' && <PoliticsRecipe manifest={manifest} data={data} reload={reload} searchParams={searchParams} setParam={setParam} />}
       {recipe === 'institutional' && <InstitutionalRecipe manifest={manifest} data={data} reload={reload} searchParams={searchParams} setParam={setParam} />}
