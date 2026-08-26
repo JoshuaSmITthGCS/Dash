@@ -4,18 +4,20 @@ import { loadMedium, getMediumMeta } from '../registry.js'
 import { MediumProvider } from './MediumContext.jsx'
 import { useEntryDecision } from './entry.js'
 import HomeScreen from './screens/HomeScreen.jsx'
-import ResearchScreen from './screens/ResearchScreen.jsx'
-import ScreensScreen from './screens/ScreensScreen.jsx'
-import MarketsScreen from './screens/MarketsScreen.jsx'
-import EvidenceScreen from './screens/EvidenceScreen.jsx'
 
-// Lazy, unlike the other five screens — PortfolioScreen's entire content is gated behind
-// useFirebasePortfolio() (currentUser.uid), which statically imports useAuth from
-// FirebaseAuthContext.jsx. That's the only other place under MediumShell's own static-import
-// graph, besides HomeScreen's own portfolio panel, that pulls Firebase's SDK weight into a cold
-// /v2 load (Phase 4, NOTES.md) — Home stays a static import since it's the actual cold-loaded
-// route and lazy-loading it would just add a needless round trip.
+// Lazy, unlike Home — Home stays a static import since it's the actual cold-loaded route and
+// lazy-loading it would just add a needless round trip. The other five screens grew
+// substantially during Phase 4b's ledger-coverage wiring (Research/Screens/Evidence are each
+// 800-1200+ lines now, and Screens/Evidence each mount their own <FirebaseAuthProvider> for
+// watchlist/shadow-portfolio features) — statically importing any of them back into this file
+// reintroduces the exact eager-Firebase/oversized-bundle problem Phase 4a fixed, just via a
+// different route. Keeping every non-Home screen lazy is what keeps Home's own cold /v2 load
+// (the one budget.spec.mjs measures) from paying for code five other routes need.
+const ResearchScreen = lazy(() => import('./screens/ResearchScreen.jsx'))
+const ScreensScreen = lazy(() => import('./screens/ScreensScreen.jsx'))
 const PortfolioScreen = lazy(() => import('./screens/PortfolioScreen.jsx'))
+const MarketsScreen = lazy(() => import('./screens/MarketsScreen.jsx'))
+const EvidenceScreen = lazy(() => import('./screens/EvidenceScreen.jsx'))
 
 export const MEDIUM_ROOT_PATH = '/v2'
 
