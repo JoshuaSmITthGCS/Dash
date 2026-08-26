@@ -17,7 +17,11 @@
   --state-established: var(--ink-primary);
   --state-accumulating: var(--ink-faint);
   --state-breach: #c23b2e;
-  --state-unavailable: #b3ac9c;
+  /* #b3ac9c measured 1.51:1 against --surface-plastic — the named risk in DESIGN.md §10
+     ("beige-on-beige contrast failing easily... no pair ships on assumption") caught for real
+     by Phase 3's rules.spec.mjs #13. This clears 5.17:1 against --surface-plastic and 6.24:1
+     against --surface-window, both above the 4.5:1 WCAG AA floor. */
+  --state-unavailable: #58524a;
 
   --rule-hairline: #b3ac9c;
 
