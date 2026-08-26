@@ -1,0 +1,29 @@
+/* Ticker — the wire feed. Dark, flat, zero chrome. See DESIGN.md §4. */
+:root[data-medium="ticker"] {
+  color-scheme: dark;
+  --ink-primary: #e4e4e4;
+  --ink-faint: #6b6b6b;
+  --surface-ground: #050505;
+  --rule-hairline: #232323;
+  --state-established: #e4e4e4;
+  --state-breach: #ff4d4d;
+  --state-gain: #37d67a;
+  --state-loss: #ff6b6b;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-display: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+[data-medium="ticker"] body { background: var(--surface-ground); color: var(--ink-primary); font-family: var(--font-mono); }
+
+[data-medium="ticker"] [data-ticker-row] {
+  border-bottom: 1px solid var(--rule-hairline);
+  padding: 8px 4px;
+  display: flex;
+  justify-content: space-between;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-medium="ticker"] [data-ticker-row][data-breached="true"] {
+  border-left: 2px solid var(--state-breach);
+  padding-left: 6px;
+}
