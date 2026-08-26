@@ -5,13 +5,18 @@ import { MediumProvider } from '../MediumContext.jsx'
 import { PreferencesProvider } from '../../../lib/PreferencesContext.jsx'
 import { useData } from '../../../lib/useData.js'
 import { useFirebasePortfolio } from '../../../lib/useFirebasePortfolio.js'
+import { useWatchlist } from '../../../lib/useWatchlist.js'
 import { useAuth } from '../../../lib/FirebaseAuthContext.jsx'
 
 vi.mock('../../../lib/useData.js', async (importOriginal) => ({ ...(await importOriginal()), useData: vi.fn() }))
 vi.mock('../../../lib/useFirebasePortfolio.js', () => ({ useFirebasePortfolio: vi.fn() }))
+vi.mock('../../../lib/useWatchlist.js', () => ({ useWatchlist: vi.fn() }))
 vi.mock('../../../lib/FirebaseAuthContext.jsx', () => ({ useAuth: vi.fn(), AuthProvider: ({ children }) => children }))
 
-const fakeManifest = { components: {} }
+const fakeLine = vi.fn(({ metricId }) => <svg data-testid="fake-line-chart" data-metric-id={metricId} />)
+const fakeComposition = vi.fn(({ metricId }) => <svg data-testid="fake-composition-chart" data-metric-id={metricId} />)
+const fakeBar = vi.fn(({ metricId }) => <svg data-testid="fake-bar-chart" data-metric-id={metricId} />)
+const fakeManifest = { components: {}, loadRenderer: () => Promise.resolve({ line: fakeLine, composition: fakeComposition, bar: fakeBar }) }
 
 function renderHome() {
   return render(
@@ -27,8 +32,16 @@ function renderHome() {
 // rankReversal legitimately reject it (opposite-signed gates), exercising the empty state too.
 const RESEARCH_ROW = {
   ticker: 'AAPL', name: 'Apple Inc.', score: 82, stance: 'ATTRACTIVE', strengths: ['Strong valuation score'],
-  is_etf: false, price: 150,
+  is_etf: false, price: 150, sector: 'Technology',
   technical_detail: { return_5d: 6, return_20d: 10, volume_ratio_60d: 1.5 },
+}
+
+// Genuinely clears dipWatch's gates (ATTRACTIVE/PROMISING, >=8% off the 52-week high, negative
+// 60-day return, and a floor/max band that puts price above the floor and below the recovery
+// max) so chart.home.buying-the-dip has one real row to render instead of only its empty state.
+const DIP_ROW = {
+  ticker: 'MSFT', name: 'Microsoft Corp.', score: 75, stance: 'ATTRACTIVE', is_etf: false, price: 92,
+  technical_detail: { pct_from_52w_high: -20, pct_above_52w_low: 5, max_drawdown_252d: -30, return_60d: -5 },
 }
 
 const REPORT = {
@@ -52,6 +65,10 @@ describe('HomeScreen', () => {
   beforeEach(() => {
     useAuth.mockReturnValue({ currentUser: null, authError: '', retryAuth: vi.fn() })
     useFirebasePortfolio.mockReturnValue({ positions: [], loading: false })
+    useWatchlist.mockReturnValue({ items: [] })
+    fakeLine.mockClear()
+    fakeComposition.mockClear()
+    fakeBar.mockClear()
   })
 
   it('shows the loading state while the report is loading', () => {
@@ -182,5 +199,104 @@ describe('HomeScreen', () => {
     expect(container.querySelector('[data-capability-id="control.home.chart-period"]')).toBeInTheDocument()
     expect(container.querySelector('[data-capability-id="control.home.top5-rank-mode"]')).toBeInTheDocument()
     expect(screen.getByTestId('top-5-holdings')).toHaveTextContent('AAPL')
+  })
+
+  it('renders the buying-the-dip empty state when no name clears the screen', () => {
+    mockDataFiles()
+    const { container } = renderHome()
+    const node = container.querySelector('[data-capability-id="chart.home.buying-the-dip"]')
+    expect(node).toBeInTheDocument()
+    expect(node.querySelector('[data-testid="buying-the-dip-empty"]')).toBeInTheDocument()
+  })
+
+  it('renders the buying-the-dip bar chart and rows for a name that clears dipWatch\'s gates', async () => {
+    mockDataFiles({ report: { data: { ...REPORT, research: [RESEARCH_ROW, DIP_ROW] }, loading: false } })
+    const { container } = renderHome()
+    const node = container.querySelector('[data-capability-id="chart.home.buying-the-dip"]')
+    await waitFor(() => expect(within(node).getByTestId('buying-the-dip-chart')).toBeInTheDocument())
+    expect(fakeBar).toHaveBeenCalled()
+    expect(within(node).getByTestId('buying-the-dip-rows')).toHaveTextContent('MSFT')
+  })
+
+  describe('HomeScreen — signed-in Firebase-backed figures', () => {
+    // Real price history on both the anchor dates and the holding lets currentHoldingsSeries
+    // build a genuine two-point series, so chart.home.growth-chart and chart.home.allocation
+    // exercise their `renderer.line`/`renderer.composition` calls rather than only their
+    // chart-unavailable fallback (already covered above).
+    const CHART_REPORT = {
+      generated_at: '2026-08-25T12:00:00Z',
+      research: [{
+        ticker: 'AAPL', name: 'Apple Inc.', score: 82, stance: 'ATTRACTIVE', is_etf: false,
+        price: 160, sector: 'Technology',
+        history: { dates: ['2026-08-20', '2026-08-21'], closes: [150, 160] },
+      }],
+      screen_universe: [], portfolio_coverage: [],
+      benchmark_history: { dates: ['2026-08-20', '2026-08-21'] },
+    }
+
+    beforeEach(() => {
+      useAuth.mockReturnValue({ currentUser: { uid: 'u1' }, authError: '', retryAuth: vi.fn() })
+      useFirebasePortfolio.mockReturnValue({ positions: [{ ticker: 'AAPL', shares: 10, costBasis: 100 }], loading: false })
+    })
+
+    it('renders chart.home.growth-chart through the shared renderer once a real series builds', async () => {
+      mockDataFiles({ report: { data: CHART_REPORT, loading: false } })
+      const { container } = renderHome()
+      await waitFor(() => expect(screen.getByTestId('growth-chart')).toBeInTheDocument())
+      const node = container.querySelector('[data-capability-id="chart.home.growth-chart"]')
+      expect(within(node).getByTestId('fake-line-chart')).toBeInTheDocument()
+      expect(fakeLine).toHaveBeenCalled()
+      expect(fakeLine.mock.calls.at(-1)[0].metricId).toBe('home-growth-chart')
+    })
+
+    it('renders chart.home.allocation through renderer.composition from sector allocation', async () => {
+      mockDataFiles({ report: { data: CHART_REPORT, loading: false } })
+      const { container } = renderHome()
+      await waitFor(() => expect(container.querySelector('[data-capability-id="chart.home.allocation"]')).toBeInTheDocument())
+      const node = container.querySelector('[data-capability-id="chart.home.allocation"]')
+      await waitFor(() => expect(within(node).getByTestId('fake-composition-chart')).toBeInTheDocument())
+      expect(within(node).getByTestId('allocation-bars')).toHaveTextContent('Technology')
+    })
+
+    it('renders figure.home.performance-evidence-summary with an overall read', async () => {
+      mockDataFiles({ report: { data: CHART_REPORT, loading: false } })
+      const { container } = renderHome()
+      await waitFor(() => expect(container.querySelector('[data-capability-id="figure.home.performance-evidence-summary"]')).toBeInTheDocument())
+      const node = container.querySelector('[data-capability-id="figure.home.performance-evidence-summary"]')
+      expect(within(node).getByTestId('evidence-summary-overall')).toHaveTextContent('Overall evidence:')
+    })
+
+    it('renders figure.home.action-needed with the no-action-needed copy when nothing clears the gate', async () => {
+      mockDataFiles({ report: { data: CHART_REPORT, loading: false } })
+      const { container } = renderHome()
+      await waitFor(() => expect(container.querySelector('[data-capability-id="figure.home.action-needed"]')).toBeInTheDocument())
+      const node = container.querySelector('[data-capability-id="figure.home.action-needed"]')
+      expect(within(node).getByTestId('action-needed-count')).toHaveTextContent('0')
+    })
+
+    it('renders figure.home.watchlist-preview from useWatchlist matched against report.research', async () => {
+      useWatchlist.mockReturnValue({ items: [{ ticker: 'AAPL', addedAt: '2026-08-01' }] })
+      mockDataFiles({ report: { data: CHART_REPORT, loading: false } })
+      const { container } = renderHome()
+      await waitFor(() => expect(container.querySelector('[data-capability-id="figure.home.watchlist-preview"]')).toBeInTheDocument())
+      const node = container.querySelector('[data-capability-id="figure.home.watchlist-preview"]')
+      await waitFor(() => expect(within(node).getByTestId('watchlist-preview-rows')).toHaveTextContent('AAPL'))
+    })
+
+    it('shows the watchlist-preview empty state with no followed tickers', async () => {
+      mockDataFiles({ report: { data: CHART_REPORT, loading: false } })
+      const { container } = renderHome()
+      await waitFor(() => expect(container.querySelector('[data-capability-id="figure.home.watchlist-preview"]')).toBeInTheDocument())
+      const node = container.querySelector('[data-capability-id="figure.home.watchlist-preview"]')
+      expect(within(node).getByTestId('watchlist-preview-empty')).toBeInTheDocument()
+    })
+
+    it('shows the opportunity-cost empty state with no benchmark-report.json comparison available', async () => {
+      mockDataFiles({ report: { data: CHART_REPORT, loading: false } })
+      const { container } = renderHome()
+      await waitFor(() => expect(container.querySelector('[data-capability-id="figure.home.opportunity-cost"]')).toBeInTheDocument())
+      const node = container.querySelector('[data-capability-id="figure.home.opportunity-cost"]')
+      expect(within(node).getByTestId('opportunity-cost-empty')).toBeInTheDocument()
+    })
   })
 })

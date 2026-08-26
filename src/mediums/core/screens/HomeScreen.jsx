@@ -1,11 +1,12 @@
 import { lazy, Suspense } from 'react'
 import { useData } from '../../../lib/useData.js'
 import { useMedium } from '../MediumContext.jsx'
-import { canonicalArtifactState, provenanceOf, promotionDisclosure } from '../states.js'
+import { useRenderer } from '../useRenderer.js'
+import { canonicalArtifactState, provenanceOf, promotionDisclosure, confidenceOf } from '../states.js'
 import { cap } from '../capability.js'
 import { HOME_IDS } from './capabilityIds.js'
 import { signedPct } from '../../../lib/formatters.js'
-import { rankBreakoutInProgress, rankValueTurnarounds, rankMomentum, rankReversal, rankGrowingEtfs } from '../../../lib/researchScreens.js'
+import { rankBreakoutInProgress, rankValueTurnarounds, rankMomentum, rankReversal, rankGrowingEtfs, rankBuyingTheDip } from '../../../lib/researchScreens.js'
 
 // Lazy — the only Firebase-dependent part of Home (useAuth/useFirebasePortfolio, both of which
 // statically import FirebaseAuthContext.jsx and its eager ~610 kB SDK init) is split out here so
@@ -116,6 +117,61 @@ function InsideInformation({ insideInformation, insideInformationLoading, Contai
   )
 }
 
+// chart.home.buying-the-dip — quality names (already ATTRACTIVE/PROMISING) trading down from
+// their highs, mirroring BuyingTheDipChart.jsx (read-only reference): report.json only, no
+// portfolio/Firebase dependency, so this renders directly on HomeScreen like TopSignal above.
+// `bar` is the closest CHART_TYPES fit for a sorted per-ticker comparison (distance below each
+// row's estimated floor); the textual row list beneath it carries the same figures accessibly.
+function BuyingTheDip({ report, Container }) {
+  const renderer = useRenderer()
+  const screenRows = [...new Map(
+    [...(report.research || []), ...(report.screen_universe || [])].map((row) => [row.ticker, row]),
+  ).values()]
+  const rows = rankBuyingTheDip(screenRows, 8)
+  const artifactState = canonicalArtifactState(rows.length ? { status: 'success' } : null)
+  const confidence = confidenceOf({})
+
+  return (
+    <Container {...cap('chart.home.buying-the-dip')} aria-labelledby="buying-the-dip-title">
+      <span className="eyebrow">Quality down from its highs</span>
+      <h3 id="buying-the-dip-title">Buying the dip</h3>
+      {rows.length ? (
+        <>
+          {renderer && (
+            <div data-testid="buying-the-dip-chart">
+              {renderer.bar({
+                metricId: 'home-buying-the-dip',
+                values: rows.map((row) => row.screen.distanceToFloorPct),
+                domain: { min: Math.min(0, ...rows.map((row) => row.screen.distanceToFloorPct)), max: Math.max(...rows.map((row) => row.screen.distanceToFloorPct)) },
+                unit: '%',
+                thresholds: [],
+                annotations: [],
+                state: artifactState,
+                confidence,
+                ariaLabel: `Distance from estimated floor for ${rows.map((row) => row.ticker).join(', ')}`,
+                width: 480,
+                height: 120,
+              })}
+            </div>
+          )}
+          <ol data-testid="buying-the-dip-rows">
+            {rows.map((row) => (
+              <li key={row.ticker}>
+                <b>{row.ticker}</b>
+                <span>${row.price.toFixed(2)}</span>
+                <span>{signedPct(row.screen.distanceToFloorPct)} vs. floor</span>
+                <em>{row.score}</em>
+              </li>
+            ))}
+          </ol>
+        </>
+      ) : (
+        <p data-testid="buying-the-dip-empty">No ATTRACTIVE or PROMISING name is currently down far enough from its highs to clear this screen. Check back after the next data refresh.</p>
+      )}
+    </Container>
+  )
+}
+
 /**
  * The primary destination. Renders the Phase 0 first-viewport recommendation
  * (ROUTE-INVENTORY.md §3): portfolio value + today's delta + as-of line, then a growth chart of
@@ -175,6 +231,7 @@ export default function HomeScreen() {
       </Container>
 
       <TopSignal report={report} Container={Container} />
+      <BuyingTheDip report={report} Container={Container} />
 
       <FocusedScreens report={report} etfData={etfData} etfLoading={etfLoading} Container={Container} SectionHeading={SectionHeading} />
       <InsideInformation insideInformation={insideInformation} insideInformationLoading={insideInformationLoading} Container={Container} />

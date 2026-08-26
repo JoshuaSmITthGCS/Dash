@@ -1,13 +1,23 @@
 import { useMemo, useState } from 'react'
 import { AuthProvider as FirebaseAuthProvider, useAuth } from '../../../lib/FirebaseAuthContext.jsx'
 import { useFirebasePortfolio } from '../../../lib/useFirebasePortfolio.js'
-import { enrichPortfolio, currentHoldingsSeries, selectPeriod, latestMarketDayReturn } from '../../../lib/portfolioAnalytics.js'
+import { useWatchlist } from '../../../lib/useWatchlist.js'
+import { useData } from '../../../lib/useData.js'
+import {
+  enrichPortfolio, currentHoldingsSeries, selectPeriod, latestMarketDayReturn,
+  BENCHMARKS, compareBenchmarkSeries, performanceMetrics, riskFreeAnnualRate,
+} from '../../../lib/portfolioAnalytics.js'
 import { buildPortfolioPriceData, mergePositionSnapshots } from '../../../lib/portfolioPosition.js'
 import { liveTodayPortfolioReturn } from '../../../lib/afterHoursQuotes.js'
 import { dailyMoveForPosition } from '../../../lib/marketPresentation.js'
 import { signedPct } from '../../../lib/formatters.js'
+import { getRecommendation } from '../../../lib/recommendation.js'
+import { buildPortfolioMetricModel } from '../../../lib/portfolioMetricModel.js'
+import { combinedEvidence, sectionAssessment } from '../../../lib/metricAssessment.js'
 import { usePreferences } from '../../../lib/PreferencesContext.jsx'
 import { useMedium } from '../MediumContext.jsx'
+import { useRenderer } from '../useRenderer.js'
+import { canonicalArtifactState, confidenceOf } from '../states.js'
 import { cap } from '../capability.js'
 import { HOME_IDS } from './capabilityIds.js'
 
@@ -41,9 +51,15 @@ function HomePortfolioContent({ report }) {
   const ControlComponent = manifest.components?.Control
   const Skeleton = manifest.components?.Skeleton
 
+  const renderer = useRenderer()
   const { currentUser, authError, retryAuth } = useAuth()
   const { positions, loading: portfolioLoading } = useFirebasePortfolio()
+  const { items: watchlistItems } = useWatchlist()
   const { preferences, updatePreferences } = usePreferences()
+  // benchmark-report.json backs both the opportunity-cost figure and the performance-evidence
+  // summary below — same file, same shape Dashboard.jsx reads for its own `comparison`/
+  // `scoreComparison`. Only fetched once a holder actually has positions to compare.
+  const { data: benchmarkReport } = useData(positions.length ? 'benchmark-report.json' : null)
 
   const [period, setPeriod] = useState(preferences.defaultChartPeriod && PERIODS.includes(preferences.defaultChartPeriod) ? preferences.defaultChartPeriod : '1M')
   const [holdingsSort, setHoldingsSort] = useState('day')
@@ -75,6 +91,75 @@ function HomePortfolioContent({ report }) {
   const money = (value) => value == null ? '–' : privacyMode ? '••••' : `$${value.toFixed(2)}`
 
   const changePeriod = (next) => { setPeriod(next); updatePreferences({ defaultChartPeriod: next }) }
+
+  // chart.home.growth-chart's state/confidence — mirrors MarketsScreen's `IndexesView`: no
+  // per-metric row exists for a holdings-value series, so state comes from whether report.json
+  // itself built (`canonicalArtifactState`), never hand-derived, and confidence stays the
+  // neutral default (no explicit confidence field, no |t| flag applies to a value chart).
+  const growthChartState = canonicalArtifactState(report ? { status: 'success' } : null)
+  const growthChartConfidence = confidenceOf({})
+
+  // chart.home.allocation — sector allocation by current market value, same source Dashboard.jsx
+  // uses for AllocationDonut/`.allocation-bars` (portfolioAnalytics.js via enrichPortfolio's
+  // priceInfo.sector). Composition-safe replacement for the retired donut (DESIGN.md, ledger note).
+  const sectorAllocation = useMemo(() => Object.entries(portfolio.positions.reduce((totals, position) => {
+    const sector = position.priceInfo?.sector || 'Unclassified'
+    totals[sector] = (totals[sector] || 0) + Number(position.currentValue || 0)
+    return totals
+  }, {})).map(([sector, value]) => ({ sector, value, pct: portfolio.totalValue ? value / portfolio.totalValue * 100 : 0 }))
+    .sort((left, right) => right.value - left.value), [portfolio.positions, portfolio.totalValue])
+  const allocationState = canonicalArtifactState(sectorAllocation.length ? { status: 'success' } : null)
+  const allocationConfidence = confidenceOf({})
+
+  // figure.home.action-needed — holdings with evidence-based guidance beyond Hold, same
+  // getRecommendation() Dashboard.jsx's `actionable` reads off each position's merged priceInfo.
+  const actionable = useMemo(() => portfolio.positions
+    .map((row) => ({ ...row, recommendation: row.priceInfo ? getRecommendation(row.priceInfo) : null }))
+    .filter((row) => row.recommendation?.action === 'SELL' || row.recommendation?.action === 'TRIM'),
+  [portfolio.positions])
+
+  // figure.home.watchlist-preview — followed tickers matched against the published research
+  // rows, same lookup Dashboard.jsx's `watchRows` performs against `data.research`.
+  const watchRows = useMemo(() => watchlistItems
+    .map((item) => (report?.research || []).find((row) => row.ticker === item.ticker))
+    .filter(Boolean)
+    .slice(0, 4), [watchlistItems, report])
+
+  // Selected benchmark proxies (up to 3, preference-driven) — one shared read backing both the
+  // opportunity-cost figure and the performance-evidence summary, same as Dashboard.jsx's
+  // `selectedBenchmarkSeries`.
+  const selectedBenchmarkSeries = useMemo(() => (preferences.defaultBenchmarks || [preferences.defaultBenchmark])
+    .map((symbol) => {
+      const history = benchmarkReport?.histories?.[symbol]
+      const definition = BENCHMARKS.find((item) => item.symbol === symbol)
+      return history ? { symbol, label: definition?.label || symbol, dates: history.dates, closes: history.closes } : null
+    }).filter(Boolean), [benchmarkReport, preferences.defaultBenchmarks, preferences.defaultBenchmark])
+
+  // figure.home.opportunity-cost — potential earnings had the same starting value been put in
+  // each benchmark proxy instead, over the currently charted period. Identical computation to
+  // Dashboard.jsx's `comparison` (compareBenchmarkSeries against the selected chart period).
+  const opportunityComparison = useMemo(() => compareBenchmarkSeries(chart, selectedBenchmarkSeries), [chart, selectedBenchmarkSeries])
+
+  // figure.home.performance-evidence-summary — standard risk/return measures against the
+  // primary benchmark over up to a year of live holdings, fed through the same
+  // buildPortfolioMetricModel()/combinedEvidence() apparatus PerformanceEvidenceSummary
+  // (src/components/PerformanceMetrics.jsx, read-only reference) uses — reimplemented against
+  // lib/* directly since importing from src/components is ESLint-forbidden outside Classic.
+  const scorePeriod = useMemo(() => selectPeriod(holdingsSeries, '1Y') || selectPeriod(holdingsSeries, 'All'), [holdingsSeries])
+  const scoreComparison = useMemo(() => compareBenchmarkSeries(scorePeriod, selectedBenchmarkSeries.slice(0, 1)), [scorePeriod, selectedBenchmarkSeries])
+  const riskFree = useMemo(() => riskFreeAnnualRate(report), [report])
+  const performance = useMemo(
+    () => performanceMetrics(scoreComparison?.portfolio || scorePeriod, scoreComparison?.benchmarks?.[0], riskFree.annualPct),
+    [scoreComparison, scorePeriod, riskFree],
+  )
+  const evidenceOverall = useMemo(() => {
+    const model = buildPortfolioMetricModel({ performance })
+    return combinedEvidence([
+      { id: 'standard', metrics: model.standard, summary: sectionAssessment('standard', model.standard) },
+      { id: 'comparison', metrics: model.comparison, summary: sectionAssessment('comparison', model.comparison) },
+      { id: 'fast', metrics: model.fast, summary: sectionAssessment('fast', model.fast) },
+    ])
+  }, [performance])
 
   if (currentUser && portfolioLoading) {
     return Skeleton ? <Skeleton /> : <div role="status" aria-live="polite">Loading…</div>
@@ -165,7 +250,20 @@ function HomePortfolioContent({ report }) {
         </label>
         {chart ? (
           <div data-testid="growth-chart" data-points={chart.values.length}>
-            Current holdings, {chart.period}: {chart.returnPct != null ? signedPct(chart.returnPct) : '–'}
+            {renderer && renderer.line({
+              metricId: 'home-growth-chart',
+              series: chart.dates.map((date, index) => ({ x: date, y: chart.values[index] })),
+              domain: { min: chart.low, max: chart.high },
+              unit: 'USD',
+              thresholds: [],
+              annotations: [],
+              state: growthChartState,
+              confidence: growthChartConfidence,
+              ariaLabel: `Current holdings value history, ${period} range`,
+              width: 920,
+              height: 360,
+            })}
+            <span className="sr-only">Current holdings, {chart.period}: {chart.returnPct != null ? signedPct(chart.returnPct) : '–'}</span>
           </div>
         ) : (
           <span data-testid="growth-chart-empty" {...cap('state.home.chart-unavailable')}>
@@ -173,6 +271,103 @@ function HomePortfolioContent({ report }) {
           </span>
         )}
       </Container>
+
+      {/* chart.home.allocation — composition-safe replacement for the retired AllocationDonut */}
+      <Container {...cap('chart.home.allocation')} aria-label="Sector allocation">
+        {sectorAllocation.length ? (
+          <div data-testid="allocation-chart">
+            {renderer && renderer.composition({
+              metricId: 'home-allocation',
+              values: sectorAllocation.map((item) => ({ value: item.pct, label: item.sector })),
+              domain: { min: 0, max: 100 },
+              unit: '%',
+              thresholds: [],
+              annotations: [],
+              state: allocationState,
+              confidence: allocationConfidence,
+              ariaLabel: `Sector allocation of ${money(portfolio.totalValue)} covered portfolio value`,
+              width: 480,
+              height: 32,
+            })}
+            <ul data-testid="allocation-bars">
+              {sectorAllocation.map((item) => (
+                <li key={item.sector}><b>{item.sector}</b><span>{item.pct.toFixed(1)}%</span><small>{money(item.value)}</small></li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <span data-testid="allocation-empty">No priced holdings to allocate yet.</span>
+        )}
+      </Container>
+
+      {/* figure.home.performance-evidence-summary — the read and its counts; full analytics live
+          on Portfolio → Data overview, not duplicated here. */}
+      <Container {...cap('figure.home.performance-evidence-summary')} aria-labelledby="evidence-summary-title">
+        <span className="eyebrow">Performance evidence</span>
+        <h3 id="evidence-summary-title" data-testid="evidence-summary-overall">Overall evidence: {evidenceOverall.read}</h3>
+        <p data-testid="evidence-summary-headline">
+          {performance.available
+            ? `Sharpe ${Number.isFinite(performance.sharpe) ? performance.sharpe.toFixed(2) : 'Unavailable'} · Max drawdown ${Number.isFinite(performance.maxDrawdown) ? `${performance.maxDrawdown.toFixed(1)}%` : 'Unavailable'}`
+            : performance.reason || 'Unavailable'}
+        </p>
+        <div data-testid="evidence-summary-counts" aria-label={`${evidenceOverall.counts.positive} positive, ${evidenceOverall.counts.neutral} neutral, ${evidenceOverall.counts.negative} negative, ${evidenceOverall.counts.insufficient} insufficient`}>
+          {['positive', 'neutral', 'negative', 'insufficient'].map((status) => (
+            <span key={status} data-status={status}>{evidenceOverall.counts[status]} {status}</span>
+          ))}
+        </div>
+        <p data-testid="evidence-summary-narrative">{evidenceOverall.narrative}</p>
+      </Container>
+
+      {/* figure.home.action-needed */}
+      <Container {...cap('figure.home.action-needed')} aria-label="Holdings to review">
+        <strong data-testid="action-needed-count">{actionable.length}</strong>
+        <p data-testid="action-needed-note">
+          {actionable.length
+            ? `${actionable.slice(0, 4).map((row) => row.ticker).join(', ')} have evidence-based guidance beyond Hold.`
+            : 'No covered holding has multi-factor guidance beyond Hold.'}
+        </p>
+        <small>Research prompts only. Review the underlying evidence before acting.</small>
+      </Container>
+
+      {/* figure.home.watchlist-preview */}
+      <Container {...cap('figure.home.watchlist-preview')} aria-label="Names you follow">
+        {watchRows.length ? (
+          <ol data-testid="watchlist-preview-rows">
+            {watchRows.map((row) => (
+              <li key={row.ticker}><b>{row.ticker}</b><span>{row.name}</span><em>{row.score}</em>{row.dayChange != null && <span>{signedPct(row.dayChange, 2)}</span>}</li>
+            ))}
+          </ol>
+        ) : (
+          <p data-testid="watchlist-preview-empty">No published watchlist matches yet.</p>
+        )}
+      </Container>
+
+      {/* figure.home.opportunity-cost */}
+      <Container {...cap('figure.home.opportunity-cost')} aria-label="Potential earnings by benchmark">
+        {opportunityComparison ? (
+          <div data-testid="opportunity-cost">
+            <div><span>Shared starting value</span><strong>{money(opportunityComparison.startingValue)}</strong><small>{opportunityComparison.startDate} to {opportunityComparison.endDate}</small></div>
+            <div><span>Current holdings</span><strong>{opportunityComparison.portfolio.dollarReturn >= 0 ? '+' : '−'}{money(Math.abs(opportunityComparison.portfolio.dollarReturn))}</strong></div>
+            {opportunityComparison.benchmarks.map((item) => (
+              <div key={item.symbol}>
+                <span>{item.symbol} proxy · {item.label}</span>
+                <strong>{item.potentialEarnings >= 0 ? '+' : '−'}{money(Math.abs(item.potentialEarnings))}</strong>
+                <em>{item.differenceVsPortfolio >= 0 ? `Portfolio ahead ${money(item.differenceVsPortfolio)}` : `Benchmark ahead ${money(Math.abs(item.differenceVsPortfolio))}`}</em>
+              </div>
+            ))}
+            <small>{opportunityComparison.methodology}</small>
+          </div>
+        ) : (
+          <p data-testid="opportunity-cost-empty">Comparable history is unavailable for this selection.</p>
+        )}
+      </Container>
+
+      {/* chart.home.projection-panel — deferred: needs useFirebaseFinances() (goal/contribution
+          settings), useProjectionSimulation()'s Worker-backed Monte Carlo engine, and the chain
+          of derived inputs Dashboard.jsx builds to feed it (selectProjectionReturnSource,
+          applyAllocationAssumption, normalizeAnnualReturnTarget, fidelityProjectionBaseline).
+          None of that is fetched or computed anywhere in this screen today; wiring it is a
+          second, standalone pass rather than an addition to this one. */}
 
       <p {...cap('disclosure.home.methodology-footer')}>
         Balances use the latest stored closes. Historical portfolio lines apply current
