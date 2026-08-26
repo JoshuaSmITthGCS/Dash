@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { calculateAge, isValidBirthDate, RETIREMENT_AGES } from './age.js'
 import modelSettings from '../../pipeline/config/settings.json'
+import { isKnownMedium, getMediumMeta, DEFAULT_MEDIUM_DURING_BUILD } from '../mediums/registry.js'
 
 export const PREFERENCES_KEY = 'valuesignal.ui-preferences.v1'
 
@@ -38,7 +39,9 @@ export const DEFAULT_WIDGETS = [
 ]
 
 export const DEFAULT_PREFERENCES = {
-  version: 5,
+  version: 6,
+  medium: DEFAULT_MEDIUM_DURING_BUILD,
+  entrySkip: {},
   theme: 'system',
   accentColor: 'valuesignal',
   surfaceStyle: 'outlined',
@@ -92,10 +95,20 @@ export function validatePreferences(raw) {
   const defaultBenchmarks = [...new Set(storedBenchmarks.filter((symbol) => allowedBenchmarks.includes(symbol)))].slice(0, 3)
   if (!defaultBenchmarks.length) defaultBenchmarks.push('SPY')
 
+  const storedEntrySkip = raw.entrySkip && typeof raw.entrySkip === 'object' ? raw.entrySkip : {}
+  const entrySkip = Object.fromEntries(
+    Object.entries(storedEntrySkip).filter(([id]) => isKnownMedium(id)).map(([id, value]) => [id, Boolean(value)])
+  )
+
   return {
     ...DEFAULT_PREFERENCES,
     ...raw,
-    version: 5,
+    version: 6,
+    // v5 -> v6: no `medium` key existed before. An older stored blob has no field to migrate
+    // from, so it just falls back to the same build-time default a first-ever visit gets —
+    // this is additive, not lossy: nothing a v5 blob held is dropped.
+    medium: isKnownMedium(raw.medium) ? raw.medium : DEFAULT_MEDIUM_DURING_BUILD,
+    entrySkip,
     theme: pick(raw.theme, ['system', 'light', 'dark'], 'system'),
     accentColor: ACCENTS[raw.accentColor] ? raw.accentColor : 'valuesignal',
     surfaceStyle: pick(raw.surfaceStyle, ['outlined', 'soft', 'elevated'], 'outlined'),
@@ -166,14 +179,25 @@ export function PreferencesProvider({ children }) {
     root.dataset.chartAnimation = preferences.chartAnimation
     root.dataset.chartLabels = preferences.largerChartLabels ? 'large' : 'standard'
     const isDark = resolvedTheme === 'dark'
-    // Only the primary is published. --brand-secondary, --accent-dim and
-    // --series-stock derive from it in variables.css, so they stay in step with
-    // whichever accent is active without three more inline writes.
-    root.style.setProperty('--brand-primary', isDark ? accent.dark : accent.value)
-    root.style.setProperty('--accent', isDark ? accent.dark : accent.value)
-    root.style.setProperty('--accent-ink', isDark ? accent.inkDark : accent.ink)
+    // The inline accent write beats ANY stylesheet rule, including a non-Classic medium's own
+    // token CSS — so it is published only when the active medium's manifest declares
+    // `acceptsAccent: true` (Classic, today, is the only one). Every other medium gets its
+    // palette from its own tokens.css alone; publishing here would silently repaint it.
+    const mediumMeta = getMediumMeta(preferences.medium)
+    if (mediumMeta?.acceptsAccent) {
+      // Only the primary is published. --brand-secondary, --accent-dim and
+      // --series-stock derive from it in variables.css, so they stay in step with
+      // whichever accent is active without three more inline writes.
+      root.style.setProperty('--brand-primary', isDark ? accent.dark : accent.value)
+      root.style.setProperty('--accent', isDark ? accent.dark : accent.value)
+      root.style.setProperty('--accent-ink', isDark ? accent.inkDark : accent.ink)
+    } else {
+      root.style.removeProperty('--brand-primary')
+      root.style.removeProperty('--accent')
+      root.style.removeProperty('--accent-ink')
+    }
     const themeMeta = document.getElementById('theme-color-meta')
-    themeMeta?.setAttribute('content', isDark ? '#0b100e' : '#eceff0')
+    themeMeta?.setAttribute('content', mediumMeta?.themeColor || (isDark ? '#0b100e' : '#eceff0'))
     try { localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences)) } catch { /* storage can be unavailable */ }
   }, [preferences, resolvedTheme])
 

@@ -43,7 +43,10 @@ describe('interface preferences', () => {
       theme: 'sepia',
       widgets: [{ id: 'portfolio-summary', visible: false }, { id: 'market-pulse', visible: false, order: 0, size: 'huge' }],
     })
-    expect(value.version).toBe(5)
+    // v6 adds `medium` (the 12-medium rebuild) alongside the pre-existing fields below —
+    // additive, not lossy: nothing a v5 blob held is dropped by the migration.
+    expect(value.version).toBe(6)
+    expect(value.medium).toBe('classic')
     expect(value.theme).toBe('system')
     expect(value.widgets).toHaveLength(DEFAULT_WIDGETS.length)
     expect(value.widgets.find((widget) => widget.id === 'portfolio-summary').visible).toBe(true)
@@ -52,6 +55,23 @@ describe('interface preferences', () => {
     expect(value.holdingSort).toEqual({ key: 'allocation', direction: 'desc' })
     expect(value.defaultBenchmarks).toEqual(['SPY', 'QQQ', 'VTI'])
     expect(value.watchlistSizingMode).toBe('capped')
+  })
+
+  it('accepts a valid medium and rejects an unknown one back to the default', () => {
+    expect(validatePreferences({ medium: 'neon' }).medium).toBe('neon')
+    expect(validatePreferences({ medium: 'not-a-medium' }).medium).toBe('classic')
+  })
+
+  it('only publishes the inline accent for a medium that accepts one (Classic today)', () => {
+    installMatchMedia(false)
+    render(<PreferencesProvider><Harness /></PreferencesProvider>)
+    act(() => { fireEvent.click(screen.getByText('Update')) })
+    expect(document.documentElement.style.getPropertyValue('--brand-primary')).not.toBe('')
+
+    localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ ...JSON.parse(localStorage.getItem(PREFERENCES_KEY)), medium: 'neon' }))
+    document.documentElement.style.removeProperty('--brand-primary')
+    render(<PreferencesProvider><Harness /></PreferencesProvider>)
+    expect(document.documentElement.style.getPropertyValue('--brand-primary')).toBe('')
   })
 
   it('follows live system-theme changes until the user selects an override', () => {
