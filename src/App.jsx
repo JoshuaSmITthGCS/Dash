@@ -43,6 +43,10 @@ const Insights = lazy(() => import('./pages/Insights.jsx'))
 const Alerts = lazy(() => import('./pages/Alerts.jsx'))
 const Markets = lazy(() => import('./pages/Markets.jsx'))
 const HUDDemo = lazy(() => import('./pages/HUDDemo.jsx'))
+// The twelve-medium rebuild's shell — see src/mediums/. Lazy so the entry bundle never pays
+// for it until someone actually visits /v2 (most of the twelve medium manifests don't exist
+// on disk yet; each one is its own lazy chunk loaded only when that medium is active).
+const MediumShell = lazy(() => import('./mediums/core/MediumShell.jsx'))
 
 // Flat strategy paths that predate the Options tab, kept alive as redirects into it.
 const OPTIONS_STRATEGY_IDS = [
@@ -330,6 +334,9 @@ function AppContent() {
           <Route path="/glossary" element={<Glossary />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/alerts" element={cloudPage('Alerts', '/alerts', <Alerts />)} />
+          <Route path="/v2/*" element={
+            <MediumShell mediumId={preferences.medium} entrySkip={Boolean(preferences.entrySkip?.[preferences.medium])} />
+          } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
