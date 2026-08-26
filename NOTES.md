@@ -175,3 +175,57 @@ real manifests — the screens just start rendering richer material automaticall
 plan before ledger authoring began, per the plan's own instruction ("refine during authoring,
 don't reopen the shape"). Every `merged`/`moved` row in the ledger targets one of these six —
 no row proposes a seventh destination or a different shape.
+
+**Phase 2c — Classic port, judgment calls.**
+- **`ResearchRadarChart` reused unmodified, grandfathered from the radar ban.** The banned list
+  (root doc "Banned in every theme") retires radar everywhere in favor of `profile` (a sorted
+  bar/dot factor-loading chart); the master's own banned-list self-audit explicitly allows
+  Classic to keep it, "grandfathered only with NOTES.md listing" — this is that listing.
+  `classic/renderer/index.jsx`'s `profile()` function adapts the shared `values: [{label,
+  value}]` contract shape into the `{fundamental_categories}` object `ResearchRadarChart`
+  expects; the component itself is untouched.
+- **Chart-renderer split: 10 of 14 types are literal component reuse, 4 are new-but-token-
+  consistent.** `line/sparkline/pairedBar/barTimeline/scatter/heatmap/fan/dotPlot/dial/profile`
+  wrap `GrowthChart/Sparkline/PairedBarChart/BarTimeline/ScatterChart/CorrelationHeatmap/
+  ProjectionFanChart/DotPlot/ScoreGauge/ResearchRadarChart` directly via thin prop adapters —
+  exactly DESIGN.md §12's stated approach ("adapter maps contract props onto existing component
+  APIs rather than rewriting them"). `bar/composition/bullet/waterfall` have no existing
+  component with a shape generic enough to adapt without inventing new page-specific coupling
+  (e.g. `ScoreExplainability`'s waterfall needs a whole `stock` object, not a flat `values[]`),
+  so those four are small new SVG functions using the existing design-token set
+  (`var(--positive)`/`var(--negative)`/`var(--surface-tertiary)`) rather than a chart library —
+  still zero new dependencies, still the existing visual language.
+- **`LabelFrame` is new markup, ported CSS classes.** `WallLabel`'s `parts` contract (used
+  identically by all twelve mediums) is deliberately narrower than the raw `signal_metrics.json`
+  row `SignalMetricsPanel`'s private `Metric` function needs (kill_threshold_value/comparison/
+  cadence aren't in `parts` — passing the full raw row through would violate the "structured
+  parts, not free text" design the whole rebuild depends on for its disclosure guarantees).
+  Reusing `Metric` verbatim was rejected for that reason; instead `classic/components/
+  LabelFrame.jsx` derives the exact same tone vocabulary `src/lib/signalMetrics.js`'s
+  `metricTone()` produces (`breached/ready/accumulating/pending`) from the canonical state
+  already in `parts`, and renders through the identical `.signal-metric`/`.tone-*`/
+  `.chip.signal-status-*`/`.signal-kill` CSS classes — full visual/CSS reuse, new markup.
+- **ESLint enforcement of 0f was a real gap, closed here.** The Phase 2a plan called for a
+  `no-restricted-imports` rule banning `src/mediums/**` (except `classic/`) from importing
+  `src/pages/*`/top-level `src/components/*`, but it was never actually added to
+  `eslint.config.js` during 2a — nothing enforced the isolation boundary mechanically until now.
+  Added as part of this pass (the natural point, since Classic is the first and only medium that
+  legitimately crosses it) — verified to catch a real violation and stay silent on all eleven
+  other mediums and on Classic's own legitimate imports before being committed.
+- **`ProvenanceStrip`/`Nav` are new, not `ModelVersionFooter`/`DataStatus`/the inline `App.jsx`
+  nav markup.** Those existing components fetch their own data (`useData('report.json')`
+  directly) or are inline JSX in `App.jsx`, not extractable components with the
+  `{ready, breached, liveDays, modelVersion, promotionText}` / bare-nav-with-props shape every
+  other medium's manifest contract expects. Classic's versions are new, prop-driven components
+  styled with the existing CSS classes (`.model-version-footer`, `.mobile-nav`/`.mobile-nav-item`
+  /`.mobile-more-nav`, `MobileSheet`, `Icon`) for full visual continuity rather than duplicating
+  their own data-fetching a second time.
+- **Bottom nav: five destinations become four tabs + a six-destination-consolidated More sheet.**
+  Per DESIGN.md §12 exactly: Home/Portfolio/Research/Markets stay direct tabs; the More sheet
+  now holds Screens/Evidence (new, absorbing the old route sprawl) plus the pre-existing
+  Alerts/Settings entries — same one-more-tap interaction budget as the other eleven mediums.
+- **Phase 2c drift check: clean.** `git diff --stat src/mediums/core/` is empty for this commit —
+  no core file needed a change to make Classic work. (The three earlier additive `WallLabel.jsx`
+  extensions — `previous`, `headline`, `confidenceInterval` — were made during Chalkboard/
+  Newspaper/Star Chart respectively, each already committed in its own medium's commit, each in
+  service of that medium's own must-include device, not "to make Classic work.")

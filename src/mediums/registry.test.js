@@ -48,19 +48,13 @@ describe('getMediumMeta / getAllMediumMeta / isKnownMedium', () => {
 })
 
 describe('isMediumImplemented / loadMedium', () => {
-  it('is true only for mediums that actually have a manifest.js on disk (Phase 2b, in progress)', () => {
-    // Grows as Phase 2b lands each medium — update this list alongside each new manifest.js.
-    const implemented = new Set(['cockpit', 'neon', 'poster', 'ticker', 'gallery', 'chalkboard', 'beige-box', 'newspaper', 'book', 'blueprint', 'star-chart'])
+  it('is true for every medium — Phase 2b/2c is complete, all twelve manifests exist on disk', () => {
     for (const entry of MEDIUM_META) {
-      expect(isMediumImplemented(entry.id)).toBe(implemented.has(entry.id))
+      expect(isMediumImplemented(entry.id)).toBe(true)
     }
   })
 
   it('rejects with a clear, catchable error for an unknown medium', async () => {
     await expect(loadMedium('not-a-medium')).rejects.toThrow(/Unknown medium/)
-  })
-
-  it('rejects with a clear, catchable error for a known-but-unbuilt medium', async () => {
-    await expect(loadMedium('classic')).rejects.toThrow(/has not been built yet/)
   })
 })

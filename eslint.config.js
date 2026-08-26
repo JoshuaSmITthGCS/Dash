@@ -42,4 +42,24 @@ export default [
     files: ['src/lib/fidelityConnectorStub.js'],
     rules: { 'no-unused-vars': ['error', { args: 'none' }] },
   },
+  {
+    // The twelve-medium rebuild's 0f rule: `core/screens/*` compose exclusively from
+    // `manifest.components` + `WallLabel` + the renderer + data hooks — never from the
+    // pre-existing `src/pages/*` or top-level `src/components/*`. Classic (DESIGN.md §12) is
+    // the sole, deliberate exception — it's the only medium permitted to reuse those existing
+    // files, which is exactly why it's excluded here rather than the rule not existing at all.
+    // The three-`../`-levels patterns match the literal relative-import depth every medium
+    // subfolder (`components/`, `nav/`, `entry/`, `renderer/`) sits at from `src/`; a medium's
+    // own local `./components/*` or `../components/*` import never matches this shape.
+    files: ['src/mediums/**/*.{js,jsx}'],
+    ignores: ['src/mediums/classic/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          { group: ['../../../pages/*', '../../../../pages/*'], message: 'Only src/mediums/classic/** may import from src/pages/** (DESIGN.md §12 — the isolated Classic port).' },
+          { group: ['../../../components/*', '../../../../components/*'], message: 'Only src/mediums/classic/** may import from the top-level src/components/** (DESIGN.md §12 — the isolated Classic port). A medium\'s own src/mediums/<id>/components/* is unaffected.' },
+        ],
+      }],
+    },
+  },
 ]
