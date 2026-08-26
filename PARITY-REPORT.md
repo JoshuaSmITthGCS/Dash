@@ -22,7 +22,7 @@ rather than quoting the master's exact wording, which isn't available to check a
 | Every retired route redirects with params, 0 404s | **Not started** | `src/routes/redirects.js` (the 0c redirect table as data) exists from Phase 2a but is not yet consumed by `App.jsx` — no route has actually been retired, since cutover hasn't happened. This checklist item applies at cutover, not before. |
 | PWA/bookmarks intact | **Holds** | `manifest.webmanifest`'s `start_url`/`id`/scope untouched; `/v2/*` is a new, additive route, not a replacement of the app shell. |
 | Firestore additive | **Holds** | `PreferencesContext`'s v5→v6 migration (`medium`, `entrySkip`) is additive; no existing preference field was removed or repurposed. |
-| All 16 harness assertions green | **13 of 16 green** (2 documented pre-existing exceptions, 1 blocked on real infrastructure weight — see below) | |
+| All 16 harness assertions green | **15 of 16 green** (1 documented pre-existing exception, 1 blocked on real infrastructure weight — see below) | |
 
 ## The sixteen Playwright assertions
 
@@ -32,7 +32,7 @@ rather than quoting the master's exact wording, which isn't available to check a
 | 2 | Nav parity, all six destinations, all twelve mediums | `parity.spec.mjs` | **Green.** |
 | 3 | Deep-link bypass (structural) | `parity.spec.mjs` | **Green**, all eight entry-bearing mediums. |
 | 4 | Entry containment, every element carries a known capabilityId | `parity.spec.mjs` | **Green** — this assertion caught a real gap: none of the eight entry pages carried `data-capability-id` at all until this phase; fixed by adding `nav.chrome.mobile-tab-bar` to every entry destination control. |
-| 5 | Screenshot matrix + greyscale | `visual.spec.mjs` | **Written, correct, not yet run to establish baselines.** Requires either a local `--update-snapshots` run or the pinned container (`update-baselines.yml`) — see "What's not done". |
+| 5 | Screenshot matrix + greyscale | `visual.spec.mjs` | **Green.** 208 baselines generated (24 medium×viewport projects, self-comparison confirmed pixel-identical). Generated locally, not yet regenerated in the pinned `mcr.microsoft.com/playwright:v1.62.1-noble` container — see "Baseline provenance" below. |
 | 6 | Distinct renderer identity per medium | `renderer.spec.mjs` | **Green**, sampled across 8 of 12 mediums — no two produced identical markup for the same fixed chart call. |
 | 7 | Numeral legibility (unfiltered, unshadowed, ≥16px) | `renderer.spec.mjs` | **Green**, all twelve. |
 | 8 | Non-reduced-motion value-superset check (no real CSS transition/animation) | `motion.spec.mjs` | **Green, eleven of twelve.** Classic is a documented exception — its own DESIGN.md section explicitly keeps its pre-existing, correctly-gated hover transitions rather than claiming zero motion (0f forbids reopening that shared styling), so the "applies no motion" half of this assertion excludes it by name (`NO_MOTION_CLAIM_EXEMPT` in the spec). |
@@ -141,6 +141,26 @@ in the *current, live* app depends on, a change with a blast radius far beyond t
 scope. Documented and grandfathered, same treatment as the light-theme-is-dark bug and the
 `money_weighted_xirr` gap.
 
+## Baseline provenance
+
+208 baselines committed under `tests/e2e/__screenshots__/` (24 medium×viewport projects: 4
+destinations × screenshot + greyscale, plus an entry-page shot for the eight entry-bearing
+mediums). Generated locally against this environment's pre-installed Chromium, **not yet inside
+the pinned `mcr.microsoft.com/playwright:v1.62.1-noble` container** THEMES.md names as the source
+of truth for CI comparisons — font rasterization can differ subtly between them, so a first CI run
+against these baselines may show a small, expected diff even with no real regression. Trigger
+`.github/workflows/update-baselines.yml` (`workflow_dispatch`) to regenerate authoritatively in
+the pinned container once this branch is on a runnable ref; that replaces these without any app
+change.
+
+Generating them also surfaced one more real bug: `playwright.config.mjs` never set
+`snapshotPathTemplate`, so Playwright's default (`{testFile}-snapshots/`) didn't match
+`tests/e2e/__screenshots__/` — the path THEMES.md, `.gitignore`, and
+`update-baselines.yml`'s own `git add tests/e2e/__screenshots__/` all assumed. Left as originally
+written, that CI workflow would have run "successfully" while silently committing nothing every
+time. Fixed by adding the template explicitly; the 208 files generated under the old default path
+were moved (not regenerated) to confirm the fix reproduces byte-identical results.
+
 ## Budget: real, large, and not this session's fix
 
 `budget.spec.mjs` measures actual network transfer for a cold `/v2` load per medium against a
@@ -179,14 +199,14 @@ attempted here under the same pass as the smaller, contained fixes above.
 1. **Ledger coverage.** ~750 of 762 rows have no rendering path yet. This is the largest remaining
    body of work before cutover — wiring the remaining ~600 capability rows into the six screens
    (or a seventh+ screen, if warranted) is its own effort, scoped separately.
-2. **Visual baselines (#5) not generated.** `visual.spec.mjs` is written and correct; establishing
-   baselines requires either a local `--update-snapshots` run or the pinned container
-   (`.github/workflows/update-baselines.yml`, workflow_dispatch, not yet triggered).
+2. **Visual baselines (#5) generated, not yet re-verified in the pinned container.** See
+   "Baseline provenance" above — a real gap only in the sense that CI's exact pixels haven't
+   confirmed these locally-generated ones yet, not in the sense that the work is undone.
 3. **Budget (#16).** See "Budget" section above — real, large, requires deferred-Firebase-loading
    work scoped as its own effort.
 4. **Redirect cutover.** `src/routes/redirects.js` exists but `App.jsx` doesn't consume it yet —
    no route has been retired. Correct: cutover happens only after all 16 assertions are green
-   (or named exceptions accepted), which items 1–3 above say hasn't happened yet.
+   (or named exceptions accepted), which item 3 above says hasn't happened yet.
 5. **`scripts/check-metric-preservation.mjs`'s `money_weighted_xirr` gap** and **Classic's
    `--text-faint`/`--text-tertiary` contrast bug** are both pre-existing, out-of-scope for this
    rebuild, and currently-red inputs to "all 16 green" — see their sections above. Whether the
@@ -195,8 +215,9 @@ attempted here under the same pass as the smaller, contained fixes above.
 
 ## Recommendation
 
-Do not cut over yet. Fourteen of sixteen assertions are green or hold their documented exception;
-the remaining two (#5 visual baselines, #16 budget) are both real and both scoped: baselines are
-an hour of container time, budget is a genuine architectural project (deferred Firebase loading)
-that deserves its own pass rather than a rushed fix bolted onto this one. Ledger coverage (~1% by
-row count) remains the largest true gate and the actual next phase of work, separate from either.
+Do not cut over yet. Fifteen of sixteen assertions are green or hold their documented exception;
+the last (#16 budget) is a genuine architectural project (deferred Firebase loading) that deserves
+its own pass rather than a rushed fix bolted onto this one. Ledger coverage (~1% by row count)
+remains the largest true gate and the actual next phase of work, separate from budget. Before
+treating visual regression as fully trustworthy in CI, trigger `update-baselines.yml` once to
+confirm the pinned-container pixels match these locally-generated ones closely enough to keep.

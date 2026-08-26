@@ -34,6 +34,13 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   timeout: 30_000,
+  // Without this, Playwright's default template (`{testFile}-snapshots/`) doesn't match
+  // `tests/e2e/__screenshots__/` — the path THEMES.md, .gitignore, and
+  // .github/workflows/update-baselines.yml's `git add` all assume, which would make that
+  // workflow silently commit nothing. `{-platform}` is kept in the filename (not folded into the
+  // directory) so a locally-generated `-darwin` baseline is visually distinct from the pinned
+  // container's `-linux` one in a diff, per THEMES.md's baseline-churn guidance.
+  snapshotPathTemplate: '{testDir}/__screenshots__/{projectName}/{arg}{-platform}{ext}',
   expect: {
     timeout: 10_000,
     toHaveScreenshot: { maxDiffPixelRatio: 0.001, animations: 'disabled' },
