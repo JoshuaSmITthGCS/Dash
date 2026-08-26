@@ -108,4 +108,25 @@ describe('MediumShell', () => {
     await waitFor(() => expect(container.querySelector('[data-app-ready="true"]')).toBeInTheDocument())
     expect(screen.getByText('Entry card')).toBeInTheDocument()
   })
+
+  it('shows a neutral exit-to-Classic control once the shell is ready, and it hard-navigates to /', async () => {
+    loadMedium.mockResolvedValue(fakeManifestNoEntry)
+    useData.mockReturnValue({ data: { research: [] }, loading: false })
+    renderShell('/v2')
+    await waitFor(() => expect(screen.getByTestId('exit-to-classic')).toBeInTheDocument())
+    const assign = vi.fn()
+    const originalLocation = window.location
+    Object.defineProperty(window, 'location', { value: { ...originalLocation, assign }, writable: true })
+    screen.getByTestId('exit-to-classic').click()
+    expect(assign).toHaveBeenCalledWith('/')
+    Object.defineProperty(window, 'location', { value: originalLocation, writable: true })
+  })
+
+  it('does not show the exit control on the entry page — the entry has its own skip/continue framing', async () => {
+    loadMedium.mockResolvedValue(fakeManifestWithEntry)
+    useData.mockReturnValue({ data: { research: [] }, loading: false })
+    renderShell('/v2')
+    await waitFor(() => expect(screen.getByText('Entry card')).toBeInTheDocument())
+    expect(screen.queryByTestId('exit-to-classic')).not.toBeInTheDocument()
+  })
 })

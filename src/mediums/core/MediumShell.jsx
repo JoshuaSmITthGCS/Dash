@@ -56,6 +56,38 @@ function MediumLoading() {
 }
 
 /**
+ * A neutral, non-medium-themed exit affordance — "switch back to what you have now" (user's own
+ * words). Deliberately styled plainly rather than through any medium's own material system, same
+ * convention `MediumLoading`/`MediumLoadError` above already establish for shared shell chrome:
+ * it must read consistently regardless of which of the twelve themes is active, and must not
+ * depend on that medium's own tokens.css having loaded correctly.
+ *
+ * A hard reload to `/` (never a client-side navigate) — symmetric with `MediumApp.jsx`'s own
+ * `EscapeToClassic` mechanism, and required for the same reason: `/` is a structurally different
+ * root (`main.jsx`'s bootstrap picks `App.jsx` vs `MediumApp.jsx` by pathname), so nothing short
+ * of a real navigation loads it. Deliberately does NOT touch the `medium` preference — this is a
+ * pure escape hatch, not a reset; only Settings' picker (`src/pages/Settings.jsx`) changes which
+ * medium is selected, so returning to `/v2` later lands back on whatever was last chosen.
+ */
+function ExitToClassic() {
+  return (
+    <button
+      type="button"
+      data-testid="exit-to-classic"
+      aria-label="Back to Classic"
+      onClick={() => window.location.assign('/')}
+      style={{
+        position: 'fixed', top: 8, right: 8, zIndex: 9999,
+        padding: '6px 10px', minHeight: '32px', fontSize: '13px', fontFamily: 'system-ui, sans-serif',
+        background: '#111', color: '#fff', border: '1px solid #444', borderRadius: '4px', cursor: 'pointer',
+      }}
+    >
+      ← Back to Classic
+    </button>
+  )
+}
+
+/**
  * Mounts at `/v2/*`. Loads the active medium's manifest, sets `data-medium` on the document
  * root, provides it via MediumContext to every screen and WallLabel beneath it, decides whether
  * to show the medium's entry page (skippable, deep-link-bypass structural — see core/entry.js),
@@ -120,6 +152,7 @@ function MediumShellReady({ manifest, mediumId, entrySkip }) {
   return (
     <div data-medium-shell="true" data-app-ready={appReady ? 'true' : undefined}>
       {NavComponent && <NavComponent />}
+      <ExitToClassic />
       <main id="main-content" tabIndex="-1">
         <Suspense fallback={<MediumLoading />}>
           <Routes>
