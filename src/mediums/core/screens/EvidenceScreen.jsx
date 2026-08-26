@@ -4,6 +4,8 @@ import { useMedium } from '../MediumContext.jsx'
 import { promotionDisclosure } from '../states.js'
 import { cap } from '../capability.js'
 import { EVIDENCE_IDS } from './capabilityIds.js'
+import WallLabel from '../WallLabel.jsx'
+import { splitBySampleRequirement, defaultOpenGroups, sharedStatusMessage } from '../../../lib/signalMetrics.js'
 
 export const EVIDENCE_SECTIONS = Object.freeze(['validation', 'backtests', 'shadow', 'methodology', 'glossary'])
 
@@ -25,6 +27,7 @@ export default function EvidenceScreen() {
   const { data: researchEvidence } = useData(section === 'validation' ? 'validation/research_evidence.json' : null)
 
   const promotion = promotionDisclosure(researchEvidence)
+  const buckets = section === 'validation' && signalMetrics ? splitBySampleRequirement(signalMetrics) : []
 
   if (section === 'validation' && metricsLoading) {
     return <div role="status" aria-live="polite">Loading…</div>
@@ -43,6 +46,27 @@ export default function EvidenceScreen() {
           <span data-testid="metrics-summary">
             {signalMetrics.summary?.ready} ready · {signalMetrics.summary?.breached} breached of {signalMetrics.summary?.total}
           </span>
+          {buckets.map((bucket) => {
+            const openGroups = defaultOpenGroups(bucket)
+            return (
+              <section key={bucket.id} data-metrics-bucket={bucket.id}>
+                <h3>{bucket.title}</h3>
+                <p>{bucket.subtitle}</p>
+                {bucket.groups.map((group) => {
+                  const groupMessage = sharedStatusMessage(group.metrics)
+                  return (
+                    <details key={group.id} open={openGroups.has(group.id)}>
+                      <summary>{group.letter ? `${group.letter} — ` : ''}{group.title || group.id} ({group.metrics.length})</summary>
+                      {groupMessage && <p data-testid={`group-status-${group.id}`}>{groupMessage}</p>}
+                      {group.metrics.map((metric) => (
+                        <WallLabel key={metric.id} metric={metric} />
+                      ))}
+                    </details>
+                  )
+                })}
+              </section>
+            )
+          })}
         </Container>
       )}
     </div>

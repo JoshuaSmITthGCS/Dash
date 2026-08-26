@@ -377,3 +377,25 @@ Measured result: eleven of twelve mediums dropped from ~1.26 MB to ~300–310 kB
 but the fix applies to it too (zero `firebase-*` chunks in its own budget breakdown) — its overage
 is purely its own pre-existing ~341 kB legacy stylesheet plus the shared ~220 kB vendor runtime,
 a separate, already-named, accepted tradeoff, not attempted here.
+
+**Phase 4b-1 — first ledger-coverage slice: Evidence `?section=validation` now renders every
+published metric.** `EvidenceScreen.jsx` previously showed only a one-line ready/breached/total
+summary for the 64-metric report; it now iterates the full `signal_metrics.json` artifact through
+`splitBySampleRequirement`/`defaultOpenGroups`/`sharedStatusMessage` (the same helpers
+`SignalMetricsPanel.jsx` already used) and renders every row through `<WallLabel metric={metric}>`
+— zero transformation, since the file's rows are already shaped exactly as `WallLabel` expects.
+This is the cheapest slice named in the plan (Phase 4b-1 step 2): every medium's own `LabelFrame`
+already implements the render contract, so wiring this one screen gets the same ~64 capability
+rows live across all twelve mediums at once, at no marginal per-medium cost. Confirmed structurally
+sound before committing: `parity.spec.mjs` #1b (every rendered `data-capability-id` is a known
+ledger row) passes in isolation — the new `metric.report.*` ids are all pre-existing rows from
+CAPABILITY-LEDGER.md §15, none hallucinated; #1a (`check-metric-preservation.mjs`) is unaffected,
+its one failure (`money_weighted_xirr`) predates this change. Visual baselines regenerated for the
+`evidence-validation` destination across all twelve mediums × two widths (48 screenshots) — the
+new content is real, legible growth (checked directly against a rendered screenshot: group
+headers, breach markers, kill-threshold text, sample counts all present), not a layout break.
+Still not wired here: Portfolio `?view=data`'s ~38 portfolio-derived metric rows (different data
+shape — `portfolioAnalytics.js`'s live computation, not a published JSON file — so they need their
+own mapping into a `signal_metrics.json`-shaped row before `WallLabel` can render them, unlike this
+slice); Evidence backtests/shadow; the ~483 non-metric-class rows (column/control/state/disclosure/
+figure/chart/etc.) per screen. Next per the plan's phasing.
