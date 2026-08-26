@@ -221,20 +221,29 @@ were moved (not regenerated) to confirm the fix reproduces byte-identical result
 - **All twelve medium manifests** (Cockpit, Neon, Poster, Ticker, Book, Blueprint, Star Chart,
   Newspaper, Chalkboard, Beige Box, Gallery, Classic) exist, load, pass their own
   `manifest.test.jsx` suite, and render correctly in a real browser.
-- **Six core screens** (Home, Research, Screens, Portfolio, Markets, Evidence) are a real,
-  working, but *intentionally partial* slice — each fetches real published data and renders one
-  representative, correctly-stated capability per screen, not the full ~600-row remainder of
-  `CAPABILITY-LEDGER.md`. This was a deliberate Phase 2a scope decision, not a shortfall
-  discovered late.
+- **Six core screens** (Home, Research, Screens, Portfolio, Markets, Evidence) are a real, working,
+  but still *partial* slice — Phase 4b's six-agent fan-out (NOTES.md has the full account) took
+  this well past the original Phase 2a proof-of-pattern: Home +14 rows, Research +44, Screens +87
+  of ~117 (7 of 12 recipe families; `fast-growth`/`themes` still unwired), Portfolio +124 across
+  all 7 views (its ~109 metric rows are the bulk of it), Markets +23 of 25, Evidence +47 completing
+  backtests/shadow/methodology/glossary (validation was already done). Every capabilityId used was
+  independently cross-checked against `scripts/ledger-ids.json` after the fact — zero hallucinated.
+  Still not wired: `fast-growth`/`themes` recipes, Portfolio's Insights/Finances/Planning views
+  beyond an honest loading floor, and most `figure`/`chart` rows needing the full per-medium
+  renderer contract (deliberately deferred everywhere, not faked).
 - **`/e2e-harness/:mediumId`** mounts one medium's real `WallLabel`/`LabelFrame`/renderer against
   fixed fixtures — it's what let the renderer/rules/a11y/motion assertions inspect real contract
   compliance without waiting on the larger page-composition effort the six screens still need.
 
 ## What's not done (named, not hidden)
 
-1. **Ledger coverage.** ~750 of 762 rows have no rendering path yet. This is the largest remaining
-   body of work before cutover — wiring the remaining ~600 capability rows into the six screens
-   (or a seventh+ screen, if warranted) is its own effort, scoped separately.
+1. **Ledger coverage.** Substantially larger after Phase 4b (NOTES.md) but still not complete —
+   the `fast-growth`/`themes` screen recipes, most of Portfolio's Insights/Finances/Planning views,
+   and most `figure`/`chart` rows across every screen (needing the full per-medium renderer
+   contract) remain unwired. `parity.spec.mjs #1b`'s live DOM scan undercounts this badly, since
+   `tests/e2e/fixtures/data/` only ships 4 of the ~30 files the six screens now fetch — extending
+   the fixture set so the harness can actually exercise this is a real, named follow-up (NOTES.md),
+   not done here. This remains the largest true gate before cutover.
 2. **Visual baselines (#5) generated, not yet re-verified in the pinned container.** See
    "Baseline provenance" above — a real gap only in the sense that CI's exact pixels haven't
    confirmed these locally-generated ones yet, not in the sense that the work is undone.
@@ -255,6 +264,9 @@ were moved (not regenerated) to confirm the fix reproduces byte-identical result
 Do not cut over yet. Fifteen of sixteen assertions are green or hold their documented exception;
 the last (#16 budget) is now green for eleven of twelve mediums — only Classic-as-a-medium remains
 over, for a small, named, pre-existing CSS reason unrelated to the Firebase fix this pass closed.
-Ledger coverage (~1% by row count) remains the largest true gate and the actual next phase of work.
+Ledger coverage is now substantial (Phase 4b, NOTES.md) but still incomplete — the unwired recipes,
+Portfolio's remaining three views, and most chart-class rows across every screen remain the largest
+true gate and the actual next phase of work, alongside extending the e2e fixture set so the harness
+itself can verify that coverage automatically instead of relying on manual spot-checks.
 Before treating visual regression as fully trustworthy in CI, trigger `update-baselines.yml` once to
 confirm the pinned-container pixels match these locally-generated ones closely enough to keep.

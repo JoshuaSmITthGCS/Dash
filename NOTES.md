@@ -399,3 +399,85 @@ shape — `portfolioAnalytics.js`'s live computation, not a published JSON file 
 own mapping into a `signal_metrics.json`-shaped row before `WallLabel` can render them, unlike this
 slice); Evidence backtests/shadow; the ~483 non-metric-class rows (column/control/state/disclosure/
 figure/chart/etc.) per screen. Next per the plan's phasing.
+
+**Phase 4b — the six-screen fan-out.** User asked to "hook up everything" and to run parallel
+agents. Six agents ran concurrently, one per core screen (`HomeScreen.jsx`, `ResearchScreen.jsx`,
+`ScreensScreen.jsx`, `PortfolioScreen.jsx`, `MarketsScreen.jsx`, `EvidenceScreen.jsx`), each scoped
+to its own file pair (screen + test) so they could edit the live checkout in parallel without
+conflicting — no worktree isolation needed since no two agents ever touched the same file. Every
+agent was instructed to copy capabilityIds verbatim from the ledger, never invent one, run only
+lint/vitest scoped to its own files (not the full suite, to avoid racing the others), and leave
+`capabilityIds.js`/the ledger itself untouched. Results, independently verified after the fact
+(every capabilityId literal in each changed file cross-checked against `scripts/ledger-ids.json`,
+zero hallucinated in any of the six):
+
+- **Home**: +14 rows (top signal, 5 focused-screen cards via real `researchScreens.js` rank
+  functions, inside-information card, privacy toggle, chart-period control, top-5 holdings).
+- **Research**: +44/45 rows (sector/sort/asset-type/ownership toolbar, ranked pool honoring every
+  `RANKING_MODELS` entry, per-row actions, allocation planner, the watchlist absorbed view).
+- **Screens**: +87 of ~117 rows across 7 of 12 recipe families (swing in full — the ledger's own
+  "richest disclosure set" — options + 7 strategies, the momentum/quality-value/earnings/matrix
+  generic family, early-session, politics, institutional, inside-information). `fast-growth` and
+  `themes` still resolve to `null` (unchanged from Phase 2a) — their sources aren't fetched yet.
+- **Portfolio**: +124 rows across all 7 views — the single largest slice (77 metric rows in
+  `?view=data` alone, 25 more in `?view=diversification`, 4 in `?view=summary`, plus structural rows
+  in every view). Insights/Finances/Planning got only an honest floor (loading/no-holdings states) —
+  explicitly deferred, not stubbed.
+- **Markets**: +23 of 25 rows — both `?view=indexes` and `?view=news`, close to full coverage
+  (smallest section).
+- **Evidence**: +47 rows completing backtests/shadow/methodology/glossary (validation was already
+  done in the prior slice).
+
+Total: parity's own `#1b` DOM scan under the frozen e2e fixture set (which only ships 4 of the
+~30 published files newer screens now fetch — `report.json`, `screens/swing.json`, and the two
+`validation/*.json` files) reports a modest rendered-id count, but that undercounts badly: most of
+the newly-wired rows are gated behind data the fixture harness doesn't carry (backtests, shadow,
+options, congress-trades, institutional-13f, inside-information, etfs.json, etc.), so they correctly
+render their `unavailable`/empty states rather than crash — confirmed intentional, not broken, by
+a direct real-browser check against the actual `.env.e2e`-built dist serving real `public/data/`
+JSON (not the trimmed fixtures), which found dense, correctly-structured, real content everywhere
+(a 2.3MB real-content DOM on `/v2/research` alone). **Follow-up worth doing, not done here**:
+extend `tests/e2e/fixtures/data/` with trimmed real copies of the files the six screens now fetch,
+so `parity.spec.mjs`'s DOM scan and the visual-regression matrix can actually exercise this
+much of the newly-wired code automatically, instead of relying on ad-hoc manual verification.
+
+**Two real bugs found and fixed during consolidation** (not by the wiring agents themselves — by
+running the merged result through the full harness before calling this done, same discipline as
+Phase 4a's own regression):
+1. `MediumShell.jsx` still statically imported all five non-Home screens. Research/Screens/Evidence
+   grew to 800–1200+ lines each during the fan-out, and Screens/Evidence each now mount their own
+   `<FirebaseAuthProvider>` — so every `/v2` route's cold load was pulling in all five screens' code
+   plus Firebase's SDK again, silently reintroducing Phase 4a's exact problem via a different route
+   (confirmed: gallery and classic both regressed past 1.6MB before the fix). Fixed by lazy-loading
+   Research/Screens/Markets/Evidence the same way Portfolio already was; Home stays static since
+   it's the actual cold-loaded route. Back to 11/12 mediums under budget afterward.
+2. `ResearchScreen.jsx` called `useAuth()` directly (for the watchlist/portfolio/alerts absorption)
+   without ever wrapping its content in a local `FirebaseAuthProvider` — the one screen among the
+   Firebase-touching four that missed this pattern. Crashed the entire `/v2/research` tree to blank
+   (no ErrorBoundary above it) — same failure mode as Phase 4a's own HomePortfolioPanel regression,
+   and just as invisible to unit tests (whose `useAuth` mock is a no-op regardless of provider
+   context) and to `budget.spec.mjs` (measures bytes, not render success). Only a direct
+   `pageerror`-listening real-browser check caught it — the same lesson from Phase 4a, learned
+   again: verify against a real browser before declaring a multi-agent merge done, not just a green
+   test suite. Fixed with the same wrapper pattern as Portfolio/Screens/Evidence.
+
+**Two more issues found chasing a visual-regression flake**, neither invented, both real:
+`ResearchScreen.jsx`'s ranked pool had no display cap in its default (non-model) sort branch — with
+filters off it rendered every one of the ~900-name universe as a full card, unbounded (the
+model-ranked branch already capped at `MODEL_LIMIT`/20; the default branch didn't). Capped at a new
+`DISPLAY_LIMIT` (100) with an honest "showing top 100 of N" disclosure, matching the model branch's
+own wording convention. Separately, the component gated its loading state on `report.json` alone,
+not `etfs.json` — the ranked pool mixes both, so it rendered once report.json resolved and then
+silently grew again once etfs.json caught up, after `data-app-ready` had already fired (that flag
+only tracks font-settling, not in-flight fetches). Fixed by gating on both. Even after both fixes,
+neon's heavier per-card glow CSS still occasionally exceeded the visual harness's default 10s
+screenshot-stability window on Research's now much taller page — bumped `visual.spec.mjs`'s
+`toHaveScreenshot` timeout to 20s for just that assertion (not the global config), verified stable
+across 3 consecutive isolated re-runs before and after.
+
+Final state: lint clean; 1408/1408 vitest tests; production build succeeds; `budget.spec.mjs`
+11/12 (classic's own pre-existing ~676kB legacy-stylesheet gap, unrelated); the full
+parity/renderer/a11y/motion/rules suite green except the three pre-existing documented exceptions
+(classic's axe violation, `check-metric-preservation.mjs`'s `money_weighted_xirr` gap — both
+predate this session); `visual.spec.mjs` 208/208 passing, fully stable (no flakes) after the fixes
+above.
