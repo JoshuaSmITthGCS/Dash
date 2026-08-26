@@ -87,10 +87,11 @@ export const SECTIONS = [
   },
   {
     title: 'Growth',
+    note: 'Revenue and earnings growth are the latest single quarter versus the same quarter a year ago, not a trailing-twelve-month or full-year figure – free-tier data does not supply TTM growth directly. A single quarter can swing on one-off items in a way a trailing measure would smooth out, and it sits alongside a 3-year FCF figure on a materially different horizon; read the two together with that gap in mind rather than as a matched trend.',
     metrics: [
-      ['revenue_growth', 'Revenue growth', pct, 'Year-over-year revenue change', { good: 0.1, bad: 0 }],
-      ['earnings_growth', 'Earnings growth', pct, 'Year-over-year earnings change', { good: 0.1, bad: 0 }],
-      ['fcf_growth_3y', 'FCF growth (3y)', pct, 'Compound annual free-cash-flow growth', { good: 0.08, bad: 0 }],
+      ['revenue_growth', 'Revenue growth (latest qtr YoY)', pct, 'Most recent quarter’s revenue vs. the same quarter a year earlier – not trailing-twelve-month or full-year', { good: 0.1, bad: 0 }],
+      ['earnings_growth', 'Earnings growth (latest qtr YoY)', pct, 'Most recent quarter’s earnings vs. the same quarter a year earlier – not trailing-twelve-month or full-year', { good: 0.1, bad: 0 }],
+      ['fcf_growth_3y', 'FCF growth (3y CAGR)', pct, 'Compound annual free-cash-flow growth across the last 3–4 fiscal years on file – a materially longer horizon than the quarterly growth figures above', { good: 0.08, bad: 0 }],
       ['earnings_surprise', 'Earnings surprise', (value) => `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`, 'Recent quarters against expectations, newest weighted heaviest. Beating expectations carries drift in a way trailing growth alone does not', { good: 3, bad: -5 }],
     ],
   },
