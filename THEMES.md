@@ -96,18 +96,62 @@ Phase 2c).
    design didn't anticipate — log the deviation in `NOTES.md`, don't silently redesign.
 10. Commit as its own unit (one medium = one commit, per the execution plan's cadence).
 
-## What Phase 2a shipped vs. what Phase 2b/2c still owns
+## What Phase 2 shipped vs. what's still open
 
-Phase 2a (this pass) built the shared layer end-to-end and proved it with real data — no medium
-manifest exists yet, and `registry.isMediumImplemented(id)` is `false` for all twelve until
-Phase 2b starts landing them one at a time, in the order `DESIGN.md` specifies (Cockpit, Neon,
-Poster, Ticker, Gallery, Chalkboard, Beige Box, Newspaper, Book, Blueprint, Star Chart, then
-Classic last in Phase 2c).
+All twelve medium manifests are built (`registry.isMediumImplemented(id)` is `true` for every
+id) — Cockpit, Neon, Poster, Ticker, Gallery, Chalkboard, Beige Box, Newspaper, Book, Blueprint,
+Star Chart, then Classic last (Phase 2c, the only manifest permitted to import existing
+components).
 
-The six core screens currently render a **real, working, but intentionally partial** slice of
-their destination — enough to prove the data plumbing and capability-id pattern are correct, not
-yet every row in `CAPABILITY-LEDGER.md`. See `NOTES.md` for the exact scope of what's wired
-today (Home's three-item first viewport is complete; Research/Screens/Portfolio/Markets/Evidence
-each render a representative structural slice). Extending each screen to its full ledger-row
-coverage happens progressively as each medium is built in Phase 2b, since a screen's remaining
-capabilities can't be visually proven correct without a real manifest to render them through.
+The six core screens still render a **real, working, but intentionally partial** slice of their
+destination — enough to prove the data plumbing and capability-id pattern are correct, not yet
+every row in `CAPABILITY-LEDGER.md`. See `NOTES.md` for the exact scope of what's wired today
+(Home's three-item first viewport is complete; Research/Screens/Portfolio/Markets/Evidence each
+render a representative structural slice) and `PARITY-REPORT.md` for the current ledger-coverage
+count. Extending each screen to full ledger-row coverage is the largest remaining body of work
+before cutover.
+
+## Phase 3 — the Playwright harness
+
+`playwright.config.mjs` defines the sixteen-assertion harness (`tests/e2e/*.spec.mjs`) the plan
+requires green before cutover. Two things to know before touching it:
+
+- **The harness needs a Firebase-safe build.** `src/lib/firebase.js` calls `getAuth()` as a
+  module-load side effect, which throws in any checkout without real credentials. `npm run
+  build:e2e` (`vite build --mode e2e`) picks up `.env.e2e`'s committed placeholder config so the
+  built bundle actually renders; `npm run build` (real production) still requires real secrets
+  and is untouched by this.
+- **`/e2e-harness/:mediumId`** (`src/mediums/core/E2EHarness.jsx`, gated on `import.meta.env.MODE
+  === 'e2e'`, absent from the real production bundle) mounts one medium's actual `WallLabel`/
+  `LabelFrame`/renderer against fixed fixtures, bypassing the app's Firebase-dependent chrome.
+  Most of the harness's non-visual specs (renderer/rules/motion/a11y) run against this route
+  rather than `/v2` directly, since the six core screens don't yet call
+  `manifest.loadRenderer()`/`WallLabel` from live traffic for most capabilities.
+
+### Running it
+
+```bash
+export PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chromium   # only if the default resolution fails
+npm run build:e2e
+npx vite preview --port 5175 --strictPort &
+npx playwright test                                        # everything, or:
+npx playwright test parity.spec.mjs --project=default       # one spec, non-visual project
+npm run e2e:update-baselines                                # regenerate visual.spec.mjs's baselines locally
+```
+
+### Regenerating baselines in the pinned container (authoritative for CI)
+
+Local Chromium and CI's pinned `mcr.microsoft.com/playwright:v1.62.1-noble` image can render
+subtly different pixels (fonts, GPU rasterization) even at the same browser version — baselines
+committed from a local run are a good-enough starting point, but the pinned container is the
+source of truth `.github/workflows/e2e.yml` actually checks against. Regenerate there via:
+
+```bash
+docker run --rm -v "$PWD":/work -w /work mcr.microsoft.com/playwright:v1.62.1-noble \
+  bash -c "npm ci && npx playwright test visual.spec.mjs --update-snapshots"
+```
+
+Or trigger `.github/workflows/update-baselines.yml` (`workflow_dispatch`, manual-only) to do the
+same in CI and commit the result automatically. Bump the pinned tag and the `@playwright/test`
+devDependency version together — a version-mismatched container is the #1 cause of baseline
+churn nobody can explain from the diff alone.
