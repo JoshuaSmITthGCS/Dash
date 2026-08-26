@@ -40,6 +40,11 @@ function finite(value) {
 }
 
 const MODEL_LIMIT = 20
+// Unlike the model-ranked branch (which already caps at MODEL_LIMIT), the default
+// score/column-sorted branch had no display cap — with sector/asset-type/ownership filters off,
+// it rendered every one of the ~900-name universe as a full card. Capped here for the same
+// reason MODEL_LIMIT exists: a bounded, honestly-labeled list instead of an unbounded one.
+const DISPLAY_LIMIT = 100
 const RECENT_SEARCH_KEY = 'valuesignal.recent-searches'
 const WATCHLIST_SIZING_KEY = 'valuesignal.watchlistSizing'
 const WATCHLIST_FILTER_KEY = 'valuesignal.watchlistFilterSort'
@@ -591,9 +596,12 @@ function ResearchScreenContent() {
               )}
             </Container>
           )}
+          {!modelActive && poolRows.length > DISPLAY_LIMIT && (
+            <p data-testid="pool-display-cap">Showing the top {DISPLAY_LIMIT} of {poolRows.length} matching the current filters, sorted as shown above.</p>
+          )}
 
           <div data-testid="research-pool">
-            {poolRows.map((row, index) => {
+            {poolRows.slice(0, modelActive ? poolRows.length : DISPLAY_LIMIT).map((row, index) => {
               const timing = entryTiming(row)
               const expanded = expandedTickers.has(row.ticker)
               const held = heldTickers.has(row.ticker)
