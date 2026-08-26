@@ -4,9 +4,12 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/build-ledger-ids.mjs",
     "dev": "vite",
     "dev:cloud": "netlify dev",
+    "prebuild": "node scripts/build-ledger-ids.mjs",
     "build": "vite build",
+    "ledger:ids": "node scripts/build-ledger-ids.mjs",
     "docs:breakdown": "node scripts/generate-app-breakdown.mjs",
     "preview": "vite preview",
     "test": "vitest run",
