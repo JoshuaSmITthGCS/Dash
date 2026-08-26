@@ -50,7 +50,7 @@ describe('getMediumMeta / getAllMediumMeta / isKnownMedium', () => {
 describe('isMediumImplemented / loadMedium', () => {
   it('is true only for mediums that actually have a manifest.js on disk (Phase 2b, in progress)', () => {
     // Grows as Phase 2b lands each medium — update this list alongside each new manifest.js.
-    const implemented = new Set(['cockpit', 'neon'])
+    const implemented = new Set(['cockpit', 'neon', 'poster'])
     for (const entry of MEDIUM_META) {
       expect(isMediumImplemented(entry.id)).toBe(implemented.has(entry.id))
     }

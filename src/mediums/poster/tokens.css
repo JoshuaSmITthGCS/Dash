@@ -1,0 +1,61 @@
+/* Poster — screen-printed. Light, saturated, exactly two spot inks plus black. See DESIGN.md §3. */
+:root[data-medium="poster"] {
+  color-scheme: light;
+
+  --ink-black: #161311;
+  --ink-secondary: #4a423a;
+  --ink-faint: #8a8078;
+
+  --surface-paper: #f6f1e6;
+  --surface-panel: #fffdf7;
+
+  --ink-spot-1: #e8432f;
+  --ink-spot-2: #1f7a6c;
+
+  --state-established: var(--ink-black);
+  --state-accumulating: var(--ink-faint);
+  --state-breach: var(--ink-spot-1);
+  --state-unavailable: var(--ink-faint);
+
+  --rule-hairline: #d8cdbb;
+
+  --font-display: 'Anton', 'Arial Narrow', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+[data-medium="poster"] body {
+  background: var(--surface-paper);
+  color: var(--ink-black);
+  font-family: var(--font-mono);
+}
+
+[data-medium="poster"] [data-poster-panel] {
+  background: var(--surface-panel);
+  border: 2px solid var(--ink-black);
+  padding: 12px 14px;
+  position: relative;
+}
+
+/* Trim + registration marks — static, never animated. */
+[data-medium="poster"] [data-poster-panel]::before {
+  content: '+';
+  position: absolute;
+  top: -9px;
+  left: -9px;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+[data-medium="poster"] [data-poster-panel]::after {
+  content: '+';
+  position: absolute;
+  bottom: -9px;
+  right: -9px;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+/* Overprint only where a second real condition coincides (breach). Never on text. */
+[data-medium="poster"] [data-poster-panel][data-breached="true"] {
+  border-color: var(--ink-spot-1);
+}
