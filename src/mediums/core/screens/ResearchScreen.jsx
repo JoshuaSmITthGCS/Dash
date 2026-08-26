@@ -7,7 +7,7 @@ import { RESEARCH_IDS } from './capabilityIds.js'
 import { useFirebasePortfolio } from '../../../lib/useFirebasePortfolio.js'
 import { useWatchlist } from '../../../lib/useWatchlist.js'
 import { useAlerts } from '../../../lib/useAlerts.js'
-import { useAuth } from '../../../lib/FirebaseAuthContext.jsx'
+import { useAuth, AuthProvider as FirebaseAuthProvider } from '../../../lib/FirebaseAuthContext.jsx'
 import { entryTiming } from '../../../lib/entryTiming.js'
 import {
   RANKING_MODELS, isRankingModel, modelCoverage, modelReason, rankByModel,
@@ -222,7 +222,17 @@ function PriceTargetEditor({ item, suggested, onSave, onCreateAlert, alertBusy }
   )
 }
 
+/**
+ * Wraps ResearchScreenContent in its own local FirebaseAuthProvider — /v2's root (MediumApp.jsx)
+ * never mounts one (that's the point of the Phase 4a Firebase-deferral fix), but this screen's
+ * watchlist/portfolio/alerts absorption (added in Phase 4b) calls useAuth()/useFirebasePortfolio()
+ * directly. Same pattern as PortfolioScreen.jsx/ScreensScreen.jsx/EvidenceScreen.jsx.
+ */
 export default function ResearchScreen() {
+  return <FirebaseAuthProvider><ResearchScreenContent /></FirebaseAuthProvider>
+}
+
+function ResearchScreenContent() {
   const manifest = useMedium()
   const Container = manifest.components?.Container || 'section'
   const Control = manifest.components?.Control || null

@@ -13,7 +13,7 @@ vi.mock('../../../lib/useData.js', async (importOriginal) => ({ ...(await import
 vi.mock('../../../lib/useFirebasePortfolio.js', () => ({ useFirebasePortfolio: vi.fn() }))
 vi.mock('../../../lib/useWatchlist.js', () => ({ useWatchlist: vi.fn() }))
 vi.mock('../../../lib/useAlerts.js', () => ({ useAlerts: vi.fn() }))
-vi.mock('../../../lib/FirebaseAuthContext.jsx', () => ({ useAuth: vi.fn() }))
+vi.mock('../../../lib/FirebaseAuthContext.jsx', () => ({ useAuth: vi.fn(), AuthProvider: ({ children }) => children }))
 
 const fakeManifest = { components: {} }
 
