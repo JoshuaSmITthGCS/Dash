@@ -19,7 +19,12 @@ body {
 }
 a { color: inherit; text-decoration: none; }
 button, input, select, textarea { font: inherit; }
-button { color: inherit; cursor: pointer; touch-action: manipulation; }
+/* background/border reset matters beyond cosmetics: color-scheme: dark makes the native
+   ButtonFace/border UA default render as a mid-gray (~#6b6b6b), which var(--text-tertiary) and
+   even var(--text-primary) both fail WCAG AA against -- any button that gets no explicit
+   background from a more specific rule (every unclassed <button> the core/ medium screens render,
+   confirmed via axe) silently inherited that gray instead of the page's own surface. */
+button { background: none; border: 0; color: inherit; cursor: pointer; touch-action: manipulation; }
 button:disabled { cursor: not-allowed; opacity: .45; }
 /* iOS Safari auto-zooms the page on focus for any text input under 16px — this holds every
    form control at 16px regardless of the smaller body copy sizes used at mobile breakpoints. */

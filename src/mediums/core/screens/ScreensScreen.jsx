@@ -120,7 +120,7 @@ const legsFor = (weights) => Object.entries(weights || {})
  * `column.screens.swing-table` covers every column together, not one id per column). */
 function SimpleTable({ capId, columns, rows, getKey }) {
   return (
-    <div {...cap(capId)} style={{ overflowX: 'auto' }}>
+    <div {...cap(capId)} style={{ overflowX: 'auto' }} tabIndex={0}>
       <table>
         <thead><tr>{columns.map((column) => <th key={column.key}>{column.label}</th>)}</tr></thead>
         <tbody>

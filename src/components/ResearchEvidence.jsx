@@ -92,7 +92,7 @@ export function BenchmarkPanel({ panel }) {
           then a Newey-West regression of the strategy on that benchmark.</p></div>
       <span className="chip">{panel.summary?.beaten_on_cagr_count} beaten on CAGR</span>
     </header>
-    <div className="evidence-table-scroll">
+    <div className="evidence-table-scroll" tabIndex={0}>
       <DataTable
         className="evidence-table"
         rows={rows}
@@ -189,7 +189,7 @@ export function CostPanel({ panel }) {
       <div><dt>Rebalances</dt><dd>{panel.turnover?.rebalances ?? '–'}</dd></div>
       <div><dt>Published CAGR at 10bps</dt><dd>{pct(flat.cagr, 2)}</dd></div>
     </dl>
-    <div className="evidence-table-scroll">
+    <div className="evidence-table-scroll" tabIndex={0}>
       <DataTable
         className="evidence-table"
         rows={panel.scenarios || []}
@@ -221,7 +221,7 @@ export function CalibrationPanel({ panel }) {
       </span>
     </header>
     {measured
-      ? <div className="evidence-table-scroll">
+      ? <div className="evidence-table-scroll" tabIndex={0}>
         <DataTable
           className="evidence-table"
           rows={panel.fixed_score_bands.filter((band) => band.status === 'measured')}

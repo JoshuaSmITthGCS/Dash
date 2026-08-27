@@ -47,7 +47,7 @@
     display: flex; align-items: center; justify-content: space-around; padding: var(--sp-1-5); border: 1px solid var(--border-lit); border-radius: var(--card-radius);
     background: color-mix(in srgb, var(--bg-elev) 92%, transparent); box-shadow: 0 18px 60px rgba(0,0,0,.5); backdrop-filter: blur(18px);
   }
-  .mobile-nav-item { min-width: 58px; min-height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-0-5); border-radius: var(--card-radius); color: var(--text-faint); font-size: var(--fs-2xs); }
+  .mobile-nav-item { min-width: 58px; min-height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-0-5); background: none; border: 0; border-radius: var(--card-radius); color: var(--text-faint); font-size: var(--fs-2xs); }
   .mobile-nav-item.active { background: var(--accent); color: var(--accent-ink); font-weight: var(--fw-bold); }.mobile-nav-icon { height: 22px; display: grid; place-items: center; }
   .data-status { margin-bottom: var(--sp-6); }.source-health { display: none; }
   .dashboard-intro .stamp { display: none; }.refresh-control { align-self: flex-start; }

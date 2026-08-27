@@ -188,9 +188,19 @@ export function PreferencesProvider({ children }) {
       // Only the primary is published. --brand-secondary, --accent-dim and
       // --series-stock derive from it in variables.css, so they stay in step with
       // whichever accent is active without three more inline writes.
-      root.style.setProperty('--brand-primary', isDark ? accent.dark : accent.value)
-      root.style.setProperty('--accent', isDark ? accent.dark : accent.value)
-      root.style.setProperty('--accent-ink', isDark ? accent.inkDark : accent.ink)
+      //
+      // Always the dark variant here, never `isDark`-gated: `acceptsAccent` is Classic-only
+      // (the only medium with `colorScheme: 'dark'` that also accepts an inline accent), and
+      // Classic's stylesheet has no `[data-theme="light"]` block at all -- `:root`,
+      // `[data-theme="dark"]`, and `prefers-color-scheme: dark` are three copies of the same
+      // dark values (a known, documented gap, see NOTES.md). Picking `accent.value`/`accent.ink`
+      // (the light-optimized pair) whenever `resolvedTheme` resolves to "light" -- which anyone
+      // with a light-preferring system and the default "system" theme setting hits on their very
+      // first visit -- wrote a low-contrast accent against a background that never actually goes
+      // light, failing WCAG AA color-contrast (confirmed via axe: #17513c on #0a0e14, ~2:1).
+      root.style.setProperty('--brand-primary', accent.dark)
+      root.style.setProperty('--accent', accent.dark)
+      root.style.setProperty('--accent-ink', accent.inkDark)
     } else {
       root.style.removeProperty('--brand-primary')
       root.style.removeProperty('--accent')

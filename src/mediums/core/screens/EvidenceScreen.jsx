@@ -284,7 +284,7 @@ function BacktestsSection({ comparison, optionsBacktest, loading, Container }) {
               })}
             </div>
           )}
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflowX: 'auto' }} tabIndex={0}>
             <table>
               <thead>
                 <tr>
@@ -332,7 +332,7 @@ function BacktestsSection({ comparison, optionsBacktest, loading, Container }) {
           feature caused a result.
         </p>
         {rollup.length ? (
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflowX: 'auto' }} tabIndex={0}>
             <table>
               <thead>
                 <tr>
@@ -657,7 +657,7 @@ function ShadowSection({ shadowData, reportData, loading, Container }) {
       )}
 
       <Container {...cap('column.evidence.shadow-strategies-table')}>
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto' }} tabIndex={0}>
           <table>
             <thead>
               <tr>

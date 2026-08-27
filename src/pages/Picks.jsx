@@ -805,6 +805,7 @@ export default function Picks() {
         <div className="settings-row allocation-planner-toggle">
           <div><strong>Double down on positions I already own</strong><span>Off restricts the split to tickers you don't hold yet – new positions only. On (default), an already-held name can still win a bucket and add to what you have.</span></div>
           <label className="switch compact-switch"><input type="checkbox" checked={includeHeldInAllocation}
+            aria-label="Double down on positions I already own"
             onChange={(event) => setIncludeHeldInAllocation(event.target.checked)} /><span aria-hidden="true" /></label>
         </div>
         <p className="allocation-planner-note">
