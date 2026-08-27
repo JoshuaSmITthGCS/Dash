@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "config_version": "operating-kpi-universe-saas-v1.0.0",
+  "_comment": "Tickers to collect Annual Recurring Revenue (ARR) and Net Revenue Retention (NRR) for -- the SaaS subset of advisor_universe.json, not the whole universe, for the same reason pipeline/config/operating_kpi_universe.json's retail/restaurant list is scoped the way it is: fetching every universe ticker's earnings-release exhibit to look for phrasing only recurring-revenue software companies use would spend most of the SEC rate-limit budget on names that were always going to return 'not_found'. Derived once from public/data/advisor.json's screen_universe sector/industry classification (2026-08-27 snapshot) for the Yahoo industries: Software - Application and Software - Infrastructure. Not every ticker below is a 'pure' ARR-reporting SaaS company -- some are legacy enterprise software that does not use ARR/NRR phrasing, and a few (e.g. UBER, LYFT) are marketplaces classified into these industries that will not use this phrasing at all; those are expected to resolve 'not_found' rather than being pre-filtered out, since a wrong guess about who reports ARR is exactly the kind of judgment call this collector should not be making. A company's sector/industry classification changes rarely enough that this list does not need to be regenerated every run; regenerate by re-filtering a fresh screen_universe snapshot on the same industry set if it drifts.",
+  "metric": [
+    "annual_recurring_revenue",
+    "net_revenue_retention_rate"
+  ],
+  "saas_symbols": [
+    "ADP", "ADSK", "AKAM", "BILL", "BSY", "CDNS", "CPAY", "CRM", "CRWD", "CVLT",
+    "DBX", "DDOG", "DOCU", "DOX", "DSGX", "DT", "DUOL", "EEFT", "ESTC", "FICO",
+    "FIVN", "FOUR", "FTNT", "GDDY", "GEN", "GTLB", "GWRE", "HUBS", "IDCC", "INTU",
+    "LYFT", "MANH", "MDB", "MSFT", "NOW", "NTNX", "OKTA", "ORCL", "PANW", "PARA",
+    "PATH", "PAYC", "PAYX", "PCTY", "PEGA", "PGY", "PTC", "QTWO", "ROP", "SNOW",
+    "SNPS", "SPSC", "SSNC", "TDC", "TEAM", "TWLO", "TYL", "UBER", "VRNS", "WDAY",
+    "WEX", "WK", "YOU", "ZETA", "ZS"
+  ]
+}
