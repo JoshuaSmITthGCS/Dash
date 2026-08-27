@@ -731,7 +731,10 @@ function DataView({ Container, analytics, positions, signalMetrics, monteCarloPr
               // stay honest.
               series: Object.entries(monteCarloProjection.horizons)
                 .map(([days, h]) => ({
-                  x: Number(days), year: Number(days) / 365, // Classic's fan() axis label reads `year`
+                  // `year` covers a generic fan consumer; `days` is the honest unit for this
+                  // panel's actual 30/90/180/365-day horizons -- Classic's fan() renderer prefers
+                  // it for the axis label so sub-year points don't all round to "Year 0".
+                  x: Number(days), year: Number(days) / 365, days: Number(days),
                   p10: h.terminal_multiple_percentiles.p5, p25: h.terminal_multiple_percentiles.p25,
                   median: h.terminal_multiple_percentiles.p50, p75: h.terminal_multiple_percentiles.p75,
                   p90: h.terminal_multiple_percentiles.p95,

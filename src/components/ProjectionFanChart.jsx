@@ -18,6 +18,15 @@ function linePath(points, key, x, y) {
   return `M${points.map((point) => `${x(point).toFixed(1)},${y(point[key]).toFixed(1)}`).join(' L')}`
 }
 
+/** A point carrying `days` (a sub-year horizon, e.g. the Monte Carlo terminal-value panel's
+ * 30/90/180/365-day points) labels itself in days rather than rounding to "Year 0" three times
+ * in a row -- everything else keeps the existing Year N / Age N convention. */
+function pointLabel(point, startAge) {
+  if (point.month === 0) return 'Now'
+  if (point.days != null) return `${Math.round(point.days)}d`
+  return startAge == null ? `Year ${Math.round(point.year)}` : `Age ${Math.round(startAge + point.year)}`
+}
+
 export default function ProjectionFanChart({ fan = [], startAge = null, retirementAge = null, money }) {
   const [selectedIndex, setSelectedIndex] = useState(null)
   const figureRef = useRef(null)
@@ -71,10 +80,10 @@ export default function ProjectionFanChart({ fan = [], startAge = null, retireme
         <text x={retirementX + 6} y={PAD.top + 13}>Retire</text>
       </g>}
       {ticks.map((point) => <text key={point.month} className="projection-axis-label" x={x(point)} y={HEIGHT - 14} textAnchor={point.month === 0 ? 'start' : point.month === lastMonth ? 'end' : 'middle'}>
-        {point.month === 0 ? 'Now' : startAge == null ? `Year ${Math.round(point.year)}` : `Age ${Math.round(startAge + point.year)}`}
+        {pointLabel(point, startAge)}
       </text>)}
     </svg>
-    {selected && <div className="projection-scrub-readout" role="status"><strong>{selected.month === 0 ? 'Now' : startAge == null ? `Year ${Math.round(selected.year)}` : `Age ${Math.round(startAge + selected.year)}`}</strong><span>10th {money(selected.p10)}</span><span>Median {money(selected.p50)}</span><span>90th {money(selected.p90)}</span></div>}
+    {selected && <div className="projection-scrub-readout" role="status"><strong>{pointLabel(selected, startAge)}</strong><span>10th {money(selected.p10)}</span><span>Median {money(selected.p50)}</span><span>90th {money(selected.p90)}</span></div>}
     <figcaption><span><i className="fan-swatch outer" />10th to 90th</span><span><i className="fan-swatch inner" />25th to 75th</span><span><i className="fan-swatch median" />Median</span></figcaption>
   </figure>
 }

@@ -100,8 +100,10 @@ function heatmap({ values = [], labels, ariaLabel }) {
 function fan({ series = [], unit }) {
   // ProjectionFanChartImpl's axis labels read `.year` directly (never derives it from `.month`)
   // -- every fan caller now sets it explicitly (see fanChart.js/PortfolioScreen.jsx), `p.x`
-  // remains a fallback only for a caller that hasn't.
-  const points = series.map((p, i) => ({ month: p.x ?? i, year: p.year ?? p.x ?? i, p10: p.p10 ?? p.low, p50: p.median ?? p.y, p90: p.p90 ?? p.high }))
+  // remains a fallback only for a caller that hasn't. `.days` is optional -- only the Monte
+  // Carlo panel's sub-year horizons set it, so its points label "30d"/"90d" instead of every
+  // point under a year rounding down to the same "Year 0".
+  const points = series.map((p, i) => ({ month: p.x ?? i, year: p.year ?? p.x ?? i, days: p.days, p10: p.p10 ?? p.low, p50: p.median ?? p.y, p90: p.p90 ?? p.high }))
   const formatValue = unit === 'USD' ? money : (value) => `${ratio(value)}${unit ? unit : ''}`
   return <ProjectionFanChartImpl fan={points} money={formatValue} />
 }
