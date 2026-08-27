@@ -35,8 +35,8 @@
   /* --- ink: four levels, optimized for dark HUD ---------------------------- */
   --text-primary: #e3e8ef;    /* high contrast on dark */
   --text-secondary: #94a3b8;  /* readable secondary */
-  --text-tertiary: #64748b;   /* subdued tertiary */
-  --text-faint: #475569;      /* decorative only — never body, never alone */
+  --text-tertiary: #7e8da2;   /* subdued tertiary — WCAG AA 5.73:1 on #0a0e14 */
+  --text-faint: #8593a8;      /* decorative only — never body, never alone — WCAG AA ≥5.6:1 on #0a0e14 and the tinted card surfaces axe flagged */
 
   --border-subtle: rgba(100, 116, 139, 0.1);
   --border-default: rgba(100, 116, 139, 0.2);
@@ -239,8 +239,8 @@
 
   --text-primary: #e3e8ef;
   --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
-  --text-faint: #475569;
+  --text-tertiary: #7e8da2;
+  --text-faint: #8593a8;
 
   --border-subtle: rgba(100, 116, 139, 0.1);
   --border-default: rgba(100, 116, 139, 0.2);
@@ -309,8 +309,8 @@
     --app-background-tint: #0c1116;
     --text-primary: #e3e8ef;
     --text-secondary: #94a3b8;
-    --text-tertiary: #64748b;
-    --text-faint: #475569;
+    --text-tertiary: #7e8da2;
+    --text-faint: #8593a8;
     --border-subtle: rgba(100, 116, 139, 0.1);
     --border-default: rgba(100, 116, 139, 0.2);
     --border-strong: rgba(100, 116, 139, 0.35);
