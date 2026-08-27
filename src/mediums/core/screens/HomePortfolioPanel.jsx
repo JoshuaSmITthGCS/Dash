@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { AuthProvider as FirebaseAuthProvider, useAuth } from '../../../lib/FirebaseAuthContext.jsx'
 import { useFirebasePortfolio } from '../../../lib/useFirebasePortfolio.js'
+import { useFirebaseFinances } from '../../../lib/useFirebaseFinances.js'
 import { useWatchlist } from '../../../lib/useWatchlist.js'
 import { useData } from '../../../lib/useData.js'
 import {
   enrichPortfolio, currentHoldingsSeries, selectPeriod, latestMarketDayReturn,
-  BENCHMARKS, compareBenchmarkSeries, performanceMetrics, riskFreeAnnualRate,
+  BENCHMARKS, compareBenchmarkSeries, performanceMetrics, riskFreeAnnualRate, annualizeReturnPct,
 } from '../../../lib/portfolioAnalytics.js'
 import { buildPortfolioPriceData, mergePositionSnapshots } from '../../../lib/portfolioPosition.js'
 import { liveTodayPortfolioReturn } from '../../../lib/afterHoursQuotes.js'
@@ -14,12 +16,18 @@ import { signedPct } from '../../../lib/formatters.js'
 import { getRecommendation } from '../../../lib/recommendation.js'
 import { buildPortfolioMetricModel } from '../../../lib/portfolioMetricModel.js'
 import { combinedEvidence, sectionAssessment } from '../../../lib/metricAssessment.js'
+import { useProjectionSimulation } from '../../../lib/useProjectionSimulation.js'
+import { fidelityProjectionBaseline } from '../../../lib/referenceCashFlows.js'
+import {
+  projectionConfig, selectProjectionReturnSource, applyAllocationAssumption, normalizeAnnualReturnTarget,
+} from '../../../lib/projectionEngine.js'
 import { usePreferences } from '../../../lib/PreferencesContext.jsx'
 import { useMedium } from '../MediumContext.jsx'
 import { useRenderer } from '../useRenderer.js'
 import { canonicalArtifactState, confidenceOf } from '../states.js'
 import { cap } from '../capability.js'
 import { HOME_IDS } from './capabilityIds.js'
+import { fanChartCall, projectionArtifactState } from '../fanChart.js'
 
 const PERIODS = ['1H', '1D', '1W', '1M', '3M', '1Y']
 const PERIOD_LABELS = { '1H': 'Last hour', '1D': 'Today', '1W': 'Week', '1M': 'Month', '3M': '3 months', '1Y': 'Year' }
@@ -56,6 +64,7 @@ function HomePortfolioContent({ report }) {
   const { positions, loading: portfolioLoading } = useFirebasePortfolio()
   const { items: watchlistItems } = useWatchlist()
   const { preferences, updatePreferences } = usePreferences()
+  const finances = useFirebaseFinances()
   // benchmark-report.json backs both the opportunity-cost figure and the performance-evidence
   // summary below — same file, same shape Dashboard.jsx reads for its own `comparison`/
   // `scoreComparison`. Only fetched once a holder actually has positions to compare.
@@ -160,6 +169,38 @@ function HomePortfolioContent({ report }) {
       { id: 'fast', metrics: model.fast, summary: sectionAssessment('fast', model.fast) },
     ])
   }, [performance])
+
+  // chart.home.projection-panel — long-range Monte Carlo outcome fan, same derived-input chain
+  // as Dashboard.jsx's ReportProjection (selectProjectionReturnSource → applyAllocationAssumption
+  // → normalizeAnnualReturnTarget), reusing benchmarkReport/holdingsSeries/portfolio already
+  // fetched/computed above rather than re-deriving them a second time.
+  const primaryBenchmarkHistory = benchmarkReport?.histories?.[preferences.defaultBenchmark]
+    ? { dates: benchmarkReport.histories[preferences.defaultBenchmark].dates, closes: benchmarkReport.histories[preferences.defaultBenchmark].closes, symbol: preferences.defaultBenchmark }
+    : null
+  const projectionSource = useMemo(
+    () => selectProjectionReturnSource(holdingsSeries, primaryBenchmarkHistory, preferences.defaultBenchmark, fidelityProjectionBaseline(positions)),
+    [holdingsSeries, primaryBenchmarkHistory, preferences.defaultBenchmark, positions],
+  )
+  const liveStrategyAnnualReturnPct = useMemo(() => {
+    const period = selectPeriod(holdingsSeries, 'All')
+    return period ? annualizeReturnPct(period.returnPct, period.startDate, period.endDate) : null
+  }, [holdingsSeries])
+  const annualReturnTargetPct = normalizeAnnualReturnTarget(
+    liveStrategyAnnualReturnPct ?? finances.settings.planningAnnualReturnTargetPct, projectionSource,
+  )
+  const planningReturns = projectionSource.available
+    ? applyAllocationAssumption(projectionSource.returns, finances.settings.allocationAggressiveness || projectionConfig.allocation_default, annualReturnTargetPct / 100)
+    : []
+  const projectionInput = !finances.loading && projectionSource.available ? {
+    monthlyReturns: planningReturns,
+    currentBalance: finances.settings.currentSavings || portfolio.totalValue,
+    monthlyContribution: finances.settings.monthlyContribution,
+    monthlyWithdrawal: finances.settings.monthlyWithdrawal,
+    accumulationMonths: Math.max(1, (finances.settings.retireAge - finances.settings.currentAge) * projectionConfig.months_per_year),
+    withdrawalMonths: Math.max(0, (finances.settings.retirementEndAge - finances.settings.retireAge) * projectionConfig.months_per_year),
+    inflationPct: finances.settings.inflationPct,
+  } : null
+  const projection = useProjectionSimulation(projectionInput)
 
   if (currentUser && portfolioLoading) {
     return Skeleton ? <Skeleton /> : <div role="status" aria-live="polite">Loading…</div>
@@ -362,12 +403,20 @@ function HomePortfolioContent({ report }) {
         )}
       </Container>
 
-      {/* chart.home.projection-panel — deferred: needs useFirebaseFinances() (goal/contribution
-          settings), useProjectionSimulation()'s Worker-backed Monte Carlo engine, and the chain
-          of derived inputs Dashboard.jsx builds to feed it (selectProjectionReturnSource,
-          applyAllocationAssumption, normalizeAnnualReturnTarget, fidelityProjectionBaseline).
-          None of that is fetched or computed anywhere in this screen today; wiring it is a
-          second, standalone pass rather than an addition to this one. */}
+      {/* chart.home.projection-panel — long-range Monte Carlo outcome fan + Open Planning link */}
+      <Container {...cap('chart.home.projection-panel')} aria-label="Long-range outcome distribution">
+        {projectionSource.available ? (
+          <>
+            {renderer && fanChartCall(renderer, projection.result, {
+              metricId: 'home-projection-panel',
+              ariaLabel: 'Long-range outcome distribution, 10th to 90th percentile',
+              state: projectionArtifactState(projection.loading, projection.result, projection.error),
+              confidence: confidenceOf({}),
+            })}
+            <Link to="/v2/portfolio?view=planning">Open Planning</Link>
+          </>
+        ) : <p>{projectionSource.reason}</p>}
+      </Container>
 
       <p {...cap('disclosure.home.methodology-footer')}>
         Balances use the latest stored closes. Historical portfolio lines apply current

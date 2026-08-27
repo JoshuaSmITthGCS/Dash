@@ -1,21 +1,40 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import HomePortfolioPanel from './HomePortfolioPanel.jsx'
 import { MediumProvider } from '../MediumContext.jsx'
 import { PreferencesProvider } from '../../../lib/PreferencesContext.jsx'
 import { useData } from '../../../lib/useData.js'
 import { useFirebasePortfolio } from '../../../lib/useFirebasePortfolio.js'
+import { useFirebaseFinances } from '../../../lib/useFirebaseFinances.js'
 import { useWatchlist } from '../../../lib/useWatchlist.js'
 import { useAuth } from '../../../lib/FirebaseAuthContext.jsx'
 
 vi.mock('../../../lib/useData.js', async (importOriginal) => ({ ...(await importOriginal()), useData: vi.fn() }))
 vi.mock('../../../lib/useFirebasePortfolio.js', () => ({ useFirebasePortfolio: vi.fn() }))
+vi.mock('../../../lib/useFirebaseFinances.js', () => ({ useFirebaseFinances: vi.fn() }))
 vi.mock('../../../lib/useWatchlist.js', () => ({ useWatchlist: vi.fn() }))
 vi.mock('../../../lib/FirebaseAuthContext.jsx', () => ({ useAuth: vi.fn(), AuthProvider: ({ children }) => children }))
 
 const fakeLine = vi.fn(({ metricId }) => <svg data-testid="fake-line-chart" data-metric-id={metricId} />)
 const fakeComposition = vi.fn(({ metricId }) => <svg data-testid="fake-composition-chart" data-metric-id={metricId} />)
-const fakeManifest = { components: {}, loadRenderer: () => Promise.resolve({ line: fakeLine, composition: fakeComposition }) }
+const fakeFan = vi.fn(({ metricId }) => <svg data-testid="fake-fan-chart" data-metric-id={metricId} />)
+const fakeManifest = { components: {}, loadRenderer: () => Promise.resolve({ line: fakeLine, composition: fakeComposition, fan: fakeFan }) }
+
+const financesSettingsFixture = {
+  schemaVersion: 3, currentAge: 30, retireAge: 65, inflationPct: 2.5, monthlyContribution: 500, currentSavings: 10000,
+  retirementEndAge: 95, monthlyWithdrawal: 3000, allocationAggressiveness: 'growth', planningAnnualReturnTargetPct: 15,
+  coastFireEnabled: false,
+}
+
+function financesFixture(overrides = {}) {
+  return {
+    settings: financesSettingsFixture, budgetItems: [], pools: [], accounts: [], goals: [], loading: false,
+    updateSettings: vi.fn(), addBudgetItem: vi.fn(), removeBudgetItem: vi.fn(), addPool: vi.fn(), removePool: vi.fn(),
+    depositToPools: vi.fn(), addAccount: vi.fn(), removeAccount: vi.fn(), updateAccountContribution: vi.fn(),
+    addGoal: vi.fn(), removeGoal: vi.fn(), ...overrides,
+  }
+}
 
 // AAPL carries genuine daily history on both benchmark-history anchor dates so
 // currentHoldingsSeries builds a real two-point series (exercises chart.home.growth-chart and
@@ -49,11 +68,13 @@ function mockDataFiles(overrides = {}) {
   })
 }
 
-function renderPanel(report = REPORT) {
+function renderPanel(report = REPORT, path = '/v2') {
   return render(
-    <PreferencesProvider>
-      <MediumProvider value={fakeManifest}><HomePortfolioPanel report={report} /></MediumProvider>
-    </PreferencesProvider>,
+    <MemoryRouter initialEntries={[path]}>
+      <PreferencesProvider>
+        <MediumProvider value={fakeManifest}><HomePortfolioPanel report={report} /></MediumProvider>
+      </PreferencesProvider>
+    </MemoryRouter>,
   )
 }
 
@@ -61,7 +82,9 @@ describe('HomePortfolioPanel', () => {
   beforeEach(() => {
     fakeLine.mockClear()
     fakeComposition.mockClear()
+    fakeFan.mockClear()
     useWatchlist.mockReturnValue({ items: [] })
+    useFirebaseFinances.mockReturnValue(financesFixture())
     mockDataFiles()
   })
 
@@ -125,6 +148,28 @@ describe('HomePortfolioPanel', () => {
       const { container } = renderPanel()
       const node = container.querySelector('[data-capability-id="figure.home.performance-evidence-summary"]')
       await waitFor(() => expect(within(node).getByTestId('evidence-summary-overall')).toHaveTextContent('Overall evidence:'))
+    })
+
+    it('renders chart.home.projection-panel with an Open Planning link once a benchmark-fallback projection source is available', async () => {
+      // 13 monthly SPY closes (one per month) clears the 12-month block-bootstrap gate in
+      // selectProjectionReturnSource's benchmark-fallback branch — the 2-point BENCHMARK_REPORT
+      // used elsewhere in this file is intentionally too short for that gate.
+      const monthlyDates = Array.from({ length: 13 }, (_, index) => {
+        const month = ((7 + index) % 12) + 1 // 2025-08 .. 2026-08
+        const year = 2025 + Math.floor((7 + index) / 12)
+        return `${year}-${String(month).padStart(2, '0')}-15`
+      })
+      const monthlyCloses = monthlyDates.map((_, index) => 500 + index * 5)
+      mockDataFiles({
+        benchmarkReport: {
+          data: { histories: { SPY: { dates: monthlyDates, closes: monthlyCloses } } },
+          loading: false,
+        },
+      })
+      const { container } = renderPanel()
+      const node = container.querySelector('[data-capability-id="chart.home.projection-panel"]')
+      await waitFor(() => expect(within(node).getByRole('link', { name: 'Open Planning' })).toBeInTheDocument())
+      expect(within(node).getByRole('link', { name: 'Open Planning' })).toHaveAttribute('href', '/v2/portfolio?view=planning')
     })
   })
 })
