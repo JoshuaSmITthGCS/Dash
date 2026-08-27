@@ -15,7 +15,13 @@ vi.mock('../../../lib/useWatchlist.js', () => ({ useWatchlist: vi.fn() }))
 vi.mock('../../../lib/useAlerts.js', () => ({ useAlerts: vi.fn() }))
 vi.mock('../../../lib/FirebaseAuthContext.jsx', () => ({ useAuth: vi.fn(), AuthProvider: ({ children }) => children }))
 
-const fakeManifest = { components: {} }
+// StockDetailSheet (mounted unconditionally by ResearchScreen since the real-sheet rewire) calls
+// useRenderer(), which needs `manifest.loadRenderer` to resolve to something — a bare
+// `{ components: {} }` manifest crashed every test here with "manifest.loadRenderer is not a
+// function" even when no ?ticker= was ever set, because useRenderer's own effect always fires.
+const fakeChart = vi.fn(({ metricId }) => <svg data-testid="fake-chart" data-metric-id={metricId} />)
+const fakeRenderer = { dial: fakeChart, bar: fakeChart, profile: fakeChart, waterfall: fakeChart, line: fakeChart }
+const fakeManifest = { components: {}, loadRenderer: () => Promise.resolve(fakeRenderer) }
 
 function renderResearch(initialPath = '/v2/research') {
   return render(
@@ -120,16 +126,18 @@ describe('ResearchScreen', () => {
     expect(document.querySelector('[data-capability-id="state.research.etf-model-mismatch"]')).toBeInTheDocument()
   })
 
-  it('opens an inline research detail panel and closes it', () => {
+  it('opens the real Stock Detail Sheet via ?ticker= and closes it', () => {
     useData.mockImplementation((file) => {
       if (file === 'report.json') return { data: { research: [stock()] }, loading: false }
-      return { data: { etfs: [] }, loading: false }
+      return { data: {}, loading: false }
     })
     renderResearch()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     fireEvent.click(within(screen.getByTestId('research-row-AAPL')).getByText('Open research'))
-    expect(screen.getByTestId('research-detail')).toBeInTheDocument()
-    fireEvent.click(screen.getByLabelText('Close research detail'))
-    expect(screen.queryByTestId('research-detail')).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'AAPL' })).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('Close stock research'))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('switches to the watchlist view and shows the signed-out state when no user', () => {

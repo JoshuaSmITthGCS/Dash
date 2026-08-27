@@ -4,6 +4,8 @@ import { useData, fmtPct } from '../../../lib/useData.js'
 import { useMedium } from '../MediumContext.jsx'
 import { cap } from '../capability.js'
 import { RESEARCH_IDS } from './capabilityIds.js'
+import { useStockDetail } from '../useStockDetail.js'
+import StockDetailSheet from './StockDetailSheet.jsx'
 import { useFirebasePortfolio } from '../../../lib/useFirebasePortfolio.js'
 import { useWatchlist } from '../../../lib/useWatchlist.js'
 import { useAlerts } from '../../../lib/useAlerts.js'
@@ -31,8 +33,9 @@ import { suggestPriceTargets } from '../../../lib/watchlistPriceTargets.js'
  * (lens chips, sizing, price-target editor, dip alerts). `chart.*`-class rows are out of scope
  * for §2 (there are none); `link.global.buy-100-guard`-style cross-cutting rows live elsewhere.
  * The full per-`/research`-route Stock Detail Sheet is its own ledger section (§14, opened from
- * seven routes) — `detail.research.open-stock-detail` here opens a minimal inline research
- * summary rather than that full sheet, which is out of this screen's scope.
+ * seven routes — see src/mediums/core/screens/StockDetailSheet.jsx). `detail.research.open-
+ * stock-detail` opens it via `useStockDetail()`/`?ticker=`; `<StockDetailSheet />` is mounted
+ * once near this screen's root and owns everything from that point on.
  */
 
 function finite(value) {
@@ -374,7 +377,7 @@ function ResearchScreenContent() {
   const [alertingTicker, setAlertingTicker] = useState('')
   const [alertStatuses, setAlertStatuses] = useState({})
   const [expandedTickers, setExpandedTickers] = useState(() => new Set())
-  const [openTicker, setOpenTicker] = useState(null)
+  const { openStockDetail } = useStockDetail()
 
   const handleBuy = async (row) => {
     const price = Number(row.price)
@@ -413,7 +416,7 @@ function ResearchScreenContent() {
   })
 
   const openDetail = (row) => {
-    setOpenTicker(row.ticker)
+    openStockDetail(row.ticker)
     recordRecentSearch(row.ticker)
   }
 
@@ -500,10 +503,9 @@ function ResearchScreenContent() {
 
   if (loading) return <div role="status" aria-live="polite">Loading…</div>
 
-  const openRow = openTicker ? universeWithMeta.find((row) => row.ticker === openTicker) : null
-
   return (
     <div data-screen="research" data-view={view}>
+      <StockDetailSheet />
       <Container {...cap(RESEARCH_IDS.searchInput)}>
         <input
           type="search"
@@ -715,17 +717,6 @@ function ResearchScreenContent() {
             )
           )}
 
-          {openRow && (
-            <Container data-testid="research-detail">
-              <button type="button" onClick={() => setOpenTicker(null)} aria-label="Close research detail">Close</button>
-              <h2>{openRow.ticker} — {openRow.name}</h2>
-              <p>
-                {openRow.price != null ? `$${Number(openRow.price).toFixed(2)}` : 'Price unavailable'} · Score {openRow.score ?? '–'} · {openRow.stance || '–'}
-              </p>
-              <div><strong>Strengths</strong><ul>{(openRow.strengths || []).map((item) => <li key={item}>{item}</li>)}</ul></div>
-              <div><strong>Risks &amp; gaps</strong><ul>{(openRow.risks || []).map((item) => <li key={item}>{item}</li>)}</ul></div>
-            </Container>
-          )}
 
           <section className="allocation-planner" aria-labelledby="research-planner-title">
             <h2 id="research-planner-title">Split available funds by rank</h2>
