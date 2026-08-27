@@ -696,3 +696,84 @@ The earlier claim was accurate against an earlier daily snapshot but had gone st
 `public/data/*.json` regenerates and is recommitted daily by `refresh-advisor.yml`, so "unexercised
 by any row" is a claim with a shelf life, not a permanent property of the code. No code change was
 needed, only this correction.
+
+**Phase 7 — closing the four remaining named-deferred chart rows.** User asked to implement
+everything Phase 6's own closing summary had flagged as still open: `chart.screens.generic-
+quadrant-scatter`, the 5 deferred Portfolio chart rows (Monte Carlo panel, scenario sensitivity,
+rolling-Sharpe, correlation heatmap, theme-exposure grid), and `chart.home.projection-panel`. Three
+Explore agents investigated each in full, a Plan agent designed the sequencing, and every
+non-trivial claim (function locations, ledger ids, real data shapes, hook-ordering hazards) was
+verified directly against source and live published JSON before finalizing — the design held up
+exactly, no corrections needed at plan time.
+
+**7a — Wave 0 precursor.** Extracted `fanChartCall`/`projectionArtifactState` out of
+`PortfolioScreen.jsx` (local, non-exported) into a new `src/mediums/core/fanChart.js`, so Home's
+projection panel could reuse them without pulling that 1775-line, Firebase-heavy screen into
+Home's protected lazy chunk. Extended Classic's `scatter()`/`heatmap()` renderer adapters to
+forward `quadrant`/`legend`/`xLabel`/`yLabel`/`labels` through to the underlying `ScatterChartImpl`/
+`CorrelationHeatmapImpl` components, which already natively supported them — pure passthrough.
+
+**7b — `chart.screens.generic-quadrant-scatter`.** Wired into `GenericRecipe` (momentum/quality-
+value/earnings/matrix), data-presence gated across all four recipes rather than matrix only. Tone/
+label carried as extra `series` fields beyond `CHART_COMMON_PROP_KEYS` — Classic's renderer (7a)
+consumes them via a real, already-tested component; the other 11 mediums ignore the unknown keys
+harmlessly for now, a documented trade-off (cross-medium tone-color parity is a future item, not
+required by this row's ledger definition). Verified against the live snapshot: `structural-
+tactical.json`/`earnings-timeliness.json` render 300-point scatters; `momentum.json`/`quality-
+value.json` currently have `tactical_score: null` on every row, so the data-presence gate correctly
+hides the chart there — the gate working as designed, not a bug, and not what was originally
+assumed (the ledger's mention of momentum lacking `classification` was true but irrelevant; the
+real reason today is the missing axis field).
+
+**7c — 5 deferred Portfolio chart rows.** All five landed in one pass against `PortfolioScreen.jsx`
+(rolling-Sharpe's new `analyticsView === 'historical'` branch, correlation heatmap and theme-
+exposure grid rendered above `DiversificationView`'s early returns per the Rules of Hooks, Monte
+Carlo panel using the `fan` chart-type calling convention directly rather than `fanChartCall` since
+the real artifact's `horizons` field is an object keyed by day-string, not `simulateProjection()`'s
+array shape, and scenario sensitivity's picker + most/least-exposed rankings). Real-browser
+verification of the Monte Carlo panel surfaced a genuine pre-existing bug, not introduced by this
+work but newly exposed by it: Classic's `fan()` renderer adapter never passed a value formatter to
+`ProjectionFanChartImpl` (which requires one with no default) and never set the per-point `year`
+field its axis labels read — both were previously unexercised because no `renderer.fan()` call was
+reachable without login before this pass and 7d's Home panel landed together. Fixed both directly:
+`fan()` is now unit-aware (real money formatting for `'USD'`, a plain ratio+unit-suffix formatter
+otherwise — a dollar sign on a 1.02x terminal multiple would have misrepresented the value), and
+every fan series item now carries an explicit `year` (the three existing real callers via
+`fanChart.js` set it alongside `x`, since their `x` already *is* the year; the Monte Carlo panel
+derives `year: days / 365` since its `x` is a day count). Known small cosmetic residue, not fixed
+here: for a sub-year horizon panel the resulting axis labels round to "Year 0 / Year 0 / Year 0 /
+Year 1" for the 30/90/180/365-day horizons — numerically honest, not broken, but not the ideal
+granularity; a real "N days" label would need a small `ProjectionFanChartImpl` change, left as a
+follow-up rather than expanding this pass's scope.
+
+**7d — `chart.home.projection-panel`.** Ported Dashboard.jsx's derived-input chain
+(`selectProjectionReturnSource` → `applyAllocationAssumption` → `normalizeAnnualReturnTarget`)
+verbatim into `HomePortfolioPanel.jsx`, confirmed byte-for-byte against the legacy source before
+committing. `useFirebaseFinances()` added safely under the file's single existing
+`FirebaseAuthProvider` wrap — no second provider needed, the same pattern `PortfolioScreen.jsx`
+already proves scales to multiple Firebase hooks under one wrap. Verified the chunk stays small
+(12.62kB gzip) and `budget.spec.mjs` passes for a spot-checked pair of mediums immediately, then
+for all 12 at full consolidation.
+
+**Consolidation.** Full `lint` + `vitest` (139 files, 1462 tests) + `build`/`build:e2e` clean.
+`budget.spec.mjs`: 11/12 mediums pass, the one failure being Classic's already-documented, already-
+investigated overage (held per 6d, not attempted here) — confirmed with `--workers=1` after an
+earlier `--workers` run flaked two unrelated mediums, the same parallel-execution flakiness class
+Phase 6's consolidation also hit. Full non-visual suite (`parity`/`renderer`/`a11y`/`motion`/
+`rules.spec.mjs`, 130 tests) green. `node scripts/build-ledger-ids.mjs` plus a direct cross-check of
+every `cap(...)` literal across the three changed screens (230 ids) against the regenerated ledger:
+zero unknown ids. Visual baselines: only `/v2` Home is in `visual.spec.mjs`'s destination matrix
+among everything Phase 7 touched (screens-swing/research/evidence-validation are untouched) —
+confirmed by reading an actual diff image before regenerating anything that the only change across
+all 12 mediums × 2 viewports is the projection panel's new honest unavailable-reason text
+appearing where the deferred placeholder used to render nothing; everything else pixel-identical.
+Regenerated and re-verified with a full clean visual-suite re-run (160 passed, 8 pre-existing
+skips). Real-browser `pageerror` checks across the generic-quadrant-scatter in 4 sampled mediums
+(gallery/ticker/newspaper/chalkboard, spanning light/dark/has-entry/no-entry) and the correlation
+heatmap in 2 more — zero errors in every sample.
+
+**Remaining after Phase 7**: the `ProjectionFanChartImpl` day-vs-year axis-label granularity noted
+above; the e2e fixture gap (unrelated to this pass, last touched in Phase 6 Wave 1); Alerts/Settings
+chrome demotion and deeper a11y sweeps beyond the one named violation (both from Phase 6, still
+open, not newly discovered); Classic's budget overage (6d, held). No named chart/figure deferral
+remains open as of this phase.
