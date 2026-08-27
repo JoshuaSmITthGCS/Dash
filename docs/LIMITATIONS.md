@@ -25,6 +25,20 @@ more depth.
   Form 4 (which is parsed structured XBRL): a materially negative 8-K Item code is a reliable
   signal, but the absence of one is not evidence the underlying event was immaterial, only that
   it wasn't filed under a code this lookup recognizes.
+- **Sector operating KPIs (ARPU/churn, comps, NIM/efficiency ratio, FFO/AFFO, ARR/NRR, rate
+  base, capacity factor, book-to-bill, and similar) are not computed anywhere in the
+  pipeline.** `business_profiles.json` names them as the intended replacement for a suppressed
+  generic metric (e.g. a bank's `net_interest_margin`, a REIT's `funds_from_operations`) so the
+  metric goes null instead of scoring the wrong thing, but no provider fetches or derives a
+  value to fill that gap — these KPIs live in MD&A prose and 8-K earnings-release
+  supplementals, not structured SEC XBRL, and this pipeline deliberately does not parse
+  free-text filings (see the 8-K limitation above). Fixing this is a new text/table-extraction
+  provider or a vendor feed, not a config change. `applicability_matrix.json` / `classify_profile()`
+  (`pipeline/canonical_metrics.py`) do route more business profiles than this — including
+  `mortgage_reit`, `homebuilder`, `independent_power_producer`, and `capital_markets_firm` — to
+  suppress industrial-style metrics (P/E, EV/EBITDA, Altman Z, inventory/DSO days) that are
+  actively misleading for that profile, which is real and load-bearing today; only the
+  *replacement* KPI values remain unimplemented.
 
 ## Validation
 

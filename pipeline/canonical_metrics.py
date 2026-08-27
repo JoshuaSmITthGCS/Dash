@@ -101,8 +101,21 @@ def classify_profile(snapshot):
     text = f"{sector} {industry}"
     if snapshot.get("is_etf"):
         return "etf"
+    # Ahead of the general REIT branch: a mortgage REIT holds a leveraged securities
+    # portfolio and distributes net interest spread income, not property NOI, so FFO/AFFO
+    # (the equity-REIT earnings measure the general "reit" profile suppresses P/E in favor
+    # of) does not describe it. Book value and leverage are its anchors instead.
+    if "reit" in text and "mortgage" in industry:
+        return "mortgage_reit"
     if "reit" in text or "real estate investment trust" in text:
         return "reit"
+    # Ahead of the bank branch: Yahoo's "Capital Markets" and "Asset Management" industries
+    # do not contain the substring "bank", so ordering relative to the bank check below does
+    # not matter for those two -- but both are fee/AUM-driven businesses (no inventory or
+    # receivables, enterprise value is not the standard multiple) that a generic industrial
+    # or bank ruleset misreads.
+    if industry in ("capital markets", "asset management"):
+        return "capital_markets_firm"
     if "bank" in industry:
         return "bank"
     if "insurance" in text:
@@ -111,9 +124,28 @@ def classify_profile(snapshot):
         if any(term in industry for term in ("property", "casualty", "p&c")):
             return "property_casualty_insurer"
         return "diversified_insurer"
+    # Ahead of the generic profit-margin/industrial branches: land-banking and long build
+    # cycles make homebuilder EPS and inventory turns cycle-distorted the same way a
+    # commodity producer's are, but "residential construction" does not match any of the
+    # commodity keywords below.
+    if "residential construction" in industry:
+        return "homebuilder"
+    # Ahead of the utility branch: Yahoo already separates "Utilities - Independent Power
+    # Producers" from the regulated-electric/gas/water industries, and the two are not
+    # interchangeable -- a regulated utility's rate base and allowed-ROE framework does not
+    # exist for a merchant generator selling into spot power and capacity markets, which is
+    # commodity-cyclical like the producers below instead.
+    if "independent power producer" in industry:
+        return "independent_power_producer"
     if "utilit" in sector:
         return "utility"
-    if any(term in text for term in ("oil", "gas", "mining", "gold", "copper", "steel", "coal")):
+    if any(term in text for term in ("oil", "gas", "mining", "gold", "copper", "steel", "coal",
+                                      "lumber", "packaging", "agricultural inputs")):
+        return "commodity_producer"
+    # "Chemicals" (commodity/diversified) is cycle-driven the same way as the producers
+    # above; "Specialty Chemicals" is a formulation-value business with structurally higher,
+    # steadier multiples, so it is excluded rather than swept in by a bare "chemical" match.
+    if "chemical" in industry and "specialty" not in industry:
         return "commodity_producer"
     # Ahead of the generic profit-margin branches: a semiconductor company's capex and
     # inventory cycles are not readable through industrial cutoffs regardless of whether it

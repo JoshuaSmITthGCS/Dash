@@ -55,6 +55,15 @@ def test_correlated_momentum_family_is_detected_and_capped():
     ("NEE", {"ticker": "NEE"}, "utility"), ("XOM", {"ticker": "XOM"}, "commodity_producer"),
     ("MRNA", {"ticker": "MRNA", "sector": "Healthcare", "industry": "Biotechnology", "profit_margin": -.2}, "pre_profit_biotechnology"),
     ("BIO", {"ticker": "BIO", "sector": "Healthcare", "industry": "Biotechnology", "profit_margin": .1}, "profitable_biotechnology"),
+    ("MREIT", {"ticker": "MREIT", "sector": "Real Estate", "industry": "REIT - Mortgage"}, "mortgage_reit"),
+    ("EQREIT", {"ticker": "EQREIT", "sector": "Real Estate", "industry": "REIT - Office"}, "reit"),
+    ("BUILD", {"ticker": "BUILD", "sector": "Consumer Cyclical", "industry": "Residential Construction"}, "homebuilder"),
+    ("IPP", {"ticker": "IPP", "sector": "Utilities", "industry": "Utilities - Independent Power Producers"}, "independent_power_producer"),
+    ("REGUTIL", {"ticker": "REGUTIL", "sector": "Utilities", "industry": "Utilities - Regulated Gas"}, "utility"),
+    ("MGR", {"ticker": "MGR", "sector": "Financial Services", "industry": "Asset Management"}, "capital_markets_firm"),
+    ("BRKR", {"ticker": "BRKR", "sector": "Financial Services", "industry": "Capital Markets"}, "capital_markets_firm"),
+    ("CCHEM", {"ticker": "CCHEM", "sector": "Basic Materials", "industry": "Chemicals"}, "commodity_producer"),
+    ("SCHEM", {"ticker": "SCHEM", "sector": "Basic Materials", "industry": "Specialty Chemicals"}, "general"),
 ])
 def test_representative_profile_classification(ticker, snapshot, profile):
     assert classify_profile(snapshot) == profile

@@ -3,11 +3,15 @@
   "profiles": [
     "general",
     "bank",
+    "capital_markets_firm",
     "property_casualty_insurer",
     "life_insurer",
     "diversified_insurer",
     "reit",
+    "mortgage_reit",
+    "homebuilder",
     "utility",
+    "independent_power_producer",
     "commodity_producer",
     "profitable_biotechnology",
     "pre_profit_biotechnology",
@@ -100,6 +104,53 @@
         "suppressed",
         "common_equity_tier_1_ratio",
         "Generic accounting checklist omits credit and capital quality."
+      ]
+    },
+    "capital_markets_firm": {
+      "inventory_days_trend": [
+        "suppressed",
+        null,
+        "Asset managers and broker-dealers hold no inventory."
+      ],
+      "days_sales_outstanding_trend": [
+        "suppressed",
+        null,
+        "Fee and commission revenue is not comparable to trade receivable collection cycles."
+      ],
+      "days_sales_outstanding": [
+        "suppressed",
+        null,
+        "Fee and commission revenue is not comparable to trade receivable collection cycles."
+      ],
+      "ev_to_ebitda": [
+        "suppressed",
+        "forward_pe",
+        "Client assets under management, not enterprise value, drive fee revenue; forward P/E is the standard capital-markets multiple."
+      ],
+      "ev_to_ebit": [
+        "suppressed",
+        "forward_pe",
+        "Enterprise value is not the standard capital-markets valuation anchor."
+      ],
+      "ev_to_fcf": [
+        "suppressed",
+        "forward_pe",
+        "Industrial FCF is not comparable to AUM- and fee-driven revenue."
+      ],
+      "net_debt_to_ebitda": [
+        "suppressed",
+        "price_to_tangible_book",
+        "Repo and margin financing are operating funding for broker-dealers, not leverage risk to be read against EBITDA."
+      ],
+      "current_ratio": [
+        "suppressed",
+        null,
+        "Client custody and margin balances make conventional current-ratio liquidity meaningless."
+      ],
+      "altman_z": [
+        "suppressed",
+        "price_to_tangible_book",
+        "Industrial bankruptcy model is not calibrated for balance-sheet-light, fee-driven asset managers and broker-dealers."
       ]
     },
     "property_casualty_insurer": {
@@ -237,11 +288,87 @@
         "Industrial bankruptcy model is not calibrated for REITs."
       ]
     },
+    "mortgage_reit": {
+      "peg": [
+        "suppressed",
+        "price_to_book",
+        "Mortgage REIT earnings are leveraged net interest spread income, not FFO; book value is the standard mREIT anchor."
+      ],
+      "forward_pe": [
+        "suppressed",
+        "price_to_book",
+        "P/FFO assumes property NOI; a mortgage REIT holds a securities portfolio and is valued against book value instead."
+      ],
+      "free_cash_flow_yield": [
+        "suppressed",
+        "dividend_yield",
+        "Mortgage REITs distribute net interest spread income under a mandatory payout; industrial FCF does not describe a levered securities portfolio."
+      ],
+      "return_on_invested_capital": [
+        "suppressed",
+        "return_on_equity",
+        "Leverage is the mortgage REIT operating model, not a distortion to normalize away."
+      ],
+      "net_debt_to_ebitda": [
+        "suppressed",
+        "debt_to_equity",
+        "Borrowings fund a securities book, not an EBITDA-generating operating business."
+      ],
+      "altman_z": [
+        "suppressed",
+        "debt_to_equity",
+        "Industrial bankruptcy model is not calibrated for an intentionally leveraged securities portfolio."
+      ]
+    },
+    "homebuilder": {
+      "altman_z": [
+        "suppressed",
+        "price_to_tangible_book",
+        "Land banking and structural leverage are the homebuilder business model, not a distress signal; price-to-book is the standard cycle anchor."
+      ],
+      "peg": [
+        "suppressed",
+        "price_to_book",
+        "Homebuilder EPS swings with land cost and impairment cycles; book value, not a point-in-time earnings multiple, is the standard cycle anchor."
+      ],
+      "forward_pe": [
+        "suppressed",
+        "price_to_book",
+        "P/E is misleading at both cycle peaks (peak margins) and troughs (impairments); price-to-book and price-to-tangible-book are the preferred homebuilder cycle anchors."
+      ]
+    },
     "utility": {
       "free_cash_flow_yield": [
         "replaced",
         "funds_from_operations_yield",
         "Regulated utilities commonly fund large mandated capital programs."
+      ]
+    },
+    "independent_power_producer": {
+      "peg": [
+        "replaced",
+        "midcycle_ev_ebitda",
+        "Merchant generation earnings are commodity-cyclical (spark spreads, capacity-market prices); point estimates are dominated by the cycle."
+      ],
+      "operating_margin_trend": [
+        "suppressed",
+        "normalized_midcycle_margin",
+        "Trailing margin trend for a merchant generator tracks realized power and spark-spread prices, not structural improvement."
+      ],
+      "incremental_margin": [
+        "suppressed",
+        "normalized_midcycle_margin",
+        "Incremental margin against a commodity-priced power revenue denominator is cycle contamination, not operating leverage."
+      ],
+      "fcf_growth_3y": [
+        "suppressed",
+        "free_cash_flow_breakeven",
+        "Three-year FCF growth for a merchant generator tracks the power-price and spark-spread cycle, not capital discipline."
+      ],
+      "gross_profits_to_assets": [
+        "suppressed",
+        "normalized_midcycle_margin",
+        "Gross profitability for a merchant generator moves with realized power and fuel prices rather than asset productivity."
       ]
     },
     "commodity_producer": {

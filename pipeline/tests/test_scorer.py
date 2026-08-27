@@ -120,14 +120,29 @@ class ScorerTests(unittest.TestCase):
         self.assertIn("current_ratio", parts["suppressed_metrics"])
 
     def test_a_generic_financial_is_not_given_bank_exemptions(self):
-        """"Financial Services" covers exchanges and asset managers too; only a profile the
-        registry recognises earns a profile's suppressions."""
+        """"Financial Services" covers plenty of industries the registry has no profile for
+        (credit-card networks, payment processors); only a recognised profile earns
+        suppressions."""
         _, parts = scorer.valuation_score({"is_etf": False, "sector": "Financial Services",
-                                           "industry": "Capital Markets",
+                                           "industry": "Credit Services",
                                            "price_to_book": 1.2, "debt_to_equity": 0.4,
                                            "current_ratio": 1.8})
         self.assertEqual(parts["applicability_profile"], "general")
         self.assertIsNotNone(parts["current_ratio"])
+
+    def test_a_capital_markets_firm_is_not_scored_on_enterprise_value_or_receivable_days(self):
+        """Client AUM and fee revenue drive an asset manager or broker-dealer, not enterprise
+        value or trade-receivable collection cycles; current_ratio is meaningless against
+        client custody and margin balances."""
+        _, parts = scorer.valuation_score({"is_etf": False, "sector": "Financial Services",
+                                           "industry": "Capital Markets",
+                                           "forward_pe": 14.0, "ev_to_ebitda": 11.0,
+                                           "days_sales_outstanding_trend": -0.03, "current_ratio": 1.8})
+        self.assertEqual(parts["applicability_profile"], "capital_markets_firm")
+        for metric in ("ev_to_ebitda", "days_sales_outstanding_trend", "current_ratio"):
+            self.assertIsNone(parts[metric])
+            self.assertIn(metric, parts["suppressed_metrics"])
+        self.assertIsNotNone(parts["forward_pe"])
 
     def test_label_thresholds(self):
         self.assertEqual(scorer.label_for(90), "HIGH CONVICTION")

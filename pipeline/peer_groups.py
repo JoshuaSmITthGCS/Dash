@@ -54,11 +54,15 @@ def peer_group(snapshot):
     profile = classify_profile(snapshot)
     labels = {
         "bank": "Banks",
+        "capital_markets_firm": "Asset managers & broker-dealers",
         "property_casualty_insurer": "Property & casualty insurers",
         "life_insurer": "Life insurers",
         "diversified_insurer": "Diversified insurers",
         "reit": "REITs",
+        "mortgage_reit": "Mortgage REITs",
+        "homebuilder": "Homebuilders",
         "utility": "Utilities",
+        "independent_power_producer": "Independent power producers",
         "commodity_producer": "Commodity producers",
     }
     if profile != "general":
