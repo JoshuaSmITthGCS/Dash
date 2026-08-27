@@ -36,6 +36,7 @@ import { fidelityProjectionBaseline } from '../../../lib/referenceCashFlows.js'
 import { coastFireStatus } from '../../../lib/coastFire.js'
 import { derivePortfolioRiskProfile } from '../../../lib/monteCarloRiskProfile.js'
 import { usePortfolioMonteCarloCalibration } from '../../../lib/usePortfolioMonteCarloCalibration.js'
+import { buildExportSnapshot, snapshotFilename, snapshotToJson } from '../../../lib/exportSnapshot.js'
 import { LIVE_TRACKING_START } from '../../../lib/liveTrackingAvailability.js'
 import prospectiveValidation from '../../../../pipeline/validation/harness_freeze.json'
 import { useMedium } from '../MediumContext.jsx'
@@ -240,7 +241,7 @@ function PortfolioScreenContent() {
   const { data: factorData } = useData('factors/french.json')
   const { data: spySnapshot } = useData('etf/SPY.json')
   const { data: signalMetrics } = useData(view === 'data' ? 'validation/signal_metrics.json' : null)
-  const needsBenchmarkReport = view === 'insights' || view === 'finances' || view === 'planning'
+  const needsBenchmarkReport = view === 'data' || view === 'insights' || view === 'finances' || view === 'planning'
   const { data: benchmarkReport, loading: benchmarkReportLoading } = useData(needsBenchmarkReport ? 'benchmark-report.json' : null)
   const { preferences } = usePreferences()
   const { data: alternateBenchmarkSnapshot } = useData(
@@ -295,7 +296,7 @@ function PortfolioScreenContent() {
         <PerformanceView Container={Container} analytics={analytics} returnSummary={returnSummary} bridge={bridge} tracking={tracking} searchParams={searchParams} setSearchParams={setSearchParams} />
       )}
       {view === 'data' && (
-        <DataView Container={Container} analytics={analytics} positions={positions} signalMetrics={signalMetrics} searchParams={searchParams} setSearchParams={setSearchParams} exportPortfolio={exportPortfolio} />
+        <DataView Container={Container} analytics={analytics} positions={positions} signalMetrics={signalMetrics} benchmarks={benchmarkReport} searchParams={searchParams} setSearchParams={setSearchParams} exportPortfolio={exportPortfolio} />
       )}
       {view === 'diversification' && (
         <DiversificationView Container={Container} analytics={analytics} positions={positions} />
@@ -504,13 +505,51 @@ function CashFlowForm({ capId, tracking }) {
 const ANALYTICS_VIEWS = ['overview', 'all', 'algorithm', 'historical']
 const ANALYTICS_SCOPES = ['all_history', 'since_algorithm', 'live_algorithm', 'backtest']
 
-function DataView({ Container, analytics, positions, signalMetrics, searchParams, setSearchParams, exportPortfolio }) {
+function DataView({ Container, analytics, positions, signalMetrics, benchmarks, searchParams, setSearchParams, exportPortfolio }) {
   const analyticsView = ANALYTICS_VIEWS.includes(searchParams.get('analytics')) ? searchParams.get('analytics') : 'overview'
   const scope = ANALYTICS_SCOPES.includes(searchParams.get('scope')) ? searchParams.get('scope') : 'all_history'
   const setParam = (key, value) => {
     const params = new URLSearchParams(searchParams)
     params.set(key, value)
     setSearchParams(params)
+  }
+  const [exportStatus, setExportStatus] = useState(null)
+
+  const buildSnapshot = () => buildExportSnapshot({
+    holdings: { portfolioPositions: positions, actionable: [] },
+    analytics,
+    benchmarks,
+    signalMetrics,
+    monteCarlo: null,
+    scope,
+  })
+
+  const handleCopyMetrics = async () => {
+    try {
+      await navigator.clipboard.writeText(snapshotToJson(buildSnapshot()))
+      setExportStatus('Copied to clipboard')
+    } catch {
+      setExportStatus('Copy failed')
+    }
+    setTimeout(() => setExportStatus(null), 2500)
+  }
+
+  const handleDownloadSnapshot = () => {
+    try {
+      const blob = new Blob([snapshotToJson(buildSnapshot())], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = snapshotFilename(scope)
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      URL.revokeObjectURL(url)
+      setExportStatus('Download started')
+    } catch {
+      setExportStatus('Download failed')
+    }
+    setTimeout(() => setExportStatus(null), 2500)
   }
 
   const buckets = signalMetrics ? splitBySampleRequirement(signalMetrics) : []
@@ -540,9 +579,11 @@ function DataView({ Container, analytics, positions, signalMetrics, searchParams
       </label>
       <p {...cap('disclosure.portfolio.scope-rationale')}>Scope narrows which daily returns feed every measure below; it does not change the chart on the Performance view.</p>
 
-      <div {...cap('export.portfolio.data-overview-menu')}>
-        <button type="button" onClick={() => navigator.clipboard?.writeText?.(JSON.stringify({ performance: analytics.performance, risk: analytics.risk }, null, 2))}>Copy all</button>
-        <button type="button" onClick={exportPortfolio}>Download JSON</button>
+      <div>
+        <button type="button" {...cap('export.data-overview.copy-metrics')} onClick={handleCopyMetrics}>Copy all metrics to clipboard</button>
+        <button type="button" {...cap('export.data-overview.download-json')} onClick={handleDownloadSnapshot}>Download all metrics (JSON)</button>
+        <button type="button" {...cap('export.portfolio.export-portfolio-json')} onClick={exportPortfolio}>Export portfolio</button>
+        {exportStatus && <p role="status" {...cap('state.export.data-overview-status')}>{exportStatus}</p>}
       </div>
 
       <p {...cap('figure.portfolio.move-explanation')}>

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import PortfolioScreen from './PortfolioScreen.jsx'
@@ -135,7 +135,8 @@ describe('PortfolioScreen', () => {
 
     it('data view: renders the structural rows and the standard-measures metric rows', () => {
       const { container } = renderPortfolio('/v2/portfolio?view=data')
-      ;['nav.portfolio.analytics-view-tabs', 'control.portfolio.analytics-scope', 'export.portfolio.data-overview-menu',
+      ;['nav.portfolio.analytics-view-tabs', 'control.portfolio.analytics-scope', 'export.data-overview.copy-metrics',
+        'export.data-overview.download-json', 'export.portfolio.export-portfolio-json',
         'figure.portfolio.move-explanation', 'figure.portfolio.holdings-data-quality', 'figure.portfolio.fund-cost-overview',
         'figure.portfolio.time-to-valid-metric', 'figure.portfolio.performance-metrics-overview']
         .forEach((id) => expect(container.querySelector(`[data-capability-id="${id}"]`)).toBeInTheDocument())
@@ -143,6 +144,41 @@ describe('PortfolioScreen', () => {
         'metric.report.acceleration', 'metric.report.up-capture-spy', 'metric.report.batting-average-spy',
         'metric.report.week-excess', 'metric.report.portfolio-volatility', 'metric.report.active-share']
         .forEach((id) => expect(container.querySelector(`[data-capability-id="${id}"]`)).toBeInTheDocument())
+    })
+
+    it('data view: copies the full snapshot to the clipboard and reports status', async () => {
+      Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } })
+      renderPortfolio('/v2/portfolio?view=data')
+      fireEvent.click(screen.getByText('Copy all metrics to clipboard'))
+      await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(1))
+      const payload = JSON.parse(navigator.clipboard.writeText.mock.calls[0][0])
+      expect(payload.holdings.positions).toEqual(positions)
+      expect(await screen.findByText('Copied to clipboard')).toBeInTheDocument()
+    })
+
+    it('data view: reports a clipboard failure rather than silently doing nothing', async () => {
+      Object.assign(navigator, { clipboard: { writeText: vi.fn().mockRejectedValue(new Error('denied')) } })
+      renderPortfolio('/v2/portfolio?view=data')
+      fireEvent.click(screen.getByText('Copy all metrics to clipboard'))
+      expect(await screen.findByText('Copy failed')).toBeInTheDocument()
+    })
+
+    it('data view: triggers a JSON download of the full snapshot', () => {
+      globalThis.URL.createObjectURL = vi.fn(() => 'blob:mock')
+      globalThis.URL.revokeObjectURL = vi.fn()
+      renderPortfolio('/v2/portfolio?view=data')
+      fireEvent.click(screen.getByText('Download all metrics (JSON)'))
+      expect(globalThis.URL.createObjectURL).toHaveBeenCalledTimes(1)
+      expect(screen.getByText('Download started')).toBeInTheDocument()
+    })
+
+    it('data view: exportPortfolio button stays wired to the useFirebasePortfolio export, separate from the snapshot download', () => {
+      const exportPortfolio = vi.fn()
+      useFirebasePortfolio.mockReturnValue({ positions, loading: false, exportPortfolio, syncState: { connected: true } })
+      const { container } = renderPortfolio('/v2/portfolio?view=data')
+      fireEvent.click(screen.getByText('Export portfolio'))
+      expect(exportPortfolio).toHaveBeenCalledTimes(1)
+      expect(container.querySelector('[data-capability-id="export.portfolio.export-portfolio-json"]')).toBeInTheDocument()
     })
 
     it('data view: mounts the signal-metrics embed only in the algorithm analytics view', () => {
