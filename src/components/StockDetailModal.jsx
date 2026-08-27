@@ -1,6 +1,10 @@
 import { useId, useState } from 'react'
 import { buildStockCopyText } from '../lib/stockCopyText.js'
+import { mergeResearchStock } from '../lib/mergeResearchStock.js'
 import { Link } from 'react-router-dom'
+
+// Re-exported for StockDetailModal.test.jsx, which imports mergeResearchStock from this module.
+export { mergeResearchStock }
 import ActionGuidance from './ActionGuidance'
 import GrowthChart from './GrowthChart'
 import ETFComparisonPanel from './ETFComparisonPanel'
@@ -124,19 +128,6 @@ function primaryTheme(stock) {
   if (!themes.length) return null
   return themes.slice().sort((left, right) =>
     (themeExposureScore(right) || 0) - (themeExposureScore(left) || 0))[0]
-}
-
-export function mergeResearchStock(suppliedStock, fullResearch) {
-  if (!suppliedStock) return suppliedStock
-  const fullStock = fullResearch?.research?.find((row) => row.ticker === suppliedStock.ticker)
-    || fullResearch?.portfolio_coverage?.find((row) => row.ticker === suppliedStock.ticker)
-    || fullResearch?.screen_universe?.find((row) => row.ticker === suppliedStock.ticker)
-  if (!fullStock) return suppliedStock
-  return {
-    ...fullStock,
-    ...suppliedStock,
-    analysis_v2: { ...(fullStock.analysis_v2 || {}), ...(suppliedStock.analysis_v2 || {}) },
-  }
 }
 
 // SEC Form 4 buys vs sells (pipeline/insider_signal.py). The pipeline already scores this

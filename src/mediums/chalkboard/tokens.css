@@ -1,0 +1,50 @@
+/* Chalkboard — hand-lettered slate. Dark slate, never pure black. See DESIGN.md §9. */
+:root[data-medium="chalkboard"] {
+  color-scheme: dark;
+  --chalk-white: #f4f1e8;
+  --ink-primary: var(--chalk-white);
+  --ink-faint: #b7bdb9; /* was #9aa39f — under WCAG AA's 4.5:1 text floor once chalk pressure dims it */
+
+  --surface-slate: #2b3339;
+  --surface-slate-raised: #333c42;
+  --frame-wood: #5b4634;
+
+  --chalk-gain: #8fd19e;
+  --chalk-loss: #e3897a;
+  --chalk-alert: #f2c14e;
+
+  --state-established: var(--chalk-white);
+  --state-accumulating: #7f8a86;
+  --state-breach: var(--chalk-alert);
+  --state-unavailable: #5a6460;
+
+  --rule-hairline: #454f54;
+
+  --font-display: 'Caveat', 'Shadows Into Light', cursive;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+[data-medium="chalkboard"] { background: var(--frame-wood); }
+[data-medium="chalkboard"] body { background: var(--surface-slate); color: var(--chalk-white); font-family: var(--font-mono); border: 14px solid var(--frame-wood); box-sizing: border-box; min-height: 100vh; }
+
+[data-medium="chalkboard"] [data-chalk-box] {
+  background: transparent;
+  border: 2px solid var(--chalk-white);
+  border-radius: 2px 8px 3px 6px / 4px 2px 6px 3px; /* hand-drawn corner overshoot */
+  padding: 12px 14px;
+  opacity: 0.94;
+}
+
+[data-medium="chalkboard"] [data-chalk-box][data-breached="true"] {
+  border-color: var(--chalk-alert);
+}
+
+[data-medium="chalkboard"] [data-chalk-do-not-erase] {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--ink-faint);
+  border: 1px dashed var(--ink-faint);
+  padding: 4px 8px;
+  display: inline-block;
+}

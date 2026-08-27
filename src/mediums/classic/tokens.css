@@ -1,0 +1,12 @@
+/*
+ * Classic — what you have now (DESIGN.md §12). Uses the existing `src/styles/variables.css`
+ * token set as-is; nothing here redefines it. This file exists only so Classic follows the same
+ * `loadTokens()` manifest contract every other medium follows, and to document the one
+ * grandfathered bug rather than silently repairing it (0f forbids reopening shared layout
+ * before this pass — a "quiet fix" here is exactly the drift the master warns against).
+ *
+ * KNOWN BUG, GRANDFATHERED: `[data-theme="light"]` has no block in the shipped CSS — `:root`,
+ * `:root[data-theme="dark"]`, and the `prefers-color-scheme: dark` block are three verbatim
+ * copies of the same dark HUD values. Choosing "light" in Settings still renders dark. See
+ * NOTES.md. Not fixed here.
+ */

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, useCallback } from 'react'
+import { Suspense, useEffect, useState, useCallback, lazy } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
@@ -9,6 +9,8 @@ import { AuthProvider as FirebaseAuthProvider, useAuth } from './lib/FirebaseAut
 import { usePreferences } from './lib/PreferencesContext.jsx'
 import ModelVersionFooter from './components/ModelVersionFooter.jsx'
 import AlertBadge from './components/AlertBadge.jsx'
+import { initAdvancedHUD } from './lib/hudAdvanced.jsx'
+import RouteLoading from './components/RouteLoading.jsx'
 
 // Dashboard is the landing route on a phone opening this cold on cellular, so it ships eager.
 // Every other page loads on demand – keeps first paint off the weight of pages the visit may
@@ -43,6 +45,10 @@ const Insights = lazy(() => import('./pages/Insights.jsx'))
 const Alerts = lazy(() => import('./pages/Alerts.jsx'))
 const Markets = lazy(() => import('./pages/Markets.jsx'))
 const HUDDemo = lazy(() => import('./pages/HUDDemo.jsx'))
+// The /v2 medium shell and the Phase 3 e2e-harness diagnostic route live in MediumApp.jsx now —
+// main.jsx's bootstrap() picks that root instead of this one for /v2 and /e2e-harness paths, so
+// App.jsx (and everything it statically imports, FirebaseAuthContext.jsx included) is never
+// bundler-reachable from a medium's cold load. See MediumApp.jsx's own header comment.
 
 // Flat strategy paths that predate the Options tab, kept alive as redirects into it.
 const OPTIONS_STRATEGY_IDS = [
@@ -103,19 +109,6 @@ function preloadRoute(path) {
   })
 }
 
-function RouteLoading({ pathname }) {
-  const label = pathname.startsWith('/portfolio')
-    ? 'Opening your portfolio'
-    : pathname.startsWith('/research') ? 'Opening research' : 'Opening page'
-  return (
-    <div className="route-loading" role="status" aria-live="polite">
-      <span className="loading-mark" aria-hidden="true" />
-      <strong>{label}…</strong>
-      <span>Loading the latest saved view.</span>
-    </div>
-  )
-}
-
 function CloudDataUnavailable({ feature }) {
   const { authError, retryAuth } = useAuth()
   return <section className="report-empty-state">
@@ -124,6 +117,20 @@ function CloudDataUnavailable({ feature }) {
     <p>{authError || 'Firebase is still connecting to your solo workspace.'}</p>
     <button type="button" className="primary-button" onClick={retryAuth}>Reconnect Firebase</button>
   </section>
+}
+
+// This root's <Routes> doesn't define /v2 or /e2e-harness at all any more (Phase 4, NOTES.md —
+// main.jsx's bootstrap() picks MediumApp.jsx for those instead), so a soft <Navigate> can't reach
+// them. No current UI links from Classic into a medium (no picker in Settings yet), but if one
+// is ever added, this hands off via the one hard reload main.jsx needs to pick the other root,
+// rather than silently swallowing it into the catch-all's default "back to Home" redirect.
+function NotFoundOrMedium() {
+  const { pathname, search } = useLocation()
+  const isMediumRoute = pathname.startsWith('/v2') || pathname.startsWith('/e2e-harness')
+  useEffect(() => {
+    if (isMediumRoute) window.location.assign(pathname + search)
+  }, [isMediumRoute, pathname, search])
+  return isMediumRoute ? <RouteLoading pathname={pathname} /> : <Navigate to="/" replace />
 }
 
 export const MOBILE_NAV = [
@@ -209,6 +216,14 @@ function AppContent() {
   const portfolioPreview = import.meta.env.DEV && new URLSearchParams(search).get('portfolioPreview') === '1'
 
   useEffect(() => { setMoreMenuOpen(false) }, [pathname])
+
+  // The legacy HUD background overlay (data-stream/grid animation) is Classic-only chrome. This
+  // component (App.jsx's AppContent) only ever mounts for Classic paths now — main.jsx's
+  // bootstrap() picks MediumApp.jsx instead for /v2 and /e2e-harness (Phase 4, NOTES.md), and
+  // MediumApp's own EscapeToClassic hard-reloads rather than soft-navigating here — so there's no
+  // route branch to gate on any more. Classic's stylesheet is likewise guaranteed loaded already
+  // by that same bootstrap before this component ever renders.
+  useEffect(() => { initAdvancedHUD() }, [])
 
   useEffect(() => {
     const preload = () => {
@@ -330,7 +345,7 @@ function AppContent() {
           <Route path="/glossary" element={<Glossary />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/alerts" element={cloudPage('Alerts', '/alerts', <Alerts />)} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundOrMedium />} />
         </Routes>
         </Suspense>
         </ErrorBoundary>

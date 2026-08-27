@@ -39,12 +39,29 @@
   <body>
     <script>
       (() => {
+        // Keep in sync with MEDIUM_META in src/mediums/registry.js — duplicated here
+        // (rather than imported) so the medium is set before first paint, synchronously,
+        // with no module-load round trip. [colorScheme, themeColor] per medium id.
+        const MEDIUM_PAINT = {
+          gallery: ['light', '#f2ede2'], cockpit: ['dark', '#0a0d10'], neon: ['dark', '#0d0a2e'],
+          poster: ['light', '#f6f1e6'], ticker: ['dark', '#050505'], book: ['light', '#f7f4ec'],
+          blueprint: ['dark', '#0b1e33'], 'star-chart': ['dark', '#050818'], newspaper: ['light', '#faf6ee'],
+          chalkboard: ['dark', '#2b3339'], 'beige-box': ['light', '#d9d3c4'], classic: ['dark', '#0a0e14'],
+        }
+        const DEFAULT_MEDIUM = 'classic' // flips to 'gallery' at Phase 3 cutover
         try {
           const saved = JSON.parse(localStorage.getItem('valuesignal.ui-preferences.v1') || '{}')
           const dark = saved.theme === 'dark' || (saved.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
           document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-          document.querySelector('#theme-color-meta').content = '#0a0e14'
-        } catch { document.documentElement.dataset.theme = 'light' }
+          const medium = MEDIUM_PAINT[saved.medium] ? saved.medium : DEFAULT_MEDIUM
+          document.documentElement.dataset.medium = medium
+          const [colorScheme, themeColor] = MEDIUM_PAINT[medium]
+          document.documentElement.style.colorScheme = colorScheme
+          document.querySelector('#theme-color-meta').content = themeColor
+        } catch {
+          document.documentElement.dataset.theme = 'light'
+          document.documentElement.dataset.medium = DEFAULT_MEDIUM
+        }
       })()
     </script>
     <div id="root"></div>

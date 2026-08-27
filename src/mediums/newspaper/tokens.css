@@ -1,0 +1,50 @@
+/* Newspaper — graphics desk. Light, warm, column-ruled. See DESIGN.md §8. */
+:root[data-medium="newspaper"] {
+  color-scheme: light;
+
+  --ink-primary: #1a1714;
+  --ink-secondary: #4a4238;
+  --ink-faint: #6b6153; /* was #857a6a — 3.9:1 on --surface-ground, under WCAG AA's 4.5:1 text floor */
+
+  --surface-ground: #faf6ee;
+  --surface-panel: #fffdf8;
+
+  --accent-standfirst: #8a2a1f;
+
+  --state-established: var(--ink-primary);
+  --state-accumulating: var(--ink-faint);
+  --state-breach: var(--accent-standfirst);
+  --state-unavailable: var(--ink-faint);
+
+  --rule-column: #d8cfba;
+
+  --font-display: 'Playfair Display', 'Libre Baskerville', serif;
+  --font-body: 'Source Serif 4', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+[data-medium="newspaper"] body {
+  background: var(--surface-ground);
+  color: var(--ink-primary);
+  font-family: var(--font-body);
+}
+
+/* Column rules ARE the container device — a vertical rule, never a box. */
+[data-medium="newspaper"] [data-column-rule] {
+  border-left: 1px solid var(--rule-column);
+  padding-left: 12px;
+}
+
+[data-medium="newspaper"] [data-column-rule][data-breached="true"] {
+  border-left-color: var(--accent-standfirst);
+  border-left-width: 3px;
+}
+
+[data-medium="newspaper"] [data-standfirst] {
+  color: var(--accent-standfirst);
+  font-weight: 600;
+}
+
+[data-medium="newspaper"] [data-masthead-tab] {
+  font-family: var(--font-display);
+}

@@ -1,0 +1,37 @@
+name: Update E2E baselines
+
+# Manual-only (rebuild plan): regenerates tests/e2e/__screenshots__/ in the exact pinned
+# Playwright container and commits the result. Never runs automatically — a baseline update is a
+# deliberate act, not something a routine push should trigger silently.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update-baselines:
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.62.1-noble
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npx playwright test visual.spec.mjs --update-snapshots
+        env:
+          CI: 'true'
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      - name: Commit updated baselines
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add tests/e2e/__screenshots__/
+          git diff --staged --quiet || git commit -m "Update Playwright visual baselines (workflow_dispatch)"
+          git push

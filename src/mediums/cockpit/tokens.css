@@ -1,0 +1,73 @@
+/* Cockpit — instrument panel. Dark, calm-under-glow. See DESIGN.md §1. */
+:root[data-medium="cockpit"] {
+  color-scheme: dark;
+
+  --ink-primary: #e8f2f5;
+  --ink-secondary: #9fb4bb;
+  --ink-faint: #7a9096; /* was #5c6e73 — 3.34:1 on --surface-bezel, under WCAG AA's 4.5:1 text floor */
+
+  --surface-ground: #0a0d10;
+  --surface-bezel: #14181c;
+  --surface-bezel-raised: #1b2126;
+
+  --state-established: #4fd1c5;
+  --state-accumulating: #7c8f94;
+  --state-breach: #ff5c5c;
+  --state-unavailable: #3a4247;
+
+  --rule-hairline: #2a3138;
+  --rule-bright: #3d4750;
+
+  --glow-live: 0 0 6px rgba(79, 209, 197, 0.55);
+  --glow-breach: 0 0 8px rgba(255, 92, 92, 0.6);
+
+  --font-mono: 'Share Tech Mono', 'JetBrains Mono', ui-monospace, monospace;
+  --font-display: 'Share Tech Mono', ui-monospace, monospace;
+
+  --density-gap: 10px;
+  --bezel-radius: 2px;
+}
+
+[data-medium="cockpit"] body {
+  background: var(--surface-ground);
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+}
+
+[data-medium="cockpit"] [data-cockpit-bezel] {
+  background: var(--surface-bezel);
+  border: 1px solid var(--rule-hairline);
+  border-radius: var(--bezel-radius);
+  padding: 12px 14px;
+  position: relative;
+}
+
+[data-medium="cockpit"] [data-cockpit-bezel]::before,
+[data-medium="cockpit"] [data-cockpit-bezel]::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-color: var(--rule-bright);
+  border-style: solid;
+  top: -1px;
+}
+
+[data-medium="cockpit"] [data-cockpit-bezel]::before {
+  left: -1px;
+  border-width: 1px 0 0 1px;
+}
+
+[data-medium="cockpit"] [data-cockpit-bezel]::after {
+  right: -1px;
+  border-width: 1px 1px 0 0;
+}
+
+[data-medium="cockpit"] [data-cockpit-bezel][data-live="true"] {
+  box-shadow: var(--glow-live);
+}
+
+[data-medium="cockpit"] [data-cockpit-bezel][data-breached="true"] {
+  box-shadow: var(--glow-breach);
+  border-color: var(--state-breach);
+}

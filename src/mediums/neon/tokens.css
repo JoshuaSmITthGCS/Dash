@@ -1,0 +1,58 @@
+/* Neon — synthwave sign. Dark, saturated, glow reserved exclusively for breach. See DESIGN.md §2. */
+:root[data-medium="neon"] {
+  color-scheme: dark;
+
+  --ink-primary: #eafcff;
+  --ink-secondary: #9fb0c9;
+  --ink-faint: #8894b0; /* was #5c6a86 — 3.29:1 on --surface-panel, under WCAG AA's 4.5:1 text floor */
+
+  --surface-ground: #0d0a2e;
+  --surface-panel: #14103d;
+
+  --brand-cyan: #3ff0ff;
+  --brand-magenta: #ff3fd8;
+  --sun-band-lit: #ff9d3f;
+  --sun-band-dark: #241c4d;
+
+  --state-established: var(--brand-cyan);
+  --state-accumulating: #4a4470;
+  --state-breach: var(--brand-magenta);
+  --state-unavailable: #322c5c;
+
+  --rule-hairline: #6858b0; /* was #241c4d — 1.23:1 against --surface-ground, under the 3:1 graphical-contrast floor */
+
+  /* The ONE glow token in the theme. Applied only where state === 'breached'. */
+  --glow-breach: 0 0 10px rgba(255, 63, 216, 0.75), 0 0 2px rgba(255, 63, 216, 0.9);
+
+  --font-display: 'Share Tech Mono', ui-monospace, monospace;
+  --font-mono: 'Share Tech Mono', ui-monospace, monospace;
+
+  --scanline-opacity: 0.05;
+}
+
+[data-medium="neon"] body {
+  background: var(--surface-ground);
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  background-image: repeating-linear-gradient(0deg, rgba(255, 255, 255, var(--scanline-opacity)) 0px, transparent 1px, transparent 2px);
+}
+
+[data-medium="neon"] [data-neon-panel] {
+  background: var(--surface-panel);
+  border: 1px solid var(--rule-hairline);
+  border-radius: 3px;
+  padding: 12px 14px;
+}
+
+/* The only place box-shadow glow may ever be applied in this medium. */
+[data-medium="neon"] [data-neon-panel][data-breached="true"] {
+  box-shadow: var(--glow-breach);
+  border-color: var(--brand-magenta);
+}
+
+[data-medium="neon"] [data-neon-hero] {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  -webkit-text-stroke: 1px var(--brand-cyan);
+  color: var(--surface-ground);
+}

@@ -95,7 +95,7 @@ recorded.
 | id | displayName | calculationSite | renderSites | frequency | sampleSource | isDuplicateRenderOf | proposedGroup |
 |---|---|---|---|---|---|---|---|
 | strategy_return_twr | Strategy return (time-weighted) | `portfolioAnalytics.js:225-301` | `PortfolioReturnSummary.jsx:9-13`; `Portfolio.jsx:578-583` | point-in-time over dated flows | recorded account snapshots and settled flows | — | Return & Compounding |
-| money_weighted_xirr | Your return (money-weighted) | `portfolioAnalytics.js:303-403` | `PortfolioReturnSummary.jsx:14-18` | point-in-time over dated flows | holdings, purchase dates, cash flows | — | Return & Compounding |
+| money_weighted_xirr | Your return (money-weighted) | `portfolioAnalytics.js:303-403` | `Performance.jsx:219-224`, `PortfolioScreen.jsx:351-356` | point-in-time over dated flows | holdings, purchase dates, cash flows | — | Return & Compounding |
 | portfolio_score | Portfolio Score | `portfolioAnalytics.js:986-995` | `Portfolio.jsx:585-590` | point | six portfolio component scores | — | Exposure & Construction |
 | versus_sp500_return | Vs S&P 500 | `portfolioPerformance.js:108-153` | `Portfolio.jsx:591-603` | position-window | purchase-date matched holdings vs SPY | — | Relative Performance |
 | annualized_return | Annualized return | `portfolioAnalytics.js:900-902,931` | calculated but not rendered in Standard Measures | irregular/daily-labelled | selected current-holdings series | — | Return & Compounding |

@@ -42,4 +42,49 @@ export default [
     files: ['src/lib/fidelityConnectorStub.js'],
     rules: { 'no-unused-vars': ['error', { args: 'none' }] },
   },
+  {
+    // The twelve-medium rebuild's 0f rule: `core/screens/*` compose exclusively from
+    // `manifest.components` + `WallLabel` + the renderer + data hooks — never from the
+    // pre-existing `src/pages/*` or top-level `src/components/*`. Classic (DESIGN.md §12) is
+    // the sole, deliberate exception — it's the only medium permitted to reuse those existing
+    // files, which is exactly why it's excluded here rather than the rule not existing at all.
+    // The three-`../`-levels patterns match the literal relative-import depth every medium
+    // subfolder (`components/`, `nav/`, `entry/`, `renderer/`) sits at from `src/`; a medium's
+    // own local `./components/*` or `../components/*` import never matches this shape.
+    files: ['src/mediums/**/*.{js,jsx}'],
+    ignores: ['src/mediums/classic/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          { group: ['../../../pages/*', '../../../../pages/*'], message: 'Only src/mediums/classic/** may import from src/pages/** (DESIGN.md §12 — the isolated Classic port).' },
+          { group: ['../../../components/*', '../../../../components/*'], message: 'Only src/mediums/classic/** may import from the top-level src/components/** (DESIGN.md §12 — the isolated Classic port). A medium\'s own src/mediums/<id>/components/* is unaffected.' },
+        ],
+      }],
+    },
+  },
+  {
+    // Phase 3 harness determinism rule: `networkidle`/`waitForTimeout` are both banned under
+    // tests/e2e/** (the rebuild plan's own instruction) — neither actually promises the fonts
+    // and data a numeral-legibility or visual-regression assertion reads are done settling.
+    // Every spec waits on `[data-app-ready="true"]` (`tests/e2e/utils/mockData.mjs`'s
+    // `waitForAppReady`) instead.
+    files: ['tests/e2e/**/*.{js,mjs}'],
+    languageOptions: { globals: { ...globals, process: 'readonly' } },
+    rules: {
+      'no-restricted-syntax': ['error',
+        {
+          selector: "CallExpression[callee.property.name='waitForTimeout']",
+          message: 'waitForTimeout is banned in tests/e2e/** — wait on [data-app-ready="true"] via waitForAppReady() instead.',
+        },
+        {
+          selector: "CallExpression[callee.property.name='waitForLoadState'] > Literal[value='networkidle']",
+          message: "waitForLoadState('networkidle') is banned in tests/e2e/** — wait on [data-app-ready=\"true\"] via waitForAppReady() instead.",
+        },
+        {
+          selector: "Property[key.name='waitUntil'] > Literal[value='networkidle']",
+          message: "goto's waitUntil: 'networkidle' is banned in tests/e2e/** — wait on [data-app-ready=\"true\"] via waitForAppReady() instead.",
+        },
+      ],
+    },
+  },
 ]

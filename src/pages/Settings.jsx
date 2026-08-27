@@ -1,12 +1,20 @@
 import { useState } from 'react'
-import { ACCENTS, DEFAULT_WIDGETS, usePreferences } from '../lib/PreferencesContext.jsx'
+import { ACCENTS, DEFAULT_PREFERENCES, DEFAULT_WIDGETS, PREFERENCES_KEY, usePreferences, validatePreferences } from '../lib/PreferencesContext.jsx'
 import Icon from '../components/Icons.jsx'
 import { BENCHMARKS } from '../lib/portfolioAnalytics.js'
 import { calculateAge, RETIREMENT_AGES } from '../lib/age.js'
+import { getAllMediumMeta } from '../mediums/registry.js'
+import MediumTryPreview from './MediumTryPreview.jsx'
 
-const Choice = ({ active, children, onClick, preview }) => (
+// `preview` (a CSS-swatch classname, e.g. "dark") and `previewNode` (an arbitrary live-rendered
+// React node, e.g. MediumTryPreview) are separate props rather than one overloaded slot — the
+// Appearance section's theme-mode swatch is intentionally the cheap CSS-only device, and "Try a
+// new look" needs the real thing; keeping them distinct means neither call site has to know
+// which kind the other one passes.
+const Choice = ({ active, children, onClick, preview, previewNode }) => (
   <button type="button" className={`setting-choice${active ? ' active' : ''}`} aria-pressed={active} onClick={onClick}>
     {preview && <span className={`theme-preview ${preview}`} aria-hidden="true"><i /><i /><i /></span>}
+    {previewNode}
     <span>{children}</span>
   </button>
 )
@@ -55,6 +63,22 @@ export default function Settings() {
     setAnnouncement('Financial Report reset to defaults.')
   }
 
+  // Writes the medium preference to localStorage directly, then hard-navigates — never through
+  // `updatePreferences` + an immediate navigate, since that setter's own localStorage write
+  // happens inside a `useEffect` a render later, and a hard reload right after calling it can
+  // beat that write (the medium picked here would silently not stick). `/v2` is a structurally
+  // different root (`src/main.jsx`'s bootstrap picks it by pathname), so a client-side route
+  // change wouldn't load it anyway — the hard reload is required, not just a safety margin.
+  const tryMedium = (mediumId) => {
+    let current
+    try { current = JSON.parse(localStorage.getItem(PREFERENCES_KEY)) } catch { current = null }
+    const next = validatePreferences({ ...(current || DEFAULT_PREFERENCES), medium: mediumId })
+    try { localStorage.setItem(PREFERENCES_KEY, JSON.stringify(next)) } catch { /* storage can be unavailable */ }
+    window.location.assign('/v2')
+  }
+
+  const previewMediums = getAllMediumMeta().filter((medium) => medium.shipAtLaunch && medium.id !== 'classic')
+
   return <div className="settings-page">
     <header className="page-head compact-page-head">
       <div><span className="eyebrow">Personalize ValueSignal</span><h1 className="page-title">Settings</h1><p className="page-sub">Appearance and data presentation stay on this device.</p></div>
@@ -78,6 +102,17 @@ export default function Settings() {
       <SelectRow id="surface-style" label="Surface style" description="Outlined is the default wireframe treatment." value={preferences.surfaceStyle} onChange={(surfaceStyle) => updatePreferences({ surfaceStyle })}><option value="outlined">Outlined</option><option value="soft">Soft</option><option value="elevated">Elevated</option></SelectRow>
       <SelectRow id="corner-style" label="Corner style" value={preferences.cornerStyle} onChange={(cornerStyle) => updatePreferences({ cornerStyle })}><option value="compact">Compact</option><option value="rounded">Rounded</option><option value="extra-rounded">Extra rounded</option></SelectRow>
       <SelectRow id="density" label="Interface density" description="Touch targets always remain at least 44px." value={preferences.density} onChange={(density) => updatePreferences({ density })}><option value="compact">Compact</option><option value="comfortable">Comfortable</option><option value="spacious">Spacious</option></SelectRow>
+    </section>
+
+    <section className="settings-card" aria-labelledby="medium-heading">
+      <header><div><span className="settings-icon"><Icon name="sync" /></span><div><h2 id="medium-heading">Try a new look</h2><p>Preview ValueSignal's data in a different visual medium. Every medium shows the same data — only the presentation changes. You can switch back at any time.</p></div></div></header>
+      <div className="settings-block">
+        <div className="theme-options">
+          {previewMediums.map((medium) => (
+            <Choice key={medium.id} active={false} onClick={() => tryMedium(medium.id)} previewNode={<MediumTryPreview mediumId={medium.id} />}>{medium.label}</Choice>
+          ))}
+        </div>
+      </div>
     </section>
 
     <section className="settings-card" aria-labelledby="dashboard-heading">

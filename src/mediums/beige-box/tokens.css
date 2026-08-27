@@ -1,0 +1,108 @@
+/* Beige Box — mid-90s desktop. Warm-grey plastic, hard 1-2px bevels, never soft shadows. See DESIGN.md §10. */
+:root[data-medium="beige-box"] {
+  color-scheme: light;
+
+  --ink-primary: #1e1c18;
+  --ink-secondary: #4a453c;
+  --ink-faint: #8a8374;
+
+  --surface-plastic: #d9d3c4;
+  --surface-window: #ece7d8;
+  --surface-phosphor: #16221a;
+  --surface-phosphor-ink: #7fd98a;
+
+  --bevel-highlight: #f4f0e6;
+  --bevel-shadow: #8a8374;
+
+  --state-established: var(--ink-primary);
+  --state-accumulating: var(--ink-faint);
+  --state-breach: #c23b2e;
+  /* #b3ac9c measured 1.51:1 against --surface-plastic — the named risk in DESIGN.md §10
+     ("beige-on-beige contrast failing easily... no pair ships on assumption") caught for real
+     by Phase 3's rules.spec.mjs #13. This clears 5.17:1 against --surface-plastic and 6.24:1
+     against --surface-window, both above the 4.5:1 WCAG AA floor. */
+  --state-unavailable: #58524a;
+
+  /* Same #b3ac9c risk named above — 1.51:1 against --surface-plastic, under even the 3:1
+     graphical-contrast floor a11y.spec.mjs's chart-ink check applies to axis/gridlines. */
+  --rule-hairline: #726a5a;
+
+  --font-display: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+[data-medium="beige-box"] body {
+  background: var(--surface-plastic);
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+}
+
+/* Hard 1-2px bevel geometry — extracted pattern, never the whole library. Never a soft/blurred
+   shadow: two flat inset lines only. */
+[data-medium="beige-box"] [data-beige-bevel] {
+  background: var(--surface-plastic);
+  border: 1px solid var(--bevel-shadow);
+  box-shadow: inset 1px 1px 0 var(--bevel-highlight), inset -1px -1px 0 var(--bevel-shadow);
+}
+
+[data-medium="beige-box"] [data-beige-bevel][data-pressed="true"] {
+  box-shadow: inset -1px -1px 0 var(--bevel-highlight), inset 1px 1px 0 var(--bevel-shadow);
+}
+
+[data-medium="beige-box"] [data-beige-window] {
+  background: var(--surface-window);
+  border: 1px solid var(--bevel-shadow);
+  box-shadow: inset 1px 1px 0 var(--bevel-highlight), 2px 2px 0 var(--bevel-shadow);
+  padding: 0;
+}
+
+[data-medium="beige-box"] [data-beige-window][data-breached="true"] {
+  border-color: var(--state-breach);
+}
+
+[data-medium="beige-box"] [data-beige-titlebar] {
+  background: var(--ink-primary);
+  color: var(--surface-window);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+[data-medium="beige-box"] [data-beige-body] {
+  padding: 10px 12px;
+}
+
+[data-medium="beige-box"] [data-beige-disabled="true"] {
+  color: var(--state-unavailable);
+  border-color: var(--state-unavailable);
+  box-shadow: none;
+}
+
+/* Dotted focus rectangle — the layout-rhythm signature, never an outline-less focus state. */
+[data-medium="beige-box"] [data-beige-bevel]:focus-visible,
+[data-medium="beige-box"] [data-beige-window]:focus-visible {
+  outline: 1px dotted var(--ink-primary);
+  outline-offset: 2px;
+}
+
+[data-medium="beige-box"] [data-beige-statusbar] {
+  background: var(--surface-plastic);
+  border-top: 1px solid var(--bevel-shadow);
+  box-shadow: inset 1px 1px 0 var(--bevel-highlight);
+  font-size: 11px;
+  color: var(--ink-secondary);
+  padding: 4px 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  position: sticky;
+  bottom: 0;
+}
+
+[data-medium="beige-box"] [data-beige-phosphor] {
+  background: var(--surface-phosphor);
+  color: var(--surface-phosphor-ink);
+}

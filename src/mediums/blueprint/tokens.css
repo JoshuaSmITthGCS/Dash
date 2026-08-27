@@ -1,0 +1,55 @@
+/* Blueprint — engineering drawing. Deep indigo drafting-table blue, cyan-white hairlines. See DESIGN.md §6. */
+:root[data-medium="blueprint"] {
+  color-scheme: dark;
+
+  --ink-primary: #eaf6ff;
+  --ink-faint: #6f93ad;
+
+  --surface-ground: #0b1e33;
+  --surface-panel: #0f2740;
+
+  --rule-cyan: #7fd4ff;
+  --state-breach: #ff6b57;
+  --grid-construction: #132a44;
+
+  --state-established: var(--ink-primary);
+  --state-accumulating: var(--rule-cyan);
+  --state-unavailable: var(--ink-faint);
+
+  --font-display: 'Space Grotesk', 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+[data-medium="blueprint"] body {
+  background: var(--surface-ground);
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  background-image: linear-gradient(var(--grid-construction) 1px, transparent 1px), linear-gradient(90deg, var(--grid-construction) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+[data-medium="blueprint"] [data-bp-sheet] {
+  background: transparent;
+  border: 1px solid var(--rule-cyan);
+  padding: 10px 12px;
+  position: relative;
+}
+
+[data-medium="blueprint"] [data-bp-sheet][data-breached="true"] {
+  border-color: var(--state-breach);
+}
+
+[data-medium="blueprint"] [data-bp-zone-mark] {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+}
+
+[data-medium="blueprint"] [data-bp-titleblock] {
+  border: 1px solid var(--rule-cyan);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 8px 10px;
+}
