@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useData } from '../../../lib/useData.js'
 import { useMedium } from '../MediumContext.jsx'
 import { useRenderer } from '../useRenderer.js'
@@ -16,6 +16,33 @@ const HomePortfolioPanel = lazy(() => import('./HomePortfolioPanel.jsx'))
 
 function PortfolioHeroFallback({ Skeleton }) {
   return Skeleton ? <Skeleton /> : <div role="status" aria-live="polite">Loading…</div>
+}
+
+/**
+ * `lazy()` alone only defers WHEN `HomePortfolioPanel.jsx`'s import (and the Firebase SDK weight
+ * behind it) starts — not how long it takes. Mounting it unconditionally inside a `<Suspense>`
+ * still fires that import on Home's very first render, same tick as everything else. Under
+ * resource contention (several browsers/workers running concurrently, as `budget.spec.mjs` does),
+ * that fetch can finish before `data-app-ready` fires (gated on `document.fonts.ready`, unrelated
+ * to this fetch) and gets counted in the cold-load budget — this is exactly the contingency named
+ * in Phase 4a's original plan ("if budget.spec.mjs still fails after making it lazy, gate the
+ * mount behind requestIdleCallback"), observed as an intermittent budget.spec.mjs failure during
+ * Phase 5's consolidation (passed in isolation, failed only under concurrent `--workers` load).
+ * `requestIdleCallback` defers the mount (and therefore the import) until the browser is
+ * genuinely idle after Home's own first paint — the same pattern `App.jsx`'s own idle-preload
+ * effect already uses — so a fast cold load reliably snapshots before this fetch has even begun.
+ */
+function useMountWhenIdle() {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(() => setReady(true), { timeout: 2500 })
+      return () => window.cancelIdleCallback(id)
+    }
+    const id = window.setTimeout(() => setReady(true), 300)
+    return () => window.clearTimeout(id)
+  }, [])
+  return ready
 }
 
 // figure.home.top-signal — the highest-scoring published company, report.json only (no
@@ -197,6 +224,7 @@ export default function HomeScreen() {
   const { data: researchEvidence } = useData('validation/research_evidence.json')
   const { data: etfData, loading: etfLoading } = useData('etfs.json')
   const { data: insideInformation, loading: insideInformationLoading } = useData('screens/inside-information.json')
+  const portfolioPanelReady = useMountWhenIdle()
 
   const promotion = promotionDisclosure(researchEvidence)
   const artifactState = canonicalArtifactState(report ? { status: 'success' } : null)
@@ -215,9 +243,13 @@ export default function HomeScreen() {
 
   return (
     <div data-screen="home">
-      <Suspense fallback={<PortfolioHeroFallback Skeleton={Skeleton} />}>
-        <HomePortfolioPanel report={report} />
-      </Suspense>
+      {portfolioPanelReady ? (
+        <Suspense fallback={<PortfolioHeroFallback Skeleton={Skeleton} />}>
+          <HomePortfolioPanel report={report} />
+        </Suspense>
+      ) : (
+        <PortfolioHeroFallback Skeleton={Skeleton} />
+      )}
 
       {/* First-viewport item 3: the live evidence/provenance strip */}
       <Container {...cap(HOME_IDS.provenanceStrip)}>
