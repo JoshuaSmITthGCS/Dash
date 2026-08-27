@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useData } from '../../../lib/useData.js'
 import { useMedium } from '../MediumContext.jsx'
-import { canonicalArtifactState } from '../states.js'
+import { canonicalArtifactState, confidenceOf } from '../states.js'
 import { cap } from '../capability.js'
 import { SCREENS_IDS } from './capabilityIds.js'
+import { useRenderer } from '../useRenderer.js'
 import { AuthProvider as FirebaseAuthProvider } from '../../../lib/FirebaseAuthContext.jsx'
 import { useStockDetail } from '../useStockDetail.js'
 import StockDetailSheet from './StockDetailSheet.jsx'
@@ -727,7 +728,26 @@ function OptionsRecipe({ manifest, data, searchParams, setParam }) {
 // 9d — Generic ResearchScreen family: momentum, quality-value, earnings timeliness, matrix
 // =================================================================================================
 
+// Structural-vs-tactical is the axis pair every generic recipe's rows carry (momentum,
+// quality-value, earnings-timeliness, structural-tactical all publish structural_score/
+// tactical_score). Tone follows the model's own classification, not a re-derived threshold —
+// copied verbatim from the legacy src/pages/ResearchScreen.jsx, which this medium may not import.
+const CLASSIFICATION_TONE = {
+  'high-conviction candidate': 'high', 'quality company, wait': 'watch',
+  'tactical-only candidate': 'neutral', avoid: 'cool',
+}
+const CLASSIFICATION_LEGEND = [
+  { tone: 'high', label: 'High-conviction candidate' }, { tone: 'watch', label: 'Quality company, wait' },
+  { tone: 'neutral', label: 'Tactical-only candidate' }, { tone: 'cool', label: 'Avoid' },
+]
+function median(values) {
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+}
+
 function GenericRecipe({ manifest, recipe, data, searchParams, setParam }) {
+  const renderer = useRenderer()
   const sector = searchParams.get('sector') || 'all'
   const cap_ = searchParams.get('cap') || 'all'
   const confidence = Number(searchParams.get('confidence') || 0)
@@ -765,12 +785,41 @@ function GenericRecipe({ manifest, recipe, data, searchParams, setParam }) {
 
   return (
     <>
-      {recipe === 'matrix' && (
-        <p role="note">
-          Structural-vs-tactical quadrant scatter is deferred here — it needs the full per-medium chart-renderer contract
-          (`manifest.loadRenderer()`, twelve implementations); the filter panel and table below are fully live.
-        </p>
-      )}
+      {(() => {
+        const scatterRows = rows.filter((row) => row.structural_score != null && row.tactical_score != null)
+        if (!scatterRows.length || !renderer) return null
+        const structuralMedian = median(scatterRows.map((row) => row.structural_score))
+        const tacticalMedian = median(scatterRows.map((row) => row.tactical_score))
+        return (
+          <div {...cap('chart.screens.generic-quadrant-scatter')} aria-label="Structural versus tactical score">
+            {renderer.scatter({
+              metricId: `screens-${recipe}-quadrant-scatter`,
+              series: scatterRows.map((row) => ({
+                x: row.structural_score, y: row.tactical_score,
+                tone: CLASSIFICATION_TONE[row.classification], label: row.ticker, id: row.ticker,
+              })),
+              domain: null, unit: '',
+              thresholds: [
+                { value: structuralMedian, label: 'Median structural', kind: 'band', axis: 'x' },
+                { value: tacticalMedian, label: 'Median tactical', kind: 'band', axis: 'y' },
+              ],
+              annotations: [],
+              state: canonicalArtifactState(data),
+              confidence: confidenceOf({}),
+              ariaLabel: 'Structural score versus tactical score, one point per name, split at the median of each',
+              width: 480, height: 360,
+              // Extra fields beyond CHART_COMMON_PROP_KEYS — Classic's scatter() renderer forwards
+              // these to ScatterChartImpl (a real, already-tested component that natively supports
+              // them); the other 11 mediums' scatter() functions ignore unknown keys harmlessly for
+              // now (a documented trade-off, not a bug — cross-medium tone-color parity is a future
+              // item).
+              quadrant: { x: structuralMedian, y: tacticalMedian },
+              legend: CLASSIFICATION_LEGEND,
+              xLabel: 'Structural', yLabel: 'Tactical',
+            })}
+          </div>
+        )
+      })()}
 
       <div {...cap('control.screens.generic-filters')}>
         <label>Sector<select value={sector} onChange={(event) => setParam('sector', event.target.value)}>

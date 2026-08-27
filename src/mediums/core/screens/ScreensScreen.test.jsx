@@ -12,7 +12,7 @@ vi.mock('../../../lib/useData.js', async (importOriginal) => ({ ...(await import
 // bare `{ components: {} }` manifest crashed every test here with "manifest.loadRenderer is not
 // a function" even when no ?ticker= was ever set, because useRenderer's own effect always fires.
 const fakeChart = vi.fn(({ metricId }) => <svg data-testid="fake-chart" data-metric-id={metricId} />)
-const fakeRenderer = { dial: fakeChart, bar: fakeChart, profile: fakeChart, waterfall: fakeChart, line: fakeChart }
+const fakeRenderer = { dial: fakeChart, bar: fakeChart, profile: fakeChart, waterfall: fakeChart, line: fakeChart, scatter: fakeChart }
 const fakeManifest = { components: {}, loadRenderer: () => Promise.resolve(fakeRenderer) }
 
 function renderScreens(path) {
