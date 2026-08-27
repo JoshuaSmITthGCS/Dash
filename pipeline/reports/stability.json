@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 82,
+  "refreshes_observed": 83,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -16590,6 +16590,119 @@
       "mean_abs_score_delta": 0.26,
       "mean_abs_confidence_delta": 0.0,
       "largest_availability_driven_movers": []
+    },
+    {
+      "previous_refresh": "advisor-2026-08-26T22:02:11.541956+00:00",
+      "current_refresh": "advisor-2026-08-27T19:32:16.279873+00:00",
+      "shared_tickers": 878,
+      "rank_turnover": {
+        "top_40": 0.075,
+        "top_100": 0.075
+      },
+      "tickers_with_availability_driven_change": 10,
+      "tickers_with_availability_driven_change_pct": 0.011,
+      "mean_abs_score_delta": 0.29,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "RLI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -11.4,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "DDS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -4.0,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -3.6,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "UEC",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_book",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 2.9,
+          "confidence_delta": 0.05
+        },
+        {
+          "ticker": "DCI",
+          "metrics_with_value_change": [
+            "debt_to_equity",
+            "earnings_growth"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -2.5,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "SNX",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 2.0,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -1.3,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "WDC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -0.8,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "BBY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -0.6,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "MU",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 0.5,
+          "confidence_delta": 0.03
+        }
+      ]
     }
   ],
   "peer_group_recomposition": {
