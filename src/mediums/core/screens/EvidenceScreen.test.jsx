@@ -284,7 +284,7 @@ describe('EvidenceScreen methodology section', () => {
     expect(container.querySelector('[data-testid="weight-stack"]')).toHaveTextContent('60% fundamentals')
     expect(container.querySelector('[data-testid="weight-stack"]')).toHaveTextContent('30% behaviour')
     expect(container.querySelector('[data-capability-id="figure.evidence.methodology-version-card"]')).toHaveTextContent('1.2.3')
-    expect(container.querySelector('[data-capability-id="export.evidence.methodology-download-docs"]')).toBeInTheDocument()
+    expect(container.querySelector('[data-capability-id="export.evidence.methodology-docs"]')).toBeInTheDocument()
   })
 })
 

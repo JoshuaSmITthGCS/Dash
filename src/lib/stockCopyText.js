@@ -1,4 +1,4 @@
-import { resolvedMetricSections } from '../components/MetricSections.jsx'
+import { resolvedMetricSections } from './resolvedMetricSections.js'
 
 // One-button plain-text export of everything the stock detail sheet actually shows for a
 // company: identity, score, every resolved metric section (same filtering

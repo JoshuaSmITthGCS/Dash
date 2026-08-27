@@ -791,7 +791,7 @@ function MethodologySection({ data, loading, Container }) {
 
   return (
     <div data-testid="methodology-section">
-      <Container {...cap('export.evidence.methodology-download-docs')}>
+      <Container {...cap('export.evidence.methodology-docs')}>
         <button type="button" onClick={handleDownload}>Download full docs (.md)</button>
         {downloadStatus && <p role="status">{downloadStatus}</p>}
       </Container>
