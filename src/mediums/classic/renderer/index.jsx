@@ -73,8 +73,8 @@ function barTimeline({ values = [], ariaLabel }) {
   return <BarTimelineImpl points={points} yFormatter={ratio} caption={ariaLabel} />
 }
 
-function scatter({ series = [], ariaLabel }) {
-  return <ScatterChartImpl points={series} xFormatter={ratio} yFormatter={ratio} caption={ariaLabel} />
+function scatter({ series = [], ariaLabel, quadrant, legend, xLabel, yLabel }) {
+  return <ScatterChartImpl points={series} xFormatter={ratio} yFormatter={ratio} caption={ariaLabel} quadrant={quadrant} legend={legend} xLabel={xLabel} yLabel={yLabel} />
 }
 
 /** No generic allocation/composition primitive exists — a small new stacked bar using existing tokens. */
@@ -89,8 +89,8 @@ function composition({ values = [], width = 200, height = 24, ariaLabel }) {
   )
 }
 
-function heatmap({ values = [], ariaLabel }) {
-  const tickers = values.map((_, i) => `#${i + 1}`)
+function heatmap({ values = [], labels, ariaLabel }) {
+  const tickers = labels?.length === values.length ? labels : values.map((_, i) => `#${i + 1}`)
   return <CorrelationHeatmapImpl tickers={tickers} matrix={values} observations={values.length} caption={ariaLabel} />
 }
 

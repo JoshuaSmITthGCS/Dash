@@ -42,6 +42,7 @@ import prospectiveValidation from '../../../../pipeline/validation/harness_freez
 import { useMedium } from '../MediumContext.jsx'
 import { useRenderer } from '../useRenderer.js'
 import { canonicalArtifactState, confidenceOf } from '../states.js'
+import { fanChartCall, projectionArtifactState } from '../fanChart.js'
 import { cap } from '../capability.js'
 import WallLabel from '../WallLabel.jsx'
 import { PORTFOLIO_IDS } from './capabilityIds.js'
@@ -81,13 +82,6 @@ function currentPortfolioValue(positions, report) {
   }, 0)
 }
 
-/** Canonical artifact state for a client-computed Monte Carlo simulation, which has no `signal_metrics.json` row of its own. */
-function projectionArtifactState(loading, result, error) {
-  if (loading && !result) return canonicalArtifactState({ status: 'gated', disclaimer: 'Running the historical simulation off the main thread.' })
-  if (error || !result?.available) return canonicalArtifactState({ status: 'unavailable', degraded_reason: error || result?.reason || 'Unavailable.' })
-  return canonicalArtifactState({ status: 'success' })
-}
-
 function defaultGoalDate() {
   const date = new Date()
   date.setUTCFullYear(date.getUTCFullYear() + projectionConfig.goal_default_years)
@@ -96,24 +90,6 @@ function defaultGoalDate() {
 
 function successBand(probability) {
   return projectionConfig.success_bands.find((band) => probability >= band.minimum) || projectionConfig.success_bands.at(-1)
-}
-
-/** Shared `fan` (CHART_TYPES) call for a `simulateProjection()` result -- used by both the
- * Finances retirement tab and the Planning long-range outcome section. */
-function fanChartCall(renderer, result, { metricId, ariaLabel, state, confidence }) {
-  if (!renderer || !result?.fan?.length) return null
-  return renderer.fan({
-    metricId,
-    series: result.fan.map((point) => ({ x: point.year, p10: point.p10, p25: point.p25, median: point.p50, p75: point.p75, p90: point.p90 })),
-    unit: 'USD',
-    thresholds: [],
-    annotations: [],
-    state,
-    confidence,
-    ariaLabel,
-    width: 720,
-    height: 260,
-  })
 }
 
 export const PORTFOLIO_VIEWS = Object.freeze(['summary', 'performance', 'data', 'diversification', 'insights', 'finances', 'planning'])
