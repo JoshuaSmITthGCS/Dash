@@ -481,3 +481,101 @@ parity/renderer/a11y/motion/rules suite green except the three pre-existing docu
 (classic's axe violation, `check-metric-preservation.mjs`'s `money_weighted_xirr` gap — both
 predate this session); `visual.spec.mjs` 208/208 passing, fully stable (no flakes) after the fixes
 above.
+
+**Phase 5 — "connect the rest, also add a way to switch back to what i have now."** Closes the
+remaining known gaps from Phase 4b: the two still-unwired Screens recipes, Portfolio's three
+still-unported views, most of the chart-contract gap, and — new — a discoverable path into `/v2`
+and a labeled way back out, since neither existed before this phase (confirmed via a whole-tree
+grep: zero links/buttons/`navigate()` calls anywhere targeted `/v2`; `App.jsx`'s
+`NotFoundOrMedium` even had a code comment admitting it).
+
+**5a — establishing the chart-renderer pattern.** `manifest.loadRenderer()`/`chartContract.js` had
+existed since Phase 2b but was never called from a `core/screens/*` file — only from
+`E2EHarness.jsx`'s fixture route. Rather than fan out six agents to each independently discover an
+unproven contract (both real bugs in Phase 4b's consolidation came from full-harness/real-browser
+checks after a merge, not before — the same risk applied here with more force, since this contract
+had zero prior screen call-sites), one agent went first, alone: built `src/mediums/core/
+useRenderer.js` (a one-line `const renderer = useRenderer()` hook wrapping the async
+`manifest.loadRenderer()` load-once-per-medium dance) and wired `chart.markets.growth-chart` as
+the reference implementation, verified with a real browser (`pageerror` listening) across two
+mediums before calling it done. Its doc comment became the verbatim reference every Stage 1 agent
+was given. One real finding worth keeping: the contract's own doc language (`series | values`)
+doesn't specify each chart type's actual payload shape — `line`/`scatter` want `series: {x,y}[]`,
+`bar`/`dotPlot` want a flat `values` array — only discoverable by reading an actual per-medium
+renderer implementation, not the doc comment alone. Every subsequent agent hit and correctly
+resolved the same ambiguity by doing the same thing.
+
+**5b — six parallel agents, same split as Phase 4b, now against a proven chart pattern.**
+- **Screens**: both remaining recipes fully wired — `fast-growth` (11 rows, `report.json` +
+  `researchScreens.js`) and `themes` (14 rows, `advisor.json`'s `theme_screen` block +
+  `theme-peers.json` + the existing `useAdvisorRefresh` hook). Required restructuring the shell:
+  it previously gated every recipe on one `useData(RECIPE_FILES[recipe])` call, which would have
+  permanently blocked both recipes since neither maps to a single `screens/*.json` file — added a
+  `SELF_FETCHING_RECIPES` set so they own their own loading/unavailable states. All 12 Screens
+  recipe families are now wired.
+- **Portfolio**: all three remaining views fully wired — Insights (13 rows), Finances (25 rows, all
+  3 tabs), Planning (31 rows, same Monte Carlo worker and <400ms budget `Planning.jsx` already
+  uses). One correction the agent made against its own task brief: age/retirement inputs actually
+  come from `useFirebaseFinances()` (Firestore-backed), not `preferences.forecast` as the brief
+  suggested — the agent verified against the real reference implementation and the ledger's own
+  `dataSource` column rather than following a wrong note, which is exactly the kind of self-check
+  this process depends on.
+- **Home**: 7 more rows, including two real charts (`chart.home.growth-chart`,
+  `chart.home.allocation` via `CHART_TYPES.composition` per the ledger's own donut-retirement
+  note) and computed figures (action-needed, watchlist-preview, opportunity-cost,
+  performance-evidence-summary). Deferred: `chart.home.projection-panel` (needs the full
+  Dashboard.jsx Monte Carlo input chain, a standalone pass).
+- **Evidence**: the last two deferred rows closed — `chart.evidence.backtests-dotplots`,
+  `chart.evidence.shadow-scatter`.
+- **Research and Markets**: both reported nothing left in scope — Research has zero `chart.*` rows
+  in the ledger at all (its one visible chart, `chart.home.score-gauges`, is `moved` from Home and
+  keeps a `chart.home.*` id — worth a future ledger pass to make that ownership explicit), and
+  every `figure.*` row was already wired; Markets' entire §3 section (24 non-redirect rows,
+  including the growth chart from 5a) was already complete. Clean no-ops, not oversights.
+
+Deferred, not attempted: `chart.screens.generic-quadrant-scatter` and the 5 already-named Portfolio
+chart rows (Monte Carlo panel, scenario sensitivity, rolling-Sharpe, correlation heatmap,
+theme-exposure grid) — Screens/Portfolio's data-wiring priorities used the full budget, same
+honest-deferral discipline as Phase 4b.
+
+**5c — the switcher.** `src/pages/Settings.jsx` gained a "Try a new look" section listing the five
+`shipAtLaunch: true` mediums (gallery/ticker/newspaper/chalkboard/beige-box — the six
+`shipAtLaunch: false` mediums stay ungated from a real user's reach, respecting that existing
+registry flag rather than overriding it). Picking one writes the medium preference directly to
+`localStorage` before navigating — not through `updatePreferences()`, whose own write happens
+inside a `useEffect` a render later, which a hard reload to `/v2` immediately after can beat,
+silently discarding the pick (confirmed this matters with a real browser check, not just
+reasoning). `src/mediums/core/MediumShell.jsx` gained a small, neutrally-styled "← Back to Classic"
+button (`window.location.assign('/')`, hard reload — a client-side navigate can't reach `/`, a
+structurally different root `main.jsx`'s bootstrap only picks by pathname) in the main-content
+branch only, not the entry-page branch, since entry-having mediums already have their own
+skip/continue framing. It does not touch the `medium` preference — pure escape hatch, not a reset.
+Verified end-to-end with a real browser, both directions, for both a no-entry medium (ticker) and
+an entry-having one (gallery/newspaper, dismissed first): zero errors either way.
+
+**Two things found and fixed during consolidation** (same discipline as Phase 4b — full harness +
+real browser before declaring done, not just green unit tests):
+1. `budget.spec.mjs` intermittently failed under concurrent `--workers` load (newspaper: 531kB) —
+   passed cleanly every time in isolation, so a timing race, not a structural regression, but a
+   real one worth closing. `HomePortfolioPanel`'s `lazy()` boundary only deferred *when* its import
+   (and Firebase's SDK weight) started, not how long it took — mounting it unconditionally inside a
+   `<Suspense>` on Home's first render still fired that import in the same tick as everything else,
+   and under resource contention it could finish before `data-app-ready` fires (gated only on
+   `document.fonts.ready`) and get counted. This is the exact contingency Phase 4a's original plan
+   named up front but never needed until Home grew enough content this round to tip the race.
+   Fixed with a small `useMountWhenIdle()` hook (`requestIdleCallback`, mirroring `App.jsx`'s own
+   idle-preload pattern) gating the actual mount, not just the lazy import — verified stable across
+   3 repeated runs at the same concurrency that surfaced it.
+2. The new exit control renders on every `/v2` destination, so it alone invalidated every visual
+   baseline regardless of content changes — confirmed by reading an actual diff image for
+   `evidence-validation` (a section otherwise untouched this round) before regenerating anything,
+   rather than assuming. All 208 baselines regenerated and reconfirmed stable across two full
+   re-runs.
+
+**Still open, named rather than hidden**: the e2e fixture gap (`tests/e2e/fixtures/data/` ships 4
+of the now even more files the six screens fetch) grew rather than closed this round — a
+deliberate scope call (the user asked to connect the app, not extend test infrastructure), verified
+instead via 13 real-browser route×medium checks plus the switcher round trip, all zero errors. The
+generic-quadrant-scatter chart and the 5 named Portfolio chart rows remain deferred. Research's
+`chart.home.score-gauges` id-ownership question is a small future ledger cleanup, not a functional
+gap.

@@ -222,28 +222,36 @@ were moved (not regenerated) to confirm the fix reproduces byte-identical result
   Newspaper, Chalkboard, Beige Box, Gallery, Classic) exist, load, pass their own
   `manifest.test.jsx` suite, and render correctly in a real browser.
 - **Six core screens** (Home, Research, Screens, Portfolio, Markets, Evidence) are a real, working,
-  but still *partial* slice — Phase 4b's six-agent fan-out (NOTES.md has the full account) took
-  this well past the original Phase 2a proof-of-pattern: Home +14 rows, Research +44, Screens +87
-  of ~117 (7 of 12 recipe families; `fast-growth`/`themes` still unwired), Portfolio +124 across
-  all 7 views (its ~109 metric rows are the bulk of it), Markets +23 of 25, Evidence +47 completing
-  backtests/shadow/methodology/glossary (validation was already done). Every capabilityId used was
+  and now *largely complete* slice — Phase 4b's six-agent fan-out plus Phase 5's follow-up round
+  (NOTES.md has the full account of both) took this well past the original Phase 2a
+  proof-of-pattern. All 12 Screens recipe families are wired (including `fast-growth`/`themes`,
+  closed in Phase 5). All 7 Portfolio views are wired (Insights/Finances/Planning closed in Phase
+  5). The chart-renderer contract (`manifest.loadRenderer()`) is now in real use from screen
+  call-sites for the first time (`src/mediums/core/useRenderer.js`, Phase 5a) — Home, Markets, and
+  Evidence's chart rows are wired through it; Research and Markets independently confirmed nothing
+  is left unwired in their own ledger sections. Every capabilityId used across both rounds was
   independently cross-checked against `scripts/ledger-ids.json` after the fact — zero hallucinated.
-  Still not wired: `fast-growth`/`themes` recipes, Portfolio's Insights/Finances/Planning views
-  beyond an honest loading floor, and most `figure`/`chart` rows needing the full per-medium
-  renderer contract (deliberately deferred everywhere, not faked).
+  Still not wired: `chart.screens.generic-quadrant-scatter` and 5 named Portfolio chart rows
+  (Monte Carlo panel, scenario sensitivity, rolling-Sharpe, correlation heatmap, theme-exposure
+  grid) — deliberately deferred, not faked, same discipline both rounds.
+- **A discoverable path in and out of `/v2`** (Phase 5c) — Settings gained a "Try a new look"
+  picker (the five `shipAtLaunch` mediums) and `MediumShell.jsx` gained a labeled "Back to Classic"
+  exit control. Neither existed before Phase 5; there was previously no UI anywhere that linked
+  into `/v2` at all.
 - **`/e2e-harness/:mediumId`** mounts one medium's real `WallLabel`/`LabelFrame`/renderer against
   fixed fixtures — it's what let the renderer/rules/a11y/motion assertions inspect real contract
   compliance without waiting on the larger page-composition effort the six screens still need.
 
 ## What's not done (named, not hidden)
 
-1. **Ledger coverage.** Substantially larger after Phase 4b (NOTES.md) but still not complete —
-   the `fast-growth`/`themes` screen recipes, most of Portfolio's Insights/Finances/Planning views,
-   and most `figure`/`chart` rows across every screen (needing the full per-medium renderer
-   contract) remain unwired. `parity.spec.mjs #1b`'s live DOM scan undercounts this badly, since
-   `tests/e2e/fixtures/data/` only ships 4 of the ~30 files the six screens now fetch — extending
-   the fixture set so the harness can actually exercise this is a real, named follow-up (NOTES.md),
-   not done here. This remains the largest true gate before cutover.
+1. **Ledger coverage.** Now substantially complete after Phase 4b + Phase 5 (NOTES.md) — all 12
+   Screens recipes and all 7 Portfolio views are wired; what remains is `chart.screens.
+   generic-quadrant-scatter` and 5 named Portfolio chart rows, deliberately deferred. `parity.spec.mjs
+   #1b`'s live DOM scan still undercounts what's real, since `tests/e2e/fixtures/data/` ships only 4
+   of the many files the six screens now fetch (this gap grew, not shrank, across Phase 5 — a
+   deliberate scope call, verified instead via direct real-browser checks) — extending the fixture
+   set so the harness can exercise this automatically is a real, named follow-up (NOTES.md), not
+   done here.
 2. **Visual baselines (#5) generated, not yet re-verified in the pinned container.** See
    "Baseline provenance" above — a real gap only in the sense that CI's exact pixels haven't
    confirmed these locally-generated ones yet, not in the sense that the work is undone.
@@ -264,9 +272,11 @@ were moved (not regenerated) to confirm the fix reproduces byte-identical result
 Do not cut over yet. Fifteen of sixteen assertions are green or hold their documented exception;
 the last (#16 budget) is now green for eleven of twelve mediums — only Classic-as-a-medium remains
 over, for a small, named, pre-existing CSS reason unrelated to the Firebase fix this pass closed.
-Ledger coverage is now substantial (Phase 4b, NOTES.md) but still incomplete — the unwired recipes,
-Portfolio's remaining three views, and most chart-class rows across every screen remain the largest
-true gate and the actual next phase of work, alongside extending the e2e fixture set so the harness
-itself can verify that coverage automatically instead of relying on manual spot-checks.
+Ledger coverage is now largely complete (Phase 4b + Phase 5, NOTES.md) — every Screens recipe and
+every Portfolio view is wired; what remains is a small, named set of chart-class rows deliberately
+deferred (`chart.screens.generic-quadrant-scatter` and 5 Portfolio chart rows). Extending the e2e
+fixture set so the harness can verify this coverage automatically (rather than the direct
+real-browser spot-checks this session relied on) is the actual next piece of work, alongside those
+five remaining charts.
 Before treating visual regression as fully trustworthy in CI, trigger `update-baselines.yml` once to
 confirm the pinned-container pixels match these locally-generated ones closely enough to keep.
