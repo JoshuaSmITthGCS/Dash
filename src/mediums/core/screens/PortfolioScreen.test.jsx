@@ -3,25 +3,73 @@ import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import PortfolioScreen from './PortfolioScreen.jsx'
 import { MediumProvider } from '../MediumContext.jsx'
+import { PreferencesProvider } from '../../../lib/PreferencesContext.jsx'
 import { useData } from '../../../lib/useData.js'
 import { useFirebasePortfolio } from '../../../lib/useFirebasePortfolio.js'
+import { usePortfolioTracking } from '../../../lib/usePortfolioTracking.js'
+import { useFirebaseFinances } from '../../../lib/useFirebaseFinances.js'
+import { useAuth } from '../../../lib/FirebaseAuthContext.jsx'
 
 vi.mock('../../../lib/useData.js', async (importOriginal) => ({ ...(await importOriginal()), useData: vi.fn() }))
 vi.mock('../../../lib/useFirebasePortfolio.js', () => ({ useFirebasePortfolio: vi.fn() }))
+vi.mock('../../../lib/usePortfolioTracking.js', () => ({ usePortfolioTracking: vi.fn() }))
+vi.mock('../../../lib/useFirebaseFinances.js', () => ({ useFirebaseFinances: vi.fn() }))
+// The real `AuthProvider` (which `PortfolioScreen` wraps its content in, per the standing hard
+// rule -- see the module's own comment) makes a real Firebase/solo-session round trip. Mocking
+// the module lets tests control `currentUser` without touching that wrapper.
+vi.mock('../../../lib/FirebaseAuthContext.jsx', () => ({
+  AuthProvider: ({ children }) => children,
+  useAuth: vi.fn(),
+}))
 
-const fakeManifest = { components: {} }
+const fakeChart = vi.fn(({ metricId }) => <svg data-testid="fake-chart" data-metric-id={metricId} />)
+const fakeRenderer = { line: fakeChart, bar: fakeChart, dial: fakeChart, fan: fakeChart, profile: fakeChart }
+const fakeManifest = { components: {}, loadRenderer: () => Promise.resolve(fakeRenderer) }
+
+const reportFixture = { generated_at: '2026-08-25', research: [], screen_universe: [], portfolio_coverage: [] }
+const financesSettingsFixture = {
+  schemaVersion: 3, currentAge: 30, retireAge: 65, inflationPct: 2.5, monthlyContribution: 500, currentSavings: 10000,
+  retirementEndAge: 95, monthlyWithdrawal: 3000, allocationAggressiveness: 'growth', planningAnnualReturnTargetPct: 15,
+  coastFireEnabled: false,
+}
+
+function financesFixture(overrides = {}) {
+  return {
+    settings: financesSettingsFixture, budgetItems: [], pools: [], accounts: [], goals: [], loading: false,
+    updateSettings: vi.fn(), addBudgetItem: vi.fn(), removeBudgetItem: vi.fn(), addPool: vi.fn(), removePool: vi.fn(),
+    depositToPools: vi.fn(), addAccount: vi.fn(), removeAccount: vi.fn(), updateAccountContribution: vi.fn(),
+    addGoal: vi.fn(), removeGoal: vi.fn(), ...overrides,
+  }
+}
+
+function trackingFixture(overrides = {}) {
+  return {
+    snapshots: [], activities: [], rebalances: [], trackingState: null, error: '',
+    recordSnapshot: vi.fn(), recordActivity: vi.fn(), setLedgerComplete: vi.fn(), recordRebalance: vi.fn(), ...overrides,
+  }
+}
+
+function dataForFile(file) {
+  if (file === 'benchmark-report.json') return { data: { histories: {} }, loading: false }
+  return { data: reportFixture, loading: false }
+}
 
 function renderPortfolio(path = '/v2/portfolio') {
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <MediumProvider value={fakeManifest}><PortfolioScreen /></MediumProvider>
+      <PreferencesProvider>
+        <MediumProvider value={fakeManifest}><PortfolioScreen /></MediumProvider>
+      </PreferencesProvider>
     </MemoryRouter>
   )
 }
 
 describe('PortfolioScreen', () => {
   beforeEach(() => {
-    useData.mockReturnValue({ data: { generated_at: '2026-08-25', research: [], screen_universe: [], portfolio_coverage: [] }, loading: false })
+    useData.mockImplementation(dataForFile)
+    usePortfolioTracking.mockReturnValue(trackingFixture())
+    useFirebaseFinances.mockReturnValue(financesFixture())
+    useAuth.mockReturnValue({ currentUser: { uid: 'test-user' }, userProfile: {}, loading: false, authError: '', retryAuth: vi.fn() })
   })
 
   it('shows the no-positions empty state', () => {
@@ -54,6 +102,19 @@ describe('PortfolioScreen', () => {
     expect(container.querySelector('[data-capability-id="nav.portfolio.sub-tabs"]')).toBeInTheDocument()
     expect(container.querySelector('[data-capability-id="disclosure.portfolio.firebase-sync-pill"]')).toBeInTheDocument()
     expect(container.querySelector('[data-capability-id="disclosure.portfolio.hold-not-shown"]')).toBeInTheDocument()
+  })
+
+  it('insights view: shows the loading state while unauthenticated', () => {
+    useAuth.mockReturnValue({ currentUser: null, userProfile: {}, loading: true, authError: '', retryAuth: vi.fn() })
+    useFirebasePortfolio.mockReturnValue({ positions: [], loading: false })
+    const { container } = renderPortfolio('/v2/portfolio?view=insights')
+    expect(container.querySelector('[data-capability-id="state.insights.loading"]')).toBeInTheDocument()
+  })
+
+  it('insights view: shows the no-holdings state once authenticated', () => {
+    useFirebasePortfolio.mockReturnValue({ positions: [], loading: false })
+    const { container } = renderPortfolio('/v2/portfolio?view=insights')
+    expect(container.querySelector('[data-capability-id="state.insights.no-holdings"]')).toBeInTheDocument()
   })
 
   describe('with holdings', () => {
@@ -96,7 +157,7 @@ describe('PortfolioScreen', () => {
             loading: false,
           }
         }
-        return { data: { generated_at: '2026-08-25', research: [], screen_universe: [], portfolio_coverage: [] }, loading: false }
+        return dataForFile(file)
       })
       const noEmbed = renderPortfolio('/v2/portfolio?view=data&analytics=overview')
       expect(noEmbed.container.querySelector('[data-capability-id="chart.portfolio.signal-metrics-embed"]')).not.toBeInTheDocument()
@@ -121,6 +182,65 @@ describe('PortfolioScreen', () => {
       ;['control.portfolio.performance-compare-over', 'figure.portfolio.xirr-kpi', 'figure.portfolio.reconciliation-bridge',
         'control.portfolio.ledger-complete-checkbox', 'control.portfolio.cash-flow-ledger']
         .forEach((id) => expect(container.querySelector(`[data-capability-id="${id}"]`)).toBeInTheDocument())
+    })
+
+    it('insights view: renders the recap hero, comparison state, and trader/timing panels', async () => {
+      const { container, findByTestId } = renderPortfolio('/v2/portfolio?view=insights')
+      await findByTestId('fake-chart').catch(() => null) // let useRenderer's async loadRenderer settle if it mounted a chart
+      ;['figure.insights.mood-hero', 'export.insights.share-today', 'disclosure.insights.index-comparison-methodology',
+        'figure.insights.as-a-trader', 'figure.insights.purchase-timing']
+        .forEach((id) => expect(container.querySelector(`[data-capability-id="${id}"]`)).toBeInTheDocument())
+      // No benchmark histories in the fixture, so the cash-flow-aware comparison can't build.
+      expect(container.querySelector('[data-capability-id="state.insights.not-enough-history"]')).toBeInTheDocument()
+      expect(container.querySelector('[data-capability-id="state.insights.no-realized-sales"]')).toBeInTheDocument()
+      expect(container.querySelector('[data-capability-id="state.insights.entry-timing-insufficient"]')).toBeInTheDocument()
+    })
+
+    it('finances view: budget tab renders the KPI row, tab nav, and budget form', () => {
+      const { container } = renderPortfolio('/v2/portfolio?view=finances')
+      ;['figure.finances.kpi-row', 'nav.finances.tabs', 'control.finances.budget-add-form',
+        'state.finances.no-income-items', 'state.finances.no-expense-items', 'action.finances.use-as-retirement-contribution']
+        .forEach((id) => expect(container.querySelector(`[data-capability-id="${id}"]`)).toBeInTheDocument())
+    })
+
+    it('finances view: retirement tab renders assumptions, IRS note, and the account form', () => {
+      const { container } = renderPortfolio('/v2/portfolio?view=finances&tab=retirement')
+      ;['control.finances.retirement-assumptions', 'control.finances.return-target-slider', 'disclosure.finances.irs-limit-note',
+        'control.finances.account-add-form', 'state.finances.no-accounts', 'figure.finances.retirement-kpi-row']
+        .forEach((id) => expect(container.querySelector(`[data-capability-id="${id}"]`)).toBeInTheDocument())
+    })
+
+    it('finances view: pools tab renders the pool form and empty state', () => {
+      const { container } = renderPortfolio('/v2/portfolio?view=finances&tab=pools')
+      expect(container.querySelector('[data-capability-id="control.finances.pool-add-form"]')).toBeInTheDocument()
+      expect(container.querySelector('[data-capability-id="state.finances.no-pools"]')).toBeInTheDocument()
+      expect(container.querySelector('[data-capability-id="control.finances.deposit-split-preview"]')).toBeInTheDocument()
+    })
+
+    it('finances view: pool-bars and contribution-room-bars render through the chart renderer once data exists', () => {
+      useFirebaseFinances.mockReturnValue(financesFixture({
+        pools: [{ id: 'pool1', name: 'Emergency fund', percent: 40, balance: 1200 }],
+        accounts: [{ id: 'acct1', name: 'Fidelity 401(k)', type: '401k', annualContribution: 5000 }],
+      }))
+      const { container } = renderPortfolio('/v2/portfolio?view=finances&tab=pools')
+      expect(container.querySelector('[data-capability-id="chart.finances.pool-bars"]')).toBeInTheDocument()
+      const retirement = renderPortfolio('/v2/portfolio?view=finances&tab=retirement')
+      expect(retirement.container.querySelector('[data-capability-id="chart.finances.contribution-room-bars"]')).toBeInTheDocument()
+    })
+
+    it('planning view: renders the success gauge, live levers, and goal form', () => {
+      const { container } = renderPortfolio('/v2/portfolio?view=planning')
+      ;['chart.planning.success-probability-gauge', 'figure.planning.dotted-median-target-panel', 'control.planning.track-current-holdings',
+        'figure.planning.coast-fire-panel', 'control.planning.track-coast-fire', 'figure.planning.lever-deltas',
+        'control.planning.return-target-lever', 'control.planning.contribution-lever', 'control.planning.retirement-age-lever',
+        'control.planning.withdrawal-lever', 'control.planning.aggressiveness-select', 'chart.planning.sequence-risk-panel',
+        'figure.planning.goals-section', 'control.planning.goal-form', 'disclosure.planning.assumption-not-forecast']
+        .forEach((id) => expect(container.querySelector(`[data-capability-id="${id}"]`)).toBeInTheDocument())
+    })
+
+    it('planning view: shows the waiting-on-history state before 20 daily observations exist', () => {
+      const { container } = renderPortfolio('/v2/portfolio?view=planning')
+      expect(container.querySelector('[data-capability-id="state.planning.waiting-on-history"]')).toBeInTheDocument()
     })
   })
 })
