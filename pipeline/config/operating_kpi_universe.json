@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "config_version": "operating-kpi-universe-v1.0.0",
+  "_comment": "Tickers to collect comparable-sales growth for -- the retail and restaurant subset of advisor_universe.json, not the whole universe: fetching every universe ticker's earnings-release exhibit to look for a phrase that only retailers/restaurants use would spend most of the SEC rate-limit budget on companies that were always going to return 'not_found'. Derived once from public/data/advisor.json's screen_universe sector/industry classification (2026-08-27 snapshot) for the Yahoo industries: Apparel Retail, Department Stores, Discount Stores, Home Improvement Retail, Internet Retail, Grocery Stores, Specialty Retail, Luxury Goods, Auto & Truck Dealerships (retail) and Restaurants. A company's sector/industry classification changes rarely enough that this list does not need to be regenerated every run; regenerate by re-filtering a fresh screen_universe snapshot on the same industry set if it drifts.",
+  "metric": "comparable_sales_growth",
+  "retail_symbols": [
+    "AMZN", "AN", "BBWI", "BJ", "BURL", "CASY", "CHWY", "COST", "CPRI", "CRI",
+    "DASH", "DDS", "DG", "DKS", "DLTR", "EBAY", "ETSY", "FIVE", "FND", "GAP",
+    "GPI", "HD", "KMX", "KR", "KSS", "LAD", "LOW", "LULU", "MUSA", "OLLI",
+    "PAG", "RH", "ROST", "SFM", "TGT", "TJX", "TPR", "TSCO", "ULTA", "URBN",
+    "VVV", "W", "WMT", "WSM"
+  ],
+  "restaurant_symbols": [
+    "BROS", "CAVA", "CMG", "DPZ", "DRI", "MCD", "SBUX", "SHAK", "TXRH", "WEN",
+    "WING", "YUM"
+  ]
+}

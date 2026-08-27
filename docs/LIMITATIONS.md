@@ -47,6 +47,31 @@ more depth.
   inventory/DSO days) that are actively misleading for that profile; for those four, the
   replacement KPIs the doc's suppression-matrix framing calls for remain unimplemented, same
   as the rest of this group.
+- **A free-text extraction path now exists (`pipeline/filing_text.py`, `pipeline/operating_kpis.py`,
+  `pipeline/collect_operating_kpis.py`), crossing the boundary the two limitations above
+  describe, for exactly one metric: same-store/comparable sales growth for retail and
+  restaurants, sourced from an 8-K Item 2.02 filing's Exhibit 99.x earnings-release text
+  (reusing the accessions `pipeline/collect_earnings_releases.py` already collects) rather
+  than XBRL. It is standalone and opt-in — a `collect_*.py` script in the existing
+  `collect_estimates.py`/`collect_earnings_releases.py` pattern, not part of
+  `fetch_advisor.py`'s scheduled run — and it is **not wired into scoring**: no
+  `comparable_sales_growth` entry exists in `metric_registry.json` or
+  `settings.json`'s `fundamentals.metric_weights` yet, on purpose. The reason is specific,
+  not general caution: this was built in a sandboxed environment with no network access to
+  SEC EDGAR (`www.sec.gov`/`data.sec.gov` both blocked at the proxy), so the extraction
+  patterns in `operating_kpis.py` — which sector and restaurant earnings releases phrase
+  same-store sales in a small, well-known set of conventions ("comparable store sales
+  increased X%", "same-store sales of (X)%", etc.) — were written from that documented
+  convention and unit-tested against synthetic text, but **have never been run against a
+  single real filing**. `pipeline/collect_operating_kpis.py --report` after a run with real
+  SEC EDGAR access (any normal CI/scheduled environment has this) reports the match rate;
+  wiring the store into scoring is the next step once that rate is known, not before — the
+  same `>80% coverage before activating a KPI in production ranking` bar the research brief
+  itself proposes. Extending this to the rest of the sector-KPI list (ARPU/churn, MAU/DAU,
+  ARR/NRR, rate base, capacity factor, book-to-bill, AFFO, and the rest) is now a
+  bounded, well-defined follow-up per metric — a new phrasing pattern in
+  `operating_kpis.py`, validated the same way — not a new architecture each time, but none
+  of them are implemented.
 
 ## Validation
 
