@@ -672,10 +672,27 @@ unconsumed) — this is a deliberate, recorded decision, not an oversight, and r
 need either Classic itself adopting the consolidated shape or a narrower redirect list scoped to
 paths Classic's own nav has actually stopped using.
 
-**Remaining after Phase 6**: `chart.stock.score-history`'s divergence/dip-watch/bull-bear-thesis
-branches are built and logically verified but currently unexercised by any row in the live dataset
-(not a defect — confirmed by direct data inspection, not assumed); the e2e fixture gap is closed
-for the six core screens as of Wave 1 but will drift again as new capability rows get wired;
-Alerts/Settings chrome demotion, deeper a11y sweeps beyond the one named violation, and the
-`chart.screens.generic-quadrant-scatter`/5 Portfolio chart rows deferred since Phase 5 remain open,
-not newly discovered.
+**Remaining after Phase 6**: the e2e fixture gap is closed for the six core screens as of Wave 1 but
+will drift again as new capability rows get wired; Alerts/Settings chrome demotion and deeper a11y
+sweeps beyond the one named violation remain open, not newly discovered.
+
+**`chart.stock.score-history` — correction, not a new finding.** The prior note here claimed the
+sheet's divergence/dip-watch/bull-bear-thesis branches were "built and logically verified but
+currently unexercised by any row in the live dataset." Re-checked directly against a live
+`public/data/advisor.json` snapshot (not just re-reading the code) rather than trusting the earlier
+claim, and all three branches fire correctly today:
+- Divergence (`disclosure.stock.waterfall-divergence`): reachable via the sheet's existing `variant`
+  toggle to "challenger" on any research/portfolio_coverage ticker — e.g. `MTB` (champion score
+  79.9 vs. challenger 51.0).
+- Dip-watch (`figure.stock.dip-watch-badge`): fires unconditionally on "Explore the evidence"
+  expansion for any qualifying ticker — e.g. `ENS`, also `DECK`/`CRUS`/`ALGN`/`KEX`/`MGY`/`UTHR`/
+  `BWA`/`MLI`/`SNX`/`YETI`/`HAL`.
+- Bull/bear thesis (`figure.stock.bull-bear-thesis-track`): fires for ETF tickers (which never get
+  `analysis_v2` merged) via Research's existing "Stocks & ETFs / ETFs" asset-type filter — e.g.
+  `VCSH` (123 of 125 ETF tickers qualify; only `VGT`/`VOO` collide with stock tickers and take the
+  stock merge path instead).
+
+The earlier claim was accurate against an earlier daily snapshot but had gone stale —
+`public/data/*.json` regenerates and is recommitted daily by `refresh-advisor.yml`, so "unexercised
+by any row" is a claim with a shelf life, not a permanent property of the code. No code change was
+needed, only this correction.
