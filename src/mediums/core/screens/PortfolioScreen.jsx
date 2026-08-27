@@ -16,8 +16,9 @@ import {
 import { portfolioAcceleration } from '../../../lib/portfolioAcceleration.js'
 import { captureRatios, battingAverage } from '../../../lib/portfolioBenchmarkComparison.js'
 import { shortTermView } from '../../../lib/portfolioShortTermView.js'
-import { factorRegression } from '../../../lib/factorAnalytics.js'
-import { timeToValidMetric } from '../../../lib/portfolioStatistics.js'
+import { factorRegression, aggregateThemeExposure } from '../../../lib/factorAnalytics.js'
+import { timeToValidMetric, performanceStatistics } from '../../../lib/portfolioStatistics.js'
+import { availableScenarios, rankHoldingsByScenario, portfolioProjectedImpact } from '../../../lib/scenarioSensitivity.js'
 import { portfolioVsBenchmark } from '../../../lib/portfolioPerformance.js'
 import { buildPortfolioPriceData, mergePositionSnapshots } from '../../../lib/portfolioPosition.js'
 import { splitBySampleRequirement, defaultOpenGroups, sharedStatusMessage } from '../../../lib/signalMetrics.js'
@@ -56,6 +57,10 @@ const MARKET_DESTINATIONS = [
   { symbol: 'DIA', label: 'Dow Jones' },
   { symbol: 'IWM', label: 'Russell 2000' },
 ]
+
+// Mirrors `src/pages/portfolio/portfolioAnalyticsModel.js`'s use of the same frozen trial count
+// as the deflated-Sharpe trial count for rolling-Sharpe historical statistics.
+const DEFLATION_TRIALS = prospectiveValidation.trial_count_for_deflated_statistics?.dsr_trial_count_used
 
 function latestMove(history) {
   const values = history?.closes || []
@@ -183,7 +188,7 @@ function useAnalytics({ report, positions, priceData, etfData, factorData, spySn
       return {
         available: true, enriched, holdingsSeriesFull, spySeries, riskFree, performance, acceleration, capture,
         batting, underwater, shortTerm, risk, diversification, factor, resilience, concentration, legacyScore,
-        versusIndex, twrComparison, timeToValid, fundCost, lookThrough,
+        versusIndex, twrComparison, timeToValid, fundCost, lookThrough, comparable,
       }
     } catch (error) {
       return { available: false, error: error.message }
@@ -220,6 +225,7 @@ function PortfolioScreenContent() {
   const { data: factorData } = useData('factors/french.json')
   const { data: spySnapshot } = useData('etf/SPY.json')
   const { data: signalMetrics } = useData(view === 'data' ? 'validation/signal_metrics.json' : null)
+  const { data: monteCarloProjection } = useData(view === 'data' ? 'validation/monte_carlo_projection.json' : null)
   const needsBenchmarkReport = view === 'data' || view === 'insights' || view === 'finances' || view === 'planning'
   const { data: benchmarkReport, loading: benchmarkReportLoading } = useData(needsBenchmarkReport ? 'benchmark-report.json' : null)
   const { preferences } = usePreferences()
@@ -278,10 +284,10 @@ function PortfolioScreenContent() {
         <PerformanceView Container={Container} analytics={analytics} returnSummary={returnSummary} bridge={bridge} tracking={tracking} searchParams={searchParams} setSearchParams={setSearchParams} />
       )}
       {view === 'data' && (
-        <DataView Container={Container} analytics={analytics} positions={positions} signalMetrics={signalMetrics} benchmarks={benchmarkReport} searchParams={searchParams} setSearchParams={setSearchParams} exportPortfolio={exportPortfolio} />
+        <DataView Container={Container} analytics={analytics} positions={positions} signalMetrics={signalMetrics} monteCarloProjection={monteCarloProjection} benchmarks={benchmarkReport} searchParams={searchParams} setSearchParams={setSearchParams} exportPortfolio={exportPortfolio} />
       )}
       {view === 'diversification' && (
-        <DiversificationView Container={Container} analytics={analytics} positions={positions} />
+        <DiversificationView Container={Container} analytics={analytics} positions={positions} report={report} />
       )}
       {view === 'insights' && (
         <InsightsView
@@ -525,7 +531,8 @@ function CashFlowForm({ capId, tracking }) {
 const ANALYTICS_VIEWS = ['overview', 'all', 'algorithm', 'historical']
 const ANALYTICS_SCOPES = ['all_history', 'since_algorithm', 'live_algorithm', 'backtest']
 
-function DataView({ Container, analytics, positions, signalMetrics, benchmarks, searchParams, setSearchParams, exportPortfolio }) {
+function DataView({ Container, analytics, positions, signalMetrics, monteCarloProjection, benchmarks, searchParams, setSearchParams, exportPortfolio }) {
+  const renderer = useRenderer()
   const analyticsView = ANALYTICS_VIEWS.includes(searchParams.get('analytics')) ? searchParams.get('analytics') : 'overview'
   const scope = ANALYTICS_SCOPES.includes(searchParams.get('scope')) ? searchParams.get('scope') : 'all_history'
   const setParam = (key, value) => {
@@ -714,13 +721,43 @@ function DataView({ Container, analytics, positions, signalMetrics, benchmarks, 
               </>
             ) : <p>Signal metrics unavailable — run pipeline/signal_metrics.py.</p>}
           </Container>
+
+          <Container {...cap('chart.portfolio.monte-carlo-panel-embed')} aria-label="Monte Carlo terminal-value projection">
+            {renderer && monteCarloProjection?.horizons && renderer.fan({
+              metricId: 'portfolio-monte-carlo-panel',
+              // This artifact publishes p5/p95, not p10/p90 -- the p10/p90 slots below carry the
+              // real p5/p95 values (the shared fan shape only has 5 named percentile slots).
+              // ariaLabel and any visible copy must say "5th to 95th", never "10th to 90th", to
+              // stay honest.
+              series: Object.entries(monteCarloProjection.horizons)
+                .map(([days, h]) => ({
+                  x: Number(days), year: Number(days) / 365, // Classic's fan() axis label reads `year`
+                  p10: h.terminal_multiple_percentiles.p5, p25: h.terminal_multiple_percentiles.p25,
+                  median: h.terminal_multiple_percentiles.p50, p75: h.terminal_multiple_percentiles.p75,
+                  p90: h.terminal_multiple_percentiles.p95,
+                }))
+                .sort((a, b) => a.x - b.x),
+              unit: 'x', thresholds: [], annotations: [],
+              state: canonicalArtifactState(monteCarloProjection), confidence: confidenceOf({}),
+              ariaLabel: 'Simulated terminal-value multiple by horizon in days, 5th to 95th percentile band',
+              width: 480, height: 260,
+            })}
+            <p>{monteCarloProjection?.disclosure}</p>
+          </Container>
+
+          <ScenarioSensitivitySection
+            Container={Container} renderer={renderer} signalMetrics={signalMetrics}
+            positions={analytics.enriched?.positions || []}
+          />
         </>
       )}
 
-      {/* Deferred: chart.portfolio.monte-carlo-panel-embed, chart.portfolio.scenario-sensitivity,
-          chart.portfolio.rolling-sharpe-historical (each needs a real per-medium chart renderer
-          via manifest.loadRenderer(), not implemented in this pass), figure.portfolio.all-metrics-tearsheet
-          and figure.portfolio.baseline-comparison (need the full cross-period evidence-comparison model). */}
+      {analyticsView === 'historical' && (
+        <RollingSharpeSection Container={Container} analytics={analytics} renderer={renderer} />
+      )}
+
+      {/* Deferred: figure.portfolio.all-metrics-tearsheet and figure.portfolio.baseline-comparison
+          (need the full cross-period evidence-comparison model). */}
     </>
   )
 }
@@ -729,8 +766,86 @@ function windowFor(shortTerm, days) {
   return shortTerm?.windows?.find((row) => row.days === days) || null
 }
 
+/** Rolling 60-day Sharpe over the same aligned holdings/benchmark series `useAnalytics` already
+ * built for the twrComparison -- reruns `performanceStatistics` for its `rolling60` series only. */
+function RollingSharpeSection({ Container, analytics, renderer }) {
+  const series = analytics.comparable?.left
+  const stats = series ? performanceStatistics(series, analytics.riskFree.annualPct, { trialCount: DEFLATION_TRIALS }) : { available: false }
+  const rolling = stats.available ? stats.rolling60 : []
+  return (
+    <Container {...cap('chart.portfolio.rolling-sharpe-historical')} aria-label="Rolling 60-day Sharpe">
+      {rolling.length ? (
+        <>
+          {renderer && renderer.line({
+            metricId: 'portfolio-rolling-sharpe-60',
+            series: rolling.map((r) => ({ x: r.date, y: r.value })),
+            unit: '', thresholds: [{ value: 0, label: 'Zero', kind: 'band' }], annotations: [],
+            state: canonicalArtifactState({ status: 'success' }), confidence: confidenceOf({}),
+            ariaLabel: 'Rolling 60-day Sharpe ratio', width: 480, height: 220,
+          })}
+          <p>{rolling.length} rolling 60-day windows.</p>
+        </>
+      ) : <p>Rolling Sharpe is insufficient — requires at least 60 contiguous daily returns in this scope.</p>}
+    </Container>
+  )
+}
+
+/** Ranks the user's own holdings through a published scenario's market move (each holding's own
+ * beta times the scenario's return), then value-weights into one portfolio-level figure -- see
+ * scenarioSensitivity.js's own doc comment for what this estimate is and is not. */
+function ScenarioSensitivitySection({ Container, renderer, signalMetrics, positions }) {
+  const [scenarioId, setScenarioId] = useState(null)
+  const scenarios = availableScenarios(signalMetrics)
+  const scenario = scenarios.find((s) => s.id === scenarioId) || scenarios[0]
+  const ranked = scenario ? rankHoldingsByScenario(positions, scenario.marketReturnPct) : []
+  const impact = portfolioProjectedImpact(ranked)
+  const mostExposed = ranked.slice(0, 5)
+  const leastExposed = ranked.slice(-5)
+  return (
+    <Container {...cap('chart.portfolio.scenario-sensitivity')} aria-label="Scenario sensitivity">
+      <nav aria-label="Scenario">
+        {scenarios.map((s) => (
+          <button type="button" key={s.id} aria-current={s.id === scenario?.id ? 'page' : undefined}
+            onClick={() => setScenarioId(s.id)}>{s.label}</button>
+        ))}
+      </nav>
+      {scenario ? (
+        <>
+          <p>{scenario.description}</p>
+          {impact && <p>Projected portfolio impact: {signedPct(impact.weightedReturnPct, 1)} ({money(impact.totalDollarImpact)}) across {impact.positionsIncluded} priced holdings.</p>}
+          <div aria-label="Most exposed">
+            {renderer && renderer.bar({
+              metricId: `scenario-${scenario.id}-most-exposed`, values: mostExposed.map((r) => r.projectedReturnPct),
+              unit: '%', thresholds: [], annotations: [], state: canonicalArtifactState({ status: 'success' }),
+              confidence: confidenceOf({}), ariaLabel: 'Five most-exposed holdings, projected return percent', width: 320, height: 120,
+            })}
+            <ol>{mostExposed.map((r) => <li key={r.ticker}>{r.ticker} {signedPct(r.projectedReturnPct, 1)} (beta {ratio(r.beta)})</li>)}</ol>
+          </div>
+          <div aria-label="Least exposed">
+            {renderer && renderer.bar({
+              metricId: `scenario-${scenario.id}-least-exposed`, values: leastExposed.map((r) => r.projectedReturnPct),
+              unit: '%', thresholds: [], annotations: [], state: canonicalArtifactState({ status: 'success' }),
+              confidence: confidenceOf({}), ariaLabel: 'Five least-exposed holdings, projected return percent', width: 320, height: 120,
+            })}
+            <ol>{leastExposed.map((r) => <li key={r.ticker}>{r.ticker} {signedPct(r.projectedReturnPct, 1)} (beta {ratio(r.beta)})</li>)}</ol>
+          </div>
+        </>
+      ) : <p>No scenario data published yet.</p>}
+    </Container>
+  )
+}
+
 // --- Diversification view --------------------------------------------------------------------
-function DiversificationView({ Container, analytics, positions }) {
+function DiversificationView({ Container, analytics, positions, report }) {
+  // Hooks must run unconditionally on every render, before either early return below --
+  // otherwise the no-holdings/still-loading render paths call fewer hooks than a data-ready
+  // render and React's hook order invariant breaks.
+  const renderer = useRenderer()
+  const themes = useMemo(
+    () => aggregateThemeExposure(analytics.enriched?.positions || [], report?.theme_screen?.by_ticker || {}),
+    [analytics.enriched, report],
+  )
+
   if (!positions.length) {
     return <div {...cap('state.diversification.no-holdings')}>Add portfolio holdings before calculating diversification.</div>
   }
@@ -805,6 +920,37 @@ function DiversificationView({ Container, analytics, positions }) {
         </Container>
       ) : <p {...cap('state.diversification.factor-history-accumulating')}>Factor history is accumulating — {analytics.factor?.reason}</p>}
 
+      {correlation?.available ? (
+        <Container {...cap('chart.diversification.correlation-heatmap')} aria-label="Pairwise correlation matrix">
+          {renderer && renderer.heatmap({
+            metricId: 'diversification-correlation-heatmap',
+            values: correlation.matrix,
+            labels: correlation.tickers,
+            unit: '', thresholds: [], annotations: [],
+            state: canonicalArtifactState({ status: 'success' }), confidence: confidenceOf({}),
+            ariaLabel: `Pairwise correlation of ${correlation.tickers.length} holdings, ${correlation.observations} common days`,
+            width: 360, height: 360,
+          })}
+        </Container>
+      ) : null}
+
+      {themes.length ? (
+        <Container {...cap('chart.diversification.theme-exposure-grid')} aria-label="Theme exposure">
+          {renderer && renderer.bar({
+            metricId: 'diversification-theme-exposure',
+            values: themes.slice(0, 6).map((t) => t.exposureScore),
+            unit: '', thresholds: [], annotations: [],
+            state: canonicalArtifactState({ status: 'success' }), confidence: confidenceOf({}),
+            ariaLabel: 'Theme exposure score by theme, top six by score', width: 320, height: 140,
+          })}
+          <ol>{themes.slice(0, 6).map((t) => (
+            <li key={t.theme}><span>{t.theme}</span><span>{Math.round(t.exposureScore)}</span><span>{pct(t.portfolioCoveragePct)} coverage</span></li>
+          ))}</ol>
+        </Container>
+      ) : (
+        <p {...cap('state.diversification.theme-exposure-unavailable')}>Theme exposure is unavailable in the current research snapshot.</p>
+      )}
+
       <Container aria-label="Diversification metrics">
         <Metric capId="metric.report.diversification-score" label="Diversification score" display={String(div.score)} value={div.score} reads="Weighted composite of holding, sector, and industry breadth plus effective bets and diversification ratio." cadence="per refresh" source="portfolioAnalytics.js" />
         <Metric capId="metric.report.raw-holding-count" label="Raw holdings" display={String(div.rawHoldingCount)} value={div.rawHoldingCount} reads="Count of currently priced holdings." cadence="per refresh" source="portfolioAnalytics.js" />
@@ -836,8 +982,7 @@ function DiversificationView({ Container, analytics, positions }) {
       {!div.warnings?.length && <p {...cap('state.diversification.no-concentration-warnings')}>No concentration warnings in covered holdings.</p>}
       <p {...cap('disclosure.diversification.lookthrough-provisional')}>Missing look-through stays visible as unavailable and makes the result provisional.</p>
 
-      {/* Deferred: chart.diversification.correlation-heatmap (NxN visual matrix), chart.diversification.theme-exposure-grid
-          (needs the theme registry keyed by ticker), detail.diversification.info-tags, state.diversification.theme-exposure-unavailable. */}
+      {/* Deferred: detail.diversification.info-tags. */}
     </>
   )
 }

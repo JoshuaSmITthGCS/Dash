@@ -13,7 +13,7 @@ export function fanChartCall(renderer, result, { metricId, ariaLabel, state, con
   if (!renderer || !result?.fan?.length) return null
   return renderer.fan({
     metricId,
-    series: result.fan.map((point) => ({ x: point.year, p10: point.p10, p25: point.p25, median: point.p50, p75: point.p75, p90: point.p90 })),
+    series: result.fan.map((point) => ({ x: point.year, year: point.year, p10: point.p10, p25: point.p25, median: point.p50, p75: point.p75, p90: point.p90 })),
     unit: 'USD',
     thresholds: [],
     annotations: [],

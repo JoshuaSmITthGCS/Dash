@@ -17,7 +17,7 @@ import DotPlotImpl from '../../../components/DotPlot.jsx'
 import ScoreGaugeImpl from '../../../components/ScoreGauge.jsx'
 import CorrelationHeatmapImpl from '../../../components/CorrelationHeatmap.jsx'
 import ResearchRadarChartImpl from '../../../components/ResearchRadarChart.jsx'
-import { ratio } from '../../../lib/formatters.js'
+import { ratio, money } from '../../../lib/formatters.js'
 import { STATES } from '../../core/states.js'
 
 const POSITIVE = 'var(--positive)'
@@ -94,9 +94,16 @@ function heatmap({ values = [], labels, ariaLabel }) {
   return <CorrelationHeatmapImpl tickers={tickers} matrix={values} observations={values.length} caption={ariaLabel} />
 }
 
-function fan({ series = [] }) {
-  const points = series.map((p, i) => ({ month: p.x ?? i, p10: p.p10 ?? p.low, p50: p.median ?? p.y, p90: p.p90 ?? p.high }))
-  return <ProjectionFanChartImpl fan={points} />
+// ProjectionFanChartImpl requires a value formatter with no default -- unit-aware here since
+// callers publish both USD projections (retirement/Home) and bare ratios (Monte Carlo terminal
+// multiples, unit 'x'), and a dollar sign on a 1.02x multiple would misrepresent the value.
+function fan({ series = [], unit }) {
+  // ProjectionFanChartImpl's axis labels read `.year` directly (never derives it from `.month`)
+  // -- every fan caller now sets it explicitly (see fanChart.js/PortfolioScreen.jsx), `p.x`
+  // remains a fallback only for a caller that hasn't.
+  const points = series.map((p, i) => ({ month: p.x ?? i, year: p.year ?? p.x ?? i, p10: p.p10 ?? p.low, p50: p.median ?? p.y, p90: p.p90 ?? p.high }))
+  const formatValue = unit === 'USD' ? money : (value) => `${ratio(value)}${unit ? unit : ''}`
+  return <ProjectionFanChartImpl fan={points} money={formatValue} />
 }
 
 /** No exact bullet primitive exists generically — a small new SVG using the existing token set. */

@@ -23,10 +23,25 @@ vi.mock('../../../lib/FirebaseAuthContext.jsx', () => ({
 }))
 
 const fakeChart = vi.fn(({ metricId }) => <svg data-testid="fake-chart" data-metric-id={metricId} />)
-const fakeRenderer = { line: fakeChart, bar: fakeChart, dial: fakeChart, fan: fakeChart, profile: fakeChart }
+const fakeRenderer = { line: fakeChart, bar: fakeChart, dial: fakeChart, fan: fakeChart, profile: fakeChart, heatmap: fakeChart }
 const fakeManifest = { components: {}, loadRenderer: () => Promise.resolve(fakeRenderer) }
 
-const reportFixture = { generated_at: '2026-08-25', research: [], screen_universe: [], portfolio_coverage: [] }
+const reportFixture = { generated_at: '2026-08-25', research: [], screen_universe: [], portfolio_coverage: [], theme_screen: { by_ticker: {} } }
+
+/** A small representative fixture matching `public/data/validation/monte_carlo_projection.json`'s
+ * real shape -- `horizons` is an object keyed by day-string, not an array. */
+const monteCarloFixture = {
+  schema_version: 1, generated_at: '2026-08-25', status: 'ready',
+  input: {},
+  horizons: {
+    30: { terminal_multiple_percentiles: { p5: 0.93, p25: 0.98, p50: 1.02, p75: 1.04, p95: 1.08 } },
+    365: { terminal_multiple_percentiles: { p5: 0.75, p25: 0.92, p50: 1.1, p75: 1.3, p95: 1.6 } },
+  },
+  live_comparison: {},
+  disclosure: 'This is a projection built by resampling the historical daily return distribution, not a forecast.',
+  model_version: '1.0.0',
+  model_metadata: {},
+}
 
 /** A published research row whose `getRecommendation()` verdict is TRIM, for suggested-actions tests. */
 const trimResearchRow = {
@@ -57,7 +72,79 @@ function trackingFixture(overrides = {}) {
 
 function dataForFile(file) {
   if (file === 'benchmark-report.json') return { data: { histories: {} }, loading: false }
+  if (file === 'validation/monte_carlo_projection.json') return { data: monteCarloFixture, loading: false }
   return { data: reportFixture, loading: false }
+}
+
+/** Consecutive weekday ISO dates -- enough (90) to clear both the 60-common-observation floor
+ * `correlationDiversification` requires and the 60-return window `rollingSharpe` needs a
+ * non-empty output from. */
+function weekdayDates(count, start = Date.UTC(2026, 0, 2)) {
+  const dates = []
+  const cursor = new Date(start)
+  while (dates.length < count) {
+    const day = cursor.getUTCDay()
+    if (day !== 0 && day !== 6) dates.push(cursor.toISOString().slice(0, 10))
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  }
+  return dates
+}
+const richDates = weekdayDates(90)
+const richCloses = (base, phase) => richDates.map((_, i) => base * (1 + i * 0.0015 + Math.sin(i / 5 + phase) * 0.01))
+const richAaaCloses = richCloses(50, 0)
+const richBbbCloses = richCloses(80, 1.4)
+const richSpyCloses = richCloses(400, 0.3)
+
+/** Two priced, native-daily holdings with published beta and theme rows -- the substrate the
+ * rolling-Sharpe, correlation-heatmap, theme-exposure-grid, monte-carlo-panel-embed, and
+ * scenario-sensitivity rows all read real (non-"insufficient history") content from. */
+const richReportFixture = {
+  generated_at: richDates.at(-1),
+  research: [
+    {
+      ticker: 'AAA', price: richAaaCloses.at(-1), name: 'AAA Corp', sector: 'Technology', industry: 'Software',
+      analytics_history: { dates: richDates, closes: richAaaCloses, frequency: 'daily' },
+      technical_detail: { beta: 1.2 },
+    },
+    {
+      ticker: 'BBB', price: richBbbCloses.at(-1), name: 'BBB Inc', sector: 'Healthcare', industry: 'Biotech',
+      analytics_history: { dates: richDates, closes: richBbbCloses, frequency: 'daily' },
+      technical_detail: { beta: 0.7 },
+    },
+  ],
+  screen_universe: [],
+  portfolio_coverage: [],
+  theme_screen: {
+    by_ticker: {
+      AAA: [{ theme_id: 'digital_payments', display_name: 'Digital Payments', theme_exposure_score: 82, eligible: true }],
+      BBB: [{ theme_id: 'genomics', display_name: 'Genomics', theme_exposure_score: 65, eligible: true }],
+    },
+  },
+}
+const richSpySnapshot = {
+  ticker: 'SPY', benchmark: 'S&P 500',
+  price_series: { fund: richDates.map((date, i) => ({ date, adjusted_close: richSpyCloses[i] })) },
+}
+const richPositions = [
+  { id: 'p1', ticker: 'AAA', shares: 10, costBasis: 40, purchaseDate: '2024-01-01' },
+  { id: 'p2', ticker: 'BBB', shares: 5, costBasis: 60, purchaseDate: '2024-01-01' },
+]
+const richSignalMetrics = {
+  summary: { ready: 1, breached: 0, total: 1 },
+  groups: [],
+  metrics: [{
+    id: 'scenario_gfc_2008', group: 'scenario', label: 'GFC 2008', value: null, display: null, reads: 'x',
+    breached: false, status: 'ready', observations: null, required_observations: null,
+    detail: { spy_return_pct: -38, description: 'A repeat of the 2008 financial crisis.' },
+  }],
+}
+function dataForRichFile(file) {
+  if (file === 'report.json') return { data: richReportFixture, loading: false }
+  if (file === 'benchmark-report.json') return { data: { histories: {} }, loading: false }
+  if (file === 'etf/SPY.json') return { data: richSpySnapshot, loading: false }
+  if (file === 'validation/monte_carlo_projection.json') return { data: monteCarloFixture, loading: false }
+  if (file === 'validation/signal_metrics.json') return { data: richSignalMetrics, loading: false }
+  return { data: null, loading: false }
 }
 
 function renderPortfolio(path = '/v2/portfolio') {
@@ -245,6 +332,13 @@ describe('PortfolioScreen', () => {
         .forEach((id) => expect(container.querySelector(`[data-capability-id="${id}"]`)).toBeInTheDocument())
     })
 
+    it('diversification view: shows the theme-exposure-unavailable note when the report has no theme data for held tickers', () => {
+      const { container } = renderPortfolio('/v2/portfolio?view=diversification')
+      expect(container.querySelector('[data-capability-id="state.diversification.theme-exposure-unavailable"]'))
+        .toHaveTextContent('Theme exposure is unavailable in the current research snapshot.')
+      expect(container.querySelector('[data-capability-id="chart.diversification.theme-exposure-grid"]')).not.toBeInTheDocument()
+    })
+
     it('performance view: renders the TWR/XIRR/bridge structural rows and the cash-flow form', () => {
       const { container } = renderPortfolio('/v2/portfolio?view=performance')
       ;['control.portfolio.performance-compare-over', 'figure.portfolio.xirr-kpi', 'figure.portfolio.reconciliation-bridge',
@@ -309,6 +403,61 @@ describe('PortfolioScreen', () => {
     it('planning view: shows the waiting-on-history state before 20 daily observations exist', () => {
       const { container } = renderPortfolio('/v2/portfolio?view=planning')
       expect(container.querySelector('[data-capability-id="state.planning.waiting-on-history"]')).toBeInTheDocument()
+    })
+  })
+
+  describe('with rich price history (two priced holdings, 90 daily closes)', () => {
+    beforeEach(() => {
+      useData.mockImplementation(dataForRichFile)
+      useFirebasePortfolio.mockReturnValue({ positions: richPositions, loading: false, exportPortfolio: vi.fn(), syncState: { connected: true } })
+    })
+
+    // `useRenderer()` resolves `manifest.loadRenderer()` in a `useEffect`, and this fixture's
+    // 90-day correlation/rolling-Sharpe/factor-regression arithmetic runs synchronously in the
+    // render before that -- comfortably under RTL's default 1000ms in isolation, but not always
+    // inside the full suite, so these use a longer explicit timeout rather than the default.
+    const FIND_CHART_OPTS = { timeout: 5000 }
+
+    it('data view, historical tab: renders a real rolling-Sharpe line chart, not the insufficient-history message', async () => {
+      const { container, findAllByTestId } = renderPortfolio('/v2/portfolio?view=data&analytics=historical')
+      await findAllByTestId('fake-chart', {}, FIND_CHART_OPTS)
+      const section = container.querySelector('[data-capability-id="chart.portfolio.rolling-sharpe-historical"]')
+      expect(section.querySelector('[data-testid="fake-chart"]')).toHaveAttribute('data-metric-id', 'portfolio-rolling-sharpe-60')
+      expect(section).not.toHaveTextContent('Rolling Sharpe is insufficient')
+    })
+
+    it('diversification view: renders a real correlation heatmap for two correlatable holdings', async () => {
+      const { container, findAllByTestId } = renderPortfolio('/v2/portfolio?view=diversification')
+      await findAllByTestId('fake-chart', {}, FIND_CHART_OPTS)
+      const section = container.querySelector('[data-capability-id="chart.diversification.correlation-heatmap"]')
+      expect(section.querySelector('[data-testid="fake-chart"]')).toHaveAttribute('data-metric-id', 'diversification-correlation-heatmap')
+    })
+
+    it('diversification view: renders the theme-exposure grid from report.json theme_screen.by_ticker, not the unavailable note', async () => {
+      const { container, findAllByTestId } = renderPortfolio('/v2/portfolio?view=diversification')
+      await findAllByTestId('fake-chart', {}, FIND_CHART_OPTS)
+      const section = container.querySelector('[data-capability-id="chart.diversification.theme-exposure-grid"]')
+      expect(section).toHaveTextContent('Digital Payments')
+      expect(section).toHaveTextContent('Genomics')
+      expect(container.querySelector('[data-capability-id="state.diversification.theme-exposure-unavailable"]')).not.toBeInTheDocument()
+    })
+
+    it('data view, algorithm tab: renders the Monte Carlo panel from validation/monte_carlo_projection.json', async () => {
+      const { container, findAllByTestId } = renderPortfolio('/v2/portfolio?view=data&analytics=algorithm')
+      await findAllByTestId('fake-chart', {}, FIND_CHART_OPTS)
+      const section = container.querySelector('[data-capability-id="chart.portfolio.monte-carlo-panel-embed"]')
+      expect(section.querySelector('[data-testid="fake-chart"]')).toHaveAttribute('data-metric-id', 'portfolio-monte-carlo-panel')
+      expect(section).toHaveTextContent(monteCarloFixture.disclosure)
+    })
+
+    it('data view, algorithm tab: renders scenario sensitivity ranking real holdings by published beta', async () => {
+      const { container, findAllByTestId } = renderPortfolio('/v2/portfolio?view=data&analytics=algorithm')
+      await findAllByTestId('fake-chart', {}, FIND_CHART_OPTS)
+      const section = container.querySelector('[data-capability-id="chart.portfolio.scenario-sensitivity"]')
+      expect(section).toHaveTextContent('GFC 2008')
+      expect(section).toHaveTextContent('AAA')
+      expect(section).toHaveTextContent('BBB')
+      expect(section).toHaveTextContent('Projected portfolio impact')
     })
   })
 })
