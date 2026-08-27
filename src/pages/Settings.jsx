@@ -4,10 +4,17 @@ import Icon from '../components/Icons.jsx'
 import { BENCHMARKS } from '../lib/portfolioAnalytics.js'
 import { calculateAge, RETIREMENT_AGES } from '../lib/age.js'
 import { getAllMediumMeta } from '../mediums/registry.js'
+import MediumTryPreview from './MediumTryPreview.jsx'
 
-const Choice = ({ active, children, onClick, preview }) => (
+// `preview` (a CSS-swatch classname, e.g. "dark") and `previewNode` (an arbitrary live-rendered
+// React node, e.g. MediumTryPreview) are separate props rather than one overloaded slot — the
+// Appearance section's theme-mode swatch is intentionally the cheap CSS-only device, and "Try a
+// new look" needs the real thing; keeping them distinct means neither call site has to know
+// which kind the other one passes.
+const Choice = ({ active, children, onClick, preview, previewNode }) => (
   <button type="button" className={`setting-choice${active ? ' active' : ''}`} aria-pressed={active} onClick={onClick}>
     {preview && <span className={`theme-preview ${preview}`} aria-hidden="true"><i /><i /><i /></span>}
+    {previewNode}
     <span>{children}</span>
   </button>
 )
@@ -102,7 +109,7 @@ export default function Settings() {
       <div className="settings-block">
         <div className="theme-options">
           {previewMediums.map((medium) => (
-            <Choice key={medium.id} active={false} onClick={() => tryMedium(medium.id)}>{medium.label}</Choice>
+            <Choice key={medium.id} active={false} onClick={() => tryMedium(medium.id)} previewNode={<MediumTryPreview mediumId={medium.id} />}>{medium.label}</Choice>
           ))}
         </div>
       </div>
