@@ -320,12 +320,16 @@ class ApplicabilityAuthorityTests(unittest.TestCase):
     def test_semiconductor_inherits_the_default_declarations(self):
         # declaration_defaults omitted the semiconductor profile, so every inherited
         # inventory metric was suppressed for semis on the v2 path (CRUS: 28 of ~30 metrics)
-        # while the champion scored 26 of them. Only the two curated cyclicality rules
-        # should suppress anything for a semiconductor name.
+        # while the champion scored 26 of them. Only the two curated cyclicality rules --
+        # plus price_to_ffo/net_interest_margin/efficiency_ratio, which are narrowly scoped
+        # to exactly one profile each (reit / bank / bank) by registry declaration rather
+        # than a semiconductor-specific rule, the same way price_to_book already excludes
+        # several pre-profit-biotech profiles -- should suppress anything for a semi name.
         from canonical_metrics import suppressed_metrics
         from scorer import SCORED_METRICS
         self.assertEqual(suppressed_metrics("semiconductor", SCORED_METRICS),
-                         {"capex_to_depreciation", "inventory_days_trend"})
+                         {"capex_to_depreciation", "inventory_days_trend",
+                          "price_to_ffo", "net_interest_margin", "efficiency_ratio"})
 
     def test_explicit_rules_govern_both_metric_id_namespaces(self):
         # The matrix suppresses sales_multiple for insurers; the v2 path asks about the

@@ -52,6 +52,15 @@ ALIASES = {
                      "Reconciled Depreciation"),
     "stock_comp": ("Stock Based Compensation",),
     "buybacks": ("Repurchase Of Capital Stock",),
+    # Bank-specific income-statement rows. These are not custom or inconsistently tagged the
+    # way an operating KPI like ARPU is -- a bank's own income statement is structured around
+    # interest income/expense and noninterest income/expense because GAAP requires it, so
+    # Yahoo's normalized statement carries them as ordinary line items for filers organized
+    # as banks.
+    "net_interest_income": ("Net Interest Income",),
+    "interest_income": ("Interest Income", "Total Interest Income", "Interest And Dividend Income"),
+    "noninterest_income": ("Non Interest Income", "Total Non Interest Income"),
+    "noninterest_expense": ("Non Interest Expense", "Total Non Interest Expense"),
 }
 
 FINANCIAL_SECTORS = ("Financial Services", "Financials", "Financial")
@@ -194,6 +203,64 @@ def derive_cash_conversion(income, cashflow):
     if net_income is None or net_income <= 0:
         return None
     return rounded(ratio(fcf, net_income))
+
+
+def derive_reit_ffo(income, cashflow, market_cap):
+    """Simplified FFO (funds from operations) and price/FFO for a REIT.
+
+    NAREIT's definition is net income plus real-estate depreciation and amortization, minus
+    gains (plus losses) on sales of depreciable property and impairment write-downs of
+    depreciable property. The depreciation add-back is the dominant correction -- GAAP
+    depreciation is what makes a REIT's net income understate its cash-generating capacity in
+    the first place -- and both net income and D&A are ordinary, reliably tagged statement
+    lines. The property-disposition adjustment is not: yfinance's normalized statements do not
+    break out gains/losses on real estate sales as a distinct line, so this FFO omits it
+    rather than guess at it. That means a year with a large one-off property sale is
+    understated here relative to a NAREIT-reported figure; there is no adjustment for it, not
+    a wrong one. Both outputs are ``None``, not estimated, when net income or D&A itself is
+    unavailable.
+    """
+    net_income = at(line(income, "net_income"))
+    depreciation = at(line(cashflow, "depreciation"))
+    if depreciation is None:
+        depreciation = at(line(income, "depreciation"))
+    if net_income is None or depreciation is None:
+        return {"funds_from_operations": None, "price_to_ffo": None}
+    ffo = net_income + abs(depreciation)
+    return {
+        "funds_from_operations": round(ffo),
+        "price_to_ffo": rounded(ratio(market_cap, ffo) if ffo > 0 else None, 2),
+    }
+
+
+def derive_bank_metrics(income, balance):
+    """Net interest margin and efficiency ratio for a bank, from its own income statement.
+
+    Net interest income (or interest income less interest expense, when the net line is not
+    itself tagged) and noninterest income/expense are ordinary rows on a bank's income
+    statement, not free-text MD&A. The one real limitation: NIM is conventionally net interest
+    income divided by *average interest-earning assets*, and yfinance's normalized balance
+    sheet does not break earning assets out from the rest of the balance sheet. This margin is
+    computed against average total assets instead, which runs structurally lower than a
+    textbook, earning-assets-denominator NIM (typically by the ~10-15% of a bank's balance
+    sheet that is not earning assets) -- consistent for cross-bank comparison within this
+    pipeline, not a citable figure against externally reported NIM.
+    """
+    net_interest_income = at(line(income, "net_interest_income"))
+    if net_interest_income is None:
+        interest_income = at(line(income, "interest_income"))
+        interest_expense = at(line(income, "interest_expense"))
+        if interest_income is not None and interest_expense is not None:
+            net_interest_income = interest_income - abs(interest_expense)
+    noninterest_income = at(line(income, "noninterest_income"))
+    noninterest_expense = at(line(income, "noninterest_expense"))
+    average_assets = average(at(line(balance, "total_assets")), at(line(balance, "total_assets"), 1))
+    revenue = (None if net_interest_income is None or noninterest_income is None
+              else net_interest_income + noninterest_income)
+    return {
+        "net_interest_margin": rounded(ratio(net_interest_income, average_assets)),
+        "efficiency_ratio": rounded(ratio(noninterest_expense, revenue) if revenue and revenue > 0 else None),
+    }
 
 
 def derive_fcf_growth(cashflow):
@@ -630,6 +697,18 @@ def derive_extended(*, annual, quarterly=None, info=None, market_cap=None, price
     metrics.update(derive_working_capital_trends(income, balance))
     metrics.update(derive_capital_allocation(income, balance, cashflow, market_cap))
     metrics.update(derive_enterprise_multiples(income, balance, cashflow, info, market_cap))
+    # Bank metrics resolve to a real value only where the statement is actually structured as
+    # a bank's (net interest income, noninterest income/expense) and stay None everywhere else
+    # by data absence -- no sector gate here. FFO's inputs (net income, D&A) are ordinary and
+    # resolve broadly, so it computes for non-REITs too; what makes it REIT-only is scoring,
+    # not derivation -- canonical_metrics/applicability_matrix suppress price_to_ffo from every
+    # profile but "reit" (metric_registry.json), the same "computed broadly, suppressed at the
+    # scoring layer" split current_ratio already gets for banks. Both stay out of
+    # COVERAGE_KEYS below for the same reason gross_profits_to_assets etc. are universal there
+    # and these are not: a metric this narrowly applicable in a blanket coverage denominator
+    # would understate everyone else's coverage for a gap that isn't theirs.
+    metrics.update(derive_reit_ffo(income, cashflow, market_cap))
+    metrics.update(derive_bank_metrics(income, balance))
     metrics.update(derive_market_structure(info, price, closes, volumes))
     metrics["piotroski_tests"] = {key: value for key, value in piotroski_tests.items() if value is not None}
     metrics["statement_periods"] = (income or {}).get("periods", [])[:4]
@@ -674,6 +753,9 @@ EXTENDED_METRIC_UNITS = {
     "piotroski_f": "count",
     "days_sales_outstanding_trend": "decimal",
     "inventory_days_trend": "decimal",
+    "price_to_ffo": "multiple",
+    "net_interest_margin": "decimal",
+    "efficiency_ratio": "decimal",
 }
 
 

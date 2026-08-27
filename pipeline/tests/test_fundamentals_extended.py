@@ -227,6 +227,57 @@ class ValuationTests(unittest.TestCase):
         self.assertIsNone(multiples["ev_to_ebitda"])
 
 
+class ReitAndBankMetricsTests(unittest.TestCase):
+    def test_ffo_adds_back_depreciation_and_prices_against_it(self):
+        # net income 180 + |depreciation| 55 (from the cash-flow statement) = 235.
+        ffo = fx.derive_reit_ffo(INCOME, CASHFLOW, market_cap=4000)
+        self.assertEqual(ffo["funds_from_operations"], 235)
+        self.assertAlmostEqual(ffo["price_to_ffo"], 4000 / 235, places=2)
+
+    def test_ffo_falls_back_to_the_income_statement_depreciation_line(self):
+        income_only = statement(**{**INCOME["rows"], "Depreciation And Amortization": [55.0]})
+        no_cashflow_depreciation = {"periods": ["2025"], "rows": {}}
+        ffo = fx.derive_reit_ffo(income_only, no_cashflow_depreciation, market_cap=4000)
+        self.assertEqual(ffo["funds_from_operations"], 235)
+
+    def test_ffo_is_undefined_without_net_income_or_depreciation(self):
+        no_depreciation = {"periods": ["2025"], "rows": {}}
+        self.assertIsNone(fx.derive_reit_ffo(INCOME, no_depreciation, market_cap=4000)["funds_from_operations"])
+        self.assertIsNone(fx.derive_reit_ffo(INCOME, no_depreciation, market_cap=4000)["price_to_ffo"])
+
+    def test_bank_metrics_use_the_net_interest_income_line_directly(self):
+        bank_income = statement(**{
+            "Net Interest Income": [60.0, 55.0],
+            "Non Interest Income": [20.0, 18.0],
+            "Non Interest Expense": [45.0, 42.0],
+        })
+        bank_balance = statement(**{"Total Assets": [2500.0, 2300.0]})
+        metrics = fx.derive_bank_metrics(bank_income, bank_balance)
+        # NII 60 / average assets (2500+2300)/2=2400 = 0.025.
+        self.assertAlmostEqual(metrics["net_interest_margin"], 60 / 2400, places=4)
+        # 45 / (60 + 20) = 0.5625.
+        self.assertAlmostEqual(metrics["efficiency_ratio"], 45 / 80, places=4)
+
+    def test_bank_metrics_fall_back_to_interest_income_less_expense(self):
+        bank_income = statement(**{
+            "Interest Income": [90.0],
+            "Interest Expense": [30.0],
+            "Non Interest Income": [20.0],
+            "Non Interest Expense": [45.0],
+        })
+        bank_balance = statement(**{"Total Assets": [2400.0]})
+        metrics = fx.derive_bank_metrics(bank_income, bank_balance)
+        # 90 - 30 = 60 net interest income, against a single-period asset base (no prior period).
+        self.assertAlmostEqual(metrics["net_interest_margin"], 60 / 2400, places=4)
+
+    def test_bank_metrics_are_undefined_for_a_non_bank_income_statement(self):
+        # INCOME/BALANCE are the generic Technology-company fixtures above: no
+        # interest-income-statement structure at all.
+        metrics = fx.derive_bank_metrics(INCOME, BALANCE)
+        self.assertIsNone(metrics["net_interest_margin"])
+        self.assertIsNone(metrics["efficiency_ratio"])
+
+
 class MarketStructureTests(unittest.TestCase):
     def test_short_liquidity_and_52_week_context(self):
         info = {"shortPercentOfFloat": 0.18, "shortRatio": 7.5, "heldPercentInstitutions": 0.71,

@@ -71,9 +71,9 @@
         "Industrial FCF is not comparable for banks."
       ],
       "gross_profits_to_assets": [
-        "suppressed",
+        "replaced",
         "net_interest_margin",
-        "Banks report no gross-profit line."
+        "Banks report no gross-profit line; net_interest_margin is computed (fundamentals_extended.derive_bank_metrics) and scored in profitability's place."
       ],
       "inventory_days_trend": [
         "suppressed",
@@ -91,14 +91,14 @@
         "Receivable days do not represent bank credit quality."
       ],
       "incremental_margin": [
-        "suppressed",
+        "replaced",
         "efficiency_ratio",
-        "Efficiency ratio is the bank operating-leverage measure."
+        "Efficiency ratio is the bank operating-leverage measure and is computed (fundamentals_extended.derive_bank_metrics)."
       ],
       "capex_to_depreciation": [
-        "suppressed",
+        "replaced",
         "efficiency_ratio",
-        "Physical reinvestment is not the bank value-creation engine."
+        "Physical reinvestment is not the bank value-creation engine; efficiency_ratio is computed (fundamentals_extended.derive_bank_metrics) and scored in profitability's place."
       ],
       "piotroski_f": [
         "suppressed",
@@ -258,14 +258,14 @@
     },
     "reit": {
       "peg": [
-        "suppressed",
+        "replaced",
         "price_to_ffo",
-        "EPS is distorted by property depreciation."
+        "EPS is distorted by property depreciation; price_to_ffo is computed (fundamentals_extended.derive_reit_ffo) and scored in valuation's place."
       ],
       "forward_pe": [
-        "suppressed",
+        "replaced",
         "price_to_ffo",
-        "P/FFO is the standard earnings multiple for REITs."
+        "P/FFO is the standard earnings multiple for REITs and is computed (fundamentals_extended.derive_reit_ffo), not just named as a gap."
       ],
       "free_cash_flow_yield": [
         "suppressed",

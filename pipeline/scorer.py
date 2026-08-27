@@ -182,13 +182,13 @@ TANGIBLE_BOOK_SECTORS = ("Financial Services", "Financials", "Financial", "Real 
 
 LOWER_IS_BETTER_METRICS = {
     "peg", "forward_pe", "sales_multiple", "price_to_book", "price_to_tangible_book",
-    "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf", "debt_to_equity",
-    "net_debt_to_ebitda", "stock_comp_to_revenue", "accruals_ratio",
+    "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf", "debt_to_equity", "price_to_ffo",
+    "net_debt_to_ebitda", "stock_comp_to_revenue", "accruals_ratio", "efficiency_ratio",
     "days_sales_outstanding_trend", "inventory_days_trend",
 }
 VALUATION_MULTIPLES = {
     "peg", "forward_pe", "sales_multiple", "price_to_book", "price_to_tangible_book",
-    "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf",
+    "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf", "price_to_ffo",
 }
 RANGE_METRICS = {"capex_to_depreciation", "asset_growth"}
 
@@ -230,8 +230,9 @@ def sales_multiple_score(snap, cfg):
 # them. Suppression is a lookup against the applicability registry, never a literal in code.
 SCORED_METRICS = (
     "peg", "forward_pe", "sales_multiple", "price_to_book", "price_to_tangible_book",
-    "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf", "return_on_equity",
+    "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf", "price_to_ffo", "return_on_equity",
     "return_on_invested_capital", "gross_profits_to_assets", "cash_conversion",
+    "net_interest_margin", "efficiency_ratio",
     "free_cash_flow_yield", "profit_margin", "debt_to_equity", "current_ratio",
     "interest_coverage", "net_debt_to_ebitda", "altman_z", "revenue_growth",
     "earnings_growth", "fcf_growth_3y", "operating_margin_trend", "earnings_surprise",
@@ -592,6 +593,10 @@ def _band_valuation_score(snap, *, apply_confidence_multiplier=True):
         "ev_to_ebitda": multiple_score(snap.get("ev_to_ebitda"), cfg["ev_to_ebitda"]),
         "ev_to_ebit": multiple_score(snap.get("ev_to_ebit"), cfg["ev_to_ebit"]),
         "ev_to_fcf": multiple_score(snap.get("ev_to_fcf"), cfg["ev_to_fcf"]),
+        # P/FFO: the REIT earnings multiple. Only ever non-null for the "reit" profile (see
+        # fundamentals_extended.derive_reit_ffo) and applicability suppresses it everywhere
+        # else, mirroring how forward_pe/peg are suppressed for REITs in its favor.
+        "price_to_ffo": multiple_score(snap.get("price_to_ffo"), cfg["price_to_ffo"]),
         "return_on_equity": higher_is_better_score(snap.get("return_on_equity"), cfg["return_on_equity"]),
         # ROIC is the one ROE should have been: leverage cannot inflate it.
         "return_on_invested_capital": higher_is_better_score(snap.get("return_on_invested_capital"),
@@ -600,6 +605,11 @@ def _band_valuation_score(snap, *, apply_confidence_multiplier=True):
         # measured above the line where accounting discretion does its work.
         "gross_profits_to_assets": higher_is_better_score(
             snap.get("gross_profits_to_assets"), cfg["gross_profits_to_assets"]),
+        # Bank profitability/operating-leverage anchors. Only non-null for the "bank" profile
+        # (fundamentals_extended.derive_bank_metrics); applicability suppresses
+        # gross_profits_to_assets for banks in net_interest_margin's favor.
+        "net_interest_margin": higher_is_better_score(snap.get("net_interest_margin"), cfg["net_interest_margin"]),
+        "efficiency_ratio": lower_is_better_score(snap.get("efficiency_ratio"), cfg["efficiency_ratio"]),
         "cash_conversion": higher_is_better_score(snap.get("cash_conversion"), cfg["cash_conversion"]),
         "free_cash_flow_yield": higher_is_better_score(snap.get("free_cash_flow_yield"), cfg["free_cash_flow_yield"]),
         "profit_margin": higher_is_better_score(snap.get("profit_margin"), cfg["profit_margin"]),

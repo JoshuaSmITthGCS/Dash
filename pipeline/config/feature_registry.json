@@ -319,6 +319,30 @@
       "references": [],
       "version": "1.0.0"
     },
+    "efficiency_ratio": {
+      "feature_id": "efficiency_ratio",
+      "family": "quality",
+      "fundamentals_category": "profitability",
+      "usage": [
+        "ranking",
+        "explanation"
+      ],
+      "not_used_for": [
+        "hard_filter"
+      ],
+      "direction": "lower_is_better",
+      "unit": "unknown",
+      "definition_declared": false,
+      "target_horizons": [
+        126,
+        252
+      ],
+      "availability_lag": "as declared by metric_registry.json (formula_version, period_type) where declared; statement-derived, typically 1-3 months after fiscal period end",
+      "missingness_policy": "unavailable_when_denominator_is_zero_or_economically_invalid (see metric_registry.json declaration_defaults)",
+      "economic_rationale": "Not yet declared in metric_registry.json metric_inventory.",
+      "references": [],
+      "version": "1.0.0"
+    },
     "eps_surprise": {
       "feature_id": "eps_surprise",
       "family": "catalyst",
@@ -805,6 +829,30 @@
       "references": [],
       "version": "1.0.0"
     },
+    "net_interest_margin": {
+      "feature_id": "net_interest_margin",
+      "family": "quality",
+      "fundamentals_category": "profitability",
+      "usage": [
+        "ranking",
+        "explanation"
+      ],
+      "not_used_for": [
+        "hard_filter"
+      ],
+      "direction": "higher_is_better",
+      "unit": "unknown",
+      "definition_declared": false,
+      "target_horizons": [
+        126,
+        252
+      ],
+      "availability_lag": "as declared by metric_registry.json (formula_version, period_type) where declared; statement-derived, typically 1-3 months after fiscal period end",
+      "missingness_policy": "unavailable_when_denominator_is_zero_or_economically_invalid (see metric_registry.json declaration_defaults)",
+      "economic_rationale": "Not yet declared in metric_registry.json metric_inventory.",
+      "references": [],
+      "version": "1.0.0"
+    },
     "on_balance_volume_slope": {
       "feature_id": "on_balance_volume_slope",
       "family": "momentum",
@@ -934,6 +982,30 @@
       ],
       "direction": "lower_is_better",
       "unit": "multiple",
+      "definition_declared": false,
+      "target_horizons": [
+        126,
+        252
+      ],
+      "availability_lag": "as declared by metric_registry.json (formula_version, period_type) where declared; statement-derived, typically 1-3 months after fiscal period end",
+      "missingness_policy": "unavailable_when_denominator_is_zero_or_economically_invalid (see metric_registry.json declaration_defaults)",
+      "economic_rationale": "Not yet declared in metric_registry.json metric_inventory.",
+      "references": [],
+      "version": "1.0.0"
+    },
+    "price_to_ffo": {
+      "feature_id": "price_to_ffo",
+      "family": "value",
+      "fundamentals_category": "valuation",
+      "usage": [
+        "ranking",
+        "explanation"
+      ],
+      "not_used_for": [
+        "hard_filter"
+      ],
+      "direction": "lower_is_better",
+      "unit": "unknown",
       "definition_declared": false,
       "target_horizons": [
         126,

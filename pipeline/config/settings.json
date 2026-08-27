@@ -656,22 +656,25 @@
     },
     "metric_weights": {
       "valuation": {
-        "peg": 0.09,
-        "forward_pe": 0.15,
-        "sales_multiple": 0.09,
-        "price_to_book": 0.05,
-        "price_to_tangible_book": 0.05,
+        "peg": 0.074,
+        "forward_pe": 0.1233,
+        "sales_multiple": 0.074,
+        "price_to_book": 0.0411,
+        "price_to_tangible_book": 0.0411,
         "ev_to_ebitda": 0.27,
-        "ev_to_ebit": 0.12,
-        "ev_to_fcf": 0.18
+        "ev_to_ebit": 0.0986,
+        "ev_to_fcf": 0.1479,
+        "price_to_ffo": 0.13
       },
       "profitability": {
-        "return_on_invested_capital": 0.26,
-        "gross_profits_to_assets": 0.22,
-        "return_on_equity": 0.1,
-        "free_cash_flow_yield": 0.16,
-        "profit_margin": 0.1,
-        "cash_conversion": 0.16
+        "return_on_invested_capital": 0.195,
+        "gross_profits_to_assets": 0.165,
+        "return_on_equity": 0.075,
+        "free_cash_flow_yield": 0.12,
+        "profit_margin": 0.075,
+        "cash_conversion": 0.12,
+        "net_interest_margin": 0.14,
+        "efficiency_ratio": 0.11
       },
       "financial_health": {
         "interest_coverage": 0.3,
@@ -950,11 +953,31 @@
       "healthy_max": 28.0,
       "elevated_max": 45.0
     },
+    "price_to_ffo": {
+      "_comment": "P/FFO is the REIT earnings multiple that replaces forward P/E; bands set from typical historical equity-REIT P/FFO ranges, not EPS-multiple bands.",
+      "suspicious_below": 6.0,
+      "cheap_max": 13.0,
+      "healthy_max": 18.0,
+      "elevated_max": 24.0
+    },
     "gross_profits_to_assets": {
       "excellent_min": 0.33,
       "good_min": 0.22,
       "fair_min": 0.13,
       "weak_min": 0.06
+    },
+    "net_interest_margin": {
+      "_comment": "Computed against average total assets, not average earning assets (fundamentals_extended.derive_bank_metrics) -- structurally lower than a textbook NIM, so bands are set for this pipeline's own denominator, not to match externally reported NIM.",
+      "excellent_min": 0.028,
+      "good_min": 0.022,
+      "fair_min": 0.016,
+      "weak_min": 0.010
+    },
+    "efficiency_ratio": {
+      "excellent_max": 0.55,
+      "good_max": 0.62,
+      "fair_max": 0.70,
+      "poor_max": 0.80
     },
     "asset_growth": {
       "_comment": "Investment factor: conservative asset growth beats aggressive. Shrinkage is not rewarded above steady reinvestment, so this is a range, not a floor.",

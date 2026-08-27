@@ -538,7 +538,7 @@ Refresh of 2026-08-06T22:50 (an intraday `data-only` run):
 | 14 alpha sleeves | 3 built |
 | 6 portfolio-construction methods | 1 (score-weighted top-N) |
 | Same-close execution guard | None |
-| 32 scored fundamentals metrics formally declared | 20 declared, 12 undeclared in `metric_registry.json` |
+| All scored fundamentals metrics formally declared | 35 total; 31 declared, 4 undeclared in `metric_registry.json` |
 | Delisted-security replay in scoring | Membership logged, not replayed |
 | IPO-seasoning window | None |
 | Independent corporate-action event log | Relies on provider-adjusted prices |

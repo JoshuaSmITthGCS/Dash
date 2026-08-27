@@ -11,8 +11,9 @@ more depth.
 - **No delisting/survivorship data.** The PIT store logs universe membership changes
   (`pipeline/pit_store.py universe.jsonl`) but scoring does not replay a delisted name's
   history — delisted-name effects are not modeled.
-- **12 of 32 scored fundamentals metrics have no formal `metric_registry.json` declaration**
-  (`docs/FEATURE-REGISTRY.md`) — direction is still correct (sourced from `scorer.py`'s
+- **4 of 35 scored fundamentals metrics have no formal `metric_registry.json` declaration**
+  (`asset_growth`, `earnings_surprise`, `ev_to_ebit`, `gross_profits_to_assets`;
+  `docs/FEATURE-REGISTRY.md`) — direction is still correct (sourced from `scorer.py`'s
   actual scoring code), but the formal definition/provider/period metadata is missing.
 - **Analyst estimate coverage is a small subset** (`collect_estimates.py`, 8 tickers) — any
   catalyst/revision-based ranking is starved of data for the vast majority of the universe.
@@ -25,20 +26,27 @@ more depth.
   Form 4 (which is parsed structured XBRL): a materially negative 8-K Item code is a reliable
   signal, but the absence of one is not evidence the underlying event was immaterial, only that
   it wasn't filed under a code this lookup recognizes.
-- **Sector operating KPIs (ARPU/churn, comps, NIM/efficiency ratio, FFO/AFFO, ARR/NRR, rate
-  base, capacity factor, book-to-bill, and similar) are not computed anywhere in the
-  pipeline.** `business_profiles.json` names them as the intended replacement for a suppressed
-  generic metric (e.g. a bank's `net_interest_margin`, a REIT's `funds_from_operations`) so the
-  metric goes null instead of scoring the wrong thing, but no provider fetches or derives a
-  value to fill that gap — these KPIs live in MD&A prose and 8-K earnings-release
-  supplementals, not structured SEC XBRL, and this pipeline deliberately does not parse
-  free-text filings (see the 8-K limitation above). Fixing this is a new text/table-extraction
-  provider or a vendor feed, not a config change. `applicability_matrix.json` / `classify_profile()`
-  (`pipeline/canonical_metrics.py`) do route more business profiles than this — including
-  `mortgage_reit`, `homebuilder`, `independent_power_producer`, and `capital_markets_firm` — to
-  suppress industrial-style metrics (P/E, EV/EBITDA, Altman Z, inventory/DSO days) that are
-  actively misleading for that profile, which is real and load-bearing today; only the
-  *replacement* KPI values remain unimplemented.
+- **Most sector operating KPIs (ARPU/churn, comps, ARR/NRR, rate base, capacity factor,
+  book-to-bill, AFFO, and similar) are not computed anywhere in the pipeline** — they live in
+  MD&A prose and 8-K earnings-release supplementals, not structured SEC XBRL, and this
+  pipeline deliberately does not parse free-text filings (see the 8-K limitation above).
+  Fixing this is a new text/table-extraction provider or a vendor feed, not a config change.
+  **Two of this group are the exception**: `price_to_ffo`/`funds_from_operations` (REITs) and
+  `net_interest_margin`/`efficiency_ratio` (banks) are computed
+  (`pipeline/fundamentals_extended.py` `derive_reit_ffo`/`derive_bank_metrics`), because their
+  inputs are ordinary, reliably tagged statement line items (net income, D&A; net interest
+  income, noninterest income/expense), not free text. Both are simplifications, not the
+  citable textbook figure: FFO omits NAREIT's gain/loss-on-property-sale adjustment (yfinance's
+  normalized statements don't break that line out), and NIM is computed against average total
+  assets rather than average interest-earning assets (also not broken out) — see the
+  `_comment` fields on `price_to_ffo`/`net_interest_margin` in `metric_registry.json` and
+  `settings.json`'s `fundamentals.net_interest_margin`. `applicability_matrix.json` /
+  `classify_profile()` (`pipeline/canonical_metrics.py`) route more business profiles than
+  this — including `mortgage_reit`, `homebuilder`, `independent_power_producer`, and
+  `capital_markets_firm` — to suppress industrial-style metrics (P/E, EV/EBITDA, Altman Z,
+  inventory/DSO days) that are actively misleading for that profile; for those four, the
+  replacement KPIs the doc's suppression-matrix framing calls for remain unimplemented, same
+  as the rest of this group.
 
 ## Validation
 

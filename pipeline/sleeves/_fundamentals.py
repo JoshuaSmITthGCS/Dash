@@ -44,19 +44,30 @@ def score_fundamentals_family_sleeve(sleeve_id, family, subscore_categories, ver
     if "sales_multiple" in raw_features and sales_basis:
         raw_features["sales_multiple"] = snapshot.get(sales_basis)
     normalized_features = {metric_id: detail.get(metric_id) for metric_id in metric_ids}
-    resolved = sum(1 for value in raw_features.values() if value is not None)
     categories = detail.get("categories", {})
+
+    # Confidence is answered-share of what could apply to this profile, not of the whole
+    # family: a metric this company's business profile suppresses (detail["suppressed_metrics"],
+    # the same registry scorer.valuation_score already consulted) is never going to resolve and
+    # must leave the denominator entirely, the same way scorer.weighted_coverage already treats
+    # it. Counting it as unresolved evidence understated confidence for every business profile
+    # with any suppressed value-family metric -- a bank's forward_pe/peg, a REIT's price_to_ffo
+    # for a non-REIT -- not just the metric that happened to expose it here.
+    suppressed = set(detail.get("suppressed_metrics") or ())
+    applicable_metric_ids = [metric_id for metric_id in metric_ids if metric_id not in suppressed]
+    resolved = sum(1 for metric_id in applicable_metric_ids if raw_features.get(metric_id) is not None)
 
     result["raw_features"] = raw_features
     result["normalized_features"] = normalized_features
     result["subscores"] = {category: categories.get(category) for category in subscore_categories}
     resolved_subscores = [value for value in result["subscores"].values() if value is not None]
     result["raw_score"] = round(sum(resolved_subscores) / len(resolved_subscores), 1) if resolved_subscores else None
-    result["confidence"] = round(resolved / len(metric_ids), 2) if metric_ids else None
+    result["confidence"] = round(resolved / len(applicable_metric_ids), 2) if applicable_metric_ids else None
     if resolved == 0:
         result["eligibility"] = {"eligible": False, "reasons": ["missing_provider_data"]}
-    elif resolved < len(metric_ids) // 2:
-        result["warnings"].append(f"Only {resolved}/{len(metric_ids)} {family} metrics resolved for this company.")
+    elif applicable_metric_ids and resolved < len(applicable_metric_ids) // 2:
+        result["warnings"].append(
+            f"Only {resolved}/{len(applicable_metric_ids)} applicable {family} metrics resolved for this company.")
     negative_denominator_flags = [
         metric_id for metric_id in ("ev_to_ebitda", "ev_to_ebit", "ev_to_fcf")
         if raw_features.get(metric_id) is not None and raw_features[metric_id] <= 0
