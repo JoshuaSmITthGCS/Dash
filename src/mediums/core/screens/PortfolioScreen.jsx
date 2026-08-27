@@ -45,6 +45,9 @@ import { canonicalArtifactState, confidenceOf } from '../states.js'
 import { cap } from '../capability.js'
 import WallLabel from '../WallLabel.jsx'
 import { PORTFOLIO_IDS } from './capabilityIds.js'
+import { useStockDetail } from '../useStockDetail.js'
+import StockDetailSheet from './StockDetailSheet.jsx'
+import { getRecommendation, actionHeadline, actionStyle, positionImpact } from '../../../lib/recommendation.js'
 
 const MARKET_DESTINATIONS = [
   { symbol: 'SPY', label: 'S&P 500' },
@@ -251,6 +254,7 @@ function PortfolioScreenContent() {
   const { positions, loading: portfolioLoading, exportPortfolio, syncState } = useFirebasePortfolio()
   const tracking = usePortfolioTracking()
   const finances = useFirebaseFinances()
+  const { openStockDetail } = useStockDetail()
 
   const priceData = useMemo(() => {
     if (!report) return {}
@@ -279,6 +283,7 @@ function PortfolioScreenContent() {
 
   return (
     <div data-screen="portfolio" data-view={view}>
+      <StockDetailSheet />
       <nav {...cap('nav.portfolio.sub-tabs')} aria-label="Portfolio views">
         {PORTFOLIO_VIEWS.map((item) => (
           <button type="button" key={item} aria-current={view === item ? 'page' : undefined} onClick={() => setView(item)}>{item}</button>
@@ -290,7 +295,8 @@ function PortfolioScreenContent() {
       <p {...cap('disclosure.portfolio.hold-not-shown')}>Hold positions are not shown here.</p>
 
       {view === 'summary' && (
-        <SummaryView Container={Container} portfolio={portfolio} positions={positions} analytics={analytics} returnSummary={returnSummary} />
+        <SummaryView Container={Container} portfolio={portfolio} positions={positions} analytics={analytics} returnSummary={returnSummary}
+          openStockDetail={openStockDetail} preferences={preferences} />
       )}
       {view === 'performance' && (
         <PerformanceView Container={Container} analytics={analytics} returnSummary={returnSummary} bridge={bridge} tracking={tracking} searchParams={searchParams} setSearchParams={setSearchParams} />
@@ -326,7 +332,23 @@ function PortfolioScreenContent() {
 }
 
 // --- Summary view --------------------------------------------------------------------------
-function SummaryView({ Container, portfolio, positions, analytics, returnSummary }) {
+/**
+ * Positions whose current guidance is TRIM or SELL -- the "needs your attention" subset, not
+ * every held position (HOLD/WATCH are the default state and stay on the holdings grid only).
+ * `row.priceInfo` is the full published research/coverage/screen_universe row `enrichPortfolio`
+ * already resolved per ticker (see `buildPortfolioPriceData`), which is exactly the shape
+ * `getRecommendation()` expects -- no separate `report.json` lookup needed here.
+ */
+function suggestedActionPositions(portfolioPositions) {
+  return portfolioPositions
+    .map((row) => ({ row, recommendation: row.priceInfo ? getRecommendation(row.priceInfo) : null }))
+    .filter(({ recommendation }) => recommendation && ['TRIM', 'SELL'].includes(recommendation.action))
+}
+
+function SummaryView({ Container, portfolio, positions, analytics, returnSummary, openStockDetail, preferences }) {
+  const [suggestedActionsOpen, setSuggestedActionsOpen] = useState(preferences?.suggestedActionsDefault === 'expanded')
+  const suggestedActions = useMemo(() => suggestedActionPositions(portfolio.positions), [portfolio.positions])
+
   return (
     <>
       <Container {...cap(PORTFOLIO_IDS.kpiRow)}>
@@ -373,13 +395,35 @@ function SummaryView({ Container, portfolio, positions, analytics, returnSummary
             <ul data-testid="holdings-grid">
               {portfolio.positions.map((row) => (
                 <li key={row.id || row.ticker}>
-                  <span>{row.ticker}</span>
+                  <button type="button" onClick={() => openStockDetail(row.ticker)}>{row.ticker}</button>
                   <span>{money(row.currentValue) || '–'}</span>
                   <span>{row.gainPct != null ? signedPct(row.gainPct, 1) : '–'}</span>
                 </li>
               ))}
             </ul>
           </Container>
+
+          <details id="sell-signals" {...cap('control.portfolio.suggested-actions-toggle')}
+            open={suggestedActionsOpen} onToggle={(event) => setSuggestedActionsOpen(event.currentTarget.open)}>
+            <summary>Suggested actions ({suggestedActions.length})</summary>
+            <ul data-testid="suggested-actions-list" {...cap('figure.portfolio.suggested-actions-list')}>
+              {suggestedActions.length ? suggestedActions.map(({ row, recommendation }) => {
+                const style = actionStyle(recommendation.action)
+                const impact = positionImpact(recommendation, { shares: row.shares, price: row.currentPrice })
+                return (
+                  <li key={row.id || row.ticker}>
+                    <span style={{ color: style.color }}>{style.icon} {actionHeadline(recommendation)}</span>
+                    <strong>{row.ticker}</strong>
+                    <span>{recommendation.summary}</span>
+                    {impact && (
+                      <small>{impact.shares.toFixed(2)} of {row.shares} shares ≈ {money(impact.proceeds)}</small>
+                    )}
+                    <button type="button" onClick={() => openStockDetail(row.ticker)}>Why</button>
+                  </li>
+                )
+              }) : <li>No sell/trim actions need review right now.</li>}
+            </ul>
+          </details>
 
           <Container {...cap('column.portfolio.benchmark-table')}>
             {analytics.versusIndex ? (

@@ -6,6 +6,8 @@ import { canonicalArtifactState } from '../states.js'
 import { cap } from '../capability.js'
 import { SCREENS_IDS } from './capabilityIds.js'
 import { AuthProvider as FirebaseAuthProvider } from '../../../lib/FirebaseAuthContext.jsx'
+import { useStockDetail } from '../useStockDetail.js'
+import StockDetailSheet from './StockDetailSheet.jsx'
 import { useWatchlist } from '../../../lib/useWatchlist.js'
 import { useScreenRefresh } from '../../../lib/useScreenRefresh.js'
 import { useAdvisorRefresh } from '../../../lib/useAdvisorRefresh.js'
@@ -430,6 +432,7 @@ function MiniSparkline({ values, label }) {
 
 function FastGrowthRecipe({ manifest, searchParams, setParam }) {
   const { data, loading } = useData('report.json')
+  const { openStockDetail } = useStockDetail()
   const sub = searchParams.get('sub') === 'emerging' ? 'emerging' : 'breakout'
   const sector = searchParams.get('sector') || 'all'
 
@@ -447,14 +450,14 @@ function FastGrowthRecipe({ manifest, searchParams, setParam }) {
   if (!data) return <div {...cap('state.screens.fastgrowth-unavailable')} role="alert">Screen snapshot unavailable.</div>
 
   const columns = sub === 'breakout' ? [
-    { key: 'ticker', label: 'Ticker', cell: (row) => <><b>{row.ticker}</b> {row.name}</> },
+    { key: 'ticker', label: 'Ticker', cell: (row) => <><button type="button" onClick={() => openStockDetail(row.ticker)}>{row.ticker}</button> {row.name}</> },
     { key: 'sector', label: 'Sector', cell: (row) => row.sector || '–' },
     { key: 'week', label: '5-day return', cell: (row) => upside(row.screen.weekReturn) },
     { key: 'month', label: '20-day return', cell: (row) => upside(row.screen.monthReturn) },
     { key: 'acceleration', label: 'Acceleration', cell: (row) => upside(row.screen.acceleration) },
     { key: 'score', label: 'Score', cell: (row) => number(row.score, 1) },
   ] : [
-    { key: 'ticker', label: 'Ticker', cell: (row) => <><b>{row.ticker}</b> {row.name}</> },
+    { key: 'ticker', label: 'Ticker', cell: (row) => <><button type="button" onClick={() => openStockDetail(row.ticker)}>{row.ticker}</button> {row.name}</> },
     { key: 'sector', label: 'Sector', cell: (row) => row.sector || '–' },
     { key: 'revenue', label: 'Revenue growth', cell: (row) => pctFrac(row.screen.revenueGrowth) },
     { key: 'relative', label: 'Relative strength', cell: (row) => upside(row.screen.relativeStrength) },
@@ -502,7 +505,7 @@ function FastGrowthRecipe({ manifest, searchParams, setParam }) {
           <section {...cap('figure.screens.fastgrowth-mobile-cards')} aria-label="Idea cards">
             {filtered.slice(0, 10).map((row) => (
               <article key={row.ticker}>
-                <b>{row.ticker}</b> · score {number(row.score, 1)}
+                <button type="button" onClick={() => openStockDetail(row.ticker)}>{row.ticker}</button> · score {number(row.score, 1)}
                 <MiniSparkline values={(row.history?.closes || []).slice(-22)} label={`${row.ticker} one-month daily close trend`} />
               </article>
             ))}
@@ -553,6 +556,7 @@ function TradeTicket({ row }) {
 }
 
 function OptionsRecipe({ manifest, data, searchParams, setParam }) {
+  const { openStockDetail } = useStockDetail()
   const strategyId = searchParams.get('strategy')
   const strategyConfig = strategyId && STRATEGY_SCREENS[strategyId] ? STRATEGY_SCREENS[strategyId] : null
   const { data: strategyData } = useData(strategyConfig?.file || null)
@@ -604,7 +608,7 @@ function OptionsRecipe({ manifest, data, searchParams, setParam }) {
 
   const columns = [
     { key: 'rank', label: 'Rank', cell: (row) => `#${row.rank}` },
-    { key: 'ticker', label: 'Ticker', cell: (row) => <b>{row.ticker}</b> },
+    { key: 'ticker', label: 'Ticker', cell: (row) => <button type="button" onClick={() => openStockDetail(row.ticker)}>{row.ticker}</button> },
     { key: 'sector', label: 'Sector', cell: (row) => row.sector || '–' },
     { key: 'side', label: strategyConfig ? 'Strategy' : 'Side', cell: (row) => strategyConfig ? (strategyConfig.strategyLabel(row)) : (row.option_type === 'put' ? 'Put' : 'Call') },
     { key: 'legs', label: 'Strike/legs', cell: (row) => row.legs?.length ? row.legs.map((leg) => `${leg.action === 'buy' ? 'Buy' : 'Sell'} ${leg.option_type} ${money(leg.strike)}`).join(' · ') : money(row.strike) },
@@ -699,7 +703,7 @@ function OptionsRecipe({ manifest, data, searchParams, setParam }) {
           <section {...cap('figure.screens.options-mobile-cards')} aria-label="Idea cards">
             {rows.slice(0, 10).map((row) => (
               <article key={`${row.ticker}-${row.rank}`}>
-                <b>{row.ticker}</b> #{row.rank} · score {number(row.score, 2)}
+                <button type="button" onClick={() => openStockDetail(row.ticker)}><b>{row.ticker}</b></button> #{row.rank} · score {number(row.score, 2)}
                 <div role="progressbar" aria-valuenow={row.confidence != null ? Math.round(row.confidence * 100) : 0} aria-valuemin={0} aria-valuemax={100}>
                   Confidence {row.confidence != null ? `${Math.round(row.confidence * 100)}%` : '–'}
                 </div>
@@ -863,10 +867,10 @@ function GroupCount({ shown, total }) {
   return <span>Showing {shown} of {total}</span>
 }
 
-function ThemeRowsTable({ rows }) {
+function ThemeRowsTable({ rows, openStockDetail }) {
   return (
     <SimpleTable columns={[
-      { key: 'ticker', label: 'Ticker', cell: (row) => <><b>{row.ticker}</b> {row.name}{row.candidate_source ? ` (${THEME_SOURCE_LABELS[row.candidate_source] || row.candidate_source})` : ''}</> },
+      { key: 'ticker', label: 'Ticker', cell: (row) => <><button type="button" onClick={() => openStockDetail(row.ticker)}>{row.ticker}</button> {row.name}{row.candidate_source ? ` (${THEME_SOURCE_LABELS[row.candidate_source] || row.candidate_source})` : ''}</> },
       { key: 'industry', label: 'Industry', cell: (row) => row.industry || row.sector || '–' },
       { key: 'why', label: 'Why it is here', cell: (row) => (row.why || [])[0] || '–' },
       { key: 'exposure', label: 'Exposure', cell: (row) => number(row.theme_exposure_score, 0) },
@@ -915,6 +919,7 @@ function ThemesRecipe({ manifest }) {
   const { data: peerScreen } = useData('theme-peers.json')
   const [hideHoldings, setHideHoldings] = useState(false)
   const { positions } = useFirebasePortfolio()
+  const { openStockDetail } = useStockDetail()
 
   const holdings = useMemo(() => new Set((positions || []).map((position) => String(position.ticker || '').toUpperCase())), [positions])
   const themeScreen = data?.theme_screen
@@ -997,7 +1002,7 @@ function ThemesRecipe({ manifest }) {
               position carrying three correlated bets.</p>
           </details>
           <SimpleTable columns={[
-            { key: 'ticker', label: 'Ticker', cell: (row) => <b>{row.ticker}</b> },
+            { key: 'ticker', label: 'Ticker', cell: (row) => <button type="button" onClick={() => openStockDetail(row.ticker)}>{row.ticker}</button> },
             { key: 'themeCount', label: 'Themes', cell: (row) => row.themeCount },
             { key: 'themes', label: 'Why it crosses', cell: (row) => row.themes.map((theme) => theme.display_name || theme.theme_id).join(' · ') },
             { key: 'bestOpportunity', label: 'Best opportunity', cell: (row) => number(row.bestOpportunity, 0) },
@@ -1045,7 +1050,7 @@ function ThemesRecipe({ manifest }) {
                 <h4>Biggest players</h4>
                 <ul>
                   {visible(theme.biggest_players).map((player) => (
-                    <li key={player.ticker}><b>{player.ticker}</b> {player.name} — {player.role ? `${THEME_ROLE_LABELS[player.role] || player.role} in this chain` : 'no chain role assigned'}
+                    <li key={player.ticker}><button type="button" onClick={() => openStockDetail(player.ticker)}>{player.ticker}</button> {player.name} — {player.role ? `${THEME_ROLE_LABELS[player.role] || player.role} in this chain` : 'no chain role assigned'}
                       {' '}· exposure {player.theme_exposure_score ?? '–'}{player.eligible === false ? ' · flagged, not promoted' : ''}</li>
                   ))}
                 </ul>
@@ -1061,7 +1066,7 @@ function ThemesRecipe({ manifest }) {
             </h3>
             {!leaders.length ? (
               <p {...cap('state.screens.themes-no-leader')}>No published leader or holding cleared this theme's signal minimum yet.</p>
-            ) : <ThemeRowsTable rows={leaders} />}
+            ) : <ThemeRowsTable rows={leaders} openStockDetail={openStockDetail} />}
 
             <h3>Connected, not yet re-rated <GroupCount shown={connected.length} total={connectedTotal} />
               <details {...cap('detail.screens.themes-info-tags')}>
@@ -1072,7 +1077,7 @@ function ThemesRecipe({ manifest }) {
             </h3>
             {!connected.length ? (
               <p {...cap('state.screens.themes-no-connected')}>No sector-connected candidate cleared this theme's signal minimum in the latest report.</p>
-            ) : <ThemeRowsTable rows={connected} />}
+            ) : <ThemeRowsTable rows={connected} openStockDetail={openStockDetail} />}
           </section>
         )
       })}
@@ -1533,6 +1538,7 @@ function ScreensScreenContent() {
 
   return (
     <div data-screen="screens" data-recipe={recipe}>
+      <StockDetailSheet />
       <Container>
         <h1>{recipe}</h1>
         {!selfFetching && (

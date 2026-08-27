@@ -7,7 +7,13 @@ import { useData } from '../../../lib/useData.js'
 
 vi.mock('../../../lib/useData.js', async (importOriginal) => ({ ...(await importOriginal()), useData: vi.fn() }))
 
-const fakeManifest = { components: {} }
+// StockDetailSheet (mounted unconditionally by ScreensScreen since the FastGrowth open-detail
+// wiring) calls useRenderer(), which needs `manifest.loadRenderer` to resolve to something — a
+// bare `{ components: {} }` manifest crashed every test here with "manifest.loadRenderer is not
+// a function" even when no ?ticker= was ever set, because useRenderer's own effect always fires.
+const fakeChart = vi.fn(({ metricId }) => <svg data-testid="fake-chart" data-metric-id={metricId} />)
+const fakeRenderer = { dial: fakeChart, bar: fakeChart, profile: fakeChart, waterfall: fakeChart, line: fakeChart }
+const fakeManifest = { components: {}, loadRenderer: () => Promise.resolve(fakeRenderer) }
 
 function renderScreens(path) {
   return render(

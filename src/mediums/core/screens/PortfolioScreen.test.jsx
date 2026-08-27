@@ -27,6 +27,12 @@ const fakeRenderer = { line: fakeChart, bar: fakeChart, dial: fakeChart, fan: fa
 const fakeManifest = { components: {}, loadRenderer: () => Promise.resolve(fakeRenderer) }
 
 const reportFixture = { generated_at: '2026-08-25', research: [], screen_universe: [], portfolio_coverage: [] }
+
+/** A published research row whose `getRecommendation()` verdict is TRIM, for suggested-actions tests. */
+const trimResearchRow = {
+  ticker: 'AAA', name: 'AAA Corp', price: 12, is_etf: false, data_coverage: 0.9,
+  recommendation: { action: 'TRIM', suggested_trim_pct: 25, reasons: ['Two of three factors flagged'], agreement_count: 2 },
+}
 const financesSettingsFixture = {
   schemaVersion: 3, currentAge: 30, retireAge: 65, inflationPct: 2.5, monthlyContribution: 500, currentSavings: 10000,
   retirementEndAge: 95, monthlyWithdrawal: 3000, allocationAggressiveness: 'growth', planningAnnualReturnTargetPct: 15,
@@ -131,6 +137,32 @@ describe('PortfolioScreen', () => {
       expect(container.querySelector('[data-capability-id="figure.portfolio.holdings-grid"]')).toBeInTheDocument()
       expect(container.querySelector('[data-capability-id="column.portfolio.benchmark-table"]')).toBeInTheDocument()
       expect(screen.getByTestId('holdings-grid')).toHaveTextContent('AAA')
+    })
+
+    it('summary view: clicking a holdings-grid ticker opens the Stock Detail Sheet via ?ticker=', () => {
+      const { container } = renderPortfolio('/v2/portfolio?view=summary')
+      fireEvent.click(screen.getByTestId('holdings-grid').querySelector('button'))
+      expect(container.querySelector('[data-capability-id="detail.stock.dialog-shell"]')).toBeInTheDocument()
+    })
+
+    it('summary view: does not render a suggested action for a HOLD-only portfolio', () => {
+      const { container } = renderPortfolio('/v2/portfolio?view=summary')
+      expect(container.querySelector('[data-capability-id="control.portfolio.suggested-actions-toggle"]')).toBeInTheDocument()
+      expect(container.querySelector('[data-capability-id="figure.portfolio.suggested-actions-list"]')).toHaveTextContent('No sell/trim actions need review right now.')
+      expect(container.querySelector('#sell-signals')).toBeInTheDocument()
+    })
+
+    it('summary view: renders a suggested action for a TRIM/SELL position, and "Why" opens the Stock Detail Sheet', () => {
+      useData.mockImplementation((file) => {
+        if (file === 'report.json') return { data: { ...reportFixture, research: [trimResearchRow] }, loading: false }
+        return dataForFile(file)
+      })
+      const { container } = renderPortfolio('/v2/portfolio?view=summary')
+      const list = container.querySelector('[data-capability-id="figure.portfolio.suggested-actions-list"]')
+      expect(list).toHaveTextContent('AAA')
+      expect(list).toHaveTextContent('TRIM')
+      fireEvent.click(screen.getByText('Why'))
+      expect(container.querySelector('[data-capability-id="detail.stock.dialog-shell"]')).toBeInTheDocument()
     })
 
     it('data view: renders the structural rows and the standard-measures metric rows', () => {
