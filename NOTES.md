@@ -579,3 +579,103 @@ instead via 13 real-browser route×medium checks plus the switcher round trip, a
 generic-quadrant-scatter chart and the 5 named Portfolio chart rows remain deferred. Research's
 `chart.home.score-gauges` id-ownership question is a small future ledger cleanup, not a functional
 gap.
+
+**Phase 6 — Stock Detail Sheet, copy/export, e2e fixtures, four named fixes.** User asked to skip
+Alerts (unused), get the Stock Detail Sheet actually working, make copy/export genuinely work, and
+fix four things named verbatim from a prior status summary: the e2e fixture gap, Classic's budget
+overage, one axe accessibility violation, and the `money_weighted_xirr` doc gap — plus the
+unconsumed redirect cutover.
+
+**6e — the two small direct fixes**, done first. `--text-tertiary`/`--text-faint` in
+`variables.css` were fixed against real axe-scanned card backgrounds, not just computed contrast
+against the flat page background — the first fix attempt (`#6f7f96`, 4.74:1 against the flat
+background) still failed axe's real DOM scan (4.29–4.40:1 against the actual tinted card
+surfaces), caught only by re-running the real test, not by re-checking the math. `docs/
+METRIC_INVENTORY.md`'s `money_weighted_xirr` row pointed at a deleted file; repointed to its two
+real current render sites.
+
+**Wave 1 — three independent agents.** Extracted `resolvedMetricSections`/`readValue`/
+`canonicalKey` out of the ESLint-restricted `src/components/MetricSections.jsx` into `src/lib/
+resolvedMetricSections.js` (pure move, re-exported from the old location), unblocking
+`stockCopyText.js` for `core/` use ahead of the Stock Detail Sheet. Extended e2e fixture coverage
+from 4 files to 39 via a new `scripts/trim-e2e-fixtures.mjs` (Tier 1: ticker-set-aware structural
+trims for `advisor.json`/`congress-trades.json`/the 4 ETF snapshots; Tier 2: stride-sampled arrays
+for the remaining 29) — the agent caught and fixed its own nesting bug (`etf/etf/`, `factors/
+factors/`) from a backup/restore mishap during its own flake testing, before reporting done. Built
+live medium-preview thumbnails for Settings' "Try a new look" picker — real `LabelFrame`/renderer
+output, not color swatches, solving the `:root[data-medium]`-can't-scope-to-a-nested-div problem
+by loading each `tokens.css` as raw text and rewriting its selectors to a local
+`[data-preview-medium]` attribute rather than the document root.
+
+**Wave 2 — the Stock Detail Sheet, Stage 0.** Ground-up rebuild in `core/` (every legacy
+sub-component lives in the ESLint-restricted `src/components/` tree) wiring all 37 §14 ledger rows,
+including the first-ever real screen call sites for `waterfall` and `profile`. Found real data for
+`chart.stock.score-history` (`explainability.score_history`) and wired it rather than deferring as
+planned. Found and fixed a live bug while building the insider-activity block: the legacy gate
+reads `insider.records_reviewed`, a field that doesn't exist on the published shape (the real field
+is `transactions_reviewed`) — Classic's own insider-activity panel has never rendered for any
+ticker as a result. Fixed in the new implementation with a fallback to the old name; left the
+untouched legacy file alone since fixing it is out of this rebuild's scope. In parallel, reimplemented
+Portfolio's data-overview export using real `exportSnapshot.js` calls split into the ledger's actual
+granular ids, discovering along the way that `benchmarkReport` was never fetched on `?view=data` at
+all (fixed) and that `monteCarlo` isn't cleanly reachable from that view without a larger
+restructure (passed `null`, named rather than hidden).
+
+**Wave 3 — Stock Detail Sheet, Stage 1, four parallel agents.** Wired `openStockDetail(ticker)`
+into the sheet's remaining 5 call sites: FastGrowth, Options (index + all 7 strategy sub-views),
+ThemeExposure (3 separate ticker-rendering spots), and Portfolio Summary. Three of the four agents
+shared `ScreensScreen.jsx` concurrently and self-coordinated cleanly on the one shared
+`<StockDetailSheet />` mount point (checked-before-adding, confirmed by the merged diff carrying
+exactly one). Portfolio's suggested-actions section (`control.portfolio.suggested-actions-toggle`,
+`figure.portfolio.suggested-actions-list`) didn't exist anywhere before this — built fresh from
+`getRecommendation()`'s TRIM/SELL verdicts, deliberately simplified from the legacy reference (no
+tax-lot-aware trim sizing, no `ConcentrationCard` parity), noted rather than silently matched.
+Full consolidation after Wave 3 (not just per-agent scoped checks): full-repo lint, the entire 1455-
+test vitest suite, a production build (confirming `StockDetailSheet` code-splits into its own ~30kB
+chunk, not inlined into every screen), and the full non-visual e2e suite (130 tests) all green.
+`budget.spec.mjs` flaked on two extra mediums under `--workers` parallelism on one run — re-ran with
+`--workers=1` and got the same 11/12 result as every prior checkpoint (only Classic fails, the
+already-documented pre-existing overage) — the same class of timing race Phase 5's consolidation
+also hit and closed, this time in the test harness itself rather than the app.
+
+**6d — Classic's budget overage: held, not attempted.** The original research proposed deferring
+`hud-*.css` behind `/hud-demo`'s route as a safe, risk-free win. Verified directly before
+implementing anything and found it wrong: `initAdvancedHUD()` runs on every Classic page via
+`App.jsx`'s own `useEffect`, not just `/hud-demo`, and the CSS in question styles the DOM elements
+that effect creates — deferring it would have broken Classic's visible ambient chrome on every page.
+No other safe partial win was found; `vendor-*.js` (218kB, shared across all twelve mediums) plus
+`styles-*.css` (341kB, one monolithic cascade-order-dependent stylesheet) already exceed the 500kB
+ceiling before any of Classic's own JS is counted. Not attempted in Phase 6, stated plainly rather
+than forcing a fix that either breaks Classic's chrome or doesn't move the number.
+
+**6f — the redirect cutover: skipped, not implemented, after a direct architectural finding.** The
+plan called for wiring `src/routes/redirects.js`'s 41 entries into `App.jsx` as `<Navigate>` routes,
+retiring Classic's old per-page paths in favor of the six-destination consolidated shape
+(`/screens?recipe=`, `/portfolio?view=`, etc.). Before implementing, checked what those 41 paths
+actually resolve to today and found a real problem the plan's authoring predates: Classic's own
+sidebar (`NAV_GROUPS`/`NAV_AFTER_GROUPS` in `App.jsx`) still uses these exact paths — `/finances`,
+`/watchlist`, `/methodology`, `/screens/momentum`, all of them — as live, working internal links to
+real Classic pages. The six-destination consolidated shape (`?recipe=`/`?view=` selectors) only
+exists under `/v2`; Classic never adopted it, by design, per the "Classic preserved... isolated
+pass" rule the rebuild has followed since Phase 0. Wiring the redirect map in as specced would mean
+clicking Classic's own ordinary sidebar links — "Financial stats," "Watchlist," "Methodology," and
+every `/screens/<recipe>` link — would eject the user into `/v2`'s medium experience instead of
+showing Classic's own page: not an old-bookmark cleanup, a live regression to Classic's own working
+navigation, converting routine in-app clicks into unexpected medium-switches. Mechanically the
+redirect *would* have worked (`NotFoundOrMedium`'s existing hard-reload handoff to `MediumApp.jsx`
+already handles a `/v2`-destined `<Navigate>` correctly), so this isn't a technical blocker — it's
+a UX one, and the earlier "as long as those screens are still available... I don't care" answer
+was given before this specific consequence (ejection from Classic's own nav, not just old-bookmark
+survival) was known. Put directly to the user with the finding; **answer: skip the cutover**.
+`redirects.js`/`ROUTE-INVENTORY.md`'s redirect table stay exactly as they were (built, documented,
+unconsumed) — this is a deliberate, recorded decision, not an oversight, and revisiting it would
+need either Classic itself adopting the consolidated shape or a narrower redirect list scoped to
+paths Classic's own nav has actually stopped using.
+
+**Remaining after Phase 6**: `chart.stock.score-history`'s divergence/dip-watch/bull-bear-thesis
+branches are built and logically verified but currently unexercised by any row in the live dataset
+(not a defect — confirmed by direct data inspection, not assumed); the e2e fixture gap is closed
+for the six core screens as of Wave 1 but will drift again as new capability rows get wired;
+Alerts/Settings chrome demotion, deeper a11y sweeps beyond the one named violation, and the
+`chart.screens.generic-quadrant-scatter`/5 Portfolio chart rows deferred since Phase 5 remain open,
+not newly discovered.
