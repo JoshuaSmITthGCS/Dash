@@ -1,0 +1,486 @@
+{
+  "schema_version": "1.0.0",
+  "model_version": "tactical-v1.0.0",
+  "config_version": "screens-v2.0.0",
+  "generated_at": "2026-08-25T19:59:21.899548+00:00",
+  "status": "success",
+  "factor_weights": {
+    "revision_agreement": 0.12,
+    "revision_magnitude": 0.15,
+    "revision_acceleration": 0.08,
+    "fresh_estimate_delta": 0.05,
+    "dispersion_trend": 0.05,
+    "eps_surprise": 0.08,
+    "surprise_consistency": 0.04,
+    "revenue_surprise": 0.03,
+    "post_earnings_drift": 0.05,
+    "momentum_12_1": 0.08,
+    "momentum_6_1": 0.04,
+    "high_52w_proximity": 0.04,
+    "industry_relative_momentum": 0.04,
+    "industry_revision_breadth": 0.1,
+    "risk_tradability": 0.05
+  },
+  "universe_scored": 877,
+  "publish_limit": 300,
+  "revision_history": {
+    "collection": "FORWARD_COLLECTION_ONLY",
+    "tickers_with_estimate_history": 0,
+    "note": "Revision acceleration and dispersion trend need this pipeline's own collected estimate snapshots; no provider sells the back history, so they fill in per ticker as the store accumulates."
+  },
+  "coverage_note": "Tactical scores use the 62% of the model's weight that today's inputs fill (revisions, price confirmation, industry breadth, tradability), renormalized. Revision acceleration, dispersion trend and the earnings-surprise factors stay absent until this pipeline's own forward collection is deep enough, which is what the FORWARD_COLLECTION_ONLY flag on each row means. The file carries the top 300 of 877 scored companies.",
+  "results": [
+    {
+      "rank": 1,
+      "ticker": "EXPD",
+      "sector": "Industrials",
+      "peer_group": "Industrials",
+      "classification": "accelerating expectations",
+      "structural_score": 78.5,
+      "tactical_score": 84.3685,
+      "data_coverage": 0.62,
+      "coverage": 0.62,
+      "market_cap": 24572127232,
+      "median_dollar_volume_60d": 189943526.73797607,
+      "factors": {
+        "high_52w_proximity": 95.22,
+        "industry_relative_momentum": 80.38,
+        "industry_revision_breadth": 82.53,
+        "momentum_12_1": 82.87,
+        "momentum_6_1": 73.08,
+        "revision_agreement": 82.26,
+        "revision_magnitude": 91.7,
+        "risk_tradability": 77.07
+      },
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY"
+      ],
+      "percentile": 100
+    },
+    {
+      "rank": 22,
+      "ticker": "LSCC",
+      "sector": "Technology",
+      "peer_group": "Semiconductor",
+      "classification": "accelerating expectations",
+      "structural_score": 55.4,
+      "tactical_score": 80.3864,
+      "data_coverage": 0.62,
+      "coverage": 0.62,
+      "market_cap": 16393296896,
+      "median_dollar_volume_60d": 270121925.34942627,
+      "factors": {
+        "high_52w_proximity": 22.96,
+        "industry_relative_momentum": 78.95,
+        "industry_revision_breadth": 94.89,
+        "momentum_12_1": 95.1,
+        "momentum_6_1": 87.76,
+        "revision_agreement": 82.26,
+        "revision_magnitude": 94.46,
+        "risk_tradability": 22.29
+      },
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY"
+      ],
+      "percentile": 97.6
+    },
+    {
+      "rank": 44,
+      "ticker": "XPO",
+      "sector": "Industrials",
+      "peer_group": "Industrials",
+      "classification": "accelerating expectations",
+      "structural_score": 53.8,
+      "tactical_score": 77.6443,
+      "data_coverage": 0.62,
+      "coverage": 0.62,
+      "market_cap": 22617006080,
+      "median_dollar_volume_60d": 228808547.91259766,
+      "factors": {
+        "high_52w_proximity": 40.79,
+        "industry_relative_momentum": 87.75,
+        "industry_revision_breadth": 82.53,
+        "momentum_12_1": 89.16,
+        "momentum_6_1": 32.17,
+        "revision_agreement": 82.26,
+        "revision_magnitude": 90.6,
+        "risk_tradability": 57.28
+      },
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY"
+      ],
+      "percentile": 95.09
+    },
+    {
+      "rank": 65,
+      "ticker": "RNR",
+      "sector": "Financial Services",
+      "peer_group": "Diversified insurers",
+      "classification": "accelerating expectations",
+      "structural_score": 86.4,
+      "tactical_score": 75.8194,
+      "data_coverage": 0.62,
+      "coverage": 0.62,
+      "market_cap": 13656860672,
+      "median_dollar_volume_60d": 103454764.20898438,
+      "factors": {
+        "high_52w_proximity": 86.36,
+        "industry_relative_momentum": 82.64,
+        "industry_revision_breadth": 97.93,
+        "momentum_12_1": 77.51,
+        "momentum_6_1": 53.73,
+        "revision_agreement": 61.31,
+        "revision_magnitude": 78.26,
+        "risk_tradability": 60.19
+      },
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY"
+      ],
+      "percentile": 92.69
+    },
+    {
+      "rank": 86,
+      "ticker": "NUE",
+      "sector": "Basic Materials",
+      "peer_group": "Commodity producers",
+      "classification": "improving expectations",
+      "structural_score": 72.9,
+      "tactical_score": 73.6539,
+      "data_coverage": 0.62,
+      "coverage": 0.62,
+      "market_cap": 56223199232,
+      "median_dollar_volume_60d": 349885667.18292236,
+      "factors": {
+        "high_52w_proximity": 55.24,
+        "industry_relative_momentum": 87.51,
+        "industry_revision_breadth": 21.09,
+        "momentum_12_1": 93.71,
+        "momentum_6_1": 94.41,
+        "revision_agreement": 82.26,
+        "revision_magnitude": 90.2,
+        "risk_tradability": 63.45
+      },
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY"
+      ],
+      "percentile": 90.3
+    },
+    {
+      "rank": 108,
+      "ticker": "DINO",
+      "sector": "Energy",
+      "peer_group": "Commodity producers",
+      "classification": "improving expectations",
+      "structural_score": 84,
+      "tactical_score": 71.7454,
+      "data_coverage": 0.62,
+      "coverage": 0.62,
+      "market_cap": 16663681024,
+      "median_dollar_volume_60d": 180166295.2102661,
+      "factors": {
+        "high_52w_proximity": 95.22,
+        "industry_relative_momentum": 90.84,
+        "industry_revision_breadth": 21.67,
+        "momentum_12_1": 94.76,
+        "momentum_6_1": 98.14,
+        "revision_agreement": 60.33,
+        "revision_magnitude": 95.27,
+        "risk_tradability": 36.73
+      },
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY"
+      ],
+      "percentile": 87.79
+    },
+    {
+      "rank": 129,
+      "ticker": "FLEX",
+      "sector": "Technology",
+      "peer_group": "Technology",
+      "classification": "improving expectations",
+      "structural_score": 66.3,
+      "tactical_score": 69.5038,
+      "data_coverage": 0.62,
+      "coverage": 0.62,
+      "market_cap": 39792087040,
+      "median_dollar_volume_60d": 755800500,
+      "factors": {
+        "high_52w_proximity": 13.87,
+        "industry_relative_momentum": 97.86,
+        "industry_revision_breadth": 64.6,
+        "momentum_12_1": 97.2,
+        "momentum_6_1": 97.67,
+        "revision_agreement": 57.81,
+        "revision_magnitude": 75.89,
+        "risk_tradability": 43.19
+      },
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY"
+      ],
+      "percentile": 85.39
+    },
+    {
+      "rank": 151,
+      "ticker": "ETN",
+      "sector": "Industrials",
+      "peer_group": "Industrials",
+      "classification": "improving expectations",
+      "structural_score": 63.5,
+      "tactical_score": 67.2786,
+      "data_coverage": 0.62,
+      "coverage": 0.62,
+      "market_cap": 158822465536,
+      "median_dollar_volume_60d": 938337578.8513184,
+      "factors": {
+        "high_52w_proximity": 60.61,
+        "industry_relative_momentum": 57.79,
+        "industry_revision_breadth": 82.53,
+        "momentum_12_1": 63.64,
+        "momentum_6_1": 64.22,
+        "revision_agreement": 82.26,
+        "revision_magnitude": 54.33,
+        "risk_tradability": 60.88
+      },
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY"
+      ],
+      "percentile": 82.88
+    },
+    {
+      "rank": 172,
+      "ticker": "HUM",
+      "sector": "Healthcare",
+      "peer_group": "Healthcare",
+      "classification": "improving expectations",
+      "structural_score": 60.9,
+      "tactical_score": 65.9514,
+      "data_coverage": 0.62,
+      "coverage": 0.62,
+      "market_cap": 46371414016,
+      "median_dollar_volume_60d": 520298936.6455078,
+      "factors": {
+        "high_52w_proximity": 72.84,
+        "industry_relative_momentum": 58.5,
+        "industry_revision_breadth": 73.68,
+        "momentum_12_1": 65.62,
+        "momentum_6_1": 98.37,
+        "revision_agreement": 46.67,
+        "revision_magnitude": 64.65,
+        "risk_tradability": 75.73
+      },
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY"
+      ],
+      "percentile": 80.48
+    },
+    {
+      "rank": 193,
+      "ticker": "MUSA",
+      "sector": "Consumer Cyclical",
+      "peer_group": "Consumer Cyclical",
+      "classification": "improving expectations",
+      "structural_score": 73.6,
+      "tactical_score": 64.7964,
+      "data_coverage": 0.62,
+      "coverage": 0.62,
+      "market_cap": 10030891008,
+      "median_dollar_volume_60d": 162252011.35253906,
+      "factors": {
+        "high_52w_proximity": 47.2,
+        "industry_relative_momentum": 94.65,
+        "industry_revision_breadth": 28.74,
+        "momentum_12_1": 91.14,
+        "momentum_6_1": 96.15,
+        "revision_agreement": 48.16,
+        "revision_magnitude": 85.35,
+        "risk_tradability": 38.13
+      },
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY"
+      ],
+      "percentile": 78.08
+    },
+    {
+      "rank": 215,
+      "ticker": "BC",
+      "sector": "Consumer Cyclical",
+      "peer_group": "Other Pre Profit",
+      "classification": "improving expectations",
+      "structural_score": 55.2,
+      "tactical_score": 63.332,
+      "data_coverage": 0.62,
+      "coverage": 0.62,
+      "market_cap": 5185090048,
+      "median_dollar_volume_60d": 52243487.409210205,
+      "factors": {
+        "high_52w_proximity": 57.23,
+        "industry_relative_momentum": 73.96,
+        "industry_revision_breadth": 32.87,
+        "momentum_12_1": 71.1,
+        "momentum_6_1": 40.56,
+        "revision_agreement": 82.26,
+        "revision_magnitude": 84.08,
+        "risk_tradability": 18.74
+      },
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY"
+      ],
+      "percentile": 75.57
+    },
+    {
+      "rank": 236,
+      "ticker": "AMTM",
+      "sector": "Industrials",
+      "peer_group": "Industrials",
+      "classification": "improving expectations",
+      "structural_score": 57,
+      "tactical_score": 62.7458,
+      "data_coverage": 0.37,
+      "coverage": 0.37,
+      "market_cap": 4963480064,
+      "median_dollar_volume_60d": null,
+      "factors": {
+        "industry_revision_breadth": 89.89,
+        "revision_agreement": 45.46,
+        "revision_magnitude": 58.48
+      },
+      "eligibility": false,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY",
+        "INSUFFICIENT_PRICE_HISTORY"
+      ],
+      "percentile": 73.17
+    },
+    {
+      "rank": 257,
+      "ticker": "ACGL",
+      "sector": "Financial Services",
+      "peer_group": "Diversified insurers",
+      "classification": "improving expectations",
+      "structural_score": 83.2,
+      "tactical_score": 61.8104,
+      "data_coverage": 0.62,
+      "coverage": 0.62,
+      "market_cap": 34406899712,
+      "median_dollar_volume_60d": 197654330.69229126,
+      "factors": {
+        "high_52w_proximity": 74.59,
+        "industry_relative_momentum": 60.05,
+        "industry_revision_breadth": 99.08,
+        "momentum_12_1": 49.77,
+        "momentum_6_1": 42.31,
+        "revision_agreement": 46.04,
+        "revision_magnitude": 52.19,
+        "risk_tradability": 80.03
+      },
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY"
+      ],
+      "percentile": 70.78
+    },
+    {
+      "rank": 279,
+      "ticker": "NOV",
+      "sector": "Energy",
+      "peer_group": "Commodity producers",
+      "classification": "improving expectations",
+      "structural_score": 70.3,
+      "tactical_score": 60.4677,
+      "data_coverage": 0.62,
+      "coverage": 0.62,
+      "market_cap": 7088567296,
+      "median_dollar_volume_60d": 67062010.51902771,
+      "factors": {
+        "high_52w_proximity": 68.41,
+        "industry_relative_momentum": 69.68,
+        "industry_revision_breadth": 22.18,
+        "momentum_12_1": 87.53,
+        "momentum_6_1": 35.08,
+        "revision_agreement": 52.07,
+        "revision_magnitude": 90.89,
+        "risk_tradability": 29.22
+      },
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY"
+      ],
+      "percentile": 68.26
+    },
+    {
+      "rank": 300,
+      "ticker": "FTDR",
+      "sector": "Consumer Cyclical",
+      "peer_group": "Consumer Cyclical",
+      "classification": "stable expectations",
+      "structural_score": 78.3,
+      "tactical_score": 59.1112,
+      "data_coverage": 0.62,
+      "coverage": 0.62,
+      "market_cap": 5743635456,
+      "median_dollar_volume_60d": 35225784.173583984,
+      "factors": {
+        "high_52w_proximity": 65.97,
+        "industry_relative_momentum": 80.14,
+        "industry_revision_breadth": 23.79,
+        "momentum_12_1": 63.17,
+        "momentum_6_1": 53.26,
+        "revision_agreement": 82.26,
+        "revision_magnitude": 73.7,
+        "risk_tradability": 6.29
+      },
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "REVISION_BACKTEST_UNAVAILABLE",
+        "FORWARD_COLLECTION_ONLY"
+      ],
+      "percentile": 65.87
+    }
+  ],
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "a8015681c21d886e074df2701d409e9c71524f27",
+    "config_hash": "ae4d188f2c6d6808ee2edcf2da308b051842737c393d266691484a1203456902",
+    "generated_at": "2026-08-25T19:59:21.899548+00:00"
+  }
+}

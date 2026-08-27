@@ -1,0 +1,605 @@
+{
+  "schema_version": "1.0.0",
+  "model_version": "quality-value-v2.0.0",
+  "config_version": "screens-v2.0.0",
+  "generated_at": "2026-08-25T19:58:40.945350+00:00",
+  "status": "success",
+  "own_history": {
+    "source": "reconstructed_from_cached_statements_and_closes",
+    "minimum_sessions": 100,
+    "minimum_fundamental_steps": 2,
+    "reporting_lag_days": 45,
+    "tickers_with_history": 445,
+    "deepest_sessions": 121,
+    "earliest_start": "2026-02-17"
+  },
+  "quality_weights": {
+    "profitability": 0.35,
+    "financial_health": 0.3,
+    "accounting_quality": 0.2,
+    "capital_allocation": 0.15
+  },
+  "metric_weights_by_profile": {
+    "general": {
+      "price_to_earnings": 0.8,
+      "price_to_sales": 0.5,
+      "price_to_book": 0.4,
+      "ev_to_ebit": 1,
+      "ev_to_ebitda": 1,
+      "ev_to_fcf": 0.8
+    },
+    "bank": {
+      "price_to_earnings": 1,
+      "price_to_book": 1,
+      "price_to_tangible_book": 1
+    },
+    "property_casualty_insurer": {
+      "price_to_earnings": 0.8,
+      "price_to_book": 1,
+      "price_to_tangible_book": 1
+    },
+    "life_insurer": {
+      "price_to_earnings": 0.8,
+      "price_to_book": 1,
+      "price_to_tangible_book": 1
+    },
+    "diversified_insurer": {
+      "price_to_earnings": 0.8,
+      "price_to_book": 1,
+      "price_to_tangible_book": 1
+    },
+    "reit": {
+      "ev_to_ebitda": 1,
+      "ev_to_fcf": 1,
+      "price_to_book": 0.6,
+      "price_to_sales": 0.5
+    },
+    "utility": {
+      "ev_to_ebitda": 1,
+      "ev_to_ebit": 0.8,
+      "price_to_earnings": 0.8,
+      "price_to_book": 0.6
+    },
+    "commodity_producer": {
+      "ev_to_ebitda": 1,
+      "price_to_book": 0.8,
+      "price_to_sales": 0.6,
+      "ev_to_sales": 0.6
+    },
+    "profitable_biotechnology": {
+      "price_to_earnings": 0.8,
+      "ev_to_ebit": 1,
+      "ev_to_ebitda": 1,
+      "ev_to_sales": 0.6
+    },
+    "pre_profit_biotechnology": {
+      "ev_to_sales": 1,
+      "price_to_sales": 0.8,
+      "price_to_book": 0.5
+    },
+    "other_pre_profit": {
+      "ev_to_sales": 1,
+      "price_to_sales": 0.8,
+      "price_to_book": 0.5
+    },
+    "financial": {
+      "price_to_earnings": 1,
+      "price_to_book": 1,
+      "price_to_tangible_book": 0.8
+    }
+  },
+  "universe_scored": 877,
+  "publish_limit": 300,
+  "coverage_note": "Own-history cheapness is measured over each company's reconstructed multiple series - at most 121 sessions, starting 2026-02-17, priced against statements only from 45 days after each period ended. 445 of 877 companies clear the 100-session minimum; the rest are ranked on peer cheapness and quality until their own record is deep enough. The file carries the top 300 of 877 scored companies.",
+  "results": [
+    {
+      "rank": 1,
+      "ticker": "SFBS",
+      "sector": "Financial Services",
+      "peer_group": "Banks",
+      "business_profile": "bank",
+      "classification": "actionable value",
+      "percentile": 99.54,
+      "structural_score": 82.2,
+      "tactical_score": null,
+      "data_coverage": 0.74,
+      "market_cap": 4711676928,
+      "median_dollar_volume_60d": 21020232.287597656,
+      "own_history_score": 99.17,
+      "own_history_sessions": 121,
+      "own_history_steps": 2,
+      "own_history_start": "2026-02-17",
+      "peer_value_score": 90,
+      "peer_value_basis": "cross_sectional_valuation_score",
+      "quality_score": 85.42,
+      "metric_percentiles": {
+        "price_to_earnings": 99.17,
+        "price_to_book": 99.17,
+        "price_to_tangible_book": 99.17
+      },
+      "distressed": false,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": []
+    },
+    {
+      "rank": 22,
+      "ticker": "MIDD",
+      "sector": "Industrials",
+      "peer_group": "Other Pre Profit",
+      "business_profile": "other_pre_profit",
+      "classification": "cheap but deteriorating",
+      "percentile": 97.14,
+      "structural_score": 73.8,
+      "tactical_score": null,
+      "data_coverage": 0.85,
+      "market_cap": 5134093312,
+      "median_dollar_volume_60d": 80359819.24142456,
+      "own_history_score": 97.52,
+      "own_history_sessions": 121,
+      "own_history_steps": 2,
+      "own_history_start": "2026-02-17",
+      "peer_value_score": 83.3,
+      "peer_value_basis": "sector_valuation_percentile",
+      "quality_score": 65.53,
+      "metric_percentiles": {
+        "ev_to_sales": 99.17,
+        "price_to_sales": 97.52,
+        "price_to_book": 59.5
+      },
+      "distressed": false,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "FORWARD_ESTIMATE_DETERIORATION"
+      ]
+    },
+    {
+      "rank": 44,
+      "ticker": "PODD",
+      "sector": "Healthcare",
+      "peer_group": "Healthcare",
+      "business_profile": "general",
+      "classification": "high quality but not cheap",
+      "percentile": 93.26,
+      "structural_score": 64.7,
+      "tactical_score": null,
+      "data_coverage": 0.87,
+      "market_cap": 9957183488,
+      "median_dollar_volume_60d": 218767134.9182129,
+      "own_history_score": 92.56,
+      "own_history_sessions": 121,
+      "own_history_steps": 2,
+      "own_history_start": "2026-02-17",
+      "peer_value_score": 16.7,
+      "peer_value_basis": "sector_valuation_percentile",
+      "quality_score": 80.98,
+      "metric_percentiles": {
+        "price_to_earnings": 92.56,
+        "price_to_sales": 92.56,
+        "price_to_book": 85.95,
+        "ev_to_ebit": 92.56,
+        "ev_to_ebitda": 92.56,
+        "ev_to_fcf": 92.56
+      },
+      "distressed": false,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "NOT_CHEAP_VS_OWN_HISTORY"
+      ]
+    },
+    {
+      "rank": 65,
+      "ticker": "KEYS",
+      "sector": "Technology",
+      "peer_group": "Technology",
+      "business_profile": "general",
+      "classification": "high quality but not cheap",
+      "percentile": 77.26,
+      "structural_score": 69.9,
+      "tactical_score": null,
+      "data_coverage": 0.89,
+      "market_cap": 53964664832,
+      "median_dollar_volume_60d": 458360774.5513916,
+      "own_history_score": 83.17,
+      "own_history_sessions": 101,
+      "own_history_steps": 2,
+      "own_history_start": "2026-03-17",
+      "peer_value_score": 16.7,
+      "peer_value_basis": "sector_valuation_percentile",
+      "quality_score": 80.1,
+      "metric_percentiles": {
+        "price_to_earnings": 83.17,
+        "price_to_sales": 77.23,
+        "price_to_book": 75.25,
+        "ev_to_ebit": 83.17,
+        "ev_to_ebitda": 84.16,
+        "ev_to_fcf": 75.25
+      },
+      "distressed": false,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "NOT_CHEAP_VS_OWN_HISTORY"
+      ]
+    },
+    {
+      "rank": 86,
+      "ticker": "XRAY",
+      "sector": "Healthcare",
+      "peer_group": "Other Pre Profit",
+      "business_profile": "other_pre_profit",
+      "classification": "distressed/value trap",
+      "percentile": 72.57,
+      "structural_score": 45.3,
+      "tactical_score": null,
+      "data_coverage": 0.74,
+      "market_cap": 2158005504,
+      "median_dollar_volume_60d": 55871068.170547485,
+      "own_history_score": 72.73,
+      "own_history_sessions": 121,
+      "own_history_steps": 2,
+      "own_history_start": "2026-02-17",
+      "peer_value_score": 50,
+      "peer_value_basis": "sector_valuation_percentile",
+      "quality_score": 42.32,
+      "metric_percentiles": {
+        "ev_to_sales": 72.73,
+        "price_to_sales": 72.73,
+        "price_to_book": 68.6
+      },
+      "distressed": true,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "SEVERE_DISTRESS"
+      ]
+    },
+    {
+      "rank": 108,
+      "ticker": "MUSA",
+      "sector": "Consumer Cyclical",
+      "peer_group": "Consumer Cyclical",
+      "business_profile": "general",
+      "classification": "high quality but not cheap",
+      "percentile": 68.29,
+      "structural_score": 73.6,
+      "tactical_score": null,
+      "data_coverage": 0.87,
+      "market_cap": 10030891008,
+      "median_dollar_volume_60d": 162252011.35253906,
+      "own_history_score": 66.94,
+      "own_history_sessions": 121,
+      "own_history_steps": 2,
+      "own_history_start": "2026-02-17",
+      "peer_value_score": 50,
+      "peer_value_basis": "sector_valuation_percentile",
+      "quality_score": 71.67,
+      "metric_percentiles": {
+        "price_to_earnings": 66.94,
+        "price_to_sales": 42.98,
+        "price_to_book": 49.59,
+        "ev_to_ebit": 71.9,
+        "ev_to_ebitda": 66.12,
+        "ev_to_fcf": 85.12
+      },
+      "distressed": false,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "NOT_CHEAP_VS_OWN_HISTORY"
+      ]
+    },
+    {
+      "rank": 129,
+      "ticker": "GLOB",
+      "sector": "Technology",
+      "peer_group": "Technology",
+      "business_profile": "general",
+      "classification": "distressed/value trap",
+      "percentile": 64.57,
+      "structural_score": 61.8,
+      "tactical_score": null,
+      "data_coverage": 0.84,
+      "market_cap": 1717682688,
+      "median_dollar_volume_60d": 62642068.965911865,
+      "own_history_score": 55.83,
+      "own_history_sessions": 120,
+      "own_history_steps": 2,
+      "own_history_start": "2026-02-17",
+      "peer_value_score": 83.3,
+      "peer_value_basis": "sector_valuation_percentile",
+      "quality_score": 64.36,
+      "metric_percentiles": {
+        "price_to_earnings": 56.67,
+        "price_to_sales": 55,
+        "price_to_book": 55.83,
+        "ev_to_ebit": 55.83,
+        "ev_to_ebitda": 55.83,
+        "ev_to_fcf": 59.17
+      },
+      "distressed": false,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "QUALITY_GATE_FAILED"
+      ]
+    },
+    {
+      "rank": 151,
+      "ticker": "AXON",
+      "sector": "Industrials",
+      "peer_group": "Industrials",
+      "business_profile": "general",
+      "classification": "distressed/value trap",
+      "percentile": 61.66,
+      "structural_score": 38.3,
+      "tactical_score": null,
+      "data_coverage": 0.85,
+      "market_cap": 49614938112,
+      "median_dollar_volume_60d": 445858287.689209,
+      "own_history_score": 50.83,
+      "own_history_sessions": 120,
+      "own_history_steps": 2,
+      "own_history_start": "2026-02-17",
+      "peer_value_score": 15.5,
+      "peer_value_basis": "cross_sectional_valuation_score",
+      "quality_score": 46.46,
+      "metric_percentiles": {
+        "price_to_earnings": 50.83,
+        "price_to_sales": 4.17,
+        "price_to_book": 5.83,
+        "ev_to_ebit": 53.33,
+        "ev_to_ebitda": 53.33,
+        "ev_to_fcf": 1.67
+      },
+      "distressed": false,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "QUALITY_GATE_FAILED"
+      ]
+    },
+    {
+      "rank": 172,
+      "ticker": "ULTA",
+      "sector": "Consumer Cyclical",
+      "peer_group": "Consumer Cyclical",
+      "business_profile": "general",
+      "classification": "high quality but not cheap",
+      "percentile": 46.86,
+      "structural_score": 74.6,
+      "tactical_score": null,
+      "data_coverage": 0.89,
+      "market_cap": 22828828672,
+      "median_dollar_volume_60d": 311306652.91748047,
+      "own_history_score": 44.55,
+      "own_history_sessions": 101,
+      "own_history_steps": 2,
+      "own_history_start": "2026-03-17",
+      "peer_value_score": 50,
+      "peer_value_basis": "sector_valuation_percentile",
+      "quality_score": 81.73,
+      "metric_percentiles": {
+        "price_to_earnings": 49.5,
+        "price_to_sales": 48.51,
+        "price_to_book": 6.93,
+        "ev_to_ebit": 44.55,
+        "ev_to_ebitda": 44.55,
+        "ev_to_fcf": 52.48
+      },
+      "distressed": false,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "NOT_CHEAP_VS_OWN_HISTORY"
+      ]
+    },
+    {
+      "rank": 193,
+      "ticker": "RH",
+      "sector": "Consumer Cyclical",
+      "peer_group": "Consumer Cyclical",
+      "business_profile": "general",
+      "classification": "distressed/value trap",
+      "percentile": 43.2,
+      "structural_score": 52.1,
+      "tactical_score": null,
+      "data_coverage": 0.85,
+      "market_cap": 2674180096,
+      "median_dollar_volume_60d": 125074171.31195068,
+      "own_history_score": 36.63,
+      "own_history_sessions": 101,
+      "own_history_steps": 2,
+      "own_history_start": "2026-03-17",
+      "peer_value_score": 50,
+      "peer_value_basis": "sector_valuation_percentile",
+      "quality_score": 57.26,
+      "metric_percentiles": {
+        "price_to_earnings": 36.63,
+        "price_to_sales": 50.5,
+        "price_to_book": 41.58,
+        "ev_to_ebit": 36.63,
+        "ev_to_ebitda": 37.62,
+        "ev_to_fcf": 36.63
+      },
+      "distressed": true,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "SEVERE_DISTRESS"
+      ]
+    },
+    {
+      "rank": 215,
+      "ticker": "CRWD",
+      "sector": "Technology",
+      "peer_group": "Other Pre Profit",
+      "business_profile": "other_pre_profit",
+      "classification": "distressed/value trap",
+      "percentile": 39.77,
+      "structural_score": 48.4,
+      "tactical_score": null,
+      "data_coverage": 0.7,
+      "market_cap": 185913786368,
+      "median_dollar_volume_60d": 1843357325.0488281,
+      "own_history_score": 30,
+      "own_history_sessions": 100,
+      "own_history_steps": 2,
+      "own_history_start": "2026-03-17",
+      "peer_value_score": 16.7,
+      "peer_value_basis": "sector_valuation_percentile",
+      "quality_score": 53.47,
+      "metric_percentiles": {
+        "ev_to_sales": 30,
+        "price_to_sales": 30,
+        "price_to_book": 30
+      },
+      "distressed": true,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "SEVERE_DISTRESS"
+      ]
+    },
+    {
+      "rank": 236,
+      "ticker": "FANG",
+      "sector": "Energy",
+      "peer_group": "Commodity producers",
+      "business_profile": "commodity_producer",
+      "classification": "distressed/value trap",
+      "percentile": 36.69,
+      "structural_score": 65.1,
+      "tactical_score": null,
+      "data_coverage": 0.83,
+      "market_cap": 56691662848,
+      "median_dollar_volume_60d": 390600299.9267578,
+      "own_history_score": 25,
+      "own_history_sessions": 120,
+      "own_history_steps": 2,
+      "own_history_start": "2026-02-17",
+      "peer_value_score": 16.7,
+      "peer_value_basis": "sector_valuation_percentile",
+      "quality_score": 58.83,
+      "metric_percentiles": {
+        "ev_to_ebitda": 25,
+        "price_to_book": 14.17,
+        "price_to_sales": 20.83,
+        "ev_to_sales": 29.17
+      },
+      "distressed": true,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "SEVERE_DISTRESS"
+      ]
+    },
+    {
+      "rank": 257,
+      "ticker": "RF",
+      "sector": "Financial Services",
+      "peer_group": "Banks",
+      "business_profile": "bank",
+      "classification": "distressed/value trap",
+      "percentile": 33.66,
+      "structural_score": 73,
+      "tactical_score": null,
+      "data_coverage": 0.76,
+      "market_cap": 26043486208,
+      "median_dollar_volume_60d": 290613265.62194824,
+      "own_history_score": 19.83,
+      "own_history_sessions": 121,
+      "own_history_steps": 2,
+      "own_history_start": "2026-02-17",
+      "peer_value_score": 50,
+      "peer_value_basis": "sector_valuation_percentile",
+      "quality_score": 83.59,
+      "metric_percentiles": {
+        "price_to_earnings": 23.97,
+        "price_to_book": 19.83,
+        "price_to_tangible_book": 19.83
+      },
+      "distressed": true,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "SEVERE_DISTRESS"
+      ]
+    },
+    {
+      "rank": 279,
+      "ticker": "WK",
+      "sector": "Technology",
+      "peer_group": "Technology",
+      "business_profile": "general",
+      "classification": "distressed/value trap",
+      "percentile": 19.54,
+      "structural_score": 50.4,
+      "tactical_score": null,
+      "data_coverage": 0.71,
+      "market_cap": 4139923200,
+      "median_dollar_volume_60d": 44161920.55053711,
+      "own_history_score": 16.53,
+      "own_history_sessions": 121,
+      "own_history_steps": 2,
+      "own_history_start": "2026-02-17",
+      "peer_value_score": 50,
+      "peer_value_basis": "sector_valuation_percentile",
+      "quality_score": 42.08,
+      "metric_percentiles": {
+        "price_to_sales": 0,
+        "ev_to_ebitda": 51.24,
+        "ev_to_fcf": 16.53
+      },
+      "distressed": true,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "SEVERE_DISTRESS"
+      ]
+    },
+    {
+      "rank": 300,
+      "ticker": "CDW",
+      "sector": "Technology",
+      "peer_group": "Technology",
+      "business_profile": "general",
+      "classification": "distressed/value trap",
+      "percentile": 16.63,
+      "structural_score": 71.2,
+      "tactical_score": null,
+      "data_coverage": 0.89,
+      "market_cap": 17558695936,
+      "median_dollar_volume_60d": 243541108.52661133,
+      "own_history_score": 10.83,
+      "own_history_sessions": 120,
+      "own_history_steps": 2,
+      "own_history_start": "2026-02-17",
+      "peer_value_score": 83.3,
+      "peer_value_basis": "sector_valuation_percentile",
+      "quality_score": 68.68,
+      "metric_percentiles": {
+        "price_to_earnings": 10.83,
+        "price_to_sales": 15,
+        "price_to_book": 10,
+        "ev_to_ebit": 10.83,
+        "ev_to_ebitda": 10.83,
+        "ev_to_fcf": 10.83
+      },
+      "distressed": true,
+      "eligibility": true,
+      "current_membership": false,
+      "reason_codes": [
+        "SEVERE_DISTRESS"
+      ]
+    }
+  ],
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "a8015681c21d886e074df2701d409e9c71524f27",
+    "config_hash": "ae4d188f2c6d6808ee2edcf2da308b051842737c393d266691484a1203456902",
+    "generated_at": "2026-08-25T19:58:40.945350+00:00"
+  }
+}
