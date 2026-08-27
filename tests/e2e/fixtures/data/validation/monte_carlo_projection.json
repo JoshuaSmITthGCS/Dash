@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-18T18:59:36.114609+00:00",
+  "status": "ready",
+  "input": {
+    "source": "backtest_daily_returns",
+    "observations": 1241,
+    "full_history_threshold": 253,
+    "method": "block_bootstrap_full_history",
+    "paths": 10000,
+    "block_size_days": 21,
+    "current_max_drawdown_pct": -18.98,
+    "backtest_observations": 1241,
+    "live_observations": 8,
+    "elapsed_seconds": 0.999
+  },
+  "horizons": {
+    "30": {
+      "calendar_days": 30,
+      "trading_days": 21,
+      "mean_terminal_multiple": 1.0126,
+      "mean_annualized_return_pct": 16.27,
+      "terminal_multiple_percentiles": {
+        "p5": 0.9253,
+        "p25": 0.9822,
+        "p50": 1.0169,
+        "p75": 1.0448,
+        "p95": 1.0826
+      },
+      "annualized_return_percentiles_pct": {
+        "p5": -60.63,
+        "p25": -19.42,
+        "p50": 22.3,
+        "p75": 69.13,
+        "p95": 159.17
+      },
+      "confidence_band_width_pct": 219.8,
+      "probability_drawdown_exceeds_current_max": 0
+    },
+    "90": {
+      "calendar_days": 90,
+      "trading_days": 62,
+      "mean_terminal_multiple": 1.0387,
+      "mean_annualized_return_pct": 16.67,
+      "terminal_multiple_percentiles": {
+        "p5": 0.9012,
+        "p25": 0.9837,
+        "p50": 1.0389,
+        "p75": 1.0954,
+        "p95": 1.1726
+      },
+      "annualized_return_percentiles_pct": {
+        "p5": -34.47,
+        "p25": -6.46,
+        "p50": 16.78,
+        "p75": 44.8,
+        "p95": 90.98
+      },
+      "confidence_band_width_pct": 125.45,
+      "probability_drawdown_exceeds_current_max": 0.0142
+    },
+    "180": {
+      "calendar_days": 180,
+      "trading_days": 124,
+      "mean_terminal_multiple": 1.0812,
+      "mean_annualized_return_pct": 17.18,
+      "terminal_multiple_percentiles": {
+        "p5": 0.8833,
+        "p25": 0.9955,
+        "p50": 1.079,
+        "p75": 1.1638,
+        "p95": 1.2872
+      },
+      "annualized_return_percentiles_pct": {
+        "p5": -22.28,
+        "p25": -0.92,
+        "p50": 16.7,
+        "p75": 36.11,
+        "p95": 67.06
+      },
+      "confidence_band_width_pct": 89.34,
+      "probability_drawdown_exceeds_current_max": 0.0645
+    },
+    "365": {
+      "calendar_days": 365,
+      "trading_days": 252,
+      "mean_terminal_multiple": 1.1706,
+      "mean_annualized_return_pct": 17.06,
+      "terminal_multiple_percentiles": {
+        "p5": 0.8832,
+        "p25": 1.0383,
+        "p50": 1.1564,
+        "p75": 1.2922,
+        "p95": 1.5029
+      },
+      "annualized_return_percentiles_pct": {
+        "p5": -11.68,
+        "p25": 3.83,
+        "p50": 15.64,
+        "p75": 29.22,
+        "p95": 50.29
+      },
+      "confidence_band_width_pct": 61.97,
+      "probability_drawdown_exceeds_current_max": 0.1774
+    }
+  },
+  "live_comparison": null,
+  "disclosure": "This is a projection built by resampling the historical daily return distribution, not a forecast, guarantee, or promise of future performance. Markets can and do behave differently than their own history. Read the width of the percentile band, not just the mean - the band is the honest answer, and the mean alone is false precision.",
+  "model_version": "3.2.0",
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "7dff03f011ff02c7799ae0887321e59e047c9f89",
+    "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
+    "generated_at": "2026-08-18T18:59:36.114609+00:00"
+  }
+}

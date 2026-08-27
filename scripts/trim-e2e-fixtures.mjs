@@ -38,6 +38,7 @@ const TIER2_FILES = [
   'etfs.json',
   'factors/french.json',
   'theme-peers.json',
+  'validation/monte_carlo_projection.json',
   'screens/backtest-comparison.json',
   'screens/options-backtest.json',
   'screens/shadow-portfolios.json',
