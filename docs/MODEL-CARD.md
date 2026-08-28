@@ -133,6 +133,88 @@ reason as the paragraph above — `business_profiles.json`'s `replacement_metric
 profiles name the target multiple, same as the pre-existing bank/REIT entries did before this
 session, as a documented intent rather than a computed value.
 
+## Every remaining GICS sub-industry gets its own profile
+
+The eight profiles above were the first pass. `classify_profile` now also distinguishes, by
+sector:
+
+- **Energy/Materials:** `specialty_chemicals` (formulation/IP-driven chemistry — including
+  industrial gases, which have no separate industry code — trades at a stable premium multiple
+  `commodity_producer`'s cyclical suppression would misprice), checked ahead of an extended
+  `commodity_producer` match that now also catches mining, steel, coal, uranium, aluminum,
+  paper, packaging, and agricultural inputs/fertilizer.
+- **Industrials:** `machinery`, `electrical_equipment`, `building_products`,
+  `engineering_construction`, `railroad`, `trucking`, `air_freight_logistics`,
+  `marine_shipping`, `waste_management`, `staffing`, `consulting_services`,
+  `industrial_distribution`.
+- **Healthcare:** `large_cap_pharma`, `medical_devices`, `life_science_tools_diagnostics`,
+  `pharmacy_healthcare_distribution`, `healthcare_it` — each checked ahead of the
+  biotech/pre-profit fallback, which previously swallowed any of these that happened to be
+  unprofitable into `other_pre_profit`.
+- **Utilities:** `renewable_yieldco_developer` (CAFD/tax-equity economics — accelerated
+  depreciation, non-cash HLBV allocations — a different problem from `independent_power_producer`'s
+  merchant commodity exposure, not a generalization of it) and `water_utility`.
+- **Financials:** `reinsurer` (large, lumpy per-event catastrophe losses, no direct
+  policyholder relationship — inherits `property_casualty_insurer`), `financial_exchange`
+  (fee/data revenue, no balance-sheet risk — inherits `capital_markets`), `consumer_finance`
+  (revolving-receivable/charge-off economics, `"Credit Services"` in Yahoo's taxonomy — inherits
+  `bank`), and `payment_processor` — ticker-override only (V, MA, PYPL, FI, GPN, FIS, WEX, EEFT),
+  since Yahoo files card networks under the same `"Credit Services"` string as `consumer_finance`
+  despite them carrying no consumer credit risk. AXP is deliberately left classified as
+  `consumer_finance`: unlike the payment networks, it does carry cardmember-loan credit risk.
+- **Technology:** `semiconductor_capital_equipment` (bookings/litho-cycle timing, not wafer
+  volume — checked ahead of the generic `semiconductor` match, inherits its rules),
+  `ems_electronic_components`, `networking_equipment`, `it_services_consulting`, and — the
+  single largest gap this closed — **`saas`**, which previously had *no* profile treatment at
+  all and, when unprofitable, was falling into `other_pre_profit` (built around biotech/early-
+  stage burn economics, not deferred-revenue subscription economics). Both `saas` and
+  `it_services_consulting` are checked ahead of that fallback.
+- **Communication Services / Consumer Discretionary / Consumer Staples:** `telecom_carrier`,
+  `media_entertainment`, `interactive_media_platform`, `video_games`, `publishing_advertising`,
+  `retail_apparel`, `restaurants`, `ecommerce_retail`, `automaker`, `auto_dealership`,
+  `auto_parts_supplier`, `leisure_products`, `education_services`, `agricultural_processor`,
+  `packaged_food_processor`, `beverage_manufacturer`, `tobacco`, `food_distributor`,
+  `grocery_staples_retail`.
+- **Real estate:** the flat `reit` match is now a sub-dispatch — `office_reit`, `retail_reit`,
+  `industrial_reit`, `residential_reit`, `healthcare_reit`, `hotel_reit`, and `mortgage_reit`
+  resolve from the industry-text property type; `self_storage_reit`, `data_center_reit`,
+  `net_lease_reit`, and `timber_reit` have no distinguishing industry string in Yahoo's taxonomy
+  (all share `"REIT - Industrial"`/`"REIT - Specialty"`/`"REIT - Diversified"` with other
+  subtypes) and are resolved exclusively via `ticker_overrides` — PSA/CUBE/EXR, DLR/EQIX,
+  O/NNN/WPC, and RYN/WY/PCH respectively. Anything left unmatched (`"REIT - Diversified"`,
+  `"REIT - Specialty"`) still falls back to the generic `reit` profile it always has. All ten
+  subtypes currently `$inherits: reit` — no subtype-specific replacement metric exists yet, so
+  this is the identification/routing groundwork the profile split enables, not new formulas.
+
+None of these 58 profiles compute a new sector-specific metric of their own (with the narrow
+exception of `capex_intensity`/`operating_ratio_proxy`/`gross_margin_trend`/
+`inventory_correction_flag` above, which several list as `replacement_metrics` because they are
+genuinely diagnostic for that profile's economics, not because a new formula was written for
+it). What changes is suppression precision and identification: each is wired through all three
+applicability authorities exactly like the original eight (`business_profiles.json`,
+`applicability_matrix.json` — `$inherits` where the economics genuinely match an existing
+profile, an explicit empty rule set where none of the generic suppressions apply, e.g.
+`specialty_chemicals` — and every one of `metric_registry.json`'s nine `applicability_profiles`
+allow-lists, to avoid recreating the omission bug from the previous section).
+`RemainingSubIndustryProfileRoutingTests` in `pipeline/tests/test_scorer.py` is the regression
+coverage: a routing table for all 58, the REIT/payment-processor ticker-override resolutions,
+and a `return_on_equity` applicability probe across the whole set guarding against the
+registry-omission bug class recurring.
+
+**A real second-order effect this surfaced:** splitting a ~910-name universe across roughly 68
+total profiles pushes most profile-specific peer groups below the n≥30 sample `peer_groups.py`
+requires before publishing a valuation-tier claim (see "Validation, not backtesting" — the same
+"a degraded estimate is worse than an absent one" reasoning that governs the THG false-precision
+regression this module was built to prevent). Left unaddressed, that would have silenced peer
+comparison for the majority of the universe. `peer_group()` now rolls a too-thin
+profile-specific group up to its broader GICS-sector bucket for peer-*comparison* purposes only
+— `classify_profile()` still governs which *metrics* apply to a name exactly as described above
+— except for the seven profiles the THG audit was originally built around (`bank`,
+`property_casualty_insurer`, `life_insurer`, `diversified_insurer`, `reit`, `utility`,
+`commodity_producer`), which still go silent below the minimum rather than roll up into a
+broader "Financial Services" or "Real Estate" bucket that would reintroduce exactly the
+category error that audit exists to prevent.
+
 ## Thematic exposure: disclosure over narrative
 
 Every `pipeline/themes/*.yaml` signal block previously weighted `filing_keyword_density_trend`
@@ -258,8 +340,11 @@ than absent. `derive_working_capital_trends` now also emits `inventory_correctio
 what counts as lean inventory is sector-relative (120 days is lean for a memory chipmaker
 mid-shortage, elevated for a grocer) and this pipeline has no sector-relative inventory-days
 percentile built. Both are PIT-logged; both are informational, same reasoning as everything
-above. Capex intensity (capex/revenue) and a semiconductor cycle-stage tag
-(trough/peak-margin/correction) from the same research are not implemented.
+above. `derive_capital_allocation` now also computes `capex_intensity` (capex/revenue), and
+`derive_margins` computes `operating_ratio_proxy` (1 − operating margin) — both zero-new-data
+reads used as the generic `replacement_metrics` entry for several of the newer sub-industry
+profiles below where no sector-specific KPI exists yet (see next section). A semiconductor
+cycle-stage tag (trough/peak-margin/correction) from the same research is not implemented.
 
 ## Operating-KPI text extraction (off by default)
 
