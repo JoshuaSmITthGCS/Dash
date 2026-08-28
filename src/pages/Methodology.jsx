@@ -3,6 +3,7 @@ import { useData } from '../lib/useData'
 import Icon from '../components/Icons.jsx'
 import appBreakdownMd from '../../APP-COMPLETE-BREAKDOWN.md?raw'
 import masterMethodologyMd from '../../docs/MASTER-METHODOLOGY.md?raw'
+import dataSourcesScreensRankingMd from '../../docs/DATA-SOURCES-SCREENS-AND-RANKING.md?raw'
 
 const STATUS_TIMEOUT_MS = 2500
 
@@ -81,6 +82,7 @@ export default function Methodology() {
     try {
       downloadFile('APP-COMPLETE-BREAKDOWN.md', appBreakdownMd, 'text/markdown')
       downloadFile('MASTER-METHODOLOGY.md', masterMethodologyMd, 'text/markdown')
+      downloadFile('DATA-SOURCES-SCREENS-AND-RANKING.md', dataSourcesScreensRankingMd, 'text/markdown')
       setDownloadStatus('Download started')
     } catch {
       setDownloadStatus('Download failed')
@@ -103,9 +105,12 @@ export default function Methodology() {
     </div>
     <p className="body-copy body-copy--gap">
       Downloads the complete, unedited source: the app's full functional/calculation breakdown
-      (<code>APP-COMPLETE-BREAKDOWN.md</code>) and the master methodology reference
-      (<code>MASTER-METHODOLOGY.md</code>) — every metric, weight, data source, and screen this
-      page summarizes, with file:line citations back to the code that computes them.
+      (<code>APP-COMPLETE-BREAKDOWN.md</code>), the master methodology reference
+      (<code>MASTER-METHODOLOGY.md</code>), and a consolidated reference on every data source
+      (including the sub-industry taxonomy), how every screen is built and organized with its
+      data types, and every ranking/sorting method in the app
+      (<code>DATA-SOURCES-SCREENS-AND-RANKING.md</code>) — every metric, weight, data source, and
+      screen this page summarizes, with file:line citations back to the code that computes them.
     </p>
 
     <div className="grid grid-2">
