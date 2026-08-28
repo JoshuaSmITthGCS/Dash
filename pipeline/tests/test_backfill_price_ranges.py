@@ -54,9 +54,11 @@ def test_backfill_upgrades_a_date_the_daily_job_already_wrote_close_volume_only(
     assert rows["2024-01-02"] == [190.0, 1000, 191.0, 189.0]
 
 
-def test_backfill_never_touches_a_date_whose_close_genuinely_disagrees(tmp_path, monkeypatch):
-    # The protection first-write-wins actually exists for: a provider restating a price is
-    # still refused, high/low included, exactly as it always was.
+def test_backfill_still_adds_a_high_low_when_the_close_has_drifted(tmp_path, monkeypatch):
+    # Adjusted-close drift (dividends changing the adjustment factor) is universal, and a real
+    # backfill run found it happening on dates as recent as the previous trading day - so the
+    # close disagreeing is not grounds to withhold the high/low, only to log the drift. The
+    # close/volume this archive already has (first-write-wins) are what stay protected.
     monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
     monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
     price_archive.append_series("AAPL", ["2024-01-02"], [190.0], [1000], "run_daily")
@@ -65,10 +67,10 @@ def test_backfill_never_touches_a_date_whose_close_genuinely_disagrees(tmp_path,
 
     summary = backfill_price_ranges.backfill(["AAPL"], lambda ticker: histories.get(ticker))
 
-    assert summary["rows_upgraded"] == 0
+    assert summary["rows_upgraded"] == 1
     assert summary["conflicts"] == 1
     rows = json.load(open(tmp_path / "AAPL.json"))["rows"]
-    assert rows["2024-01-02"] == [190.0, 1000]
+    assert rows["2024-01-02"] == [190.0, 1000, 200.0, 198.0]
 
 
 def test_backfill_is_resumable_a_second_run_adds_or_upgrades_nothing_new(tmp_path, monkeypatch):

@@ -8,10 +8,15 @@ had appended since 2026-08-11. The first real run against this archive confirmed
 append_series's original all-or-nothing first-write-wins rule, a full backfill upgraded exactly
 one row per ticker (today's, the only genuinely new date) and silently discarded the high/low
 for every historical date, because every one of those already had a close/volume-only row.
-append_series now upgrades an existing row in place - close and volume untouched, a missing
-high/low filled in - whenever the incoming close agrees with what is already archived (not a
-restatement, just previously-uncaptured data); see its docstring. That is what actually makes
-this script a backfill instead of a slower version of the daily job.
+append_series now upgrades an existing row in place - close and volume always untouched, a
+missing high/low filled in - regardless of whether the incoming close still agrees with what is
+archived. It first gated the upgrade on close agreement and that was wrong too: Yahoo's
+adjusted close drifts by a fraction of a percent as later dividends change the adjustment
+factor, on a horizon of *days*, not years - a real run against production data found AAPL's
+close for the *previous trading day* already drifted 0.2% from what had been archived a day
+earlier. Gating on agreement meant the upgrade almost never fired. See append_series's docstring
+for the full story; that fix is what actually makes this script a backfill instead of a slower
+version of the daily job.
 
 This fills that gap in one pass: a ~2-year yfinance history per ticker, same shape and same
 window fetch_advisor.yahoo_history() already uses for the live universe sweep, appended through

@@ -108,18 +108,24 @@ def test_append_series_does_not_upgrade_a_date_that_already_has_a_high_low(tmp_p
     assert upgraded == 0
 
 
-def test_append_series_never_upgrades_a_date_whose_close_disagrees(tmp_path, monkeypatch):
-    # A close mismatch is still a conflict, not an upgrade opportunity - the high/low riding
-    # along with a restated close is exactly the kind of value first-write-wins exists to
-    # refuse.
+def test_append_series_upgrades_even_when_the_close_conflicts(tmp_path, monkeypatch):
+    # Adjusted-close drift is universal and near-immediate (this file's own docstring: "on
+    # essentially every run"), not a rare data error, so gating the high/low upgrade on close
+    # agreement made it almost never fire in production - a real backfill run found AAPL's
+    # close for the *previous trading day* already drifted 0.2% from what had been archived a
+    # day earlier. The upgrade never touches the close/volume either way, so there is nothing
+    # to protect by refusing it: the conflict is still logged (that protection is real and
+    # orthogonal), but it no longer blocks the high/low from landing.
     monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
     monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
     price_archive.append_series("DEAD", ["2026-01-02"], [10.0], [100], "seed")
     added, conflicts, upgraded = price_archive.append_series(
         "DEAD", ["2026-01-02"], [99.0], [100], "run_daily", highs=[100.0], lows=[98.0])
     rows = json.load(open(tmp_path / "DEAD.json"))["rows"]
-    assert rows["2026-01-02"] == [10.0, 100]
-    assert (conflicts, upgraded) == (1, 0)
+    # The close and volume are untouched - still the originally-archived 10.0/100, never the
+    # incoming 99.0 - while the high/low land regardless of the logged conflict.
+    assert rows["2026-01-02"] == [10.0, 100, 100.0, 98.0]
+    assert (conflicts, upgraded) == (1, 1)
 
 
 def test_load_series_reads_highs_and_lows_oldest_first(tmp_path, monkeypatch):

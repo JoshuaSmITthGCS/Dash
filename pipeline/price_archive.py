@@ -95,14 +95,25 @@ def append_series(ticker, dates, closes, volumes, source, highs=None, lows=None)
     First-write-wins protects the close and volume - a later call is never allowed to restate
     a price this archive already recorded, which is the whole point of an append-only archive.
     It does not extend to a high/low that simply was not captured yet: SA-2026-08-28-01 shipped
-    with the naive reading (a high/low was write-once too), and the first real backfill run
-    against this archive showed why that was wrong - seed_from_disk() had already back-filled
-    close/volume for every ticker's entire available history (back to the 1980s for some), so
-    virtually every date a backfill would touch already existed close/volume-only, and the naive
-    rule silently discarded the high/low for all of them. A row is now upgraded in place - the
-    close and volume left untouched, a high/low filled in - whenever the incoming close agrees
-    with what is already archived (i.e. this is not a restatement, just previously-missing
-    data) and the existing row does not have one yet. Returns ``(added, conflicts, upgraded)``.
+    with the naive reading (a high/low was write-once too, gated on the incoming close matching
+    what was archived), and the first two real runs against this archive showed why that was
+    wrong twice over. First, seed_from_disk() had already back-filled close/volume for every
+    ticker's entire available history (back to the 1980s for some), so virtually every date a
+    backfill would touch already existed close/volume-only. Second - the reason gating on close
+    agreement was itself wrong, not just the original all-or-nothing rule - Yahoo's adjusted
+    close for a given date keeps drifting by a fraction of a percent as later dividends change
+    the adjustment factor, on a horizon of *days*, not years: this file's own module docstring
+    already documented that "a rolling window of already-archived dates disagrees with the
+    freshly fetched series on essentially every run," and the conflict log confirmed it - a
+    real production run found AAPL's close for the *previous trading day* already drifted
+    0.2% from what had been archived one day earlier. Gating the upgrade on close agreement
+    meant it almost never fired, on dates old or new alike.
+    A row is now upgraded in place - the close and volume always left untouched, a high/low
+    filled in whenever the existing row does not have one yet - independently of whether the
+    close conflict-checks clean, because the upgrade never touches the field the conflict check
+    protects. The conflict is still detected and logged exactly as before; it is informational
+    now for the high/low leg (audible drift, not a blocker) same as it always was for the price
+    it actually protects. Returns ``(added, conflicts, upgraded)``.
     """
     os.makedirs(ARCHIVE_DIR, exist_ok=True)
     path = _path(ticker)
@@ -130,7 +141,7 @@ def append_series(ticker, dates, closes, volumes, source, highs=None, lows=None)
                             "ticker": ticker, "date": d, "archived": existing[0],
                             "incoming": float(c), "source": source,
                             "at": datetime.now(timezone.utc).isoformat()}) + "\n")
-            elif len(existing) < 4 and (high is not None or low is not None):
+            if len(existing) < 4 and (high is not None or low is not None):
                 rows[d] = [existing[0], existing[1],
                           round(float(high), 4) if high is not None else None,
                           round(float(low), 4) if low is not None else None]
