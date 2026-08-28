@@ -33,15 +33,19 @@ UNIVERSE = "universe.jsonl"
 # taken weekly is the only history of them that will ever exist.
 TRACKED_FIELDS = (
     "price", "market_cap", "sector", "forward_pe", "trailing_pe", "peg", "price_to_sales",
-    "price_to_book", "price_to_tangible_book", "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf",
+    "price_to_book", "price_to_tangible_book", "return_on_tangible_common_equity",
+    "funds_from_operations", "price_to_ffo", "market_implied_growth",
+    "market_implied_growth_wacc", "market_implied_growth_exceeds_ceiling",
+    "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf",
     "ev_to_sales", "enterprise_value", "return_on_equity", "return_on_invested_capital",
     "gross_profits_to_assets", "free_cash_flow_yield", "profit_margin", "gross_margin",
     "operating_margin", "cash_conversion", "debt_to_equity", "current_ratio",
     "interest_coverage", "net_debt_to_ebitda", "altman_z", "altman_z_variant",
     "piotroski_f", "accruals_ratio", "revenue_growth", "earnings_growth", "fcf_growth_3y",
-    "operating_margin_trend", "asset_growth", "earnings_surprise", "net_buyback_yield",
-    "stock_comp_to_revenue", "capex_to_depreciation", "days_sales_outstanding_trend",
-    "inventory_days_trend", "short_percent_of_float", "days_to_cover", "beta",
+    "operating_margin_trend", "gross_margin_trend", "asset_growth", "earnings_surprise",
+    "net_buyback_yield", "stock_comp_to_revenue", "capex_to_depreciation",
+    "days_sales_outstanding_trend", "inventory_days_trend", "inventory_correction_flag",
+    "short_percent_of_float", "days_to_cover", "beta",
     "analyst_rating", "analyst_target_upside", "analyst_count", "statement_periods",
     "average_dollar_volume",
     # Expectation change. Yahoo serves only today's view of every one of these, so a later

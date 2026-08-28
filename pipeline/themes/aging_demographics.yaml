@@ -74,11 +74,11 @@ theme:
     - name: filing_keyword_density_trend
       source: edgar_fulltext
       leading: true
-      weight: 0.40
+      weight: 0.10
     - name: segment_revenue_share
       source: edgar_xbrl_segments
       leading: false
-      weight: 0.20
+      weight: 0.50
     - name: backlog_growth
       source: edgar_xbrl_dimensional
       leading: true

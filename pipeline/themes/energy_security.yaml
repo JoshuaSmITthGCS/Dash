@@ -76,7 +76,7 @@ theme:
     - name: filing_keyword_density_trend
       source: edgar_fulltext
       leading: true
-      weight: 0.35
+      weight: 0.10
     # Contracted revenue not yet delivered is unusually meaningful here: an LNG or power
     # agreement is a decade-long obligation, disclosed long before the first cargo.
     - name: backlog_growth
@@ -86,7 +86,7 @@ theme:
     - name: segment_revenue_share
       source: edgar_xbrl_segments
       leading: false
-      weight: 0.20
+      weight: 0.45
     - name: spender_capex_growth
       source: edgar_xbrl_capex
       universe: [LNG, WMB, KMI, OKE, CEG]

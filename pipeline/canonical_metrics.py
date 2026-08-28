@@ -102,9 +102,46 @@ def classify_profile(snapshot):
     if snapshot.get("is_etf"):
         return "etf"
     if "reit" in text or "real estate investment trust" in text:
+        # Sub-dispatch by declared property type. Self-storage, data-center, net-lease and
+        # timber REITs share ambiguous Yahoo industry strings with other specialty/industrial/
+        # diversified REITs (there is no distinguishing substring), so those four are resolved
+        # exclusively via ticker_overrides above, before we ever reach this text match. Anything
+        # not covered below (REIT - Diversified, REIT - Specialty, and any unmatched property
+        # type) falls back to the generic "reit" profile, same as before this split existed.
+        if "residential" in industry:
+            return "residential_reit"
+        if "office" in industry:
+            return "office_reit"
+        if "retail" in industry:
+            return "retail_reit"
+        if "healthcare" in industry:
+            return "healthcare_reit"
+        if "hotel" in industry or "motel" in industry or "lodging" in industry:
+            return "hotel_reit"
+        if "mortgage" in industry:
+            return "mortgage_reit"
+        if "industrial" in industry:
+            return "industrial_reit"
         return "reit"
     if "bank" in industry:
         return "bank"
+    # Ahead of the generic insurance branch: "Insurance Brokers" contains "insurance" and was
+    # falling into diversified_insurer, which assumes underwriting risk and investment float a
+    # broker never carries -- a real misclassification, not just a missing profile.
+    if "broker" in industry and "insurance" in text:
+        return "insurance_broker"
+    # Also ahead of the generic insurance branch: a health-plan filer's industry string is
+    # typically "Healthcare Plans", which contains no "insurance" substring at all, but some
+    # providers do label it "Health Insurance" -- checked here so either spelling lands on the
+    # managed-care profile rather than (in the second case) diversified_insurer.
+    if "healthcare plan" in industry or "managed care" in text or "health insurance" in text:
+        return "managed_care_insurer"
+    # Also ahead of the generic insurance branch: reinsurance economics (large, lumpy per-event
+    # losses ceded from primary carriers; no direct policyholder relationship) are close enough
+    # to property_casualty_insurer's catastrophe exposure to inherit its rules, but the industry
+    # string ("Insurance - Reinsurance") would otherwise fall through to diversified_insurer.
+    if "reinsurance" in industry:
+        return "reinsurer"
     if "insurance" in text:
         if "life" in industry:
             return "life_insurer"
@@ -112,14 +149,169 @@ def classify_profile(snapshot):
             return "property_casualty_insurer"
         return "diversified_insurer"
     if "utilit" in sector:
+        # Merchant/independent power producers sit in the same GICS sector as regulated
+        # utilities but earn nothing like a rate base -- checked first so "Utilities" alone
+        # doesn't default them into the regulated profile.
+        if "independent power" in industry or "power producer" in industry:
+            return "independent_power_producer"
+        # CAFD/tax-equity economics (accelerated depreciation, non-cash HLBV allocations
+        # distorting GAAP EPS) are a different problem from independent_power_producer's
+        # merchant commodity-price exposure, not a generalization of it -- not $inherits'd.
+        if "renewable" in industry:
+            return "renewable_yieldco_developer"
+        # Water utilities trade at a persistent scarcity/ESG premium the regulated-electric
+        # multiple bands were not calibrated for -- checked ahead of the plain fallback below.
+        if "water" in industry:
+            return "water_utility"
         return "utility"
-    if any(term in text for term in ("oil", "gas", "mining", "gold", "copper", "steel", "coal")):
+    # Ahead of the generic commodity-producer branch: "Oil & Gas Midstream" contains "gas" and
+    # would otherwise be caught by the oil/gas check below, which assumes upstream/production
+    # economics a pipeline-and-storage tolling business does not have.
+    if "midstream" in industry or "pipeline" in industry:
+        return "midstream_mlp"
+    # Ahead of the commodity-producer chemical match just below: "Specialty Chemicals" also
+    # contains "chemical", but formulation/IP-driven specialty chemistry (and, in this
+    # taxonomy, industrial gases -- Linde/Air Products/Air Liquide ADRs have no separate
+    # industry code) commands a premium, stable multiple and gets none of commodity_producer's
+    # cyclical suppression. A handful of names classify here by industry string but trade like
+    # true commodity producers (lithium converters such as Albemarle); those are corrected via
+    # ticker_overrides rather than by inventing a fake distinguishing substring.
+    if "specialty chemical" in industry:
+        return "specialty_chemicals"
+    if any(term in text for term in ("oil", "gas", "mining", "gold", "copper", "steel", "coal",
+                                     "uranium", "chemical", "aluminum", "paper", "packaging",
+                                     "agricultural input", "fertilizer")):
         return "commodity_producer"
+    if "airline" in industry:
+        return "airline"
+    if "aerospace" in industry or "defense" in industry:
+        return "aerospace_defense"
+    # Long-cycle industrials: each below is checked as a flat, mutually-exclusive block of
+    # compound industry-string matches -- none contain "construction" alone (which would wrongly
+    # catch "Farm & Heavy Construction Machinery" or the existing residential-construction
+    # check above) or any commodity/airline/aerospace term already resolved above.
+    if "specialty industrial machinery" in industry or "farm & heavy construction machinery" in industry:
+        return "machinery"
+    if "electrical equipment & parts" in industry:
+        return "electrical_equipment"
+    if "building products & equipment" in industry or "building materials" in industry:
+        return "building_products"
+    if "engineering & construction" in industry:
+        return "engineering_construction"
+    if "railroads" in industry:
+        return "railroad"
+    if "trucking" in industry:
+        return "trucking"
+    if "integrated freight & logistics" in industry:
+        return "air_freight_logistics"
+    if "marine shipping" in industry:
+        return "marine_shipping"
+    if "waste management" in industry:
+        return "waste_management"
+    if "staffing & employment services" in industry:
+        return "staffing"
+    if "consulting services" in industry:
+        return "consulting_services"
+    if "industrial distribution" in industry:
+        return "industrial_distribution"
+    if "capital markets" in industry or "investment banking" in industry:
+        return "capital_markets"
+    if "asset management" in industry:
+        return "asset_manager"
+    # Exchanges earn fee-per-transaction/data-subscription revenue with no balance-sheet credit
+    # or underwriting risk -- neither a bank's nor an asset manager's economics, but closer to
+    # capital_markets' fee-driven model than to anything else already resolved above.
+    if "financial data & stock exchanges" in industry:
+        return "financial_exchange"
+    # Card-network and consumer-lending economics (revolving receivables, charge-offs). Visa,
+    # Mastercard and several other payment processors are also filed by Yahoo under "Credit
+    # Services" despite taking no consumer credit risk themselves -- resolved via
+    # ticker_overrides (checked before any text match), not by inventing a distinguishing
+    # substring here.
+    if "credit services" in industry:
+        return "consumer_finance"
+    if "residential construction" in industry or "homebuilding" in industry:
+        return "homebuilder"
+    # Ahead of the generic semiconductor branch below: capital-equipment makers (ASML/AMAT/
+    # LRCX/KLAC) sell tooling into the fab cycle rather than fabricating or designing chips --
+    # bookings and litho-cycle timing drive results, not wafer volumes, though the same
+    # cyclical capex/inventory suppression logic applies, so this inherits semiconductor rather
+    # than duplicating it.
+    if "semiconductor equipment" in industry or "semiconductor materials" in industry:
+        return "semiconductor_capital_equipment"
     # Ahead of the generic profit-margin branches: a semiconductor company's capex and
     # inventory cycles are not readable through industrial cutoffs regardless of whether it
     # is currently profitable.
     if "semiconductor" in text:
         return "semiconductor"
+    # Contract manufacturing/distribution: thin margins, high asset turns -- not readable
+    # through semiconductor's fab-cycle lens.
+    if "electronics & computer distribution" in industry:
+        return "ems_electronic_components"
+    if "communication equipment" in industry:
+        return "networking_equipment"
+    # SaaS: checked ahead of the biotech/pre-profit fallback below (and ahead of "general") so a
+    # pre-profit subscription software company doesn't fall into other_pre_profit, which was
+    # built around biotech/early-stage burn economics, not deferred-revenue subscription
+    # economics.
+    if "software - application" in industry or "software - infrastructure" in industry:
+        return "saas"
+    if "information technology services" in industry:
+        return "it_services_consulting"
+    # Ahead of the biotech/pre-profit fallback below: each of these is a distinct healthcare
+    # sub-industry with its own economics, not a company that merely happens to be
+    # profitable or not. Checked as flat industry-string matches; none contain "biotech".
+    if "drug manufacturers - general" in industry:
+        return "large_cap_pharma"
+    if "medical devices" in industry or "medical instruments & supplies" in industry:
+        return "medical_devices"
+    if "diagnostics & research" in industry:
+        return "life_science_tools_diagnostics"
+    if "medical distribution" in industry:
+        return "pharmacy_healthcare_distribution"
+    if "health information services" in industry:
+        return "healthcare_it"
+    # Communication Services and Consumer Discretionary/Staples sub-industries: each checked as
+    # a flat, mutually-exclusive industry-string match, ahead of the biotech/pre-profit
+    # fallback below and "general" so none of these silently default into either.
+    if "telecom services" in industry:
+        return "telecom_carrier"
+    if "entertainment" in industry:
+        return "media_entertainment"
+    if "internet content & information" in industry:
+        return "interactive_media_platform"
+    if "electronic gaming & multimedia" in industry:
+        return "video_games"
+    if any(term in industry for term in ("publishing", "broadcasting", "advertising agencies")):
+        return "publishing_advertising"
+    if any(term in industry for term in ("apparel retail", "apparel manufacturing", "footwear & accessories", "luxury goods")):
+        return "retail_apparel"
+    if "restaurants" in industry:
+        return "restaurants"
+    if "internet retail" in industry:
+        return "ecommerce_retail"
+    if "auto manufacturers" in industry:
+        return "automaker"
+    if "auto & truck dealerships" in industry:
+        return "auto_dealership"
+    if "auto parts" in industry:
+        return "auto_parts_supplier"
+    if "leisure" in industry or "recreational vehicles" in industry:
+        return "leisure_products"
+    if "education & training services" in industry:
+        return "education_services"
+    if "farm products" in industry:
+        return "agricultural_processor"
+    if "packaged foods" in industry:
+        return "packaged_food_processor"
+    if "beverages" in industry:
+        return "beverage_manufacturer"
+    if "tobacco" in industry:
+        return "tobacco"
+    if "food distribution" in industry:
+        return "food_distributor"
+    if "grocery stores" in industry or "discount stores" in industry:
+        return "grocery_staples_retail"
     pre_profit = snapshot.get("profit_margin") is not None and snapshot.get("profit_margin") < 0
     if pre_profit and "biotech" in text:
         return "pre_profit_biotechnology"

@@ -76,7 +76,7 @@ theme:
     - name: filing_keyword_density_trend
       source: edgar_fulltext
       leading: true
-      weight: 0.40
+      weight: 0.10
     # Subscription security is sold on multi-year contracts, so remaining performance
     # obligation is the closest thing this theme has to a hard order book.
     - name: backlog_growth
@@ -86,7 +86,7 @@ theme:
     - name: segment_revenue_share
       source: edgar_xbrl_segments
       leading: false
-      weight: 0.15
+      weight: 0.45
     # The buyers: the large digital platforms and banks whose own infrastructure spending sets
     # the security budget beneath it.
     - name: spender_capex_growth

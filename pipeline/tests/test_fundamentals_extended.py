@@ -93,6 +93,19 @@ class ProfitabilityTests(unittest.TestCase):
         # $100 of new revenue carried $50 of new operating profit.
         self.assertAlmostEqual(margins["incremental_margin"], 0.5, places=4)
 
+    def test_gross_margin_trend(self):
+        margins = fx.derive_margins(INCOME)
+        self.assertAlmostEqual(margins["gross_margin"], 0.6, places=4)
+        self.assertAlmostEqual(margins["gross_margin_trend"], 600 / 1000 - 520 / 900, places=4)
+
+    def test_operating_ratio_proxy_is_the_complement_of_operating_margin(self):
+        margins = fx.derive_margins(INCOME)
+        self.assertAlmostEqual(margins["operating_ratio_proxy"], 1 - 0.25, places=4)
+
+    def test_gross_margin_trend_is_none_without_a_prior_period(self):
+        one_period = {"periods": ["2025"], "rows": {"Total Revenue": [1000.0], "Gross Profit": [600.0]}}
+        self.assertIsNone(fx.derive_margins(one_period)["gross_margin_trend"])
+
 
 class HealthTests(unittest.TestCase):
     def test_interest_coverage(self):
@@ -190,6 +203,22 @@ class AccountingQualityTests(unittest.TestCase):
         # Receivables grew slower than revenue, so days outstanding fell.
         self.assertLess(trends["days_sales_outstanding_trend"], 0)
         self.assertIsNotNone(trends["inventory_days_trend"])
+        # A ~2.5% drift on this fixture sits inside the neutral band.
+        self.assertEqual(trends["inventory_correction_flag"], "normal")
+
+    def test_inventory_correction_flag_lean_and_elevated(self):
+        lean = dict(BALANCE)
+        lean["rows"] = {**BALANCE["rows"], "Inventory": [50.0, 80.0, 76.0, 74.0]}
+        self.assertEqual(fx.derive_working_capital_trends(INCOME, lean)["inventory_correction_flag"], "lean")
+
+        elevated = dict(BALANCE)
+        elevated["rows"] = {**BALANCE["rows"], "Inventory": [110.0, 80.0, 76.0, 74.0]}
+        self.assertEqual(
+            fx.derive_working_capital_trends(INCOME, elevated)["inventory_correction_flag"], "elevated")
+
+    def test_inventory_correction_flag_is_none_without_a_trend(self):
+        no_prior = {"periods": ["2025"], "rows": {"Cost Of Revenue": [400.0], "Inventory": [80.0]}}
+        self.assertIsNone(fx.derive_working_capital_trends(INCOME, no_prior)["inventory_correction_flag"])
 
 
 class CapitalAllocationTests(unittest.TestCase):
@@ -209,6 +238,10 @@ class CapitalAllocationTests(unittest.TestCase):
         self.assertAlmostEqual(allocation["stock_comp_to_revenue"], 0.03, places=4)
         self.assertAlmostEqual(allocation["capex_to_depreciation"], 60 / 55, places=2)
 
+    def test_capex_intensity(self):
+        allocation = fx.derive_capital_allocation(INCOME, BALANCE, CASHFLOW, market_cap=4000)
+        self.assertAlmostEqual(allocation["capex_intensity"], 60 / 1000, places=4)
+
 
 class ValuationTests(unittest.TestCase):
     def test_enterprise_multiples_fall_back_to_the_balance_sheet(self):
@@ -221,10 +254,40 @@ class ValuationTests(unittest.TestCase):
         multiples = fx.derive_enterprise_multiples(INCOME, BALANCE, CASHFLOW, {}, market_cap=4000)
         self.assertAlmostEqual(multiples["price_to_tangible_book"], 4000 / (1100 - 200 - 100), places=2)
 
+    def test_raw_free_cash_flow_and_total_debt_are_exposed(self):
+        # pipeline/reverse_dcf.py needs the dollar figures, not just the multiples built on them.
+        multiples = fx.derive_enterprise_multiples(INCOME, BALANCE, CASHFLOW, {}, market_cap=4000)
+        self.assertEqual(multiples["free_cash_flow"], 200.0)
+        self.assertEqual(multiples["total_debt"], 500.0)
+
     def test_loss_making_ebitda_leaves_the_multiple_undefined(self):
         loss = {"periods": ["2025"], "rows": {"EBITDA": [-50.0]}}
         multiples = fx.derive_enterprise_multiples(loss, BALANCE, CASHFLOW, {}, market_cap=4000)
         self.assertIsNone(multiples["ev_to_ebitda"])
+
+    def test_rotce_averages_two_periods_of_tangible_book(self):
+        # tangible book: (1100-200-100)=800 now, (920-200-110)=610 prior -> average 705
+        self.assertAlmostEqual(fx.derive_tangible_returns(INCOME, BALANCE), 180 / 705, places=4)
+
+    def test_rotce_is_none_without_positive_tangible_book(self):
+        wiped_out = dict(BALANCE)
+        wiped_out["rows"] = {**BALANCE["rows"], "Stockholders Equity": [250.0, 260.0, 800.0, 680.0]}
+        self.assertIsNone(fx.derive_tangible_returns(INCOME, wiped_out))
+
+    def test_ffo_adds_back_depreciation_and_prices_off_it(self):
+        ffo, price_to_ffo = fx.derive_reit_ffo(INCOME, CASHFLOW, market_cap=4000)
+        self.assertAlmostEqual(ffo, 180 + 55, places=2)
+        self.assertAlmostEqual(price_to_ffo, 4000 / 235, places=2)
+
+    def test_ffo_backs_out_a_disclosed_gain_on_sale(self):
+        with_gain = dict(INCOME)
+        with_gain["rows"] = {**INCOME["rows"], "Gain On Sale Of Business": [20.0, 10.0, 0.0, 0.0]}
+        ffo, _ = fx.derive_reit_ffo(with_gain, CASHFLOW, market_cap=4000)
+        self.assertAlmostEqual(ffo, 180 + 55 - 20, places=2)
+
+    def test_ffo_is_none_without_a_depreciation_figure(self):
+        no_depreciation = {"periods": ["2025"], "rows": {}}
+        self.assertEqual(fx.derive_reit_ffo(INCOME, no_depreciation, market_cap=4000), (None, None))
 
 
 class MarketStructureTests(unittest.TestCase):

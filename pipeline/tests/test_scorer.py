@@ -5,6 +5,7 @@ import unittest
 PIPELINE_DIR = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, PIPELINE_DIR)
 
+import canonical_metrics
 import scorer
 
 # A company that answers every metric the model asks for. Used wherever a test needs full
@@ -119,11 +120,23 @@ class ScorerTests(unittest.TestCase):
         self.assertEqual(parts["applicability_profile"], "bank")
         self.assertIn("current_ratio", parts["suppressed_metrics"])
 
-    def test_a_generic_financial_is_not_given_bank_exemptions(self):
-        """"Financial Services" covers exchanges and asset managers too; only a profile the
-        registry recognises earns a profile's suppressions."""
+    def test_capital_markets_now_gets_its_own_bank_like_exemptions(self):
+        """"Capital Markets" (broker-dealers/exchanges/investment banks) now resolves to its
+        own profile rather than falling through to general -- it inherits bank's suppressions,
+        per the same P/TBV<->ROTCE framework research recommends for this sub-industry."""
         _, parts = scorer.valuation_score({"is_etf": False, "sector": "Financial Services",
                                            "industry": "Capital Markets",
+                                           "price_to_book": 1.2, "debt_to_equity": 0.4,
+                                           "current_ratio": 1.8})
+        self.assertEqual(parts["applicability_profile"], "capital_markets")
+        self.assertIsNone(parts["current_ratio"])
+        self.assertIn("current_ratio", parts["suppressed_metrics"])
+
+    def test_a_generic_financial_is_not_given_bank_exemptions(self):
+        """"Financial Services" alone, with no sub-industry text this pipeline recognises,
+        must still fall through to general."""
+        _, parts = scorer.valuation_score({"is_etf": False, "sector": "Financial Services",
+                                           "industry": "Specialty Finance",
                                            "price_to_book": 1.2, "debt_to_equity": 0.4,
                                            "current_ratio": 1.8})
         self.assertEqual(parts["applicability_profile"], "general")
@@ -403,6 +416,219 @@ class RegistryDrivenApplicabilityTests(unittest.TestCase):
         for metric in ("operating_margin_trend", "fcf_growth_3y", "gross_profits_to_assets"):
             self.assertIsNone(parts[metric])
             self.assertIn(metric, parts["suppressed_metrics"])
+
+
+class NewSubIndustryProfileTests(unittest.TestCase):
+    """The eight sub-industry profiles added to close the KPI-registry research gap: each
+    must (a) actually classify into its new profile rather than falling through to general or
+    being caught by an earlier, wrongly-matching branch, and (b) suppress the generic ratios
+    its own research called misleading for that sub-industry."""
+
+    def snap(self, sector, industry, **updates):
+        base = {"is_etf": False, "sector": sector, "industry": industry,
+                "price_to_book": 1.5, "forward_pe": 14.0, "peg": 1.1, "debt_to_equity": 0.5,
+                "current_ratio": 1.4, "return_on_equity": 0.15, "profit_margin": 0.08,
+                "free_cash_flow_yield": 0.04, "ev_to_ebitda": 9.0, "ev_to_fcf": 15.0,
+                "altman_z": 2.5, "gross_profits_to_assets": 0.3,
+                "days_sales_outstanding_trend": 0.01, "accruals_ratio": 0.02,
+                "net_debt_to_ebitda": 1.2, "inventory_days_trend": 0.0}
+        base.update(updates)
+        return base
+
+    def test_insurance_broker_no_longer_misrouted_into_diversified_insurer(self):
+        # The bug the audit found: "Insurance Brokers" contains "insurance" and was landing on
+        # diversified_insurer, which assumes underwriting risk and investment float a broker
+        # never carries.
+        _, parts = scorer.valuation_score(
+            self.snap("Financial Services", "Insurance Brokers"))
+        self.assertEqual(parts["applicability_profile"], "insurance_broker")
+        self.assertIsNone(parts["price_to_book"])
+        self.assertIn("price_to_book", parts["suppressed_metrics"])
+
+    def test_managed_care_is_distinct_from_life_and_pc_insurers(self):
+        _, parts = scorer.valuation_score(
+            self.snap("Healthcare", "Healthcare Plans", debt_to_equity=0.4))
+        self.assertEqual(parts["applicability_profile"], "managed_care_insurer")
+        # Inherits property_casualty_insurer's suppression set (EV multiples, DSO, inventory).
+        self.assertIsNone(parts["ev_to_ebitda"])
+        self.assertIn("ev_to_ebitda", parts["suppressed_metrics"])
+
+    def test_midstream_is_not_swallowed_by_the_oil_and_gas_commodity_branch(self):
+        _, parts = scorer.valuation_score(
+            self.snap("Energy", "Oil & Gas Midstream"))
+        self.assertEqual(parts["applicability_profile"], "midstream_mlp")
+        self.assertIsNone(parts["forward_pe"])
+        self.assertIn("forward_pe", parts["suppressed_metrics"])
+
+    def test_airline_gets_cyclical_suppression(self):
+        _, parts = scorer.valuation_score(self.snap("Industrials", "Airlines"))
+        self.assertEqual(parts["applicability_profile"], "airline")
+        self.assertIsNone(parts["current_ratio"])
+        self.assertIn("current_ratio", parts["suppressed_metrics"])
+
+    def test_aerospace_defense_suppresses_current_ratio_not_valuation_multiples(self):
+        _, parts = scorer.valuation_score(self.snap("Industrials", "Aerospace & Defense"))
+        self.assertEqual(parts["applicability_profile"], "aerospace_defense")
+        self.assertIsNone(parts["current_ratio"])
+        # Unlike the cyclical/financial profiles above, aerospace keeps its generic multiples --
+        # the research's ask here was additive (book-to-bill/backlog), not suppressive.
+        self.assertIsNotNone(parts["ev_to_ebitda"])
+        self.assertIsNotNone(parts["forward_pe"])
+
+    def test_capital_markets_inherits_bank_suppressions(self):
+        _, parts = scorer.valuation_score(
+            self.snap("Financial Services", "Capital Markets", price_to_tangible_book=1.8))
+        self.assertEqual(parts["applicability_profile"], "capital_markets")
+        for metric in ("ev_to_ebitda", "current_ratio", "altman_z"):
+            self.assertIsNone(parts[metric])
+            self.assertIn(metric, parts["suppressed_metrics"])
+
+    def test_asset_manager_suppresses_book_value_and_leverage(self):
+        _, parts = scorer.valuation_score(self.snap("Financial Services", "Asset Management"))
+        self.assertEqual(parts["applicability_profile"], "asset_manager")
+        self.assertIsNone(parts["price_to_book"])
+        self.assertIn("price_to_book", parts["suppressed_metrics"])
+        self.assertIn("net_debt_to_ebitda", parts["suppressed_metrics"])
+
+    def test_homebuilder_suppresses_cash_flow_and_distress_reads(self):
+        _, parts = scorer.valuation_score(
+            self.snap("Consumer Cyclical", "Residential Construction"))
+        self.assertEqual(parts["applicability_profile"], "homebuilder")
+        self.assertIsNone(parts["altman_z"])
+        self.assertIsNone(parts["free_cash_flow_yield"])
+        self.assertIn("altman_z", parts["suppressed_metrics"])
+
+    def test_independent_power_producer_is_distinct_from_regulated_utility(self):
+        ipp = self.snap("Utilities", "Utilities - Independent Power Producers")
+        regulated = self.snap("Utilities", "Utilities - Regulated Electric")
+        self.assertEqual(scorer.valuation_score(ipp)[1]["applicability_profile"],
+                         "independent_power_producer")
+        self.assertEqual(scorer.valuation_score(regulated)[1]["applicability_profile"], "utility")
+        self.assertIsNone(scorer.valuation_score(ipp)[1]["forward_pe"])
+        self.assertIn("forward_pe", scorer.valuation_score(ipp)[1]["suppressed_metrics"])
+
+
+class RemainingSubIndustryProfileRoutingTests(unittest.TestCase):
+    """Every sub-industry profile added after the eight above (Energy/Materials, Industrials,
+    Healthcare, Utilities, the Financials gaps, Technology/SaaS, Communication Services,
+    Consumer Discretionary/Staples, and the ten REIT property-type splits): each must actually
+    classify into its own profile rather than falling through to "general" or an earlier,
+    wrongly-matching branch. classify_profile() is the single dispatch point both scorer paths
+    and peer_groups.py share, so a routing test here is a routing guarantee everywhere."""
+
+    CASES = [
+        ("Basic Materials", "Specialty Chemicals", "specialty_chemicals"),
+        ("Industrials", "Specialty Industrial Machinery", "machinery"),
+        ("Industrials", "Electrical Equipment & Parts", "electrical_equipment"),
+        ("Industrials", "Building Products & Equipment", "building_products"),
+        ("Industrials", "Engineering & Construction", "engineering_construction"),
+        ("Industrials", "Railroads", "railroad"),
+        ("Industrials", "Trucking", "trucking"),
+        ("Industrials", "Integrated Freight & Logistics", "air_freight_logistics"),
+        ("Industrials", "Marine Shipping", "marine_shipping"),
+        ("Industrials", "Waste Management", "waste_management"),
+        ("Industrials", "Staffing & Employment Services", "staffing"),
+        ("Industrials", "Consulting Services", "consulting_services"),
+        ("Industrials", "Industrial Distribution", "industrial_distribution"),
+        ("Healthcare", "Drug Manufacturers - General", "large_cap_pharma"),
+        ("Healthcare", "Medical Devices", "medical_devices"),
+        ("Healthcare", "Diagnostics & Research", "life_science_tools_diagnostics"),
+        ("Healthcare", "Medical Distribution", "pharmacy_healthcare_distribution"),
+        ("Healthcare", "Health Information Services", "healthcare_it"),
+        ("Utilities", "Utilities - Renewable", "renewable_yieldco_developer"),
+        ("Utilities", "Utilities - Water", "water_utility"),
+        ("Financial Services", "Insurance - Reinsurance", "reinsurer"),
+        ("Financial Services", "Financial Data & Stock Exchanges", "financial_exchange"),
+        ("Financial Services", "Credit Services", "consumer_finance"),
+        ("Technology", "Semiconductor Equipment & Materials", "semiconductor_capital_equipment"),
+        ("Technology", "Electronics & Computer Distribution", "ems_electronic_components"),
+        ("Technology", "Communication Equipment", "networking_equipment"),
+        ("Technology", "Software - Application", "saas"),
+        ("Technology", "Software - Infrastructure", "saas"),
+        ("Technology", "Information Technology Services", "it_services_consulting"),
+        ("Communication Services", "Telecom Services", "telecom_carrier"),
+        ("Communication Services", "Entertainment", "media_entertainment"),
+        ("Communication Services", "Internet Content & Information", "interactive_media_platform"),
+        ("Communication Services", "Electronic Gaming & Multimedia", "video_games"),
+        ("Communication Services", "Publishing", "publishing_advertising"),
+        ("Consumer Cyclical", "Apparel Retail", "retail_apparel"),
+        ("Consumer Cyclical", "Restaurants", "restaurants"),
+        ("Consumer Cyclical", "Internet Retail", "ecommerce_retail"),
+        ("Consumer Cyclical", "Auto Manufacturers", "automaker"),
+        ("Consumer Cyclical", "Auto & Truck Dealerships", "auto_dealership"),
+        ("Consumer Cyclical", "Auto Parts", "auto_parts_supplier"),
+        ("Consumer Cyclical", "Leisure", "leisure_products"),
+        ("Consumer Defensive", "Education & Training Services", "education_services"),
+        ("Consumer Defensive", "Farm Products", "agricultural_processor"),
+        ("Consumer Defensive", "Packaged Foods", "packaged_food_processor"),
+        ("Consumer Defensive", "Beverages - Non-Alcoholic", "beverage_manufacturer"),
+        ("Consumer Defensive", "Tobacco", "tobacco"),
+        ("Consumer Defensive", "Food Distribution", "food_distributor"),
+        ("Consumer Defensive", "Grocery Stores", "grocery_staples_retail"),
+        ("Real Estate", "REIT - Office", "office_reit"),
+        ("Real Estate", "REIT - Retail", "retail_reit"),
+        ("Real Estate", "REIT - Industrial", "industrial_reit"),
+        ("Real Estate", "REIT - Residential", "residential_reit"),
+        ("Real Estate", "REIT - Healthcare Facilities", "healthcare_reit"),
+        ("Real Estate", "REIT - Hotel & Motel", "hotel_reit"),
+        ("Real Estate", "REIT - Mortgage", "mortgage_reit"),
+        # Falls back to the generic reit profile: no distinguishing substring for these, and
+        # not a ticker this test overrides.
+        ("Real Estate", "REIT - Diversified", "reit"),
+    ]
+
+    def test_every_case_routes_to_its_own_profile(self):
+        for sector, industry, expected in self.CASES:
+            with self.subTest(sector=sector, industry=industry):
+                self.assertEqual(
+                    canonical_metrics.classify_profile({"sector": sector, "industry": industry}),
+                    expected)
+
+    def test_ticker_overrides_resolve_ambiguous_reit_property_types(self):
+        # These four share Yahoo industry strings with other REIT subtypes -- there is no
+        # text-based way to tell a self-storage REIT from a generic specialty REIT, so they
+        # must be resolved by ticker_overrides, checked ahead of any industry-text match.
+        for ticker, expected in (("PSA", "self_storage_reit"), ("CUBE", "self_storage_reit"),
+                                 ("EXR", "self_storage_reit"), ("DLR", "data_center_reit"),
+                                 ("EQIX", "data_center_reit"), ("O", "net_lease_reit"),
+                                 ("NNN", "net_lease_reit"), ("WPC", "net_lease_reit"),
+                                 ("RYN", "timber_reit"), ("WY", "timber_reit"),
+                                 ("PCH", "timber_reit")):
+            with self.subTest(ticker=ticker):
+                self.assertEqual(
+                    canonical_metrics.classify_profile(
+                        {"ticker": ticker, "sector": "Real Estate", "industry": "REIT - Specialty"}),
+                    expected)
+
+    def test_payment_processors_are_exempted_from_consumer_finance_by_ticker(self):
+        # Visa, Mastercard and PayPal are all filed by Yahoo under "Credit Services" despite
+        # taking no consumer credit risk themselves -- resolved via ticker_overrides rather
+        # than an invented industry-text distinction.
+        for ticker in ("V", "MA", "PYPL", "FI", "GPN", "FIS", "WEX", "EEFT"):
+            with self.subTest(ticker=ticker):
+                self.assertEqual(
+                    canonical_metrics.classify_profile(
+                        {"ticker": ticker, "sector": "Financial Services", "industry": "Credit Services"}),
+                    "payment_processor")
+        # AXP genuinely carries cardmember-loan credit risk unlike the payment networks above,
+        # so it is deliberately left unresolved and falls through to consumer_finance.
+        self.assertEqual(
+            canonical_metrics.classify_profile(
+                {"ticker": "AXP", "sector": "Financial Services", "industry": "Credit Services"}),
+            "consumer_finance")
+
+    def test_no_new_profile_is_silently_suppressed_on_everything(self):
+        # The bug class this guards against: a profile absent from metric_registry.json's
+        # applicability_profiles allow-lists gets nearly every metric suppressed regardless of
+        # what applicability_matrix.json's explicit rules say. return_on_equity is not
+        # suppressed or replaced by any profile's explicit rule anywhere in this matrix
+        # (unlike ev_to_ebitda, which bank/property_casualty_insurer -- and so their
+        # inheritors consumer_finance/reinsurer -- do suppress on genuine economic grounds),
+        # so it is a clean probe for the registry-omission bug specifically.
+        for _, _, profile in self.CASES:
+            with self.subTest(profile=profile):
+                rule = canonical_metrics.applicability_for("return_on_equity", profile)
+                self.assertEqual(rule["status"], "applied")
 
 
 class CategoryCoverageTests(unittest.TestCase):

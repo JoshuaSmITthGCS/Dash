@@ -19,3 +19,7 @@ firebase-admin>=6.5
 # statsmodels/scipy are not pulled in for one regression script -- numpy alone is enough for a
 # direct sandwich-estimator implementation (see that file's docstring for the exact formula).
 numpy>=1.26
+# HTML table/paragraph extraction for pipeline/filing_extraction.py's 8-K Exhibit 99.x
+# earnings-supplement parsing. html.parser backend only -- no lxml -- so this stays pure
+# Python with no compiled dependency.
+beautifulsoup4>=4.12

@@ -997,6 +997,10 @@ class YahooExtendedFailureIsolationTests(unittest.TestCase):
 
         self.assertGreater(extended.get("extended_coverage", 0), 0)
         self.assertEqual(sum(diagnostics.values()), 0)
+        # Reverse-DCF market-implied growth rides along whenever settings.json declares the
+        # assumptions it needs (risk-free rate, equity risk premium, cost of debt); positive
+        # FCF, EV and market cap are all present on this fixture, so it should resolve.
+        self.assertIsNotNone(extended.get("market_implied_growth"))
 
     def test_enrich_counts_only_companies_with_positive_extended_coverage(self):
         # A company whose ticker_obj is None (e.g. yfinance unavailable) must not count as
