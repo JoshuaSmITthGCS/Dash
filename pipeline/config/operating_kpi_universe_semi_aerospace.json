@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "config_version": "operating-kpi-universe-semi-aerospace-v1.0.0",
+  "_comment": "Tickers to collect book-to-bill ratio for -- the semiconductor and aerospace/defense subset of advisor_universe.json, not the whole universe, mirroring pipeline/config/operating_kpi_universe.json's rationale. Derived once from public/data/advisor.json's screen_universe sector/industry classification (2026-08-27 snapshot) for the Yahoo industries: Semiconductor Equipment & Materials, Semiconductors, and Aerospace & Defense. A company's sector/industry classification changes rarely enough that this list does not need to be regenerated every run; regenerate by re-filtering a fresh screen_universe snapshot on the same industry set if it drifts. IMPORTANT provenance note this module's collector script uses to interpret its own coverage numbers: book-to-bill is a semiconductor-capital-equipment convention first (AMAT, ENTG, KLAC, LRCX, ONTO, TER, VECO cite either SEMI's industry-wide figure or their own company ratio about as routinely as retailers cite comps); fabless/IDM chipmakers (e.g. AMD, AVGO, MU, NVDA, QCOM, TXN) and aerospace/defense primes (e.g. BA, GD, LMT, NOC, RTX) disclose it far less consistently, if at all -- primes more often report a segment-scoped book-to-bill or simply state backlog in dollars with no ratio. A low match rate across this list, concentrated outside the semicap-equipment names, is the expected result, not evidence the extraction is broken.",
+  "metric": "book_to_bill_ratio",
+  "semi_aerospace_symbols": [
+    "ADI", "AMAT", "AMD", "AMKR", "AVGO", "AXON", "BA", "CRDO", "CW", "ENTG",
+    "GD", "GE", "GFS", "HEI", "HII", "HWM", "HXL", "KLAC", "LHX", "LMT",
+    "LRCX", "LSCC", "MCHP", "MPWR", "MRCY", "MRVL", "MTSI", "MU", "NOC", "NVDA",
+    "NXPI", "ON", "ONTO", "QCOM", "QRVO", "RKLB", "RMBS", "RTX", "SLAB", "SWKS",
+    "SYNA", "TDG", "TER", "TXN", "VECO", "VSH", "WOLF", "WWD"
+  ]
+}
