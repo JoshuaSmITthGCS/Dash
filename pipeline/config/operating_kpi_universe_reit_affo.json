@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "config_version": "operating-kpi-universe-reit-affo-v1.0.0",
+  "_comment": "Tickers to collect AFFO-per-share (or Core FFO / FFO-as-adjusted per share) for -- the equity-REIT subset of advisor_universe.json, not the whole universe, for the same reason operating_kpi_universe.json scopes to retail/restaurants: spending the SEC rate-limit budget on companies whose releases never state this figure at all. Derived once from public/data/advisor.json's screen_universe sector/industry classification (2026-08-27 snapshot) for the Yahoo industries REIT - Diversified/Healthcare Facilities/Hotel & Motel/Industrial/Office/Residential/Retail/Specialty. Mortgage REITs (REIT - Mortgage) are deliberately excluded: they hold and trade debt/MBS instruments rather than operating physical property, so they do not report FFO/AFFO/Core-FFO at all -- their analogous disclosures (book value per share, net interest margin) are a different metric family this module does not attempt. A company's sector/industry classification changes rarely enough that this list does not need to be regenerated every run; regenerate by re-filtering a fresh screen_universe snapshot on the same industry set if it drifts.",
+  "metric": "affo_per_share",
+  "reit_symbols": [
+    "AMH", "AMT", "AVB", "BRX", "BXP", "CCI", "CPT", "CUBE", "CUZ", "DLR",
+    "DOC", "EGP", "ELS", "EPR", "EQIX", "ESS", "FR", "FRT", "GLPI", "HST",
+    "IIPR", "INVH", "IRM", "IRT", "KIM", "KRC", "KRG", "LAMR", "MAA", "NNN",
+    "O", "OHI", "PK", "PLD", "PSA", "REG", "REXR", "RHP", "RYN", "SBRA",
+    "SLG", "SPG", "STAG", "TRNO", "VNO", "VTR", "WELL", "WPC"
+  ]
+}
