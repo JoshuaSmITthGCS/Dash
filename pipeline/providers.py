@@ -37,11 +37,20 @@ SCHEMA_VERSION = 1
 
 @dataclass
 class PriceSeries:
-    """Adjusted daily closes and volumes for one symbol, oldest first."""
+    """Adjusted daily closes and volumes for one symbol, oldest first.
+
+    ``highs``/``lows`` are the session's intraday extremes - present whenever the adapter's
+    underlying provider carries them, empty otherwise (EdgarAdapter's always-empty PriceSeries,
+    or a provider whose free tier doesn't return a range). Never fabricated: a caller reading
+    range-based signals (true range, NR7) off a short or empty highs/lows list gets no signal
+    rather than one built from a proxy.
+    """
     symbol: str
     dates: list = field(default_factory=list)
     closes: list = field(default_factory=list)
     volumes: list = field(default_factory=list)
+    highs: list = field(default_factory=list)
+    lows: list = field(default_factory=list)
     source: str = None
     fetched_at: str = None
 
@@ -53,7 +62,8 @@ class PriceSeries:
         return self.closes[-1] if self.closes else None
 
     def as_dict(self):
-        return {"dates": self.dates, "closes": self.closes, "volumes": self.volumes}
+        return {"dates": self.dates, "closes": self.closes, "volumes": self.volumes,
+                "highs": self.highs, "lows": self.lows}
 
 
 @dataclass
@@ -171,6 +181,8 @@ class YahooAdapter(AbstractDataProvider):
                     "dates": [str(index)[:10] for index in frame.index],
                     "closes": [float(value) for value in frame["Close"].tolist()],
                     "volumes": [float(value) for value in frame["Volume"].fillna(0).tolist()],
+                    "highs": [float(value) for value in frame["High"].tolist()],
+                    "lows": [float(value) for value in frame["Low"].tolist()],
                 }
             limiter_for(self.name).acquire()
             return retry_with_backoff(download, description=f"{symbol} prices")
@@ -244,6 +256,8 @@ class YahooAdapter(AbstractDataProvider):
                 "dates": [str(index)[:10] for index in section.index],
                 "closes": [float(value) for value in section["Close"].tolist()],
                 "volumes": [float(value) for value in section["Volume"].fillna(0).tolist()],
+                "highs": [float(value) for value in section["High"].tolist()],
+                "lows": [float(value) for value in section["Low"].tolist()],
             }
         except Exception:  # noqa: BLE001 - one absent symbol must not sink the batch
             return None
@@ -325,6 +339,8 @@ class AlphaVantageAdapter(AbstractDataProvider):
             closes=[float(values["4. close"]) for _, values in rows if values.get("4. close")],
             volumes=[float(values.get("5. volume") or 0) for _, values in rows
                      if values.get("4. close")],
+            highs=[float(values["2. high"]) for _, values in rows if values.get("4. close")],
+            lows=[float(values["3. low"]) for _, values in rows if values.get("4. close")],
         )
 
     def quote(self, symbol):

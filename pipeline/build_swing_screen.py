@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from common import LOG, load_json, save_json
 from edgar_sue import ANNOUNCEMENT_ANCHOR_NOTE, announcement_age_trading_days, sue_for
 from peer_groups import peer_group
+from price_archive import load_series as archive_series_for
 from screen_inputs import (backtest_entry, latest_observations, median_dollar_volume,
                            universe_rows, with_current_price)
 from swing_signals import (BASELINE_VARIANT, CONTEXT_SIGNAL_EVIDENCE, CONTRACTION_NOTE,
@@ -80,7 +81,8 @@ def resolve_sue(ticker, as_of, sessions, sue_for=sue_for):
         sue.get("release_datetime"), sessions)}
 
 
-def build_rows(universe, entry_for=None, observations=None, as_of=None, sue_resolver=resolve_sue):
+def build_rows(universe, entry_for=None, observations=None, as_of=None, sue_resolver=resolve_sue,
+               archive_for=None):
     """One pre-score row per ticker: its context, plus every raw swing subfactor.
 
     Two passes rather than one. The announcement-return leg is an *abnormal* return, so it
@@ -88,8 +90,13 @@ def build_rows(universe, entry_for=None, observations=None, as_of=None, sue_reso
     until every row's closes have been read. The first pass gathers the series, the second
     scores against it. Nothing here fetches: the market leg is the equal-weighted mean of the
     same cached closes the factors come from, not an index from a provider.
+
+    ``archive_for`` defaults to price_archive.load_series - the separate, younger high/low
+    series the two range-based contraction context signals read. Injectable for the same
+    reason ``entry_for`` and ``sue_resolver`` are: a test builds a row without touching disk.
     """
     entry_for = entry_for or backtest_entry
+    archive_for = archive_for or archive_series_for
     observations = observations if observations is not None else latest_observations()
     as_of = as_of or datetime.now(timezone.utc).date().isoformat()
     prepared = []
@@ -113,6 +120,7 @@ def build_rows(universe, entry_for=None, observations=None, as_of=None, sue_reso
         observed = observations.get(ticker) or {}
         sue = sue_resolver(ticker, as_of, entry.get("dates") or [])
         group_id, group_label = peer_group(row)
+        archive = archive_for(ticker) or {}
         rows.append({
             "ticker": ticker, "name": row.get("name"), "sector": row.get("sector"),
             "peer_group": group_id, "peer_group_label": group_label,
@@ -130,7 +138,10 @@ def build_rows(universe, entry_for=None, observations=None, as_of=None, sue_reso
             "days_to_cover": row.get("days_to_cover") or observed.get("days_to_cover"),
             "factors": swing_factors(row, closes=closes, volumes=volumes, sue=sue,
                                      market_returns=market_returns,
-                                     forward_horizons=FORWARD_HORIZONS),
+                                     forward_horizons=FORWARD_HORIZONS,
+                                     archive_highs=archive.get("highs"),
+                                     archive_lows=archive.get("lows"),
+                                     archive_closes=archive.get("closes")),
         })
     return rows
 

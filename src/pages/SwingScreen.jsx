@@ -556,16 +556,22 @@ export default function SwingScreen() {
     },
     {
       key: 'setup', label: 'Setup', full: true,
-      hint: 'Volatility-contraction and volume context (Bollinger BandWidth squeeze, volume '
-        + 'dry-up, 2-period RSI). Descriptive, never a scoring leg — a coiled or thinned-out '
-        + 'name is not a directional call by itself.',
+      hint: 'Volatility-contraction and volume context (Bollinger BandWidth squeeze, NR7, '
+        + 'ATR-percentile compression, volume dry-up, 2-period RSI). Descriptive, never a '
+        + 'scoring leg — a coiled or thinned-out name is not a directional call by itself. NR7 '
+        + 'and ATR compression read a separate, younger data store than the rest, so they show '
+        + '"–" on most names until it has grown or been backfilled.',
       sortValue: (row) => (row.contraction?.bandwidth_squeeze?.squeezed ? 1 : 0)
-        + (row.contraction?.volume_dry_up?.dried_up ? 1 : 0),
+        + (row.contraction?.volume_dry_up?.dried_up ? 1 : 0)
+        + (row.contraction?.narrow_range?.is_nr7 ? 1 : 0)
+        + (row.contraction?.atr_compression?.squeezed ? 1 : 0),
       cell: (row) => {
         const setup = row.contraction
         if (!setup) return <span className="swing-trend">–</span>
         const badges = []
         if (setup.bandwidth_squeeze?.squeezed) badges.push('Squeeze')
+        if (setup.narrow_range?.is_nr7) badges.push('NR7')
+        if (setup.atr_compression?.squeezed) badges.push('ATR compression')
         if (setup.volume_dry_up?.dried_up) badges.push('Volume dry-up')
         const rsi = setup.rsi_2
         return (
@@ -573,6 +579,9 @@ export default function SwingScreen() {
             title={`RSI(2): ${rsi == null ? '–' : rsi.toFixed(0)}`
               + (setup.bandwidth_squeeze
                 ? ` · BandWidth ${Math.round(setup.bandwidth_squeeze.percentile_of_own_history * 100)}th pct of its own 6-month range`
+                : '')
+              + (setup.atr_compression
+                ? ` · ATR ${Math.round(setup.atr_compression.percentile_of_own_history * 100)}th pct of its own trailing range`
                 : '')
               + (setup.volume_dry_up
                 ? ` · volume ${(setup.volume_dry_up.ratio_to_50d_average * 100).toFixed(0)}% of its 50-day average`
@@ -650,10 +659,10 @@ export default function SwingScreen() {
             high-volume return premium, 52-week-high proximity, and a small cost-gated prior-week reversal
             tilt. Short interest is a negative screen, not a leg. MACD crossovers, VWAP and candlestick
             patterns are deliberately absent — none of them survive data-snooping correction and costs
-            in US single-stock data. A Bollinger BandWidth squeeze, volume dry-up and 2-period RSI read
-            are published in the Setup column as context only, not as legs: they say a name is coiled or
-            thinned out, not which way it resolves, and have not been run through this composite's own
-            validation.
+            in US single-stock data. A Bollinger BandWidth squeeze, NR7, ATR-percentile compression,
+            volume dry-up and 2-period RSI read are published in the Setup column as context only, not
+            as legs: they say a name is coiled or thinned out, not which way it resolves, and have not
+            been run through this composite's own validation.
           </>}
         </p>
       </div>

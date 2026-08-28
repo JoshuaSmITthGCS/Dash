@@ -1,0 +1,92 @@
+name: Backfill price archive high/low
+
+# One-time(-ish) fill of daily high and low into pipeline/data/price_archive/, so
+# pipeline/swing_signals.py's narrow_range (NR7) and atr_compression have a real trailing
+# distribution to read a percentile off instead of waiting months for the daily job alone to
+# grow one. See pipeline/backfill_price_ranges.py's module docstring for the full design and
+# why this deliberately never touches pipeline/data/backtest_cache/ (a pinned fixture -
+# docs/SESSION-HANDOFF.md, docs/SURVIVORSHIP-RECONSTRUCTION-2.md section 3a).
+#
+# Append-only and resumable by construction (price_archive.append_series is first-write-wins),
+# so re-running this costs nothing beyond wasted network calls. Start with `sample` (25
+# tickers) to confirm the shape of what lands before running `full`.
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: How much to fetch
+        required: true
+        default: sample
+        type: choice
+        options:
+          - sample   # first 25 tickers
+          - full     # the whole live universe
+
+permissions:
+  contents: write
+
+concurrency:
+  group: price-ranges-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    # ~900 tickers at yfinance's undocumented per-call rate limit; most of the wall time is
+    # deliberate pacing, same order of magnitude as the pit-fundamentals backfill.
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Backfill
+        run: |
+          set -o pipefail
+          case "${{ inputs.scope || 'sample' }}" in
+            sample) ARGS="--limit 25" ;;
+            *)      ARGS="" ;;
+          esac
+          echo "Running: python pipeline/backfill_price_ranges.py ${ARGS}"
+          python pipeline/backfill_price_ranges.py ${ARGS} | tee backfill-summary.json
+
+      - name: Summarise into the run log
+        if: always()
+        run: |
+          {
+            echo "### Price archive high/low backfill"
+            echo '```json'
+            cat backfill-summary.json 2>/dev/null || echo '{}'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit the archive
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A pipeline/data/price_archive
+          if git diff --cached --quiet; then
+            echo "Nothing changed; nothing to commit."
+            exit 0
+          fi
+          case "${{ inputs.scope || 'sample' }}" in
+            sample) MESSAGE="chore(data): sample-backfill price archive high/low" ;;
+            *)      MESSAGE="chore(data): backfill price archive high/low" ;;
+          esac
+          git commit -m "${MESSAGE}"
+          # The advisor refresh writes to main on its own schedule, so rebase rather than
+          # fail when the two land close together.
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep $((2 ** attempt))
+          done
+          echo "::error::Could not push the backfill after four attempts."
+          exit 1

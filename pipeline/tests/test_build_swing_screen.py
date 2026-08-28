@@ -95,20 +95,123 @@ def test_rsi_2_reads_overbought_on_a_persistent_rally_and_oversold_on_a_selloff(
     assert swing_signals.rsi_2(selloff) < 30
 
 
+def test_true_range_captures_a_gap_the_plain_high_low_range_misses():
+    # A session that gapped up 20 points overnight and then barely moved: the plain high-low
+    # range for that session is only 1, but the true range has to include the gap from the
+    # prior close, which is the entire reason Wilder defined it this way.
+    highs = [100.0, 121.0]
+    lows = [99.0, 120.0]
+    closes = [99.5, 120.5]
+
+    ranges = swing_signals.true_range_series(highs, lows, closes)
+
+    assert ranges == [max(1.0, abs(121.0 - 99.5), abs(120.0 - 99.5))]
+
+
+def test_true_range_is_none_on_a_session_missing_a_high_or_low():
+    highs = [100.0, None, 105.0]
+    lows = [99.0, 98.0, 104.0]
+    closes = [99.5, 99.0, 104.5]
+
+    ranges = swing_signals.true_range_series(highs, lows, closes)
+
+    # Index 0 has no predecessor (dropped by construction). Index 1's high is missing, so it's
+    # None. Index 2's plain range is 105-104=1, but the gap from index 1's close (99.0) to
+    # index 2's high (105.0) is 6, which true range has to capture.
+    assert ranges == [None, 6.0]
+
+
+def test_average_true_range_needs_a_fully_resolvable_window():
+    # A one-point-a-session uptrend: the plain high-low range is 1 every session, but the
+    # steady drift means the previous close always sits 0.5 inside the day's low, so the true
+    # range (which has to consider that gap) is 1.5 every session, not 1.
+    highs = [100.0 + index for index in range(20)]
+    lows = [99.0 + index for index in range(20)]
+    closes = [99.5 + index for index in range(20)]
+
+    assert swing_signals.average_true_range(highs, lows, closes, window=14) == 1.5
+    assert swing_signals.average_true_range(highs[:10], lows[:10], closes[:10], window=14) is None
+
+
+def test_narrow_range_flags_todays_range_as_the_tightest_of_the_window():
+    highs = [110.0, 108.0, 107.0, 106.0, 105.5, 105.0, 104.5]
+    lows = [100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 104.0]
+
+    nr7 = swing_signals.narrow_range(highs, lows, window=7)
+
+    assert nr7["is_nr7"] is True
+    assert nr7["range"] == .5
+
+
+def test_narrow_range_does_not_flag_a_session_that_is_not_the_tightest():
+    highs = [110.0, 100.5, 100.0, 100.0, 100.0, 100.0, 100.0]
+    lows = [100.0, 100.0, 90.0, 90.0, 90.0, 90.0, 90.0]
+
+    nr7 = swing_signals.narrow_range(highs, lows, window=7)
+
+    assert nr7["is_nr7"] is False
+
+
+def test_narrow_range_is_none_on_thin_history():
+    assert swing_signals.narrow_range([100.0] * 5, [99.0] * 5, window=7) is None
+
+
+def test_atr_compression_flags_a_range_at_its_own_trailing_low():
+    # Wide true range for the first 200 sessions, tight for the last 20 - the ATR-percentile
+    # analogue of the bandwidth_squeeze test above.
+    wide_highs = [100 + 10 * ((index % 20) / 20) for index in range(200)]
+    wide_lows = [90 - 10 * ((index % 20) / 20) for index in range(200)]
+    tight_highs = [100.1] * 20
+    tight_lows = [99.9] * 20
+    highs = wide_highs + tight_highs
+    lows = wide_lows + tight_lows
+    closes = [(h + l) / 2 for h, l in zip(highs, lows)]
+
+    compression = swing_signals.atr_compression(highs, lows, closes)
+
+    assert compression is not None
+    assert compression["squeezed"] is True
+
+
+def test_atr_compression_is_none_on_thin_history():
+    assert swing_signals.atr_compression([100.0] * 30, [99.0] * 30, [99.5] * 30) is None
+
+
+def test_contraction_setup_reads_narrow_range_and_atr_from_the_archive_series_only():
+    # The archive series is independent of the long backtest-cache series: passing a short
+    # archive alongside a long cache series must not let one substitute for the other.
+    long_closes = [100.0 + index for index in range(400)]
+    long_volumes = [1_000_000.0] * 400
+    archive_highs = [101.0, 102.0, 103.0, 104.0, 105.0, 106.0, 100.5]
+    archive_lows = [99.0, 99.5, 100.0, 100.5, 101.0, 101.5, 100.0]
+    archive_closes = [100.0, 100.5, 101.5, 102.0, 103.0, 104.0, 100.2]
+
+    setup = swing_signals.contraction_setup(long_closes, long_volumes, archive_highs,
+                                            archive_lows, archive_closes)
+
+    assert setup["narrow_range"] is not None
+    assert setup["narrow_range"]["is_nr7"] is True
+    # Too little archive history for a real ATR-percentile distribution yet.
+    assert setup["atr_compression"] is None
+
+
 def test_contraction_setup_is_never_a_declared_leg():
     """These are published beside the five scored legs, never as a sixth one."""
     assert "contraction" not in swing_signals.SWING_WEIGHTS
     assert "contraction" not in swing_signals.SWING_SUBFACTORS
     for subfactors in swing_signals.SWING_SUBFACTORS.values():
         for name, _ in subfactors:
-            assert name not in ("bandwidth_squeeze", "volume_dry_up", "rsi_2")
+            assert name not in ("bandwidth_squeeze", "volume_dry_up", "rsi_2",
+                                "narrow_range", "atr_compression")
 
 
 def test_contraction_setup_reports_none_components_on_insufficient_history():
     # Ten flat closes are enough for RSI(2) (neutral 50, not a fabricated read) but not for the
     # squeeze (needs ~6 months) or the volume dry-up (needs a 50-session reference average).
+    # No archive series is passed at all, so the two range-based reads are also None.
     setup = swing_signals.contraction_setup([100.0] * 10, [1_000_000.0] * 10)
-    assert setup == {"bandwidth_squeeze": None, "volume_dry_up": None, "rsi_2": 50.0}
+    assert setup == {"bandwidth_squeeze": None, "volume_dry_up": None, "rsi_2": 50.0,
+                     "narrow_range": None, "atr_compression": None}
 
 
 def test_reversal_leg_is_signed_against_the_prior_week():
@@ -616,6 +719,35 @@ def test_build_rows_reads_cached_series_and_skips_funds():
     assert rows[0]["median_dollar_volume_60d"] > 0
 
 
+def test_build_rows_wires_the_archive_series_into_narrow_range():
+    universe = [universe_row("AAA")]
+    entries = entries_for({"AAA": cache_entry()})
+    archive = {
+        "AAA": {
+            "dates": sessions_from("2026-08-01", 7),
+            "highs": [110.0, 108.0, 107.0, 106.0, 105.5, 105.0, 104.5],
+            "lows": [100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 104.0],
+            "closes": [105.0, 104.0, 103.5, 103.0, 102.5, 102.0, 104.2],
+        },
+    }
+
+    rows = module.build_rows(universe, entry_for=entries, observations={},
+                             archive_for=lambda ticker: archive.get(ticker))
+
+    assert rows[0]["factors"]["contraction"]["narrow_range"]["is_nr7"] is True
+
+
+def test_build_rows_defaults_to_no_archive_series_rather_than_erroring():
+    universe = [universe_row("AAA")]
+    entries = entries_for({"AAA": cache_entry()})
+
+    rows = module.build_rows(universe, entry_for=entries, observations={},
+                             archive_for=lambda ticker: None)
+
+    assert rows[0]["factors"]["contraction"]["narrow_range"] is None
+    assert rows[0]["factors"]["contraction"]["atr_compression"] is None
+
+
 def test_run_publishes_ranked_rows_with_their_evidence(monkeypatch, tmp_path):
     universe = [universe_row(f"T{index}", breadth=index / 10, magnitude=index / 100)
                 for index in range(8)]
@@ -649,7 +781,8 @@ def test_run_publishes_ranked_rows_with_their_evidence(monkeypatch, tmp_path):
     # The contraction context is published beside the score on every row, and its evidence
     # travels with it, but it must never be one of the declared, weighted legs.
     assert all("contraction" in row for row in result["results"])
-    assert set(result["context_signal_evidence"]) == {"bandwidth_squeeze", "volume_dry_up", "rsi_2"}
+    assert set(result["context_signal_evidence"]) == {"bandwidth_squeeze", "volume_dry_up", "rsi_2",
+                                                       "narrow_range", "atr_compression"}
     assert not set(result["context_signal_evidence"]) & set(result["weights"])
 
 

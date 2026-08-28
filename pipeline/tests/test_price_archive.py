@@ -58,6 +58,87 @@ def test_dedup_keys_on_ticker_and_date_not_the_whole_universe(tmp_path, monkeypa
     assert conflicts == 1  # a different date for the same ticker is a fresh pair
 
 
+# ---------------------------------------------------------------------------
+# High/low: SA-2026-08-28-01
+# ---------------------------------------------------------------------------
+
+def test_append_series_is_backward_compatible_with_no_highs_or_lows(tmp_path, monkeypatch):
+    monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
+    monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
+    price_archive.append_series("DEAD", ["2026-01-02"], [10.0], [100], "test")
+    rows = json.load(open(tmp_path / "DEAD.json"))["rows"]
+    assert rows["2026-01-02"] == [10.0, 100]
+
+
+def test_append_series_stores_high_and_low_when_given(tmp_path, monkeypatch):
+    monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
+    monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
+    price_archive.append_series("DEAD", ["2026-01-02"], [10.0], [100], "test",
+                                highs=[10.5], lows=[9.5])
+    rows = json.load(open(tmp_path / "DEAD.json"))["rows"]
+    assert rows["2026-01-02"] == [10.0, 100, 10.5, 9.5]
+
+
+def test_append_series_never_retrofits_a_high_low_onto_an_existing_date(tmp_path, monkeypatch):
+    # First-write-wins applies to the whole row, not just the close: a date archived before
+    # this feature existed stays a 2-element row even once a caller with a range shows up.
+    monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
+    monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
+    price_archive.append_series("DEAD", ["2026-01-02"], [10.0], [100], "seed")
+    price_archive.append_series("DEAD", ["2026-01-02"], [10.0], [100], "run_daily",
+                                highs=[10.5], lows=[9.5])
+    rows = json.load(open(tmp_path / "DEAD.json"))["rows"]
+    assert rows["2026-01-02"] == [10.0, 100]
+
+
+def test_load_series_reads_highs_and_lows_oldest_first(tmp_path, monkeypatch):
+    monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
+    monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
+    price_archive.append_series(
+        "AAA", ["2026-01-03", "2026-01-02"], [11.0, 10.0], [200, 100], "test",
+        highs=[11.5, 10.5], lows=[10.8, 9.5])
+
+    series = price_archive.load_series("AAA")
+
+    assert series["dates"] == ["2026-01-02", "2026-01-03"]
+    assert series["closes"] == [10.0, 11.0]
+    assert series["highs"] == [10.5, 11.5]
+    assert series["lows"] == [9.5, 10.8]
+
+
+def test_load_series_reports_none_for_a_row_written_before_the_feature_existed(tmp_path, monkeypatch):
+    monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
+    monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
+    price_archive.append_series("AAA", ["2026-01-02"], [10.0], [100], "seed")
+
+    series = price_archive.load_series("AAA")
+
+    assert series["highs"] == [None]
+    assert series["lows"] == [None]
+
+
+def test_load_series_is_empty_for_a_ticker_never_archived(tmp_path, monkeypatch):
+    monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
+    assert price_archive.load_series("NEVERSEEN") == {
+        "dates": [], "closes": [], "volumes": [], "highs": [], "lows": []}
+
+
+def test_run_daily_forwards_highs_and_lows_from_the_fetched_history(tmp_path, monkeypatch):
+    monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path / "archive"))
+    monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "archive" / "conflicts.jsonl"))
+    monkeypatch.setattr(price_archive, "MANIFEST", str(tmp_path / "archive" / "manifest.json"))
+    monkeypatch.setattr(price_archive, "REPO", str(tmp_path))
+    fake_advisor = {"research": [{"ticker": "AAPL"}], "portfolio_coverage": []}
+    monkeypatch.setattr("common.load_json", lambda name: fake_advisor if name == "advisor.json" else None)
+    histories = {"AAPL": {"dates": ["2026-08-12"], "closes": [200.0], "volumes": [1000],
+                          "highs": [202.0], "lows": [198.0]}}
+
+    price_archive.run_daily(history_fetcher=lambda ticker: histories.get(ticker, {}))
+
+    rows = json.load(open(tmp_path / "archive" / "AAPL.json"))["rows"]
+    assert rows["2026-08-12"] == [200.0, 1000, 202.0, 198.0]
+
+
 def test_health_goes_critical_when_stale(tmp_path, monkeypatch):
     monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
     monkeypatch.setattr(price_archive, "MANIFEST", str(tmp_path / "m.json"))

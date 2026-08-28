@@ -608,10 +608,21 @@ def trend_state(closes, window=252):
 # Alvarez's replicated 70%+ win rates respectively), but that literature is about the published
 # construct's own backtest, not about this composite - wiring either in as a weight change
 # belongs behind the same harness_freeze.json prospective-clock process the three registered
-# reversal variants (A/B/C) above went through, not a citation. Crabel-style NR7/ATR range
-# compression is not published at all: it needs the intraday high and low, and this pipeline's
-# cached daily series carries only close and volume, so an NR7 read here would silently
-# substitute a close-only proxy for a range-based construct with a different economic story.
+# reversal variants (A/B/C) above went through, not a citation.
+#
+# Crabel-style NR7 and ATR-percentile compression (SA-2026-08-28-01) read the daily high and
+# low, which the closes-only series this module was originally built against does not carry.
+# They read `pipeline/data/price_archive/{TICKER}.json` instead - the append-only survivorship
+# archive `price_archive.py` already grows by one real session per ticker on every scheduled
+# refresh, extended (same amendment) to record the session's high and low alongside its close
+# and volume. That archive started 2026-08-11, so on any given refresh most names carry only a
+# few weeks of it: `narrow_range` needs 7 sessions and resolves quickly, `atr_compression` wants
+# a real trailing distribution (its percentile read is meaningless on a handful of points, same
+# reasoning as MINIMUM_BANDWIDTH_HISTORY below) and reports None until the archive has grown
+# into one, or until a one-time historical backfill (pipeline/backfill_price_ranges.py) runs.
+# Never backfilled through pipeline/data/backtest_cache/ itself - that tree is a pinned fixture
+# and writing through its symlinks has already corrupted it once (docs/SESSION-HANDOFF.md,
+# docs/SURVIVORSHIP-RECONSTRUCTION-2.md section 3a).
 CONTEXT_SIGNAL_EVIDENCE = {
     "bandwidth_squeeze": {
         "label": "Bollinger BandWidth squeeze",
@@ -655,19 +666,52 @@ CONTEXT_SIGNAL_EVIDENCE = {
                   "been run through the same prospective validation the three registered reversal "
                   "variants were.",
     },
+    "narrow_range": {
+        "label": "NR7 (narrowest range of the last 7 sessions)",
+        "horizon": "next few sessions",
+        "direction": "direction-neutral - flags imminent range expansion, not which way",
+        "citation": "Toby Crabel, Day Trading with Short Term Price Patterns and Opening Range "
+                    "Breakout (1990)",
+        "effect": "A session whose high-low range is the narrowest of the trailing 7 precedes a "
+                  "higher-than-usual probability of a wide-range trend day; independent "
+                  "replications (e.g. QuantifiedStrategies) confirm the effect and improve it "
+                  "with a trend-direction filter, since NR7 alone says nothing about direction.",
+        "caveat": "Reads pipeline/data/price_archive, which started recording high/low "
+                  "2026-08-28 - see the module-level note above. Resolves as soon as a ticker "
+                  "has 7 archived sessions, unlike atr_compression below.",
+    },
+    "atr_compression": {
+        "label": "ATR-percentile compression",
+        "horizon": "days to weeks after the compression",
+        "direction": "direction-neutral - flags imminent volatility expansion, not which way",
+        "citation": "J. Welles Wilder, New Concepts in Technical Trading Systems (1978); "
+                    "percentile framing per the same convention as bandwidth_squeeze above",
+        "effect": "Wilder's Average True Range at a low relative to its own trailing "
+                  "distribution is the range-based sibling of a BandWidth squeeze - same "
+                  "direction-neutral compression-precedes-expansion logic, measured off the "
+                  "true range (which captures a gap) rather than the close-to-close series "
+                  "BandWidth uses.",
+        "caveat": "Wants a real trailing distribution to read a percentile off, same as "
+                  "bandwidth_squeeze - see MINIMUM_BANDWIDTH_HISTORY. The archive is too young "
+                  "for this on most names until either it grows for several more months or "
+                  "pipeline/backfill_price_ranges.py backfills history once.",
+    },
 }
 
 CONTRACTION_NOTE = (
-    "Setup context, never a scoring leg - see CONTEXT_SIGNAL_EVIDENCE for why. A "
-    "volatility-contraction concept (BandWidth squeeze) says a move is coming without saying "
-    "which way; a supply-exhaustion concept (volume dry-up) says selling pressure has thinned "
-    "without saying which way it resolves; a mean-reversion read (2-period RSI) is directional "
-    "but overlaps the existing short_term_reversal leg and has not been run through this "
-    "composite's prospective validation. All three are published beside the five scored legs "
+    "Setup context, never a scoring leg - see CONTEXT_SIGNAL_EVIDENCE for why. Two "
+    "volatility-contraction concepts (BandWidth squeeze, the close-based one; NR7/ATR "
+    "compression, the range-based ones) say a move is coming without saying which way; a "
+    "supply-exhaustion concept (volume dry-up) says selling pressure has thinned without "
+    "saying which way it resolves; a mean-reversion read (2-period RSI) is directional but "
+    "overlaps the existing short_term_reversal leg and has not been run through this "
+    "composite's prospective validation. All five are published beside the five scored legs "
     "so a reader can see whether a name is coiled and where it sits on a short mean-reversion "
-    "read, not because any of them adds to the composite. True Crabel-style NR7/ATR range "
-    "compression is not published here: it needs intraday high/low data this pipeline's cached "
-    "daily series does not carry.")
+    "read, not because any of them adds to the composite. narrow_range and atr_compression read "
+    "a separate, younger data store (pipeline/data/price_archive) than the other three, so they "
+    "report None on names or dates the archive has not reached yet rather than falling back to "
+    "a close-only proxy for a range-based construct - see the module-level note above "
+    "CONTEXT_SIGNAL_EVIDENCE.")
 
 # Below this many trailing BandWidth readings, "at a 6-month low" is describing a handful of
 # overlapping windows rather than a real distribution - the same floor forward_return_distribution
@@ -751,16 +795,101 @@ def rsi_2(closes):
     return relative_strength_index(closes, window=2)
 
 
-def contraction_setup(closes, volumes):
-    """The three descriptive, non-scored context signals as one dict.
+def true_range_series(highs, lows, closes):
+    """True range for every session with a predecessor to gap against, oldest first.
 
-    Never read by swing_scores or any scoring leg - see CONTRACTION_NOTE. A component that
-    cannot resolve on this row's history is None rather than a fabricated read.
+    Wilder's definition (New Concepts in Technical Trading Systems, 1978): the greatest of the
+    plain high-low range, the gap up from the previous close, and the gap down from it. The
+    first session has no predecessor and is dropped rather than scored on the plain range
+    alone, which would silently understate a session that gapped. A session missing a high,
+    low, or previous close - the archive rows written before SA-2026-08-28-01, or a genuine
+    data gap - reads None rather than being skipped, so a caller reading a trailing window sees
+    exactly where its history is thin instead of a window that quietly spans a gap.
+    """
+    highs, lows, closes = highs or [], lows or [], closes or []
+    ranges = []
+    for index in range(1, min(len(highs), len(lows), len(closes))):
+        high, low, previous_close = highs[index], lows[index], closes[index - 1]
+        if _finite(high) and _finite(low) and _finite(previous_close):
+            ranges.append(max(high - low, abs(high - previous_close), abs(low - previous_close)))
+        else:
+            ranges.append(None)
+    return ranges
+
+
+def average_true_range(highs, lows, closes, window=14):
+    """Mean true range over a trailing `window` sessions.
+
+    The simple-moving-average reading of Wilder's ATR: every rolling average in this module is
+    a plain SMA (see bollinger_bandwidth above) rather than Wilder's original recursive
+    smoothing, which keeps the two range-based and close-based compression reads built the same
+    way. None unless the trailing window is fully resolvable - a window spanning a data gap
+    reports no ATR rather than one computed by silently skipping the gap.
+    """
+    trailing = true_range_series(highs, lows, closes)[-window:]
+    if len(trailing) < window or any(value is None for value in trailing):
+        return None
+    return sum(trailing) / window
+
+
+def atr_compression(highs, lows, closes, window=14, lookback=BANDWIDTH_SQUEEZE_LOOKBACK):
+    """Whether today's mean true range sits at (or near) its own trailing `lookback`-session low.
+
+    The range-based sibling of bandwidth_squeeze: same percentile-of-own-history convention
+    (BANDWIDTH_SQUEEZE_PERCENTILE) for the same reason - ATR's scale tracks the name's own
+    baseline volatility - applied to true range instead of the close-based Bollinger band. None
+    until there is enough resolvable history to have a distribution to compare against, which
+    for most names today means waiting on pipeline/data/price_archive to grow or on
+    pipeline/backfill_price_ranges.py to backfill it - see CONTEXT_SIGNAL_EVIDENCE['atr_compression'].
+    """
+    ranges = true_range_series(highs, lows, closes)
+    history = []
+    for end in range(window, len(ranges) + 1):
+        trailing = ranges[end - window:end]
+        if all(value is not None for value in trailing):
+            history.append(sum(trailing) / window)
+    if len(history) < MINIMUM_BANDWIDTH_HISTORY:
+        return None
+    current = history[-1]
+    percentile = sum(1 for value in history if value <= current) / len(history)
+    return {
+        "atr": round(current, 4),
+        "percentile_of_own_history": round(percentile, 3),
+        "squeezed": percentile <= BANDWIDTH_SQUEEZE_PERCENTILE,
+    }
+
+
+def narrow_range(highs, lows, window=7):
+    """Whether today's high-low range is the narrowest of the trailing `window` sessions - NR7.
+
+    Direction-neutral by construction (Crabel 1990): it flags imminent range expansion, not
+    which way. None unless the trailing window is fully resolvable.
+    """
+    pairs = list(zip((highs or [])[-window:], (lows or [])[-window:]))
+    if len(pairs) < window or any(not (_finite(high) and _finite(low)) for high, low in pairs):
+        return None
+    ranges = [high - low for high, low in pairs]
+    current = ranges[-1]
+    return {"range": round(current, 4), "is_nr7": current <= min(ranges), "window": window}
+
+
+def contraction_setup(closes, volumes, archive_highs=None, archive_lows=None, archive_closes=None):
+    """The five descriptive, non-scored context signals as one dict.
+
+    `closes`/`volumes` are the long backtest-cache series bandwidth_squeeze, volume_dry_up and
+    rsi_2 read. `archive_highs`/`archive_lows`/`archive_closes` are the separate, shorter
+    price_archive series narrow_range and atr_compression read instead - see the module-level
+    note above CONTEXT_SIGNAL_EVIDENCE for why a range-based read cannot come from the same
+    series the other three use. Never read by swing_scores or any scoring leg - see
+    CONTRACTION_NOTE. A component that cannot resolve on this row's history is None rather than
+    a fabricated read.
     """
     return {
         "bandwidth_squeeze": bandwidth_squeeze(closes),
         "volume_dry_up": volume_dry_up(volumes),
         "rsi_2": rsi_2(closes) if closes else None,
+        "narrow_range": narrow_range(archive_highs, archive_lows),
+        "atr_compression": atr_compression(archive_highs, archive_lows, archive_closes),
     }
 
 
@@ -961,7 +1090,8 @@ def abnormal_turnover(volumes, recent=1, reference=50):
 
 
 def swing_factors(row, closes=None, volumes=None, config=None, sue=None, market_returns=None,
-                  forward_horizons=()):
+                  forward_horizons=(), archive_highs=None, archive_lows=None,
+                  archive_closes=None):
     """Every raw subfactor for one row, before any cross-sectional ranking.
 
     Price and volume subfactors come from the cached daily series; revision subfactors come
@@ -977,6 +1107,12 @@ def swing_factors(row, closes=None, volumes=None, config=None, sue=None, market_
     ``forward_horizons`` are the holding periods to measure this name's own historical travel
     over, passed in by the caller because the horizons belong to the tiers and this module has
     no business knowing what a tier is.
+
+    ``archive_highs``/``archive_lows``/``archive_closes`` are price_archive.load_series's
+    output for this ticker, needed only by the two range-based contraction context signals
+    (narrow_range, atr_compression) - see the module-level note above CONTEXT_SIGNAL_EVIDENCE.
+    Omitted, those two read as None, the same degradation any other unresolvable context signal
+    gets.
     """
     config = {**DEFAULT_CONFIG, **(config or {})}
     estimates = row.get("estimate_detail") or {}
@@ -1022,7 +1158,8 @@ def swing_factors(row, closes=None, volumes=None, config=None, sue=None, market_
         "range_position_52w": range_position_52w(closes),
         "trend": trend_state(closes),
         # Descriptive only, never scored. See CONTRACTION_NOTE.
-        "contraction": contraction_setup(closes, volumes),
+        "contraction": contraction_setup(closes, volumes, archive_highs, archive_lows,
+                                         archive_closes),
         # Keyed by horizon as a string, because this rides through JSON. The horizons come from
         # the tiers rather than being hardcoded here: this module must not know what a tier is.
         "forward_returns": {str(horizon): forward_return_distribution(closes, horizon)

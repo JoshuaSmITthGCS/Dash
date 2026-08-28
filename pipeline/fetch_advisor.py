@@ -527,10 +527,12 @@ def daily_history(payload):
     dates = [day for day, values in rows if values.get("4. close")]
     closes = [float(values["4. close"]) for _, values in rows if values.get("4. close")]
     volumes = [float(values.get("5. volume") or 0) for _, values in rows if values.get("4. close")]
-    return {"dates": dates, "closes": closes, "volumes": volumes}
+    highs = [float(values["2. high"]) for _, values in rows if values.get("4. close")]
+    lows = [float(values["3. low"]) for _, values in rows if values.get("4. close")]
+    return {"dates": dates, "closes": closes, "volumes": volumes, "highs": highs, "lows": lows}
 
 
-EMPTY_HISTORY = {"dates": [], "closes": [], "volumes": []}
+EMPTY_HISTORY = {"dates": [], "closes": [], "volumes": [], "highs": [], "lows": []}
 
 
 def carry_forward_missing_sessions(previous_dates, previous_closes, fresh):
@@ -586,6 +588,8 @@ def yahoo_history(symbol, yf, period="2y", ticker_obj=None, cache=None):
             "dates": [str(index)[:10] for index in frame.index],
             "closes": [float(value) for value in frame["Close"].tolist()],
             "volumes": [float(value) for value in frame["Volume"].fillna(0).tolist()],
+            "highs": [float(value) for value in frame["High"].tolist()],
+            "lows": [float(value) for value in frame["Low"].tolist()],
         }
 
     try:

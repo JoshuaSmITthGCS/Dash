@@ -8,8 +8,9 @@ alive stays archived after it delists.
 
 Design:
   - One JSON file per ticker under pipeline/data/price_archive/, holding date-keyed
-    close and volume rows. Writes are append-and-merge by date, never delete, never
-    overwrite an existing date's value (first write wins, so a later restatement of an
+    close and volume rows (high and low too, from SA-2026-08-28-01 onward - see
+    ``append_series``/``load_series``). Writes are append-and-merge by date, never delete,
+    never overwrite an existing date's value (first write wins, so a later restatement of an
     adjusted close cannot silently rewrite archived history; both the original and any
     conflicting value are logged to conflicts.jsonl instead).
   - A manifest (archive_manifest.json) with per-run counts, the run timestamp, and a
@@ -81,15 +82,27 @@ def _path(ticker):
     return os.path.join(ARCHIVE_DIR, f"{ticker.upper()}.json")
 
 
-def append_series(ticker, dates, closes, volumes, source):
-    """Merge one series into the archive. Existing dates keep their first value."""
+def append_series(ticker, dates, closes, volumes, source, highs=None, lows=None):
+    """Merge one series into the archive. Existing dates keep their first value.
+
+    ``highs``/``lows`` are optional and positional-compatible with every call site that
+    predates them: omitted, a row is written as ``[close, volume]``, exactly as before. Passed,
+    a row is ``[close, volume, high, low]``. Reading code (``load_series`` below) handles both
+    lengths, since first-write-wins means an already-archived date never gains a high/low
+    retroactively just because a later call happens to carry one - it would need a deliberate
+    backfill to touch history, and this archive's whole design is that ordinary runs never do.
+    Conflict detection still compares only the close (index 0); a high/low is never restated
+    into an existing date either, for the same first-write-wins reason.
+    """
     os.makedirs(ARCHIVE_DIR, exist_ok=True)
     path = _path(ticker)
     rows = {}
     if os.path.exists(path):
         rows = json.load(open(path)).get("rows", {})
+    highs = highs or []
+    lows = lows or []
     added = conflicts = 0
-    for d, c, v in zip(dates, closes, volumes):
+    for index, (d, c, v) in enumerate(zip(dates, closes, volumes)):
         if not d or c is None:
             continue
         if d in rows:
@@ -105,11 +118,41 @@ def append_series(ticker, dates, closes, volumes, source):
                             "incoming": float(c), "source": source,
                             "at": datetime.now(timezone.utc).isoformat()}) + "\n")
             continue
-        rows[d] = [round(float(c), 4), int(v or 0)]
+        high = highs[index] if index < len(highs) else None
+        low = lows[index] if index < len(lows) else None
+        row = [round(float(c), 4), int(v or 0)]
+        if high is not None or low is not None:
+            row += [round(float(high), 4) if high is not None else None,
+                    round(float(low), 4) if low is not None else None]
+        rows[d] = row
         added += 1
     json.dump({"ticker": ticker.upper(), "rows": rows,
                "first_archived": ARCHIVE_START_DATE}, open(path, "w"))
     return added, conflicts
+
+
+def load_series(ticker, directory=None):
+    """This ticker's archived (dates, closes, volumes, highs, lows), oldest first.
+
+    All-empty when the ticker has never been archived - the same "no fabricated value" shape
+    every other reader in this pipeline returns on missing history, not an exception. ``highs``
+    and ``lows`` carry None wherever a row predates SA-2026-08-28-01 (this feature) or was
+    written by a caller that never had a range to offer (see ``append_series``), so a consumer
+    doing range math needs to skip those rather than treat None as zero.
+    """
+    path = os.path.join(directory or ARCHIVE_DIR, f"{ticker.upper()}.json")
+    if not os.path.exists(path):
+        return {"dates": [], "closes": [], "volumes": [], "highs": [], "lows": []}
+    rows = json.load(open(path)).get("rows", {})
+    dates = sorted(rows)
+    closes, volumes, highs, lows = [], [], [], []
+    for d in dates:
+        row = rows[d]
+        closes.append(row[0])
+        volumes.append(row[1])
+        highs.append(row[2] if len(row) > 2 else None)
+        lows.append(row[3] if len(row) > 3 else None)
+    return {"dates": dates, "closes": closes, "volumes": volumes, "highs": highs, "lows": lows}
 
 
 def record_run(counts):
@@ -238,7 +281,8 @@ def run_daily(yf=None, cache=None, history_fetcher=None):
             continue
         added, conflicts = append_series(
             ticker, dates, history.get("closes", []),
-            history.get("volumes", [0] * len(dates)), "run_daily")
+            history.get("volumes", [0] * len(dates)), "run_daily",
+            highs=history.get("highs"), lows=history.get("lows"))
         total_added += added
         total_conflicts += conflicts
         tickers_seen += 1
