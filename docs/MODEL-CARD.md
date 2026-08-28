@@ -168,7 +168,11 @@ sector:
   single largest gap this closed — **`saas`**, which previously had *no* profile treatment at
   all and, when unprofitable, was falling into `other_pre_profit` (built around biotech/early-
   stage burn economics, not deferred-revenue subscription economics). Both `saas` and
-  `it_services_consulting` are checked ahead of that fallback.
+  `it_services_consulting` are checked ahead of that fallback. A `cloud_infrastructure_provider`
+  profile (ticker-override only, no distinguishing industry text) was proposed but deliberately
+  not added: without a confirmed, currently-covered ticker list to override it did not seem worth
+  guessing at — those names remain classified by whatever their industry string otherwise
+  matches (typically `saas` or `general`).
 - **Communication Services / Consumer Discretionary / Consumer Staples:** `telecom_carrier`,
   `media_entertainment`, `interactive_media_platform`, `video_games`, `publishing_advertising`,
   `retail_apparel`, `restaurants`, `ecommerce_retail`, `automaker`, `auto_dealership`,
