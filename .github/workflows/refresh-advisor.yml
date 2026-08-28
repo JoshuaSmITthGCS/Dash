@@ -99,6 +99,9 @@ on:
 permissions:
   contents: write
 
+# backfill-price-ranges.yml shares this group deliberately -- both write to
+# pipeline/data/price_archive/ and commit to main, and a plain `git rebase` retry cannot
+# resolve a real conflict on that generated JSON. See that workflow's own concurrency comment.
 concurrency:
   group: scheduled-data-push-main
   cancel-in-progress: false
