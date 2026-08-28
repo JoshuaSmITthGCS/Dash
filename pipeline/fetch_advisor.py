@@ -23,6 +23,7 @@ from fetch_prices import fetch_snapshot
 from fundamentals_extended import (derive_extended, earnings_surprise_rows, extended_inputs,
                                    extended_observations)
 from insider_signal import summarize as summarize_insiders
+from reverse_dcf import derive_market_implied_growth
 from concentration_risk import summarize as summarize_concentration
 from geographic_exposure import summarize as summarize_geography
 from institutional_ownership import decay as institutional_decay
@@ -60,6 +61,7 @@ from validation.ic_harness import (append_refresh as append_ic_refresh,
 UNIVERSE = load_json("advisor_universe.json", from_config=True) or {}
 DEFAULT_SYMBOLS = tuple(UNIVERSE.get("symbols", ()))
 PUBLISH_LIMIT = int(UNIVERSE.get("publish_limit", 20))
+REVERSE_DCF_ASSUMPTIONS = SETTINGS.get("reverse_dcf", {})
 NEWS_CONFIG = SETTINGS["news_intelligence"]
 # The event layer reuses the article annotation vocabulary (source tiers, event-type markers,
 # title-similarity threshold) and adds materiality, per-event half-lives and horizon settings
@@ -761,6 +763,15 @@ def yahoo_extended(symbol, ticker_obj, snapshot, history, diagnostics=None):
             diagnostics["derivation_failed"] += 1
         return merge_edgar_fallback(symbol, {}, snapshot, as_of=as_of_today,
                                     diagnostics=diagnostics)
+    if REVERSE_DCF_ASSUMPTIONS:
+        priced_in = derive_market_implied_growth(
+            beta=result.get("beta"), market_cap=snapshot.get("market_cap"),
+            total_debt=result.get("total_debt"), enterprise_value=result.get("enterprise_value"),
+            free_cash_flow=result.get("free_cash_flow"), assumptions=REVERSE_DCF_ASSUMPTIONS)
+        if priced_in:
+            result["market_implied_growth"] = priced_in["market_implied_growth"]
+            result["market_implied_growth_wacc"] = priced_in["wacc_assumed"]
+            result["market_implied_growth_exceeds_ceiling"] = priced_in["exceeds_plausible_ceiling"]
     if os.getenv("ENABLE_OPTIONS_VOLATILITY", "").lower() in {"1", "true", "yes"}:
         result.update(yahoo_options_volatility(ticker_obj, snapshot.get("price"), history["closes"]))
     return merge_edgar_fallback(symbol, result, snapshot, as_of=as_of_today,

@@ -48,7 +48,9 @@
     "capital_ratio": ["Regulatory capital divided by risk-weighted assets under the declared framework.", "decimal", "higher_is_better"],
     "price_to_ffo": ["REIT price divided by forward or trailing FFO per share with designation declared.", "multiple", "lower_is_better"],
     "affo_yield": ["REIT AFFO divided by market capitalization.", "decimal", "higher_is_better"],
-    "cash_runway_months": ["Cash and marketable securities divided by normalized monthly cash burn.", "count", "higher_is_better"]
+    "cash_runway_months": ["Cash and marketable securities divided by normalized monthly cash burn.", "count", "higher_is_better"],
+    "return_on_tangible_common_equity": ["Net income divided by average tangible common equity (common equity less goodwill and intangibles).", "decimal", "higher_is_better"],
+    "funds_from_operations": ["Nareit FFO: net income plus real-estate depreciation and amortization, less property-sale gains.", "usd", "higher_is_better"]
   },
   "metrics": {
     "forward_pe": {

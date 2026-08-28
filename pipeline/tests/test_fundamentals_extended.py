@@ -221,10 +221,40 @@ class ValuationTests(unittest.TestCase):
         multiples = fx.derive_enterprise_multiples(INCOME, BALANCE, CASHFLOW, {}, market_cap=4000)
         self.assertAlmostEqual(multiples["price_to_tangible_book"], 4000 / (1100 - 200 - 100), places=2)
 
+    def test_raw_free_cash_flow_and_total_debt_are_exposed(self):
+        # pipeline/reverse_dcf.py needs the dollar figures, not just the multiples built on them.
+        multiples = fx.derive_enterprise_multiples(INCOME, BALANCE, CASHFLOW, {}, market_cap=4000)
+        self.assertEqual(multiples["free_cash_flow"], 200.0)
+        self.assertEqual(multiples["total_debt"], 500.0)
+
     def test_loss_making_ebitda_leaves_the_multiple_undefined(self):
         loss = {"periods": ["2025"], "rows": {"EBITDA": [-50.0]}}
         multiples = fx.derive_enterprise_multiples(loss, BALANCE, CASHFLOW, {}, market_cap=4000)
         self.assertIsNone(multiples["ev_to_ebitda"])
+
+    def test_rotce_averages_two_periods_of_tangible_book(self):
+        # tangible book: (1100-200-100)=800 now, (920-200-110)=610 prior -> average 705
+        self.assertAlmostEqual(fx.derive_tangible_returns(INCOME, BALANCE), 180 / 705, places=4)
+
+    def test_rotce_is_none_without_positive_tangible_book(self):
+        wiped_out = dict(BALANCE)
+        wiped_out["rows"] = {**BALANCE["rows"], "Stockholders Equity": [250.0, 260.0, 800.0, 680.0]}
+        self.assertIsNone(fx.derive_tangible_returns(INCOME, wiped_out))
+
+    def test_ffo_adds_back_depreciation_and_prices_off_it(self):
+        ffo, price_to_ffo = fx.derive_reit_ffo(INCOME, CASHFLOW, market_cap=4000)
+        self.assertAlmostEqual(ffo, 180 + 55, places=2)
+        self.assertAlmostEqual(price_to_ffo, 4000 / 235, places=2)
+
+    def test_ffo_backs_out_a_disclosed_gain_on_sale(self):
+        with_gain = dict(INCOME)
+        with_gain["rows"] = {**INCOME["rows"], "Gain On Sale Of Business": [20.0, 10.0, 0.0, 0.0]}
+        ffo, _ = fx.derive_reit_ffo(with_gain, CASHFLOW, market_cap=4000)
+        self.assertAlmostEqual(ffo, 180 + 55 - 20, places=2)
+
+    def test_ffo_is_none_without_a_depreciation_figure(self):
+        no_depreciation = {"periods": ["2025"], "rows": {}}
+        self.assertEqual(fx.derive_reit_ffo(INCOME, no_depreciation, market_cap=4000), (None, None))
 
 
 class MarketStructureTests(unittest.TestCase):

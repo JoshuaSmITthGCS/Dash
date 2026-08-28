@@ -68,6 +68,83 @@ reliable the resulting rank is, and never the probability of a price move. A rea
 validated-against-realized-error confidence metric does not exist yet in this codebase — its
 absence is the correct state until one is built and validated, not an oversight.
 
+## Sector-specific replacement metrics: real vs. declared
+
+`pipeline/config/business_profiles.json` has long named the multiples a bank, REIT, or insurer
+should be judged on instead of the suppressed generic set — but for most of those names (e.g.
+`combined_ratio`, `net_interest_margin`, `rate_base_growth`), nothing in the pipeline ever
+computed a value: they existed only as strings in config and test fixtures, and
+`applicability_matrix.json`'s bank/REIT/insurer rows fell back to substituting one already-
+computed generic metric for another (`ev_to_ebitda` → `price_to_book`), not to the named
+specialist multiple.
+
+Two of those names are now real. `pipeline/fundamentals_extended.py::derive_tangible_returns`
+computes **return on tangible common equity** (net income over average tangible book value,
+reusing the same goodwill/intangible strip `price_to_tangible_book` already applies) for every
+company with the inputs, not just banks. `derive_reit_ffo` computes **FFO and price/FFO**
+(Nareit definition: net income plus real-estate D&A, less a disclosed property-sale gain when
+the filer breaks that line out — most do not, so the gain add-back is often unavailable rather
+than zero). Both are PIT-logged (`pipeline/pit_store.py`) starting from this change.
+
+Both are deliberately **not yet wired into `SCORED_METRICS` or `settings.json`'s weights**.
+Round 11's negative result (above) is about per-sector *weight* tuning of the existing metric
+set, not about this — but adding a metric with zero prospective history to the live weighted
+composite is still an unvalidated scoring change, and "Validation, not backtesting" is a hard
+gate in this repository. Promoting either metric into the scored composite needs its own
+`ic_harness.py` read once enough PIT history accumulates, exactly like any other scoring change.
+
+The remaining sub-industry multiples from the KPI-registry research this section responds to —
+MLR for managed care, distribution coverage for midstream, EV/EBITDAR for airlines, EV/rate-base
+and allowed-vs-earned ROE for regulated utilities, EV/AUM for asset managers — are not
+implemented. Several (AUM, rate base, RevPAR, dayrates) are disclosed in 8-K supplementals and
+MD&A prose rather than tagged in XBRL, so computing them is a supplemental-parsing project, not
+a config change; see `research/valuesignal-kpi-thematic-methodology.md` for the full registry.
+
+## Thematic exposure: disclosure over narrative
+
+Every `pipeline/themes/*.yaml` signal block previously weighted `filing_keyword_density_trend`
+(10-K language, an NLP signal) at 0.35–0.40 — usually the single largest signal — against
+`segment_revenue_share` (ASC 280 disclosed segment revenue) at 0.15–0.25. That is the inverse of
+how index providers resolve thematic exposure: MSCI, FactSet RBICS and S&P Kensho all resolve to
+a disclosed revenue-share number first and treat text as a corroborating, discretionary layer.
+
+All 11 theme files now weight `segment_revenue_share` (and, where declared,
+`customer_concentration_to_spenders`, the ≥10%-customer disclosure rule) as the dominant
+signal, with `filing_keyword_density_trend`/`transcript_theme_salience` cut to 0.05–0.10 —
+a tie-breaker, not the deciding vote. `pipeline/themes.py::score_theme_exposure` also now
+applies `UNDISCLOSED_EXPOSURE_DISCOUNT` (0.85×) to the exposure score itself — not just to the
+already-existing `confidence` figure — whenever no `DISCLOSURE_SIGNALS` member resolved for a
+company, so a name that clears `min_signals_required` on filing/transcript language and a
+theme-wide capex reading alone scores lower than an otherwise-identical name with real segment
+revenue or customer-concentration evidence behind it. The row's `disclosure_backed` field and
+`explain_exposure()` clause make this visible per company.
+
+## Momentum-free "priced in" read: market-implied growth
+
+`pipeline/reverse_dcf.py` adds a first, deliberately simplified version of the Mauboussin &
+Rappaport reverse-DCF: instead of forecasting a fair value and comparing it to price, it solves
+the single-stage perpetuity `EV = FCF*(1+g)/(WACC-g)` for the growth rate `g` the current
+enterprise value already assumes, using a CAPM cost of equity (beta already computed by
+`fundamentals_extended.py`) blended with an after-tax cost of debt into WACC. Every rate that
+isn't computed per company — risk-free rate, equity risk premium, cost of debt — is a declared
+assumption in `settings.json`'s `reverse_dcf` block, the same "labeled, not measured" honesty
+`pipeline/costs.py` applies to its spread proxy: get the assumption wrong and every company's
+implied growth shifts by roughly the same amount, so this is a comparable cross-sectional read,
+not a precise per-company forecast. It is a single-stage approximation, not the full multi-stage
+model with an explicit forecast horizon and competitive-advantage-period estimate the source
+research describes — a real fidelity gap, not a rounding detail, and it uses zero momentum or
+price-history input either way.
+
+`market_implied_growth`, `market_implied_growth_wacc`, and `market_implied_growth_exceeds_ceiling`
+are informational fields (PIT-logged from this change), not part of the scored composite, for
+the same reason ROTCE and FFO are not yet: a brand-new signal has no prospective IC history to
+validate against.
+
+Multiple-expansion decomposition (splitting realized return into delivery vs. re-rating) and
+theme-maturity/crowding labeling (return dispersion, pairwise correlation, supplier book-to-bill)
+from the same research are not implemented — both need new modules and are tracked as follow-on
+work.
+
 ## Validation state
 
 **No signal has been promoted.** The IC harness has observed 0 of the 24 eligible periods

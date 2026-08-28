@@ -96,7 +96,7 @@ theme:
     - name: filing_keyword_density_trend
       source: edgar_fulltext
       leading: true
-      weight: 0.35
+      weight: 0.10
     - name: backlog_growth              # orders booked, the earliest honest read on a buildout
       source: edgar_xbrl_dimensional
       leading: true
@@ -104,7 +104,7 @@ theme:
     - name: segment_revenue_share
       source: edgar_xbrl_segments
       leading: false
-      weight: 0.20
+      weight: 0.40
     - name: spender_capex_growth        # regulated utility capex is what funds this theme
       source: edgar_xbrl_capex
       universe: [NEE, DUK, SO, AEP, XEL, SRE, EIX, WEC, ED]
@@ -113,7 +113,7 @@ theme:
     - name: customer_concentration_to_spenders
       source: edgar_item1_major_customers
       leading: true
-      weight: 0.10
+      weight: 0.15
 
   guardrails:
     exclude_if_valuation_percentile_above: 90

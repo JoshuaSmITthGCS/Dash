@@ -52,6 +52,12 @@ ALIASES = {
                      "Reconciled Depreciation"),
     "stock_comp": ("Stock Based Compensation",),
     "buybacks": ("Repurchase Of Capital Stock",),
+    # REIT-specific: FFO adds back real-estate D&A and backs out property-sale gains (Nareit
+    # definition). yfinance rarely tags the gain line separately for a REIT, so it is treated
+    # as an optional adjustment -- FFO still computes without it, just without that add-back.
+    "gain_on_sale_of_real_estate": ("Gain On Sale Of Business", "Net Gains Losses On Sale Of "
+                                    "Investments Real Estate", "Gain On Sale Of Investment "
+                                    "Real Estate", "Gains Losses On Disposition Of Assets"),
 }
 
 FINANCIAL_SECTORS = ("Financial Services", "Financials", "Financial")
@@ -501,6 +507,10 @@ def derive_enterprise_multiples(income, balance, cashflow, info, market_cap):
 
     return {
         "enterprise_value": None if enterprise_value is None else round(enterprise_value),
+        # Raw inputs, not just the multiples derived from them -- pipeline/reverse_dcf.py
+        # needs the dollar figures themselves to solve for market-implied growth.
+        "free_cash_flow": rounded(fcf, 0),
+        "total_debt": rounded(at(line(balance, "total_debt")), 0),
         "ev_to_ebitda": rounded(multiple(ebitda), 2),
         # EV/EBIT is EV/EBITDA's twin without the depreciation add-back, which is where
         # capital intensity hides. Gray & Vogel's multiples horse race finds the two produce
@@ -514,6 +524,53 @@ def derive_enterprise_multiples(income, balance, cashflow, info, market_cap):
             ratio(market_cap, tangible_book) if (tangible_book or 0) > 0 else None, 2),
         "earnings_yield": rounded(ratio(info.get("trailingEps"), info.get("currentPrice") or info.get("regularMarketPrice"))),
     }
+
+
+def derive_tangible_returns(income, balance):
+    """Return on tangible common equity: net income over average tangible book value.
+
+    ROTCE is the bank/capital-markets scorecard metric -- ROE inflated by goodwill from a
+    roll-up acquisition reads identically to organic returns on a clean balance sheet, and
+    stripping intangibles is exactly what price_to_tangible_book already does on the other
+    side of the same ledger. Averaging the two most recent tangible-book readings (rather
+    than the single latest one) matches how the multiple itself is conventionally quoted.
+    """
+    net_income = at(line(income, "net_income"))
+    if net_income is None:
+        return None
+    equity, goodwill, intangibles = line(balance, "equity"), line(balance, "goodwill"), line(balance, "intangibles")
+
+    def tangible(index):
+        equity_value = at(equity, index)
+        if equity_value is None:
+            return None
+        return equity_value - (at(goodwill, index) or 0) - (at(intangibles, index) or 0)
+
+    base = average(tangible(0), tangible(1)) or tangible(0)
+    if base is None or base <= 0:
+        return None
+    return rounded(ratio(net_income, base))
+
+
+def derive_reit_ffo(income, cashflow, market_cap=None):
+    """Funds from operations: net income plus real-estate D&A, less property-sale gains.
+
+    GAAP net income is close to meaningless for a REIT because straight-line depreciation on
+    a building that (unlike a machine) does not actually wear out mechanically overstates the
+    economic expense -- Nareit defines FFO precisely to back that distortion out. The
+    property-sale-gain add-back only fires when the filer breaks that line out separately;
+    see the ``gain_on_sale_of_real_estate`` alias note for why it is often unavailable.
+    """
+    net_income = at(line(income, "net_income"))
+    depreciation = at(line(cashflow, "depreciation"))
+    if net_income is None or depreciation is None:
+        return None, None
+    gain_on_sale = at(line(income, "gain_on_sale_of_real_estate"))
+    ffo = net_income + abs(depreciation) - (gain_on_sale or 0)
+    price_to_ffo = None
+    if market_cap and ffo and ffo > 0:
+        price_to_ffo = rounded(ratio(market_cap, ffo), 2)
+    return rounded(ffo, 0), price_to_ffo
 
 
 def derive_earnings_surprise(surprises):
@@ -611,6 +668,7 @@ def derive_extended(*, annual, quarterly=None, info=None, market_cap=None, price
     market_cap = market_cap or info.get("marketCap")
     piotroski, piotroski_tests = derive_piotroski(income, balance, cashflow)
     altman, altman_variant = derive_altman_z(income, balance, market_cap, sector)
+    funds_from_operations, price_to_ffo = derive_reit_ffo(income, cashflow, market_cap)
 
     metrics = {
         "return_on_invested_capital": derive_roic(income, balance),
@@ -625,6 +683,9 @@ def derive_extended(*, annual, quarterly=None, info=None, market_cap=None, price
         "accruals_ratio": derive_accruals_ratio(income, balance, cashflow),
         "asset_growth": derive_asset_growth(balance),
         "earnings_surprise": derive_earnings_surprise(earnings_surprises),
+        "return_on_tangible_common_equity": derive_tangible_returns(income, balance),
+        "funds_from_operations": funds_from_operations,
+        "price_to_ffo": price_to_ffo,
     }
     metrics.update(derive_margins(income))
     metrics.update(derive_working_capital_trends(income, balance))
@@ -644,6 +705,7 @@ COVERAGE_KEYS = (
     "operating_margin_trend", "days_sales_outstanding_trend", "net_buyback_yield",
     "stock_comp_to_revenue", "capex_to_depreciation", "asset_growth", "ev_to_ebitda",
     "ev_to_ebit", "ev_to_sales", "ev_to_fcf", "price_to_tangible_book",
+    "return_on_tangible_common_equity", "funds_from_operations",
 )
 
 # Every statement-derived metric the legacy scorer weighs (pipeline/config/settings.json's
@@ -654,6 +716,11 @@ COVERAGE_KEYS = (
 # layer reporting near-zero evidence for most companies despite the values being present.
 EXTENDED_METRIC_UNITS = {
     "price_to_tangible_book": "multiple",
+    "return_on_tangible_common_equity": "decimal",
+    "funds_from_operations": "usd",
+    "price_to_ffo": "multiple",
+    "free_cash_flow": "usd",
+    "total_debt": "usd",
     "ev_to_ebitda": "multiple",
     "ev_to_ebit": "multiple",
     "ev_to_fcf": "multiple",

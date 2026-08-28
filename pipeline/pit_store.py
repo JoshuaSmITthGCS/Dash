@@ -33,7 +33,10 @@ UNIVERSE = "universe.jsonl"
 # taken weekly is the only history of them that will ever exist.
 TRACKED_FIELDS = (
     "price", "market_cap", "sector", "forward_pe", "trailing_pe", "peg", "price_to_sales",
-    "price_to_book", "price_to_tangible_book", "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf",
+    "price_to_book", "price_to_tangible_book", "return_on_tangible_common_equity",
+    "funds_from_operations", "price_to_ffo", "market_implied_growth",
+    "market_implied_growth_wacc", "market_implied_growth_exceeds_ceiling",
+    "ev_to_ebitda", "ev_to_ebit", "ev_to_fcf",
     "ev_to_sales", "enterprise_value", "return_on_equity", "return_on_invested_capital",
     "gross_profits_to_assets", "free_cash_flow_yield", "profit_margin", "gross_margin",
     "operating_margin", "cash_conversion", "debt_to_equity", "current_ratio",

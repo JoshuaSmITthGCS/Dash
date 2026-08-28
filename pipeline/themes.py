@@ -67,6 +67,23 @@ LEADING_SIGNALS = ("segment_revenue_share", "filing_keyword_density_trend",
 FORBIDDEN_SIGNALS = ("price_momentum", "return_12m", "return_1m", "distance_from_52w_high",
                      "social_mentions", "thematic_etf_inclusion", "analyst_upgrades")
 
+# Signals sourced from mandatory SEC disclosure -- ASC 280 segment reporting and the >=10%
+# major-customer rule -- rather than inferred from SIC/industry scope, keyword lists, or
+# transcript language. Sautner-van Lent-Vilkov-Zhang (J. Finance 2023) and Hassan-Hollander-
+# van Lent-Tahoun (QJE 2019) validate firm-level text signals, but the professional standard
+# (MSCI Relevance Score, FactSet RBICS, S&P Kensho) still resolves exposure to a disclosed
+# revenue-share number first and treats text as a corroborating, subordinate layer. Theme
+# signal weights follow that ordering (see pipeline/themes/*.yaml); UNDISCLOSED_EXPOSURE_DISCOUNT
+# below is the second half of it, for the case a text signal alone still clears the bar.
+DISCLOSURE_SIGNALS = ("segment_revenue_share", "customer_concentration_to_spenders")
+
+# Applied to the exposure score -- not just reported confidence -- when no disclosure-based
+# signal resolved for a company. A name scored purely on filing language or transcript
+# salience is a narrative match, not a demonstrated one: MSCI's own methodology applies an
+# explicit discount factor to exposure inferred from industry mapping rather than reported
+# segment revenue, and this is that same discipline.
+UNDISCLOSED_EXPOSURE_DISCOUNT = 0.85
+
 DEFAULT_GUARDRAILS = {
     "exclude_if_valuation_percentile_above": 90,
     "require_leading_signal_confirmation": True,
@@ -404,6 +421,12 @@ def explain_exposure(theme, result, row):
     if confidence is not None and declared:
         clauses.append(f"{answered} of {declared} declared signals resolved, carrying "
                        f"{confidence * 100:.0f}% of this theme's signal weight")
+    if result.get("disclosure_backed") is False:
+        clauses.append(
+            "No disclosed segment revenue or major-customer link resolved for this company - "
+            f"exposure rests on filing/transcript language alone, scored at "
+            f"{UNDISCLOSED_EXPOSURE_DISCOUNT * 100:.0f}% of what the same signals would carry "
+            "with disclosure behind them")
     return clauses
 
 
@@ -441,6 +464,7 @@ def score_theme_exposure(theme, signal_values, *, valuation_percentile=None):
             "reason": f"only {len(contributions)} of {required} required signals resolved",
             "signals": contributions, "signals_answered": len(contributions),
             "company_signals_answered": company_answered,
+            "disclosure_backed": any(item["name"] in DISCLOSURE_SIGNALS for item in contributions),
         }
 
     total_weight = sum(item["weight"] for item in contributions)
@@ -450,6 +474,15 @@ def score_theme_exposure(theme, signal_values, *, valuation_percentile=None):
     declared = sum(signal["weight"] for signal in theme["signals"]
                    if signal["name"] not in FORBIDDEN_SIGNALS)
     confidence = round(total_weight / declared, 2) if declared else 0.0
+
+    # A company with no disclosed segment revenue or major-customer link still clears
+    # min_signals_required on filing/transcript language plus a capex or backlog reading --
+    # confidence reports that gap but the score itself does not, which is exactly how a
+    # narrative-only name would come to rank alongside a disclosure-backed one. See
+    # DISCLOSURE_SIGNALS above.
+    disclosure_backed = any(item["name"] in DISCLOSURE_SIGNALS for item in contributions)
+    if not disclosure_backed:
+        score = round(score * UNDISCLOSED_EXPOSURE_DISCOUNT, 1)
 
     exclusions = []
     ceiling = guardrails.get("exclude_if_valuation_percentile_above")
@@ -468,6 +501,7 @@ def score_theme_exposure(theme, signal_values, *, valuation_percentile=None):
         "theme_id": theme["id"],
         "theme_exposure_score": score,
         "confidence": confidence,
+        "disclosure_backed": disclosure_backed,
         "eligible": not exclusions,
         "excluded_by": exclusions,
         # Company-specific only: what this company's own filings say, which is the claim the

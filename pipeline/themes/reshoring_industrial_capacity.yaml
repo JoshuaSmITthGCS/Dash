@@ -87,15 +87,15 @@ theme:
     - name: filing_keyword_density_trend
       source: edgar_fulltext
       leading: true
-      weight: 0.35
+      weight: 0.10
     - name: backlog_growth
       source: edgar_xbrl_dimensional
       leading: true
-      weight: 0.20
+      weight: 0.15
     - name: segment_revenue_share
       source: edgar_xbrl_segments
       leading: false
-      weight: 0.15
+      weight: 0.40
     # The operators building the plants. Their capex is the money this theme is about, and it
     # is spent a long way upstream of their own revenue.
     - name: spender_capex_growth
@@ -106,7 +106,7 @@ theme:
     - name: customer_concentration_to_spenders
       source: edgar_item1_major_customers
       leading: true
-      weight: 0.10
+      weight: 0.15
 
   guardrails:
     exclude_if_valuation_percentile_above: 90

@@ -378,6 +378,39 @@ class ExposureScoringTests(unittest.TestCase):
         self.assertLess(partial["confidence"], full["confidence"])
         self.assertEqual(full["confidence"], 1.0)
 
+    def test_undisclosed_exposure_is_discounted_not_just_reported(self):
+        # No segment_revenue_share and no customer_concentration_to_spenders resolved: this
+        # company clears min_signals_required on filing language plus theme-wide capex growth
+        # alone, which is exactly the narrative-only match DISCLOSURE_SIGNALS exists to catch.
+        theme = build()
+        undisclosed = themes.score_theme_exposure(theme, {
+            "filing_keyword_density_trend": 0.4, "hyperscaler_capex_growth": 0.3})
+        self.assertFalse(undisclosed["disclosure_backed"])
+
+        disclosed = themes.score_theme_exposure(theme, {
+            "segment_revenue_share": 0.4, "filing_keyword_density_trend": 0.4,
+            "hyperscaler_capex_growth": 0.3})
+        self.assertTrue(disclosed["disclosure_backed"])
+
+        # Same filing_keyword_density_trend and hyperscaler_capex_growth readings, but the
+        # undisclosed case is missing only the disclosure signal -- it should score lower,
+        # not merely carry a lower confidence.
+        matched = themes.score_theme_exposure(theme, {
+            "filing_keyword_density_trend": 0.4, "hyperscaler_capex_growth": 0.3,
+            "segment_revenue_share": 0.4})
+        self.assertLess(undisclosed["theme_exposure_score"], matched["theme_exposure_score"])
+
+    def test_disclosure_backed_when_customer_concentration_resolves_without_segment_share(self):
+        theme = build(signals=[
+            {"name": "filing_keyword_density_trend", "weight": 0.4},
+            {"name": "customer_concentration_to_spenders", "weight": 0.3},
+            {"name": "hyperscaler_capex_growth", "weight": 0.3},
+        ])
+        result = themes.score_theme_exposure(theme, {
+            "filing_keyword_density_trend": 0.4, "customer_concentration_to_spenders": 0.5,
+            "hyperscaler_capex_growth": 0.3})
+        self.assertTrue(result["disclosure_backed"])
+
 
 class OpportunityRankingTests(unittest.TestCase):
     def test_cheap_exposure_outranks_expensive_exposure(self):

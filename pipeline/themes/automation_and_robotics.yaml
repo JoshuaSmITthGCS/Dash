@@ -76,7 +76,7 @@ theme:
     - name: filing_keyword_density_trend
       source: edgar_fulltext
       leading: true
-      weight: 0.35
+      weight: 0.10
     - name: backlog_growth
       source: edgar_xbrl_dimensional
       leading: true
@@ -84,7 +84,7 @@ theme:
     - name: segment_revenue_share
       source: edgar_xbrl_segments
       leading: false
-      weight: 0.20
+      weight: 0.45
     # The buyers of automation: the manufacturers and logistics operators whose capex is the
     # demand for it.
     - name: spender_capex_growth

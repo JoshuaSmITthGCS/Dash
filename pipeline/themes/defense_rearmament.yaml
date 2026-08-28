@@ -72,10 +72,10 @@ theme:
   icb_subsectors: []
 
   signals:
-    - name: filing_keyword_density_trend
+    - name: filing_keyword_density_trend  # NLP tie-breaker, subordinate to disclosed segment revenue
       source: edgar_fulltext
       leading: true
-      weight: 0.35
+      weight: 0.10
     # Weighted highest of the corroborating signals here because defense filers tag remaining
     # performance obligation unusually consistently - a funded multi-year award is exactly the
     # obligation ASC 606 is designed to disclose - so this is the one theme where backlog is a
@@ -87,7 +87,7 @@ theme:
     - name: segment_revenue_share
       source: edgar_xbrl_segments
       leading: false
-      weight: 0.20
+      weight: 0.45
     # The primes are both the buyers of subsystems and the builders of new capacity, so their
     # capex is the demand read for everyone below them in the chain.
     - name: spender_capex_growth
