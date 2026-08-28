@@ -26,8 +26,16 @@ on:
 permissions:
   contents: write
 
+# Shares refresh-advisor.yml's group rather than its own: both write to
+# pipeline/data/price_archive/ and commit straight to main, and their retry loops are plain
+# `git rebase` with no merge driver for that JSON, so two overlapping runs produce a real,
+# unresolvable content conflict instead of a clean rebase -- confirmed live on 2026-08-28, run
+# 33182717571: a manual full refresh's entire 48-minute pipeline ran clean and then failed to
+# publish anything because this workflow's own commit had landed on main mid-run. Queuing
+# behind the same group (cancel-in-progress: false, so neither run is discarded) instead of
+# racing costs this workflow a wait, not correctness.
 concurrency:
-  group: price-ranges-backfill
+  group: scheduled-data-push-main
   cancel-in-progress: false
 
 jobs:
