@@ -90,6 +90,43 @@ IPP_EXHIBIT_HTML = """
 </body></html>
 """
 
+# The real Citigroup 8-K Exhibit 99.x table row this extraction pipeline actually matched
+# during its first live SEC EDGAR run (2026-08-28, refresh commit 0f911d94). Reproduced here
+# (label + a real multi-period comparison table, spacer cells included) as a genuine regression
+# fixture rather than an invented one -- everything else in this file is still synthetic.
+REAL_CITIGROUP_EFFICIENCY_RATIO_HTML = """
+<html><body>
+<table>
+  <tr>
+    <td>Efficiency Ratio (total operating expenses/total revenues, net)</td>
+    <td>​</td><td>57.4%</td>
+    <td>​</td><td>58.1%</td>
+    <td>​</td><td>62.7%</td>
+    <td>​</td><td>(70) bps</td>
+    <td>​</td><td>(530) bps</td>
+  </tr>
+</table>
+</body></html>
+"""
+
+# A harder, realistic variant of the bank table above: a longer label parenthetical plus the
+# same zero-width-space spacer-cell pattern confirmed live, applied to net_interest_margin --
+# a metric that did NOT resolve in that same live run. Modeled on the confirmed real structure,
+# not itself fetched, so this checks "does the widened window plausibly help metrics shaped
+# like the one real match" rather than re-confirming NIM specifically.
+REALISTIC_MULTI_PERIOD_BANK_HTML = """
+<html><body>
+<table>
+  <tr>
+    <td>Net Interest Margin (net interest income divided by average interest-earning assets)</td>
+    <td>​</td><td>2.85%</td>
+    <td>​</td><td>2.79%</td>
+    <td>​</td><td>2.71%</td>
+  </tr>
+</table>
+</body></html>
+"""
+
 
 class HtmlToLinesTests(unittest.TestCase):
     def test_table_rows_stay_on_one_line(self):
@@ -102,6 +139,16 @@ class HtmlToLinesTests(unittest.TestCase):
 
     def test_empty_html_returns_no_lines(self):
         self.assertEqual(fe.html_to_lines(""), [])
+
+    def test_zero_width_space_spacer_cells_are_dropped_not_joined_in(self):
+        # Confirmed against a real filing: SEC earnings-release tables pad alignment with
+        # cells containing only a zero-width space (U+200B), which survives str.strip() as a
+        # "non-empty" cell and would otherwise burn characters out of the label-to-value
+        # search window for no informational reason.
+        lines = fe.html_to_lines(REAL_CITIGROUP_EFFICIENCY_RATIO_HTML)
+        self.assertEqual(len(lines), 1)
+        self.assertNotIn("​", lines[0])
+        self.assertNotIn("||", lines[0].replace(" ", ""))  # no empty-cell artifact left behind either
 
 
 class ExtractKpisTests(unittest.TestCase):
@@ -165,6 +212,21 @@ class ExtractKpisTests(unittest.TestCase):
         lines = fe.html_to_lines(IPP_EXHIBIT_HTML)
         result = fe.extract_kpis(lines, ["capacity_factor"])
         self.assertAlmostEqual(result["capacity_factor"]["value"], 0.583, places=4)
+
+    def test_extracts_the_real_confirmed_efficiency_ratio_reading(self):
+        # This exact table (see the fixture's own docstring) is what this pipeline's first
+        # live SEC EDGAR run actually matched -- a genuine regression, not a synthetic guess.
+        lines = fe.html_to_lines(REAL_CITIGROUP_EFFICIENCY_RATIO_HTML)
+        result = fe.extract_kpis(lines, ["efficiency_ratio"])
+        self.assertAlmostEqual(result["efficiency_ratio"]["value"], 0.574, places=4)
+
+    def test_widened_window_reaches_a_value_past_a_longer_label_parenthetical(self):
+        # The real match above put the label-to-value gap at ~52-56 characters, close to the
+        # original 60-character budget -- this fixture's parenthetical is deliberately longer,
+        # modeling the realistic case that budget would have missed.
+        lines = fe.html_to_lines(REALISTIC_MULTI_PERIOD_BANK_HTML)
+        result = fe.extract_kpis(lines, ["net_interest_margin"])
+        self.assertAlmostEqual(result["net_interest_margin"]["value"], 0.0285, places=4)
 
 
 class FilingExtractionGroupTests(unittest.TestCase):
