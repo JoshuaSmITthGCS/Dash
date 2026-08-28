@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 87,
+  "refreshes_observed": 88,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -17043,6 +17043,123 @@
           ],
           "score_delta": 8.9,
           "confidence_delta": 0.0
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-28T07:39:17.247836+00:00",
+      "current_refresh": "advisor-2026-08-28T18:11:21.740368+00:00",
+      "shared_tickers": 878,
+      "rank_turnover": {
+        "top_40": 0.05,
+        "top_100": 0.05
+      },
+      "tickers_with_availability_driven_change": 16,
+      "tickers_with_availability_driven_change_pct": 0.018,
+      "mean_abs_score_delta": 0.38,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 5.0,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "OLN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 4.3,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "UEC",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 4.2,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "NTNX",
+          "metrics_with_value_change": [
+            "earnings_growth",
+            "profit_margin"
+          ],
+          "metrics_with_availability_change": [
+            "debt_to_equity"
+          ],
+          "score_delta": 2.3,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "HRL",
+          "metrics_with_value_change": [
+            "altman_z",
+            "return_on_equity"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.7,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "LOW",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -1.7,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "KMX",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -1.4,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "KR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.3,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "CPB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.1,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "MU",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -1.1,
+          "confidence_delta": 0.02
         }
       ]
     }
