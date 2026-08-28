@@ -68,7 +68,18 @@
     "beverage_manufacturer",
     "tobacco",
     "food_distributor",
-    "grocery_staples_retail"
+    "grocery_staples_retail",
+    "office_reit",
+    "retail_reit",
+    "industrial_reit",
+    "residential_reit",
+    "healthcare_reit",
+    "hotel_reit",
+    "mortgage_reit",
+    "self_storage_reit",
+    "data_center_reit",
+    "net_lease_reit",
+    "timber_reit"
   ],
   "rules": {
     "general": {},
@@ -931,6 +942,39 @@
     },
     "semiconductor_capital_equipment": {
       "$inherits": "semiconductor"
+    },
+    "office_reit": {
+      "$inherits": "reit"
+    },
+    "retail_reit": {
+      "$inherits": "reit"
+    },
+    "industrial_reit": {
+      "$inherits": "reit"
+    },
+    "residential_reit": {
+      "$inherits": "reit"
+    },
+    "healthcare_reit": {
+      "$inherits": "reit"
+    },
+    "hotel_reit": {
+      "$inherits": "reit"
+    },
+    "mortgage_reit": {
+      "$inherits": "reit"
+    },
+    "self_storage_reit": {
+      "$inherits": "reit"
+    },
+    "data_center_reit": {
+      "$inherits": "reit"
+    },
+    "net_lease_reit": {
+      "$inherits": "reit"
+    },
+    "timber_reit": {
+      "$inherits": "reit"
     }
   },
   "_comment": "Two rules per metric per business profile. APPLICABILITY: `rules` declares whether a metric is meaningful for a profile at all (suppressed/replaced/applied). REQUIRED_FOR_SCORE: `required_for_score` declares which metrics a parent factor cannot publish without. Both are read by the LIVE scorer (pipeline/scorer.py) as well as the v2 layer -- previously only the v2 shadow path consulted this file, so the correct insurer rules below existed and governed nothing a user saw. See research/audit/CURRENT_MODEL_AUDIT.md section 5.",

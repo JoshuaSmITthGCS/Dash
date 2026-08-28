@@ -87,12 +87,22 @@ ENRICHMENT_ROTATION_SIZE = max(0, int(os.getenv("ADVISOR_ENRICHMENT_ROTATION_SIZ
 # fundamentals coverage" at the same rate as one spent on a general/industrial/tech/healthcare
 # name. This queue only ever draws from profiles outside EXCLUDED_EXPANSION_PROFILES.
 ENRICHMENT_EXPANSION_SIZE = max(0, int(os.getenv("ADVISOR_ENRICHMENT_EXPANSION_SIZE", "140")))
-EXCLUDED_EXPANSION_PROFILES = {"bank", "life_insurer", "property_casualty_insurer",
-                               "diversified_insurer", "reit"}
+EXCLUDED_EXPANSION_PROFILES = {
+    "bank", "life_insurer", "property_casualty_insurer", "diversified_insurer",
+    "insurance_broker", "managed_care_insurer", "reinsurer",
+    "capital_markets", "asset_manager", "consumer_finance", "financial_exchange",
+    "payment_processor",
+    "reit", "office_reit", "retail_reit", "industrial_reit", "residential_reit",
+    "healthcare_reit", "hotel_reit", "mortgage_reit", "self_storage_reit",
+    "data_center_reit", "net_lease_reit", "timber_reit",
+}
 # Deliberately sized close to the full financial/real-estate population in the committed
-# universe (reit 50 + bank 42 + property_casualty_insurer 15 + diversified_insurer 12 +
-# life_insurer 7 = 126), not left to the small, unfiltered general rotation - see
-# enrichment_expansion_financial_real_estate.
+# universe, not left to the small, unfiltered general rotation - see
+# enrichment_expansion_financial_real_estate. (This set grew alongside classify_profile's
+# sub-industry splits: a name that used to classify as the bare "reit" or "bank" profile and
+# route here still does, now under whichever subtype it splits into -- e.g. a self-storage
+# REIT that used to be generic "reit" is "self_storage_reit" today, but omitting it here would
+# silently reroute it into the general expansion queue this set exists to keep it out of.)
 ENRICHMENT_EXPANSION_FINANCIAL_REAL_ESTATE_SIZE = max(
     0, int(os.getenv("ADVISOR_ENRICHMENT_EXPANSION_FINANCIAL_REAL_ESTATE_SIZE", "130")))
 NEWS_DISCOVERY_LIMIT = 75

@@ -102,6 +102,26 @@ def classify_profile(snapshot):
     if snapshot.get("is_etf"):
         return "etf"
     if "reit" in text or "real estate investment trust" in text:
+        # Sub-dispatch by declared property type. Self-storage, data-center, net-lease and
+        # timber REITs share ambiguous Yahoo industry strings with other specialty/industrial/
+        # diversified REITs (there is no distinguishing substring), so those four are resolved
+        # exclusively via ticker_overrides above, before we ever reach this text match. Anything
+        # not covered below (REIT - Diversified, REIT - Specialty, and any unmatched property
+        # type) falls back to the generic "reit" profile, same as before this split existed.
+        if "residential" in industry:
+            return "residential_reit"
+        if "office" in industry:
+            return "office_reit"
+        if "retail" in industry:
+            return "retail_reit"
+        if "healthcare" in industry:
+            return "healthcare_reit"
+        if "hotel" in industry or "motel" in industry or "lodging" in industry:
+            return "hotel_reit"
+        if "mortgage" in industry:
+            return "mortgage_reit"
+        if "industrial" in industry:
+            return "industrial_reit"
         return "reit"
     if "bank" in industry:
         return "bank"
