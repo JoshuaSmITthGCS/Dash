@@ -11,7 +11,75 @@
     "commodity_producer",
     "profitable_biotechnology",
     "pre_profit_biotechnology",
-    "other_pre_profit"
+    "other_pre_profit",
+    "insurance_broker",
+    "managed_care_insurer",
+    "midstream_mlp",
+    "airline",
+    "aerospace_defense",
+    "capital_markets",
+    "asset_manager",
+    "homebuilder",
+    "independent_power_producer",
+    "specialty_chemicals",
+    "air_freight_logistics",
+    "building_products",
+    "consulting_services",
+    "electrical_equipment",
+    "engineering_construction",
+    "healthcare_it",
+    "industrial_distribution",
+    "large_cap_pharma",
+    "life_science_tools_diagnostics",
+    "machinery",
+    "marine_shipping",
+    "medical_devices",
+    "pharmacy_healthcare_distribution",
+    "railroad",
+    "renewable_yieldco_developer",
+    "staffing",
+    "trucking",
+    "waste_management",
+    "water_utility",
+    "reinsurer",
+    "financial_exchange",
+    "consumer_finance",
+    "semiconductor_capital_equipment",
+    "payment_processor",
+    "ems_electronic_components",
+    "networking_equipment",
+    "saas",
+    "it_services_consulting",
+    "telecom_carrier",
+    "media_entertainment",
+    "interactive_media_platform",
+    "video_games",
+    "publishing_advertising",
+    "retail_apparel",
+    "restaurants",
+    "ecommerce_retail",
+    "automaker",
+    "auto_dealership",
+    "auto_parts_supplier",
+    "leisure_products",
+    "education_services",
+    "agricultural_processor",
+    "packaged_food_processor",
+    "beverage_manufacturer",
+    "tobacco",
+    "food_distributor",
+    "grocery_staples_retail",
+    "office_reit",
+    "retail_reit",
+    "industrial_reit",
+    "residential_reit",
+    "healthcare_reit",
+    "hotel_reit",
+    "mortgage_reit",
+    "self_storage_reit",
+    "data_center_reit",
+    "net_lease_reit",
+    "timber_reit"
   ],
   "rules": {
     "general": {},
@@ -325,14 +393,588 @@
     "semiconductor": {
       "capex_to_depreciation": [
         "suppressed",
-        "gross_margin_cycle",
+        "gross_margin_trend",
         "A low capex-to-depreciation ratio is structural for a fabless designer that outsources fabrication, not evidence of under-investment. Distinguishing fabless from integrated manufacturers requires a filing parse this pipeline does not yet do, so the interpretation is suppressed for the whole industry rather than applied wrongly to part of it."
       ],
       "inventory_days_trend": [
         "suppressed",
-        "inventory_cycle",
+        "inventory_correction_flag",
         "Semiconductor inventory swings with the industry cycle and customer build plans; a rising trend is not an accounting-quality signal."
       ]
+    },
+    "insurance_broker": {
+      "price_to_book": [
+        "suppressed",
+        "forward_pe",
+        "Insurance brokers earn commission and fee income and take no underwriting risk or investment float; acquisition-driven goodwill in this roll-up-heavy sub-industry makes book value uninformative -- valued like an asset-light services business, not an underwriter."
+      ],
+      "altman_z": [
+        "suppressed",
+        "forward_pe",
+        "Distress model calibrated for asset-heavy manufacturers; a fee-based broker carries no inventory or heavy fixed assets for it to read correctly."
+      ],
+      "inventory_days_trend": [
+        "suppressed",
+        null,
+        "Insurance brokers hold no inventory."
+      ],
+      "days_sales_outstanding_trend": [
+        "suppressed",
+        null,
+        "Commission and fee income does not generate a receivable-days signal comparable to industrial DSO."
+      ]
+    },
+    "managed_care_insurer": {
+      "$inherits": "property_casualty_insurer",
+      "combined_ratio": [
+        "suppressed",
+        "medical_loss_ratio",
+        "Combined ratio is a P&C underwriting construct; medical loss ratio (health-plan costs over premium revenue) is the health-insurer analog."
+      ]
+    },
+    "midstream_mlp": {
+      "forward_pe": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Accelerated depreciation on an asset-intensive pipeline/storage base makes P/E nearly meaningless for midstream; EV/EBITDA is the sector-standard multiple."
+      ],
+      "peg": [
+        "suppressed",
+        "ev_to_ebitda",
+        "PEG compounds the same forward-P/E distortion, on the same grounds as forward_pe above."
+      ],
+      "free_cash_flow_yield": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Growth capex depresses FCF during the build phase; EV/EBITDA and distribution coverage (not yet computed by this pipeline) are the standard midstream reads, not FCF yield."
+      ],
+      "current_ratio": [
+        "suppressed",
+        null,
+        "Midstream working capital is not the liquidity signal it is for an industrial company; leverage (net_debt_to_ebitda) and interest coverage carry that read instead."
+      ]
+    },
+    "airline": {
+      "forward_pe": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Airlines are a textbook peak-earnings/trough-multiple cyclical; EV/EBITDA on mid-cycle margins is preferred to a point-in-time P/E, which reads cheapest exactly at the top of the cycle."
+      ],
+      "peg": [
+        "suppressed",
+        "ev_to_ebitda",
+        "PEG compounds the same cyclical forward-P/E distortion, on the same grounds as forward_pe above."
+      ],
+      "current_ratio": [
+        "suppressed",
+        null,
+        "Airlines run structurally low current ratios by design -- advance ticket sales are a current liability that funds operations -- so this is not the liquidity signal it is for a typical industrial company."
+      ]
+    },
+    "aerospace_defense": {
+      "current_ratio": [
+        "suppressed",
+        null,
+        "Long-cycle program working capital (progress billings, customer advances) is not the short-term liquidity signal current ratio represents for a typical industrial company."
+      ],
+      "peg": [
+        "suppressed",
+        "forward_pe",
+        "Program-timing lumpiness in trailing growth breaks the PEG denominator; forward P/E against backlog-supported growth reads better."
+      ]
+    },
+    "capital_markets": {
+      "$inherits": "bank",
+      "gross_profits_to_assets": [
+        "suppressed",
+        "return_on_equity",
+        "Capital-markets firms report no gross-profit line; trading and underwriting revenue over risk capital is the comparable read, approximated here by return on equity pending a computed net-revenue-per-risk-capital metric."
+      ]
+    },
+    "asset_manager": {
+      "price_to_book": [
+        "suppressed",
+        "forward_pe",
+        "Asset managers are asset-light and fee-driven; earnings power (P/E) is the standard read, not balance-sheet book value."
+      ],
+      "net_debt_to_ebitda": [
+        "suppressed",
+        null,
+        "Leverage is a minor input to an asset-light, fee-revenue business model."
+      ],
+      "current_ratio": [
+        "suppressed",
+        null,
+        "Working-capital liquidity is not the balance-sheet risk that matters here; AUM, net flows, and fee-rate stability are (not yet computed by this pipeline beyond the unaudited filing-extraction layer)."
+      ],
+      "gross_profits_to_assets": [
+        "suppressed",
+        null,
+        "No meaningful gross-profit-to-assets frame for a fee-based, asset-light business."
+      ]
+    },
+    "homebuilder": {
+      "altman_z": [
+        "suppressed",
+        "price_to_book",
+        "Heavy land and work-in-process inventory carrying, plus structurally elevated leverage through the build cycle, break the industrial-manufacturer calibration Altman's model assumes."
+      ],
+      "free_cash_flow_yield": [
+        "suppressed",
+        "price_to_book",
+        "Cash flow moves inversely to growth for a homebuilder: land and work-in-process spend consumes cash fastest exactly when order growth (and future revenue) is strongest, so FCF yield reads worst at the best points in the cycle."
+      ],
+      "ev_to_fcf": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Same cash-flow-inverted-to-growth distortion as free_cash_flow_yield above."
+      ],
+      "days_sales_outstanding_trend": [
+        "suppressed",
+        null,
+        "Homebuilder receivables are not a meaningful earnings-quality signal set against work-in-process inventory accounting."
+      ],
+      "accruals_ratio": [
+        "suppressed",
+        null,
+        "Land and work-in-process inventory accounting produces structurally large accruals unrelated to the earnings-quality signal this ratio targets elsewhere."
+      ]
+    },
+    "independent_power_producer": {
+      "forward_pe": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Merchant power prices are commodity-cyclical; a point-in-time P/E is the same peak-earnings/trough-multiple trap it is for other commodity producers."
+      ],
+      "peg": [
+        "suppressed",
+        "ev_to_ebitda",
+        "PEG compounds the same cyclical forward-P/E distortion, on the same grounds as forward_pe above."
+      ]
+    },
+    "machinery": {
+      "forward_pe": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Capital-goods order books are peak-earnings/trough-multiple cyclical, the same pattern as airline."
+      ],
+      "peg": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Compounds the same cyclical forward-P/E distortion as forward_pe above."
+      ],
+      "capex_to_depreciation": [
+        "replaced",
+        "capex_intensity",
+        "Depreciation base lags for OEMs that outsource fabrication; capex/revenue is the comparable reinvestment read."
+      ],
+      "inventory_days_trend": [
+        "suppressed",
+        "inventory_correction_flag",
+        "Long production/backlog cycles make inventory swing with order books, not accounting quality, the same reasoning as semiconductor."
+      ]
+    },
+    "electrical_equipment": {
+      "forward_pe": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Electrification-driven demand makes trailing growth unusually lumpy; same cyclical logic as machinery."
+      ],
+      "peg": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Compounds the same cyclical forward-P/E distortion."
+      ],
+      "capex_to_depreciation": [
+        "replaced",
+        "capex_intensity",
+        "Depreciation base lags for equipment makers that outsource fabrication; capex/revenue is the comparable read."
+      ],
+      "inventory_days_trend": [
+        "suppressed",
+        "inventory_correction_flag",
+        "Inventory swings with order books, not accounting quality, the same reasoning as semiconductor/machinery."
+      ]
+    },
+    "building_products": {
+      "forward_pe": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Construction-cycle earnings volatility."
+      ],
+      "peg": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Compounds the same cyclical distortion."
+      ],
+      "free_cash_flow_yield": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Kiln/quarry capex consumes cash fastest exactly when volume growth is strongest, the same cash-inverted-to-growth logic as homebuilder."
+      ],
+      "capex_to_depreciation": [
+        "replaced",
+        "capex_intensity",
+        "Quarry/plant capital intensity reads better against revenue than a depreciation base that varies with asset age."
+      ]
+    },
+    "engineering_construction": {
+      "current_ratio": [
+        "suppressed",
+        null,
+        "Progress billings and customer advances distort short-term liquidity, identical to aerospace_defense."
+      ],
+      "peg": [
+        "suppressed",
+        "forward_pe",
+        "Program-timing lumpiness breaks the PEG denominator, same as aerospace_defense."
+      ],
+      "accruals_ratio": [
+        "suppressed",
+        null,
+        "Percentage-of-completion accounting produces structurally large accruals unrelated to earnings quality, same logic as homebuilder."
+      ],
+      "days_sales_outstanding_trend": [
+        "suppressed",
+        "backlog_value",
+        "Unbilled receivables swing with project mix, not collection quality."
+      ]
+    },
+    "railroad": {
+      "free_cash_flow_yield": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Mandated network-maintenance and PTC capex programs, the same rationale as utility."
+      ],
+      "capex_to_depreciation": [
+        "replaced",
+        "operating_ratio_proxy",
+        "Rail's core efficiency KPI is operating ratio, not a depreciation-relative capex read; capex_intensity is tracked alongside as a replacement metric."
+      ],
+      "inventory_days_trend": [
+        "suppressed",
+        null,
+        "Minimal fuel/parts inventory carries no meaningful signal."
+      ],
+      "days_sales_outstanding_trend": [
+        "suppressed",
+        null,
+        "Freight billing aging is not a meaningful quality-of-earnings signal for a railroad."
+      ]
+    },
+    "trucking": {
+      "operating_margin_trend": [
+        "suppressed",
+        "operating_ratio_proxy",
+        "Year-over-year margin swings mechanically with fuel-surcharge pass-through revenue, a low-margin dollar-for-dollar reimbursement that dilutes the ratio without reflecting real efficiency change."
+      ],
+      "forward_pe": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Truckload spot-rate freight cycle is peak-earnings/trough-multiple, the same pattern as airline."
+      ],
+      "peg": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Compounds the same cyclical distortion."
+      ],
+      "capex_to_depreciation": [
+        "replaced",
+        "capex_intensity",
+        "Distinguishes asset-based carriers from asset-light brokers sharing the same industry tag."
+      ],
+      "inventory_days_trend": [
+        "suppressed",
+        null,
+        "No meaningful inventory for a trucking carrier."
+      ]
+    },
+    "air_freight_logistics": {
+      "capex_to_depreciation": [
+        "replaced",
+        "capex_intensity",
+        "Discriminates integrated parcel/air networks (high capex) from asset-light forwarders (low capex) sharing one industry tag."
+      ],
+      "forward_pe": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Fuel/freight-cycle earnings volatility."
+      ],
+      "peg": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Compounds the same cyclical distortion."
+      ],
+      "inventory_days_trend": [
+        "suppressed",
+        null,
+        "No meaningful inventory for a logistics-services business."
+      ]
+    },
+    "marine_shipping": {
+      "peg": [
+        "replaced",
+        "midcycle_ev_ebitda",
+        "Charter-rate cycles dominate point estimates exactly like a commodity producer; reuses that profile's own replacement target."
+      ],
+      "forward_pe": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Same peak-earnings/trough-multiple pattern as airline."
+      ],
+      "operating_margin_trend": [
+        "suppressed",
+        null,
+        "Trailing margin trend mostly reflects the period's realized charter rate, not structural efficiency, mirroring commodity_producer."
+      ],
+      "capex_to_depreciation": [
+        "replaced",
+        "capex_intensity",
+        "Vessel newbuild/drydock capex is lumpy and age-dependent; capex/revenue is the more comparable fleet-investment read."
+      ]
+    },
+    "waste_management": {
+      "free_cash_flow_yield": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Recurring landfill-cell development and fleet capex is structurally heavy, the same mandated-capex logic as utility."
+      ],
+      "capex_to_depreciation": [
+        "replaced",
+        "capex_intensity",
+        "Landfill/fleet reinvestment reads better against revenue scale than a depreciation base."
+      ],
+      "inventory_days_trend": [
+        "suppressed",
+        null,
+        "No meaningful inventory."
+      ]
+    },
+    "staffing": {
+      "price_to_book": [
+        "suppressed",
+        "forward_pe",
+        "Roll-up M&A goodwill and minimal tangible book, identical reasoning to insurance_broker."
+      ],
+      "altman_z": [
+        "suppressed",
+        "forward_pe",
+        "Distress model calibrated for asset-heavy manufacturers, same as insurance_broker."
+      ],
+      "capex_to_depreciation": [
+        "suppressed",
+        "return_on_invested_capital",
+        "Near-zero PP&E base makes the ratio noisy; ROIC/FCF-yield is the real read for an asset-light, people-based business."
+      ],
+      "inventory_days_trend": [
+        "suppressed",
+        null,
+        "No inventory."
+      ]
+    },
+    "consulting_services": {
+      "price_to_book": [
+        "suppressed",
+        "forward_pe",
+        "Roll-up M&A goodwill and minimal tangible book, identical reasoning to insurance_broker/staffing."
+      ],
+      "altman_z": [
+        "suppressed",
+        "forward_pe",
+        "Distress model calibrated for asset-heavy manufacturers, same as staffing."
+      ],
+      "capex_to_depreciation": [
+        "suppressed",
+        "return_on_invested_capital",
+        "Near-zero PP&E base makes the ratio noisy for an asset-light, people-based business."
+      ],
+      "inventory_days_trend": [
+        "suppressed",
+        null,
+        "No inventory."
+      ]
+    },
+    "industrial_distribution": {
+      "capex_to_depreciation": [
+        "replaced",
+        "capex_intensity",
+        "Directionally reasonable reinvestment read, though most names in this tag run similarly low and it is the least discriminating of the industrials group for that reason."
+      ]
+    },
+    "large_cap_pharma": {
+      "peg": [
+        "suppressed",
+        "forward_pe",
+        "Patent-cliff step-downs make trailing-growth-based PEG denominators as unstable as program-timing lumpiness is for aerospace & defense."
+      ],
+      "revenue_growth": [
+        "suppressed",
+        "analyst_target_upside",
+        "Trailing growth nets a compounding base business against a specific product's loss-of-exclusivity step-down into a number describing neither; consensus targets already price known patent expirations."
+      ],
+      "earnings_growth": [
+        "suppressed",
+        "analyst_target_upside",
+        "Same loss-of-exclusivity step-down distortion on the EPS side."
+      ],
+      "fcf_growth_3y": [
+        "suppressed",
+        null,
+        "Three-year FCF growth swings with the same loss-of-exclusivity step-down, not capital discipline."
+      ]
+    },
+    "medical_devices": {
+      "inventory_days_trend": [
+        "suppressed",
+        "gross_margin_trend",
+        "Consignment/loaner-unit inventory held at hospital sites inflates inventory-days independent of demand -- a structural placement-model effect, not an accounting-quality signal."
+      ],
+      "peg": [
+        "suppressed",
+        "forward_pe",
+        "Single-product FDA-approval/launch timing makes trailing growth lumpy, the same mechanism as aerospace & defense's program-timing rule."
+      ],
+      "days_sales_outstanding_trend": [
+        "suppressed",
+        null,
+        "Hospital/GPO contract terms and large capital-equipment placement deals with extended payment terms make DSO swings a deal-mix artifact, not a collections signal."
+      ]
+    },
+    "life_science_tools_diagnostics": {
+      "gross_profits_to_assets": [
+        "suppressed",
+        "gross_margin",
+        "This sub-industry is a serial-acquirer roll-up model, so accumulated goodwill inflates the assets denominator and depresses GP/assets regardless of underlying instrument/reagent profitability, the same goodwill argument as insurance_broker."
+      ],
+      "peg": [
+        "suppressed",
+        "forward_pe",
+        "Revenue here is tied to the external biotech-funding cycle, not company execution, breaking PEG the same way a commodity cycle breaks it for commodity_producer."
+      ],
+      "revenue_growth": [
+        "suppressed",
+        null,
+        "Trailing growth measures the biotech industry's capital-raising cycle more than management execution."
+      ]
+    },
+    "pharmacy_healthcare_distribution": {
+      "gross_profits_to_assets": [
+        "suppressed",
+        null,
+        "Passthrough wholesale revenue produces a structurally near-zero gross margin by design, which this factor reads as maximal unprofitability rather than competitive weakness."
+      ],
+      "incremental_margin": [
+        "suppressed",
+        null,
+        "On a ~3% gross margin base, single-basis-point mix shifts move incremental margin by huge relative swings unrelated to real operating leverage."
+      ],
+      "profit_margin": [
+        "suppressed",
+        "return_on_invested_capital",
+        "Distribution economics convert thin per-unit margin into acceptable returns via massive asset turnover; a flat margin band penalizes the business model itself, while ROIC already captures the turnover-adjusted return."
+      ]
+    },
+    "healthcare_it": {
+      "peg": [
+        "suppressed",
+        "forward_pe",
+        "Long implementation/sales cycles and heavy stock compensation routinely produce negative or noisy trailing EPS growth in scale-up, breaking PEG the same way it is assumed to break generically for other_pre_profit, but for a recurring-revenue reason specific to this profile."
+      ],
+      "altman_z": [
+        "suppressed",
+        null,
+        "Asset-light, recurring-revenue business carries no meaningful inventory/working-capital profile for the distress model to read, the same argument as asset_manager."
+      ],
+      "inventory_days_trend": [
+        "suppressed",
+        null,
+        "No inventory, same precedent as asset_manager/insurance_broker."
+      ],
+      "capex_to_depreciation": [
+        "suppressed",
+        "stock_comp_to_revenue",
+        "Reinvestment here is R&D/S&M-driven, not capex; a low ratio would misleadingly read as underinvestment the same way it does for a fabless semiconductor designer, and stock-comp intensity is the truer reinvestment signal."
+      ]
+    },
+    "water_utility": {
+      "$inherits": "utility",
+      "price_to_book": [
+        "suppressed",
+        null,
+        "Water utilities trade at a persistent premium reflecting scarcity of water rights and ESG-driven capital inflows, not balance-sheet mispricing; absolute price-to-book bands calibrated on the broader utility set would misread every water name as overvalued."
+      ],
+      "capex_to_depreciation": [
+        "suppressed",
+        "rate_base_growth",
+        "Multi-decade lead/aging-pipe replacement cycles run this ratio structurally high, the inverse of the fabless-semiconductor problem but the same structural-not-anomalous argument."
+      ]
+    },
+    "renewable_yieldco_developer": {
+      "peg": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Tax-equity/HLBV accounting noise in reported EPS breaks PEG, the same cyclical-forward-P/E trap noted for independent_power_producer/commodity_producer but driven by accounting structure rather than commodity price."
+      ],
+      "forward_pe": [
+        "suppressed",
+        "ev_to_ebitda",
+        "GAAP EPS for a yieldco is structurally distorted by accelerated depreciation and non-cash tax-equity allocations; EV/EBITDA on contracted cash flow is the sector-standard read, the same logic as midstream_mlp."
+      ],
+      "free_cash_flow_yield": [
+        "suppressed",
+        null,
+        "Reported FCF is depressed during the growth/build phase by construction financing draws, not owner-distributable cash."
+      ],
+      "net_debt_to_ebitda": [
+        "suppressed",
+        null,
+        "Project-level non-recourse debt against contracted assets reads very differently from corporate leverage; a blended net-debt/EBITDA overstates risk versus a diversified operating company."
+      ]
+    },
+    "reinsurer": {
+      "$inherits": "property_casualty_insurer"
+    },
+    "financial_exchange": {
+      "$inherits": "capital_markets"
+    },
+    "consumer_finance": {
+      "$inherits": "bank"
+    },
+    "semiconductor_capital_equipment": {
+      "$inherits": "semiconductor"
+    },
+    "office_reit": {
+      "$inherits": "reit"
+    },
+    "retail_reit": {
+      "$inherits": "reit"
+    },
+    "industrial_reit": {
+      "$inherits": "reit"
+    },
+    "residential_reit": {
+      "$inherits": "reit"
+    },
+    "healthcare_reit": {
+      "$inherits": "reit"
+    },
+    "hotel_reit": {
+      "$inherits": "reit"
+    },
+    "mortgage_reit": {
+      "$inherits": "reit"
+    },
+    "self_storage_reit": {
+      "$inherits": "reit"
+    },
+    "data_center_reit": {
+      "$inherits": "reit"
+    },
+    "net_lease_reit": {
+      "$inherits": "reit"
+    },
+    "timber_reit": {
+      "$inherits": "reit"
     }
   },
   "_comment": "Two rules per metric per business profile. APPLICABILITY: `rules` declares whether a metric is meaningful for a profile at all (suppressed/replaced/applied). REQUIRED_FOR_SCORE: `required_for_score` declares which metrics a parent factor cannot publish without. Both are read by the LIVE scorer (pipeline/scorer.py) as well as the v2 layer -- previously only the v2 shadow path consulted this file, so the correct insurer rules below existed and governed nothing a user saw. See research/audit/CURRENT_MODEL_AUDIT.md section 5.",

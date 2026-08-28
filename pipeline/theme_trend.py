@@ -33,7 +33,7 @@ returns, because a number tuned on the same history it is judged against would b
 result presented as a measurement.
 """
 
-from statistics import median
+from statistics import median, pstdev
 
 # A group reading needs enough members to be a group. Below this the theme reports the count
 # and no verdict: three names moving together is a coincidence with a name.
@@ -112,6 +112,10 @@ def member_reading(row):
         "revision_breadth_30d": row.get("revision_breadth_30d"),
         "eps_revision_30d_pct": row.get("eps_revision_30d_pct"),
         "expensiveness_percentile": expensiveness,
+        # Kept only for maturity's pairwise-correlation read below, never re-exposed on the
+        # published row: a raw price series traveling with an exposure entry is one careless
+        # spread away from becoming a de facto momentum input.
+        "closes": closes,
     }
 
 
@@ -214,6 +218,89 @@ def _breadth_label(participation):
     if participation <= NARROW_PARTICIPATION:
         return "narrow"
     return "mixed"
+
+
+# Maturity/crowding conventions (Ben-David et al.'s attention-competition framing, and the
+# broader observation that a basket's members trading as one instrument is a late-cycle
+# signal): stated bands, not fitted parameters, on the same principle as CROWDED_EXPENSIVENESS
+# above. Correlation is bounded and unitless, which is why it anchors the label; dispersion is
+# reported alongside as the corroborating, differently-scaled read the source research also
+# calls for, not as a second threshold to clear.
+CROWDED_CORRELATION = 0.60
+DIFFERENTIATED_CORRELATION = 0.25
+MINIMUM_MATURITY_MEMBERS = 5
+CORRELATION_WINDOW_DAYS = 60
+
+
+def _daily_returns(closes, window=CORRELATION_WINDOW_DAYS):
+    """Trailing daily simple returns, or None when the series is too short to trust."""
+    series = _numbers(closes or [])
+    if len(series) < window + 1:
+        return None
+    tail = series[-(window + 1):]
+    returns = [tail[i] / tail[i - 1] - 1 for i in range(1, len(tail)) if tail[i - 1]]
+    return returns if len(returns) >= window // 2 else None
+
+
+def average_pairwise_correlation(members_closes, *, window=CORRELATION_WINDOW_DAYS):
+    """Mean pairwise Pearson correlation of trailing daily returns across theme members.
+
+    Rising co-movement -- members trading as one basket regardless of their own fundamentals
+    -- is the crowding tell the source research (return dispersion / correlation section)
+    describes; falling correlation as a theme matures means the market has started pricing
+    winners and losers differently instead of buying the narrative as a block.
+    """
+    import numpy as np
+
+    series = {ticker: _daily_returns(closes, window) for ticker, closes in members_closes.items()}
+    series = {ticker: values for ticker, values in series.items() if values}
+    if len(series) < 2:
+        return None
+    shortest = min(len(values) for values in series.values())
+    if shortest < window // 2:
+        return None
+    matrix = np.array([values[-shortest:] for values in series.values()])
+    if np.allclose(matrix.std(axis=1), 0):
+        return None
+    correlations = np.corrcoef(matrix)
+    n = correlations.shape[0]
+    pairs = [correlations[i, j] for i in range(n) for j in range(i + 1, n)
+            if not np.isnan(correlations[i, j])]
+    return round(float(sum(pairs) / len(pairs)), 3) if pairs else None
+
+
+def _maturity_label(dispersion, correlation):
+    if correlation is None:
+        return "unmeasured"
+    if correlation >= CROWDED_CORRELATION:
+        return "crowded"
+    if correlation <= DIFFERENTIATED_CORRELATION:
+        return "differentiated"
+    return "broadening"
+
+
+def maturity_reading(measured, *, minimum_members=MINIMUM_MATURITY_MEMBERS):
+    """Return dispersion and pairwise correlation across a theme's measured members.
+
+    Separate from ``crowding`` above (median valuation percentile -- "is this expensive")
+    because a theme can be cheap and still crowded in the sense this measures: everything
+    trading together regardless of individual valuation, which is the earlier warning of the
+    two. Degrades to ``unmeasured`` below ``minimum_members``, same convention as the rest of
+    this module.
+    """
+    if len(measured) < minimum_members:
+        return {"members_measured": len(measured), "minimum_members": minimum_members,
+                "return_dispersion": None, "average_pairwise_correlation": None,
+                "label": "unmeasured"}
+    dispersion = None
+    strengths = _numbers([reading["relative_strength"] for reading in measured])
+    if len(strengths) >= minimum_members:
+        dispersion = round(pstdev(strengths), 2)
+    correlation = average_pairwise_correlation(
+        {reading["ticker"]: reading.get("closes") for reading in measured if reading.get("ticker")})
+    return {"members_measured": len(measured), "minimum_members": minimum_members,
+           "return_dispersion": dispersion, "average_pairwise_correlation": correlation,
+           "label": _maturity_label(dispersion, correlation)}
 
 
 def verdict(direction, breadth, crowding, leadership_reading):
@@ -322,6 +409,7 @@ def evaluate_theme(rows, *, minimum_members=MINIMUM_MEMBERS):
         "leadership": leadership_reading,
         "fundamental_confirmation": confirmation,
         "crowding": crowding,
+        "maturity": maturity_reading(measured),
         "roles": rotation,
         "chain_confirmation": chain_confirmation(rotation),
         "verdict": verdict(direction, breadth, crowding, leadership_reading),

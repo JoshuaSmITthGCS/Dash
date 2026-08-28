@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-28T01:08:03.587092+00:00",
+  "generated_at": "2026-08-28T07:44:49.572561+00:00",
   "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
   "coverage_by_collection": {
     "research": {
@@ -15,7 +15,7 @@
           "total": 40
         },
         "financial_health": {
-          "scored": 30,
+          "scored": 32,
           "total": 40
         },
         "growth": {
@@ -27,7 +27,7 @@
           "total": 40
         },
         "valuation": {
-          "scored": 38,
+          "scored": 39,
           "total": 40
         }
       }
@@ -45,11 +45,11 @@
           "total": 838
         },
         "financial_health": {
-          "scored": 800,
+          "scored": 798,
           "total": 838
         },
         "growth": {
-          "scored": 834,
+          "scored": 833,
           "total": 838
         },
         "profitability": {
@@ -69,22 +69,22 @@
     "score": {
       "enriched": {
         "n": 874,
-        "mean": 63.79,
+        "mean": 64.05,
         "median": 65.2,
-        "stdev": 11.23
+        "stdev": 11.66
       },
       "non_enriched": {
         "n": 4,
-        "mean": 66.4,
-        "median": 68.95,
-        "stdev": 7.61
+        "mean": 66.53,
+        "median": 69.15,
+        "stdev": 7.59
       }
     },
     "sector_distribution": {
       "enriched": {
         "Technology": 152,
         "Industrials": 138,
-        "Financial Services": 124,
+        "Financial Services": 119,
         "Consumer Cyclical": 113,
         "Healthcare": 100,
         "Consumer Defensive": 56,
@@ -93,6 +93,7 @@
         "Basic Materials": 38,
         "Utilities": 34,
         "Communication Services": 27,
+        "FINANCIAL SERVICES": 5,
         "Unknown": 1
       },
       "non_enriched": {

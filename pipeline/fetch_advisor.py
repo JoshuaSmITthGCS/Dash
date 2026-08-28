@@ -23,6 +23,9 @@ from fetch_prices import fetch_snapshot
 from fundamentals_extended import (derive_extended, earnings_surprise_rows, extended_inputs,
                                    extended_observations)
 from insider_signal import summarize as summarize_insiders
+from reverse_dcf import derive_market_implied_growth
+from filing_extraction import collect_operating_kpi_signals, filing_extraction_group
+import return_attribution
 from concentration_risk import summarize as summarize_concentration
 from geographic_exposure import summarize as summarize_geography
 from institutional_ownership import decay as institutional_decay
@@ -60,6 +63,8 @@ from validation.ic_harness import (append_refresh as append_ic_refresh,
 UNIVERSE = load_json("advisor_universe.json", from_config=True) or {}
 DEFAULT_SYMBOLS = tuple(UNIVERSE.get("symbols", ()))
 PUBLISH_LIMIT = int(UNIVERSE.get("publish_limit", 20))
+REVERSE_DCF_ASSUMPTIONS = SETTINGS.get("reverse_dcf", {})
+RETURN_ATTRIBUTION_MONTHS_BACK = int(SETTINGS.get("return_attribution", {}).get("months_back", 12))
 NEWS_CONFIG = SETTINGS["news_intelligence"]
 # The event layer reuses the article annotation vocabulary (source tiers, event-type markers,
 # title-similarity threshold) and adds materiality, per-event half-lives and horizon settings
@@ -82,12 +87,22 @@ ENRICHMENT_ROTATION_SIZE = max(0, int(os.getenv("ADVISOR_ENRICHMENT_ROTATION_SIZ
 # fundamentals coverage" at the same rate as one spent on a general/industrial/tech/healthcare
 # name. This queue only ever draws from profiles outside EXCLUDED_EXPANSION_PROFILES.
 ENRICHMENT_EXPANSION_SIZE = max(0, int(os.getenv("ADVISOR_ENRICHMENT_EXPANSION_SIZE", "140")))
-EXCLUDED_EXPANSION_PROFILES = {"bank", "life_insurer", "property_casualty_insurer",
-                               "diversified_insurer", "reit"}
+EXCLUDED_EXPANSION_PROFILES = {
+    "bank", "life_insurer", "property_casualty_insurer", "diversified_insurer",
+    "insurance_broker", "managed_care_insurer", "reinsurer",
+    "capital_markets", "asset_manager", "consumer_finance", "financial_exchange",
+    "payment_processor",
+    "reit", "office_reit", "retail_reit", "industrial_reit", "residential_reit",
+    "healthcare_reit", "hotel_reit", "mortgage_reit", "self_storage_reit",
+    "data_center_reit", "net_lease_reit", "timber_reit",
+}
 # Deliberately sized close to the full financial/real-estate population in the committed
-# universe (reit 50 + bank 42 + property_casualty_insurer 15 + diversified_insurer 12 +
-# life_insurer 7 = 126), not left to the small, unfiltered general rotation - see
-# enrichment_expansion_financial_real_estate.
+# universe, not left to the small, unfiltered general rotation - see
+# enrichment_expansion_financial_real_estate. (This set grew alongside classify_profile's
+# sub-industry splits: a name that used to classify as the bare "reit" or "bank" profile and
+# route here still does, now under whichever subtype it splits into -- e.g. a self-storage
+# REIT that used to be generic "reit" is "self_storage_reit" today, but omitting it here would
+# silently reroute it into the general expansion queue this set exists to keep it out of.)
 ENRICHMENT_EXPANSION_FINANCIAL_REAL_ESTATE_SIZE = max(
     0, int(os.getenv("ADVISOR_ENRICHMENT_EXPANSION_FINANCIAL_REAL_ESTATE_SIZE", "130")))
 NEWS_DISCOVERY_LIMIT = 75
@@ -765,6 +780,15 @@ def yahoo_extended(symbol, ticker_obj, snapshot, history, diagnostics=None):
             diagnostics["derivation_failed"] += 1
         return merge_edgar_fallback(symbol, {}, snapshot, as_of=as_of_today,
                                     diagnostics=diagnostics)
+    if REVERSE_DCF_ASSUMPTIONS:
+        priced_in = derive_market_implied_growth(
+            beta=result.get("beta"), market_cap=snapshot.get("market_cap"),
+            total_debt=result.get("total_debt"), enterprise_value=result.get("enterprise_value"),
+            free_cash_flow=result.get("free_cash_flow"), assumptions=REVERSE_DCF_ASSUMPTIONS)
+        if priced_in:
+            result["market_implied_growth"] = priced_in["market_implied_growth"]
+            result["market_implied_growth_wacc"] = priced_in["wacc_assumed"]
+            result["market_implied_growth_exceeds_ceiling"] = priced_in["exceeds_plausible_ceiling"]
     if os.getenv("ENABLE_OPTIONS_VOLATILITY", "").lower() in {"1", "true", "yes"}:
         result.update(yahoo_options_volatility(ticker_obj, snapshot.get("price"), history["closes"]))
     return merge_edgar_fallback(symbol, result, snapshot, as_of=as_of_today,
@@ -1967,6 +1991,22 @@ def run():
         collect_filing_risk_signals(sec, insider_candidates)
     )
 
+    # Operating-KPI text extraction (same-store sales, NIM, ARPU, ...) from 8-K earnings-
+    # release exhibits. Off by default -- see settings.json's filing_extraction._comment and
+    # pipeline/filing_extraction.py's module docstring for why this stays gated until a human
+    # validates it against real filings. Every reading carries "unaudited": True and is
+    # informational only, same reasoning as reverse_dcf and the new sector metrics.
+    filing_extraction_cfg = SETTINGS.get("filing_extraction") or {}
+    filing_extraction_signals, filing_extraction_diagnostics = {}, {"attempted": 0, "resolved_tickers": 0}
+    if filing_extraction_cfg.get("enabled"):
+        snapshot_by_symbol = {context["symbol"]: context["snapshot"] for context in contexts}
+        filing_extraction_signals, filing_extraction_diagnostics = collect_operating_kpi_signals(
+            sec, insider_candidates,
+            metrics_by_profile=filing_extraction_cfg.get("metrics_by_profile", {}),
+            profile_for_ticker=lambda ticker: filing_extraction_group(snapshot_by_symbol.get(ticker, {})),
+            limit_per_ticker=filing_extraction_cfg.get("limit_per_ticker", 4),
+        )
+
     # Institutional 13F, decayed by filing lag - reads build_institutional_screen.py's
     # last monthly publish, no live SEC/OpenFIGI calls in this per-refresh path. Back in
     # the champion score (see advisor_engine.apply_modifiers); the sampling-bias caveat
@@ -2042,6 +2082,20 @@ def run():
         # field and a challenger-only input - see geographic_concentration_modifier.
         row["concentration_risk"] = concentration_signals.get(symbol)
         row["geographic_exposure"] = geographic_signals.get(symbol)
+        # Display-only, unaudited, off by default -- see settings.json's filing_extraction
+        # block. Never a champion-score input; not even a challenger one yet.
+        row["filing_extracted_metrics"] = filing_extraction_signals.get(symbol)
+        # Multiple-expansion decomposition (pipeline/return_attribution.py): how much of this
+        # company's realized return over the window was re-rating vs. implied fundamental
+        # delivery, computed purely from this ticker's own archived price/multiple history --
+        # no new data, no network call, and None until pit_store has accumulated a long enough
+        # baseline. Informational only, same reasoning as market_implied_growth above.
+        return_attribution_multiple = ("price_to_ffo"
+                                       if classify_profile(context["snapshot"]) == "reit"
+                                       else "forward_pe")
+        row["return_attribution"] = return_attribution.attribute_return_from_history(
+            symbol, multiple_field=return_attribution_multiple,
+            months_back=RETURN_ATTRIBUTION_MONTHS_BACK, pit_store=pit_store)
         # Expectation change - the leg the catalyst and analyst-conviction models were missing.
         # The previous run's consensus target is the only comparison point that exists for
         # target drift: Yahoo serves today's view and nothing else, which is precisely why
@@ -2351,6 +2405,23 @@ def run():
                 "status": "available" if os.getenv("ENABLE_OPTIONS_VOLATILITY", "").lower() in {"1", "true", "yes"} else "opt_in",
                 "source": "Yahoo option chains + calculated price returns",
                 "note": "Set ENABLE_OPTIONS_VOLATILITY=1; options requests are intentionally opt-in.",
+            },
+            "filing_extracted_operating_kpis": {
+                "status": "opt_in" if not filing_extraction_cfg.get("enabled") else (
+                    "degraded" if filing_extraction_diagnostics["resolved_tickers"] == 0
+                    else "available"
+                ),
+                "source": "SEC EDGAR 8-K Exhibit 99.x earnings releases (text/table extraction)",
+                "filings_attempted": filing_extraction_diagnostics["attempted"],
+                "tickers_resolved": filing_extraction_diagnostics["resolved_tickers"],
+                "note": "Same-store sales, NIM, ARPU, and similar operating KPIs that are not "
+                        "standardized XBRL facts (pipeline/filing_extraction.py). Off by default "
+                        "(settings.json filing_extraction.enabled) and, even enabled, informational "
+                        "only -- display field row.filing_extracted_metrics, no score input. Has "
+                        "never run against a live SEC EDGAR fetch: this was written in a sandboxed "
+                        "session whose network policy blocked sec.gov, so every extraction pattern "
+                        "was verified against synthetic fixtures only. Confirm real-filing accuracy "
+                        "and settings.json's minimum_coverage before treating its output as reliable.",
             },
             "earnings_surprise_momentum": {
                 "status": "available" if EARNINGS_SURPRISE_ENABLED else "opt_in",

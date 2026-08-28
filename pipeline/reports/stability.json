@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 85,
+  "refreshes_observed": 87,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -16842,6 +16842,207 @@
           ],
           "score_delta": 5.0,
           "confidence_delta": -0.03
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-28T01:04:13.211226+00:00",
+      "current_refresh": "advisor-2026-08-28T03:45:09.246713+00:00",
+      "shared_tickers": 878,
+      "rank_turnover": {
+        "top_40": 0.05,
+        "top_100": 0.05
+      },
+      "tickers_with_availability_driven_change": 1,
+      "tickers_with_availability_driven_change_pct": 0.001,
+      "mean_abs_score_delta": 0.19,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "CRM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -3.0,
+          "confidence_delta": 0.03
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-28T03:45:09.246713+00:00",
+      "current_refresh": "advisor-2026-08-28T07:39:17.247836+00:00",
+      "shared_tickers": 878,
+      "rank_turnover": {
+        "top_40": 0.2,
+        "top_100": 0.2
+      },
+      "tickers_with_availability_driven_change": 336,
+      "tickers_with_availability_driven_change_pct": 0.383,
+      "mean_abs_score_delta": 1.58,
+      "mean_abs_confidence_delta": 0.004,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "JEF",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "capex_to_depreciation",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "gross_profits_to_assets",
+            "net_debt_to_ebitda",
+            "peg",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "sales_multiple"
+          ],
+          "score_delta": 17.1,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "UEC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "gross_profits_to_assets",
+            "operating_margin_trend",
+            "peg"
+          ],
+          "score_delta": -15.9,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "MOH",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "altman_z",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "current_ratio",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "forward_pe",
+            "free_cash_flow_yield",
+            "gross_profits_to_assets",
+            "net_debt_to_ebitda",
+            "piotroski_f",
+            "price_to_book",
+            "return_on_invested_capital",
+            "sales_multiple"
+          ],
+          "score_delta": -14.8,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "CACC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "capex_to_depreciation",
+            "current_ratio",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "gross_profits_to_assets",
+            "net_debt_to_ebitda",
+            "peg",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "sales_multiple"
+          ],
+          "score_delta": 13.8,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "GTLB",
+          "metrics_with_value_change": [
+            "ev_to_fcf"
+          ],
+          "metrics_with_availability_change": [
+            "forward_pe",
+            "price_to_book"
+          ],
+          "score_delta": -12.9,
+          "confidence_delta": 0.0
+        },
+        {
+          "ticker": "AAOI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "forward_pe",
+            "peg",
+            "price_to_book"
+          ],
+          "score_delta": 11.0,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "MRK",
+          "metrics_with_value_change": [
+            "ev_to_ebitda"
+          ],
+          "metrics_with_availability_change": [
+            "fcf_growth_3y",
+            "peg",
+            "revenue_growth"
+          ],
+          "score_delta": 10.8,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "VNO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "revenue_growth"
+          ],
+          "score_delta": 9.2,
+          "confidence_delta": 0.0
+        },
+        {
+          "ticker": "CVS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "altman_z",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "current_ratio",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "free_cash_flow_yield",
+            "gross_profits_to_assets",
+            "inventory_days_trend",
+            "net_debt_to_ebitda",
+            "peg",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "sales_multiple"
+          ],
+          "score_delta": 8.9,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "ICE",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "capex_to_depreciation",
+            "current_ratio",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "free_cash_flow_yield",
+            "gross_profits_to_assets",
+            "net_debt_to_ebitda",
+            "peg",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "sales_multiple"
+          ],
+          "score_delta": 8.9,
+          "confidence_delta": 0.0
         }
       ]
     }

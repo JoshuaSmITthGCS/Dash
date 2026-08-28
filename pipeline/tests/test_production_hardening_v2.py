@@ -51,7 +51,7 @@ def test_correlated_momentum_family_is_detected_and_capped():
 
 @pytest.mark.parametrize("ticker,snapshot,profile", [
     ("HIG", {"ticker": "HIG", "sector": "Financial Services"}, "diversified_insurer"),
-    ("JPM", {"ticker": "JPM"}, "bank"), ("O", {"ticker": "O"}, "reit"),
+    ("JPM", {"ticker": "JPM"}, "bank"), ("O", {"ticker": "O"}, "net_lease_reit"),
     ("NEE", {"ticker": "NEE"}, "utility"), ("XOM", {"ticker": "XOM"}, "commodity_producer"),
     ("MRNA", {"ticker": "MRNA", "sector": "Healthcare", "industry": "Biotechnology", "profit_margin": -.2}, "pre_profit_biotechnology"),
     ("BIO", {"ticker": "BIO", "sector": "Healthcare", "industry": "Biotechnology", "profit_margin": .1}, "profitable_biotechnology"),

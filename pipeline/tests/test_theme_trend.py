@@ -35,6 +35,19 @@ def falling(length=60, start=160.0, step=1.0):
     return [start - step * index for index in range(length)]
 
 
+def alternating(length=70, start=100.0, amplitude=0.02, invert=False):
+    """A price path whose daily returns alternate sign -- used to build two groups whose
+    return *sequences* are genuine opposites (not just trending in opposite price directions,
+    which linear rising()/falling() series do not actually produce: their returns both trend
+    downward over time and so end up positively, not negatively, correlated)."""
+    sign = -1 if invert else 1
+    prices = [start]
+    for step in range(length - 1):
+        direction = sign if step % 2 == 0 else -sign
+        prices.append(prices[-1] * (1 + direction * amplitude))
+    return prices
+
+
 class MovingAverageTests(unittest.TestCase):
     def test_a_rising_series_sits_above_its_own_average(self):
         self.assertTrue(tt.above_moving_average(rising(), 50))
@@ -114,6 +127,61 @@ class CrowdingTests(unittest.TestCase):
     def test_crowding_is_unanswered_when_no_member_resolved_a_valuation(self):
         rows = [member(f"T{index}", relative_strength=9, closes=rising()) for index in range(6)]
         self.assertIsNone(tt.evaluate_theme(rows)["crowding"]["already_priced"])
+
+
+class MaturityTests(unittest.TestCase):
+    """Return dispersion and pairwise correlation: the crowding signal that fires even when a
+    theme is not (yet) expensive -- everything trading together regardless of valuation."""
+
+    def test_identical_price_series_read_as_fully_crowded(self):
+        readings = [tt.member_reading(member(f"T{i}", relative_strength=5.0, closes=rising(70)))
+                   for i in range(6)]
+        result = tt.maturity_reading(readings)
+        self.assertEqual(result["label"], "crowded")
+        self.assertAlmostEqual(result["average_pairwise_correlation"], 1.0, places=2)
+        self.assertEqual(result["return_dispersion"], 0.0)
+
+    def test_offsetting_price_series_read_as_differentiated(self):
+        readings = [tt.member_reading(member(f"UP{i}", relative_strength=5.0 + i,
+                                             closes=alternating(70, invert=False)))
+                   for i in range(3)]
+        readings += [tt.member_reading(member(f"DN{i}", relative_strength=-5.0 - i,
+                                              closes=alternating(70, invert=True)))
+                    for i in range(3)]
+        result = tt.maturity_reading(readings)
+        self.assertLess(result["average_pairwise_correlation"], 0)
+        self.assertEqual(result["label"], "differentiated")
+        self.assertGreater(result["return_dispersion"], 0)
+
+    def test_too_few_members_is_unmeasured(self):
+        readings = [tt.member_reading(member(f"T{i}", relative_strength=5.0, closes=rising(70)))
+                   for i in range(3)]
+        result = tt.maturity_reading(readings)
+        self.assertEqual(result["label"], "unmeasured")
+        self.assertIsNone(result["average_pairwise_correlation"])
+
+    def test_short_price_history_leaves_correlation_unmeasured_not_guessed(self):
+        readings = [tt.member_reading(member(f"T{i}", relative_strength=5.0, closes=rising(10)))
+                   for i in range(6)]
+        result = tt.maturity_reading(readings)
+        self.assertIsNone(result["average_pairwise_correlation"])
+
+    def test_maturity_is_attached_to_the_published_trend_block(self):
+        rows = [member(f"T{i}", relative_strength=5.0 + i, acceleration=0.5, closes=rising(70),
+                       market_cap=1e9) for i in range(6)]
+        result = tt.evaluate_theme(rows)
+        self.assertIn("maturity", result)
+        self.assertIn(result["maturity"]["label"],
+                      ("crowded", "broadening", "differentiated", "unmeasured"))
+
+    def test_maturity_never_leaks_a_raw_price_series_into_the_published_block(self):
+        # member_reading carries "closes" for this module's own internal use; it must never
+        # surface in what evaluate_theme actually publishes.
+        rows = [member(f"T{i}", relative_strength=5.0 + i, closes=rising(70), market_cap=1e9)
+               for i in range(6)]
+        result = tt.evaluate_theme(rows)
+        self.assertNotIn("closes", result["maturity"])
+        self.assertNotIn("closes", result.get("leadership", {}))
 
 
 class LeadershipTests(unittest.TestCase):
