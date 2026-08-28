@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0.0",
+  "config_version": "operating-kpi-universe-asset-manager-v1.0.0",
+  "_comment": "Tickers to collect assets-under-management and net-flows disclosures for -- the asset-management and capital-markets subset of advisor_universe.json, not the whole universe, for the same rate-limit-budget reason pipeline/config/operating_kpi_universe.json's own comment gives for retail/restaurants. Derived once from public/data/advisor.json's screen_universe sector/industry classification (2026-08-27 snapshot) for the Yahoo industries 'Asset Management' and 'Capital Markets'. Not every symbol here is a pure asset manager: GS/MS/JEF are broker-dealers that may not headline AUM the same way an asset manager does, and MKTX is a trading-venue operator, not an asset manager, and is expected to return 'not_found' for both metrics -- see pipeline/operating_kpis_asset_manager.py's module docstring. A company's sector/industry classification changes rarely enough that this list does not need to be regenerated every run; regenerate by re-filtering a fresh screen_universe snapshot on the same industry set if it drifts.",
+  "metric": ["assets_under_management", "net_flows"],
+  "asset_manager_symbols": [
+    "APO", "ARES", "BEN", "BLK", "CG", "CRBG", "EQH", "EVR", "GS", "HLI",
+    "HLNE", "IVZ", "JEF", "MC", "MKTX", "MS", "OWL", "RJF", "SCHW", "SEIC",
+    "SF", "STT", "TPG", "TROW", "TW"
+  ]
+}
