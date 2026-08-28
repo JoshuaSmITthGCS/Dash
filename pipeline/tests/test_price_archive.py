@@ -8,10 +8,10 @@ import price_archive
 def test_append_only_first_write_wins(tmp_path, monkeypatch):
     monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
     monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
-    added, conflicts = price_archive.append_series(
+    added, conflicts, _upgraded = price_archive.append_series(
         "DEAD", ["2026-01-02", "2026-01-03"], [10.0, 11.0], [100, 200], "test")
     assert (added, conflicts) == (2, 0)
-    added, conflicts = price_archive.append_series(
+    added, conflicts, _upgraded = price_archive.append_series(
         "DEAD", ["2026-01-03", "2026-01-06"], [99.0, 12.0], [1, 300], "restated")
     assert added == 1
     assert conflicts == 1
@@ -30,10 +30,10 @@ def test_a_repeated_conflict_is_logged_once_not_every_run(tmp_path, monkeypatch)
     monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
     monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
     price_archive.append_series("DEAD", ["2026-01-02"], [10.0], [100], "seed")
-    _, conflicts_first = price_archive.append_series(
+    _, conflicts_first, _upgraded = price_archive.append_series(
         "DEAD", ["2026-01-02"], [10.5], [100], "run_daily")
     assert conflicts_first == 1
-    _, conflicts_second = price_archive.append_series(
+    _, conflicts_second, _upgraded = price_archive.append_series(
         "DEAD", ["2026-01-02"], [10.5], [100], "run_daily")
     assert conflicts_second == 0
     logged_lines = open(tmp_path / "conflicts.jsonl").read().strip().splitlines()
@@ -48,12 +48,12 @@ def test_dedup_keys_on_ticker_and_date_not_the_whole_universe(tmp_path, monkeypa
     monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
     price_archive.append_series("DEAD", ["2026-01-02"], [10.0], [100], "seed")
     price_archive.append_series("DEAD", ["2026-01-02"], [10.5], [100], "run_daily")
-    _, conflicts = price_archive.append_series(
+    _, conflicts, _upgraded = price_archive.append_series(
         "DEAD", ["2026-01-02"], [11.0], [100], "run_daily")
     assert conflicts == 0  # already logged for this pair, even at a third differing value
 
     price_archive.append_series("DEAD", ["2026-01-03"], [20.0], [100], "seed")
-    _, conflicts = price_archive.append_series(
+    _, conflicts, _upgraded = price_archive.append_series(
         "DEAD", ["2026-01-03"], [20.5], [100], "run_daily")
     assert conflicts == 1  # a different date for the same ticker is a fresh pair
 
@@ -79,16 +79,47 @@ def test_append_series_stores_high_and_low_when_given(tmp_path, monkeypatch):
     assert rows["2026-01-02"] == [10.0, 100, 10.5, 9.5]
 
 
-def test_append_series_never_retrofits_a_high_low_onto_an_existing_date(tmp_path, monkeypatch):
-    # First-write-wins applies to the whole row, not just the close: a date archived before
-    # this feature existed stays a 2-element row even once a caller with a range shows up.
+def test_append_series_upgrades_an_existing_date_with_a_missing_high_low(tmp_path, monkeypatch):
+    # First-write-wins protects the *price*, not the presence of a high/low: a date archived
+    # close/volume-only before this feature existed gains a high/low once a caller offers one,
+    # as long as the close still agrees - this is what makes a backfill against an
+    # already-seeded archive (see seed_from_disk) actually able to add anything.
     monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
     monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
     price_archive.append_series("DEAD", ["2026-01-02"], [10.0], [100], "seed")
-    price_archive.append_series("DEAD", ["2026-01-02"], [10.0], [100], "run_daily",
+    added, conflicts, upgraded = price_archive.append_series(
+        "DEAD", ["2026-01-02"], [10.0], [100], "run_daily", highs=[10.5], lows=[9.5])
+    rows = json.load(open(tmp_path / "DEAD.json"))["rows"]
+    assert rows["2026-01-02"] == [10.0, 100, 10.5, 9.5]
+    assert (added, conflicts, upgraded) == (0, 0, 1)
+
+
+def test_append_series_does_not_upgrade_a_date_that_already_has_a_high_low(tmp_path, monkeypatch):
+    # First-write-wins still applies once a high/low exists: a second caller offering a
+    # different range for the same date is not silently accepted, upgrade or not.
+    monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
+    monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
+    price_archive.append_series("DEAD", ["2026-01-02"], [10.0], [100], "seed",
                                 highs=[10.5], lows=[9.5])
+    added, conflicts, upgraded = price_archive.append_series(
+        "DEAD", ["2026-01-02"], [10.0], [100], "run_daily", highs=[10.9], lows=[9.1])
+    rows = json.load(open(tmp_path / "DEAD.json"))["rows"]
+    assert rows["2026-01-02"] == [10.0, 100, 10.5, 9.5]
+    assert upgraded == 0
+
+
+def test_append_series_never_upgrades_a_date_whose_close_disagrees(tmp_path, monkeypatch):
+    # A close mismatch is still a conflict, not an upgrade opportunity - the high/low riding
+    # along with a restated close is exactly the kind of value first-write-wins exists to
+    # refuse.
+    monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
+    monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
+    price_archive.append_series("DEAD", ["2026-01-02"], [10.0], [100], "seed")
+    added, conflicts, upgraded = price_archive.append_series(
+        "DEAD", ["2026-01-02"], [99.0], [100], "run_daily", highs=[100.0], lows=[98.0])
     rows = json.load(open(tmp_path / "DEAD.json"))["rows"]
     assert rows["2026-01-02"] == [10.0, 100]
+    assert (conflicts, upgraded) == (1, 0)
 
 
 def test_load_series_reads_highs_and_lows_oldest_first(tmp_path, monkeypatch):

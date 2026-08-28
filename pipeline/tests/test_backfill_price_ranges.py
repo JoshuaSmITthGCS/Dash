@@ -29,28 +29,49 @@ def test_backfill_archives_a_full_history_with_highs_and_lows(tmp_path, monkeypa
     summary = backfill_price_ranges.backfill(["AAPL"], lambda ticker: histories.get(ticker))
 
     assert summary == {"tickers_requested": 1, "tickers_archived": 1, "rows_added": 2,
-                       "conflicts": 0, "failures": 0}
+                       "rows_upgraded": 0, "conflicts": 0, "failures": 0}
     rows = json.load(open(tmp_path / "AAPL.json"))["rows"]
     assert rows["2024-01-02"] == [190.0, 1000, 191.0, 189.0]
 
 
-def test_backfill_never_overwrites_a_date_the_daily_job_already_wrote(tmp_path, monkeypatch):
-    # First-write-wins applies here exactly as it does to any other append_series caller: a
-    # date the daily job already recorded (close/volume only, from before SA-2026-08-28-01)
-    # does not retroactively gain a high/low just because the backfill runs later.
+def test_backfill_upgrades_a_date_the_daily_job_already_wrote_close_volume_only(tmp_path, monkeypatch):
+    # This is the whole reason the backfill script exists: seed_from_disk() had already
+    # back-filled close/volume for nearly every historical date before high/low capture
+    # shipped, so almost every date the backfill visits already has a close/volume-only row.
+    # The close still agrees, so this is new data filling a gap, not a restatement - the
+    # backfill has to be able to add the high/low here or it accomplishes nothing.
     monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
     monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
     price_archive.append_series("AAPL", ["2024-01-02"], [190.0], [1000], "run_daily")
     histories = {"AAPL": {"dates": ["2024-01-02"], "closes": [190.0], "volumes": [1000],
                           "highs": [191.0], "lows": [189.0]}}
 
-    backfill_price_ranges.backfill(["AAPL"], lambda ticker: histories.get(ticker))
+    summary = backfill_price_ranges.backfill(["AAPL"], lambda ticker: histories.get(ticker))
 
+    assert summary["rows_added"] == 0
+    assert summary["rows_upgraded"] == 1
+    rows = json.load(open(tmp_path / "AAPL.json"))["rows"]
+    assert rows["2024-01-02"] == [190.0, 1000, 191.0, 189.0]
+
+
+def test_backfill_never_touches_a_date_whose_close_genuinely_disagrees(tmp_path, monkeypatch):
+    # The protection first-write-wins actually exists for: a provider restating a price is
+    # still refused, high/low included, exactly as it always was.
+    monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
+    monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
+    price_archive.append_series("AAPL", ["2024-01-02"], [190.0], [1000], "run_daily")
+    histories = {"AAPL": {"dates": ["2024-01-02"], "closes": [199.0], "volumes": [1000],
+                          "highs": [200.0], "lows": [198.0]}}
+
+    summary = backfill_price_ranges.backfill(["AAPL"], lambda ticker: histories.get(ticker))
+
+    assert summary["rows_upgraded"] == 0
+    assert summary["conflicts"] == 1
     rows = json.load(open(tmp_path / "AAPL.json"))["rows"]
     assert rows["2024-01-02"] == [190.0, 1000]
 
 
-def test_backfill_is_resumable_a_second_run_adds_nothing_new(tmp_path, monkeypatch):
+def test_backfill_is_resumable_a_second_run_adds_or_upgrades_nothing_new(tmp_path, monkeypatch):
     monkeypatch.setattr(price_archive, "ARCHIVE_DIR", str(tmp_path))
     monkeypatch.setattr(price_archive, "CONFLICTS", str(tmp_path / "conflicts.jsonl"))
     histories = {"AAPL": {"dates": ["2024-01-02"], "closes": [190.0], "volumes": [1000],
@@ -61,12 +82,15 @@ def test_backfill_is_resumable_a_second_run_adds_nothing_new(tmp_path, monkeypat
     second = backfill_price_ranges.backfill(["AAPL"], fetcher)
 
     assert first["rows_added"] == 1
+    assert first["rows_upgraded"] == 0
     assert second["rows_added"] == 0
+    assert second["rows_upgraded"] == 0
 
 
 def test_backfill_records_a_failure_rather_than_raising_on_an_unresolvable_ticker():
     summary = backfill_price_ranges.backfill(["GHOST"], lambda ticker: None)
     assert summary == {"tickers_requested": 1, "tickers_archived": 0, "rows_added": 0,
+                       "rows_upgraded": 0,
                        "conflicts": 0, "failures": 1}
 
 

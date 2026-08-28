@@ -10,9 +10,12 @@ Design:
   - One JSON file per ticker under pipeline/data/price_archive/, holding date-keyed
     close and volume rows (high and low too, from SA-2026-08-28-01 onward - see
     ``append_series``/``load_series``). Writes are append-and-merge by date, never delete,
-    never overwrite an existing date's value (first write wins, so a later restatement of an
+    never overwrite an existing date's *price* (first write wins, so a later restatement of an
     adjusted close cannot silently rewrite archived history; both the original and any
-    conflicting value are logged to conflicts.jsonl instead).
+    conflicting value are logged to conflicts.jsonl instead). A high/low missing from an
+    existing row is the one thing that *is* filled in later, deliberately - see
+    ``append_series``'s docstring for why "first write wins" and "never backfilled" turned out
+    to be two different rules once a real backfill ran against this archive.
   - A manifest (archive_manifest.json) with per-run counts, the run timestamp, and a
     SHA-256 over the archive tree, matching the experiment-manifest discipline.
   - archive_health() returns critical when the newest successful run is older than
@@ -83,16 +86,23 @@ def _path(ticker):
 
 
 def append_series(ticker, dates, closes, volumes, source, highs=None, lows=None):
-    """Merge one series into the archive. Existing dates keep their first value.
+    """Merge one series into the archive. Existing dates keep their first *price*.
 
     ``highs``/``lows`` are optional and positional-compatible with every call site that
     predates them: omitted, a row is written as ``[close, volume]``, exactly as before. Passed,
-    a row is ``[close, volume, high, low]``. Reading code (``load_series`` below) handles both
-    lengths, since first-write-wins means an already-archived date never gains a high/low
-    retroactively just because a later call happens to carry one - it would need a deliberate
-    backfill to touch history, and this archive's whole design is that ordinary runs never do.
-    Conflict detection still compares only the close (index 0); a high/low is never restated
-    into an existing date either, for the same first-write-wins reason.
+    a row is ``[close, volume, high, low]``.
+
+    First-write-wins protects the close and volume - a later call is never allowed to restate
+    a price this archive already recorded, which is the whole point of an append-only archive.
+    It does not extend to a high/low that simply was not captured yet: SA-2026-08-28-01 shipped
+    with the naive reading (a high/low was write-once too), and the first real backfill run
+    against this archive showed why that was wrong - seed_from_disk() had already back-filled
+    close/volume for every ticker's entire available history (back to the 1980s for some), so
+    virtually every date a backfill would touch already existed close/volume-only, and the naive
+    rule silently discarded the high/low for all of them. A row is now upgraded in place - the
+    close and volume left untouched, a high/low filled in - whenever the incoming close agrees
+    with what is already archived (i.e. this is not a restatement, just previously-missing
+    data) and the existing row does not have one yet. Returns ``(added, conflicts, upgraded)``.
     """
     os.makedirs(ARCHIVE_DIR, exist_ok=True)
     path = _path(ticker)
@@ -101,12 +111,15 @@ def append_series(ticker, dates, closes, volumes, source, highs=None, lows=None)
         rows = json.load(open(path)).get("rows", {})
     highs = highs or []
     lows = lows or []
-    added = conflicts = 0
+    added = conflicts = upgraded = 0
     for index, (d, c, v) in enumerate(zip(dates, closes, volumes)):
         if not d or c is None:
             continue
+        high = highs[index] if index < len(highs) else None
+        low = lows[index] if index < len(lows) else None
         if d in rows:
-            if abs(rows[d][0] - float(c)) > max(0.01, 0.001 * abs(float(c))):
+            existing = rows[d]
+            if abs(existing[0] - float(c)) > max(0.01, 0.001 * abs(float(c))):
                 key = (ticker.upper(), d)
                 seen = _seen_conflict_keys()
                 if key not in seen:
@@ -114,12 +127,15 @@ def append_series(ticker, dates, closes, volumes, source, highs=None, lows=None)
                     conflicts += 1
                     with open(CONFLICTS, "a") as handle:
                         handle.write(json.dumps({
-                            "ticker": ticker, "date": d, "archived": rows[d][0],
+                            "ticker": ticker, "date": d, "archived": existing[0],
                             "incoming": float(c), "source": source,
                             "at": datetime.now(timezone.utc).isoformat()}) + "\n")
+            elif len(existing) < 4 and (high is not None or low is not None):
+                rows[d] = [existing[0], existing[1],
+                          round(float(high), 4) if high is not None else None,
+                          round(float(low), 4) if low is not None else None]
+                upgraded += 1
             continue
-        high = highs[index] if index < len(highs) else None
-        low = lows[index] if index < len(lows) else None
         row = [round(float(c), 4), int(v or 0)]
         if high is not None or low is not None:
             row += [round(float(high), 4) if high is not None else None,
@@ -128,7 +144,7 @@ def append_series(ticker, dates, closes, volumes, source, highs=None, lows=None)
         added += 1
     json.dump({"ticker": ticker.upper(), "rows": rows,
                "first_archived": ARCHIVE_START_DATE}, open(path, "w"))
-    return added, conflicts
+    return added, conflicts, upgraded
 
 
 def load_series(ticker, directory=None):
@@ -196,9 +212,9 @@ def seed_from_disk():
         if not f.endswith(".json"):
             continue
         d = json.load(open(os.path.join(cache, f)))
-        added, _ = append_series(d["symbol"], d["dates"], d["closes"],
-                                 d.get("volumes", [0] * len(d["dates"])),
-                                 "backtest_cache_seed")
+        added, _conflicts, _upgraded = append_series(
+            d["symbol"], d["dates"], d["closes"],
+            d.get("volumes", [0] * len(d["dates"])), "backtest_cache_seed")
         total_added += added
         total_tickers += 1
     dead = os.path.join(REPO, "research", "audit", "survivorship", "data", "dead_prices")
@@ -207,9 +223,9 @@ def seed_from_disk():
             d = json.load(open(os.path.join(dead, f)))
             if not d.get("dates"):
                 continue
-            added, _ = append_series(d["ticker"], d["dates"], d["closes"],
-                                     d.get("volumes", [0] * len(d["dates"])),
-                                     "dead_prices_seed")
+            added, _conflicts, _upgraded = append_series(
+                d["ticker"], d["dates"], d["closes"],
+                d.get("volumes", [0] * len(d["dates"])), "dead_prices_seed")
             total_added += added
             total_tickers += 1
     record_run({"mode": "seed_from_disk", "tickers": total_tickers,
@@ -273,22 +289,24 @@ def run_daily(yf=None, cache=None, history_fetcher=None):
                         if row.get("ticker")}
     delisted_tickers = _resolvable_delisted_tickers(universe_tickers)
 
-    total_added = total_conflicts = tickers_seen = 0
+    total_added = total_conflicts = total_upgraded = tickers_seen = 0
     for ticker in sorted(universe_tickers | delisted_tickers):
         history = fetch(ticker)
         dates = history.get("dates") or []
         if not dates:
             continue
-        added, conflicts = append_series(
+        added, conflicts, upgraded = append_series(
             ticker, dates, history.get("closes", []),
             history.get("volumes", [0] * len(dates)), "run_daily",
             highs=history.get("highs"), lows=history.get("lows"))
         total_added += added
         total_conflicts += conflicts
+        total_upgraded += upgraded
         tickers_seen += 1
 
     record_run({"mode": "run_daily", "tickers": tickers_seen, "rows_added": total_added,
-                "conflicts": total_conflicts, "universe_tickers": len(universe_tickers),
+                "conflicts": total_conflicts, "rows_upgraded": total_upgraded,
+                "universe_tickers": len(universe_tickers),
                 "delisted_tickers_polled": len(delisted_tickers)})
     return tickers_seen, total_added
 
