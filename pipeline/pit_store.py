@@ -42,9 +42,10 @@ TRACKED_FIELDS = (
     "operating_margin", "cash_conversion", "debt_to_equity", "current_ratio",
     "interest_coverage", "net_debt_to_ebitda", "altman_z", "altman_z_variant",
     "piotroski_f", "accruals_ratio", "revenue_growth", "earnings_growth", "fcf_growth_3y",
-    "operating_margin_trend", "asset_growth", "earnings_surprise", "net_buyback_yield",
-    "stock_comp_to_revenue", "capex_to_depreciation", "days_sales_outstanding_trend",
-    "inventory_days_trend", "short_percent_of_float", "days_to_cover", "beta",
+    "operating_margin_trend", "gross_margin_trend", "asset_growth", "earnings_surprise",
+    "net_buyback_yield", "stock_comp_to_revenue", "capex_to_depreciation",
+    "days_sales_outstanding_trend", "inventory_days_trend", "inventory_correction_flag",
+    "short_percent_of_float", "days_to_cover", "beta",
     "analyst_rating", "analyst_target_upside", "analyst_count", "statement_periods",
     "average_dollar_volume",
     # Expectation change. Yahoo serves only today's view of every one of these, so a later

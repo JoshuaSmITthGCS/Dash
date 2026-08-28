@@ -26,6 +26,10 @@
     },
     "_comment": "Enabled 2026-08-28 for a live validation run against real SEC EDGAR data, from an environment with real network access (this repo's own sandbox blocks sec.gov outright -- see pipeline/filing_extraction.py's module docstring). pipeline/filing_extraction.py parses 8-K Exhibit 99.x earnings releases for operating KPIs (same-store sales, NIM, ARPU, AUM, same-store NOI, book-to-bill, NRR, capacity utilization/factor, rate base, allowed ROE, etc.) that are not standardized XBRL facts. Every reading is still tagged unaudited and stays out of the scored composite regardless of this flag -- see row.filing_extracted_metrics and capability_status.filing_extracted_operating_kpis in the published output for per-run coverage. Check minimum_coverage is actually cleared, per metric, against a real run before trusting any of this in a published or scored context. Routing uses pipeline/filing_extraction.py's own filing_extraction_group(), independent of canonical_metrics.classify_profile -- profile names here (capital_markets, aerospace_defense, saas, independent_power_producer) are that function's groups, not live-scoring business profiles."
   },
+  "return_attribution": {
+    "months_back": 12,
+    "_comment": "pipeline/return_attribution.py splits each company's realized return over the trailing months_back into re-rating (multiple change) vs implied delivery (fundamental growth), computed only from this ticker's own pit_store price/multiple history -- no new data, no network call. Reads as None until pit_store has accumulated at least months_back of history for that ticker. row.return_attribution is informational/display only, same as market_implied_growth and the sector metrics -- never a score input."
+  },
   "reverse_dcf": {
     "risk_free_rate": 0.04,
     "equity_risk_premium": 0.045,

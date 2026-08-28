@@ -40,12 +40,48 @@
       "critical_metrics": ["cash_runway_months", "annual_cash_burn", "pipeline_stage", "binary_event_risk"]
     },
     "semiconductor": {
-      "replacement_metrics": ["gross_margin_cycle", "inventory_cycle"],
+      "replacement_metrics": ["gross_margin_trend", "inventory_correction_flag", "book_to_bill_ratio", "capacity_utilization"],
       "critical_metrics": []
     },
     "other_pre_profit": {
       "replacement_metrics": ["gross_margin_and_runway", "cash_runway_months", "annual_cash_burn", "dilution_rate"],
       "critical_metrics": ["cash_runway_months", "annual_cash_burn"]
+    },
+    "insurance_broker": {
+      "replacement_metrics": ["organic_revenue_growth", "ebitda_margin", "forward_pe", "revenue_retention"],
+      "critical_metrics": []
+    },
+    "managed_care_insurer": {
+      "replacement_metrics": ["medical_loss_ratio", "membership_growth", "premium_yield", "admin_expense_ratio", "forward_pe", "return_on_equity"],
+      "critical_metrics": []
+    },
+    "midstream_mlp": {
+      "replacement_metrics": ["distributable_cash_flow", "distribution_coverage_ratio", "fee_based_revenue_percent", "ev_to_ebitda"],
+      "critical_metrics": []
+    },
+    "airline": {
+      "replacement_metrics": ["ev_to_ebitdar", "load_factor", "revenue_per_available_seat_mile", "cost_per_available_seat_mile_ex_fuel", "price_to_tangible_book"],
+      "critical_metrics": []
+    },
+    "aerospace_defense": {
+      "replacement_metrics": ["book_to_bill_ratio", "backlog_value", "free_cash_flow_conversion", "ev_to_ebitda"],
+      "critical_metrics": []
+    },
+    "capital_markets": {
+      "replacement_metrics": ["return_on_tangible_common_equity", "price_to_tangible_book", "forward_pe"],
+      "critical_metrics": []
+    },
+    "asset_manager": {
+      "replacement_metrics": ["assets_under_management", "net_flows_organic_growth", "fee_rate_bps", "forward_pe"],
+      "critical_metrics": []
+    },
+    "homebuilder": {
+      "replacement_metrics": ["net_new_orders", "backlog_value", "cancellation_rate", "price_to_book", "forward_pe"],
+      "critical_metrics": []
+    },
+    "independent_power_producer": {
+      "replacement_metrics": ["capacity_factor", "spark_spread", "contracted_revenue_percent", "ev_to_ebitda"],
+      "critical_metrics": []
     }
   },
   "ticker_overrides": {

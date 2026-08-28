@@ -230,6 +230,8 @@ def derive_margins(income):
     gross = line(income, "gross_profit")
     now = ratio(at(operating), at(revenue))
     prior = ratio(at(operating, 1), at(revenue, 1))
+    gross_now = ratio(at(gross), at(revenue))
+    gross_prior = ratio(at(gross, 1), at(revenue, 1))
     current_revenue, prior_revenue = at(revenue), at(revenue, 1)
     revenue_delta = None
     if current_revenue is not None and prior_revenue is not None:
@@ -249,7 +251,14 @@ def derive_margins(income):
     return {
         "operating_margin": rounded(now),
         "operating_margin_trend": rounded(None if now is None or prior is None else now - prior),
-        "gross_margin": rounded(ratio(at(gross), at(revenue))),
+        "gross_margin": rounded(gross_now),
+        # Semiconductor/cyclical KPI-layer research: the gross-margin bridge (level and
+        # direction) is the single most decision-relevant read for a memory/foundry name,
+        # where margin expansion is priced-and-mix driven, not volume driven -- see
+        # docs/MODEL-CARD.md's sector-metrics section. Same construction as
+        # operating_margin_trend above, just on the gross line.
+        "gross_margin_trend": rounded(
+            None if gross_now is None or gross_prior is None else gross_now - gross_prior),
         "incremental_margin": rounded(incremental),
         "revenue_change_fraction": rounded(change_fraction),
         "incremental_margin_unavailable_reason": (
@@ -451,7 +460,30 @@ def derive_working_capital_trends(income, balance):
         "days_sales_outstanding_trend": drift(dso, dso_prior),
         "inventory_days": rounded(inventory_days, 1),
         "inventory_days_trend": drift(inventory_days, inventory_days_prior),
+        "inventory_correction_flag": inventory_correction_flag(drift(inventory_days, inventory_days_prior)),
     }
+
+
+# Rule-of-thumb bands on the year-over-year drift, not the absolute day count: what counts as
+# "lean" inventory is sector-relative (120 days is lean for a memory chipmaker mid-shortage,
+# elevated for a grocer), and this pipeline has no sector-relative inventory-days percentile
+# built yet. The direction and magnitude of the drift is the part every cyclical KPI-layer
+# writeup (semis, autos, chemicals, retail) actually leans on: inventory building for several
+# consecutive periods is the standard channel-correction tell regardless of the sub-industry's
+# absolute day-count norm.
+INVENTORY_LEAN_TREND = -0.10
+INVENTORY_ELEVATED_TREND = 0.15
+
+
+def inventory_correction_flag(inventory_days_trend):
+    """"lean" / "normal" / "elevated", or None when the trend itself is unavailable."""
+    if inventory_days_trend is None:
+        return None
+    if inventory_days_trend <= INVENTORY_LEAN_TREND:
+        return "lean"
+    if inventory_days_trend >= INVENTORY_ELEVATED_TREND:
+        return "elevated"
+    return "normal"
 
 
 # ---------------- capital allocation ----------------
@@ -705,7 +737,7 @@ COVERAGE_KEYS = (
     "operating_margin_trend", "days_sales_outstanding_trend", "net_buyback_yield",
     "stock_comp_to_revenue", "capex_to_depreciation", "asset_growth", "ev_to_ebitda",
     "ev_to_ebit", "ev_to_sales", "ev_to_fcf", "price_to_tangible_book",
-    "return_on_tangible_common_equity", "funds_from_operations",
+    "return_on_tangible_common_equity", "funds_from_operations", "gross_margin_trend",
 )
 
 # Every statement-derived metric the legacy scorer weighs (pipeline/config/settings.json's
@@ -721,6 +753,7 @@ EXTENDED_METRIC_UNITS = {
     "price_to_ffo": "multiple",
     "free_cash_flow": "usd",
     "total_debt": "usd",
+    "gross_margin_trend": "decimal",
     "ev_to_ebitda": "multiple",
     "ev_to_ebit": "multiple",
     "ev_to_fcf": "multiple",

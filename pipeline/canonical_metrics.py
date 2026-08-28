@@ -105,6 +105,17 @@ def classify_profile(snapshot):
         return "reit"
     if "bank" in industry:
         return "bank"
+    # Ahead of the generic insurance branch: "Insurance Brokers" contains "insurance" and was
+    # falling into diversified_insurer, which assumes underwriting risk and investment float a
+    # broker never carries -- a real misclassification, not just a missing profile.
+    if "broker" in industry and "insurance" in text:
+        return "insurance_broker"
+    # Also ahead of the generic insurance branch: a health-plan filer's industry string is
+    # typically "Healthcare Plans", which contains no "insurance" substring at all, but some
+    # providers do label it "Health Insurance" -- checked here so either spelling lands on the
+    # managed-care profile rather than (in the second case) diversified_insurer.
+    if "healthcare plan" in industry or "managed care" in text or "health insurance" in text:
+        return "managed_care_insurer"
     if "insurance" in text:
         if "life" in industry:
             return "life_insurer"
@@ -112,9 +123,29 @@ def classify_profile(snapshot):
             return "property_casualty_insurer"
         return "diversified_insurer"
     if "utilit" in sector:
+        # Merchant/independent power producers sit in the same GICS sector as regulated
+        # utilities but earn nothing like a rate base -- checked first so "Utilities" alone
+        # doesn't default them into the regulated profile.
+        if "independent power" in industry or "power producer" in industry:
+            return "independent_power_producer"
         return "utility"
+    # Ahead of the generic commodity-producer branch: "Oil & Gas Midstream" contains "gas" and
+    # would otherwise be caught by the oil/gas check below, which assumes upstream/production
+    # economics a pipeline-and-storage tolling business does not have.
+    if "midstream" in industry or "pipeline" in industry:
+        return "midstream_mlp"
     if any(term in text for term in ("oil", "gas", "mining", "gold", "copper", "steel", "coal")):
         return "commodity_producer"
+    if "airline" in industry:
+        return "airline"
+    if "aerospace" in industry or "defense" in industry:
+        return "aerospace_defense"
+    if "capital markets" in industry or "investment banking" in industry:
+        return "capital_markets"
+    if "asset management" in industry:
+        return "asset_manager"
+    if "residential construction" in industry or "homebuilding" in industry:
+        return "homebuilder"
     # Ahead of the generic profit-margin branches: a semiconductor company's capex and
     # inventory cycles are not readable through industrial cutoffs regardless of whether it
     # is currently profitable.

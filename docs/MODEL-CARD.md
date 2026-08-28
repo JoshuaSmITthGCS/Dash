@@ -93,12 +93,45 @@ composite is still an unvalidated scoring change, and "Validation, not backtesti
 gate in this repository. Promoting either metric into the scored composite needs its own
 `ic_harness.py` read once enough PIT history accumulates, exactly like any other scoring change.
 
-The remaining sub-industry multiples from the KPI-registry research this section responds to —
-MLR for managed care, distribution coverage for midstream, EV/EBITDAR for airlines, EV/rate-base
-and allowed-vs-earned ROE for regulated utilities, EV/AUM for asset managers — are not
-implemented. Several (AUM, rate base, RevPAR, dayrates) are disclosed in 8-K supplementals and
-MD&A prose rather than tagged in XBRL, so computing them is a supplemental-parsing project, not
-a config change; see `research/valuesignal-kpi-thematic-methodology.md` for the full registry.
+The remaining sub-industry *replacement multiples* from the KPI-registry research — MLR for
+managed care, distribution coverage for midstream, EV/EBITDAR for airlines, EV/rate-base and
+allowed-vs-earned ROE for regulated utilities, EV/AUM for asset managers — are still not
+computed as real values. Several (AUM, rate base, RevPAR, dayrates) are disclosed in 8-K
+supplementals and MD&A prose rather than tagged in XBRL, so computing them is a
+supplemental-parsing project (see "Operating-KPI text extraction" below), not a config change;
+see `research/valuesignal-kpi-thematic-methodology.md` for the full registry.
+
+## Sub-industry profiles: the suppression side, fully implemented
+
+Suppression is a separate question from replacement-metric computation, and it is now complete
+for the sub-industries the KPI-registry research calls out. `canonical_metrics.py::classify_profile`
+gained eight new business profiles this pass — `insurance_broker`, `managed_care_insurer`,
+`midstream_mlp`, `airline`, `aerospace_defense`, `capital_markets`, `asset_manager`,
+`homebuilder` — plus `independent_power_producer` split out from `utility` (a merchant/IPP
+earns nothing like a rate base and was previously indistinguishable from a regulated utility).
+Each has real `applicability_matrix.json` suppression rules — `capital_markets` and
+`managed_care_insurer` inherit `bank`'s and `property_casualty_insurer`'s rule sets respectively
+via the existing `$inherits` mechanism, since both are the same underlying valuation problem
+(leveraged-financial and insurer accounting, respectively) with a different label.
+
+One real bug this closed: `"Insurance Brokers"` contains the substring `"insurance"` and was
+landing on `diversified_insurer` — a profile that assumes underwriting risk and investment
+float a broker never carries. It is now its own profile, checked ahead of the generic insurance
+branch (`test_scorer.py::NewSubIndustryProfileTests::test_insurance_broker_no_longer_misrouted_into_diversified_insurer`
+is the regression test). A second bug surfaced and was fixed while wiring these in:
+`metric_registry.json`'s per-metric `applicability_profiles` declarations are a second,
+independent suppression authority (`canonical_metrics.applicability_for` checks both the
+`applicability_matrix.json` rule *and* this registry-declared list, and treats a profile
+*absent* from either as suppressed) — the eight new profiles were absent from every such list,
+which meant nearly the entire generic metric set was silently suppressed for them regardless of
+what `applicability_matrix.json` said. All nine lists in `metric_registry.json` now include the
+nine new profiles.
+
+The specialized *replacement* multiples for these profiles (EV/AUM, MLR, EV/EBITDAR, distribution
+coverage, book-to-bill as a scored input) remain unimplemented for the same data-availability
+reason as the paragraph above — `business_profiles.json`'s `replacement_metrics` for these
+profiles name the target multiple, same as the pre-existing bank/REIT entries did before this
+session, as a documented intent rather than a computed value.
 
 ## Thematic exposure: disclosure over narrative
 
@@ -140,10 +173,93 @@ are informational fields (PIT-logged from this change), not part of the scored c
 the same reason ROTCE and FFO are not yet: a brand-new signal has no prospective IC history to
 validate against.
 
-Multiple-expansion decomposition (splitting realized return into delivery vs. re-rating) and
-theme-maturity/crowding labeling (return dispersion, pairwise correlation, supplier book-to-bill)
-from the same research are not implemented — both need new modules and are tracked as follow-on
-work.
+## Momentum-free "priced in" read: multiple-expansion decomposition
+
+`pipeline/return_attribution.py` adds the other half of the source research's "priced in"
+toolkit: splitting a company's realized return over a trailing window into re-rating (multiple
+change) and delivery (implied fundamental growth). It uses the identity
+`Price = Multiple x Fundamental`, so `price_now/price_then = (multiple_now/multiple_then) x
+(fundamental_now/fundamental_then)` — solving that for the second factor gives the fundamental
+growth implied by the re-rating the market actually applied, without ever needing the
+fundamental (EPS, FFO, ARR) itself. Only two archived point-in-time series per ticker are
+needed — price and one valuation multiple (`forward_pe` generally, `price_to_ffo` for REITs) —
+both of which `pipeline/pit_store.py` already logs every run.
+
+This is a return-*attribution* read, explaining a realized move after the fact, not a forward
+momentum signal: it is never wired into `pipeline/themes.py`'s per-company exposure scoring,
+where a price-derived signal is rejected outright by `validate_theme()`. `row.return_attribution`
+(`total_return`, `multiple_change`, `delivery_growth`, `mostly_re_rating`) is informational only,
+reading `None` until `pit_store` has accumulated at least `settings.json`'s
+`return_attribution.months_back` (12) of history for a given ticker — like every other
+new field here, it has no prospective IC history yet, so it is not a score input.
+
+## Theme maturity and crowding: return dispersion and pairwise correlation
+
+`pipeline/theme_trend.py` already computed a theme-level "is this actually moving, and is it
+already priced" read (direction, breadth, leadership concentration, and a valuation-percentile
+`crowding` reading) — architecture this session did not build, kept rigidly separate from
+`themes.py`'s per-company exposure scoring so a price-derived group statistic can never leak
+into an individual company's score. What that module did not yet compute was the two signals
+the source research's maturity section specifically calls for: **return dispersion** (do
+members' returns still differ, or is everything moving together) and **pairwise correlation**
+(the more direct co-movement read). Both are now in `theme_trend.py::maturity_reading`, called
+from `evaluate_theme()` and published as the trend block's new `maturity` key:
+
+- `return_dispersion` — population stdev of members' `relative_strength` (already computed per
+  member for the existing `direction`/`breadth` readings; no new data).
+- `average_pairwise_correlation` — mean pairwise Pearson correlation of members' trailing
+  60-trading-day daily returns, computed from the same `history.closes` series `theme_trend.py`
+  already reads for its moving-average checks. Degrades to `None` below `MINIMUM_MATURITY_MEMBERS`
+  (5) or when a member's price history is too short (30 of the requested 60 days minimum).
+- `label` — `"crowded"` (correlation ≥ 0.60), `"differentiated"` (≤ 0.25), or `"broadening"`
+  in between; stated bands, not fitted parameters, on the same principle as this module's
+  existing `CROWDED_EXPENSIVENESS` convention.
+
+Not implemented from the same maturity section: supplier/theme-wide book-to-bill as an explicit
+crowding signal (the `backlog_growth` theme-exposure signal already exists per company but isn't
+aggregated as a maturity read) and a thematic-ETF-launch counter-signal (no launch-date dataset
+exists in this pipeline).
+
+## Validating new metrics: a candidate-metric IC harness
+
+`pipeline/validation/ic_harness.py` only grades the live composite score's forward-return IC —
+`_metric_scores()` reads its candidate list from `settings.json`'s `fundamentals.metric_weights`,
+so a metric that isn't scored (every new field this pass added) was simply invisible to it. That
+was a real gap: this repository's own rule is that a scoring change ships only if it improves
+out-of-sample IC after deflation, but there was no way to *measure* that IC for something not
+already in the score — a chicken-and-egg the "informational field, promoted only after
+validation" pattern above depends on actually being resolvable someday.
+
+New `pipeline/validation/candidate_metric_ic.py` closes that gap: the same rank-IC/ICIR
+statistics as `ic_harness.py` (it reuses that module's `_ic_summary` directly), computed instead
+from raw `pit_store` observation history for any two fields — a candidate metric and price — so
+it needs no live score at all. A period is scored only from tickers actually observed at that
+exact date, so a stale reading is never silently reused across periods a name wasn't refreshed
+in. Run it directly: `python pipeline/validation/candidate_metric_ic.py --metric
+return_on_tangible_common_equity`.
+
+Run against this repository's real committed `pit_store` data, every candidate (`return_on_
+tangible_common_equity`, `price_to_ffo`, `gross_margin_trend`, `market_implied_growth`) reports
+**0 periods, accumulating** — expected and correct, since these fields were only added this
+pass and have no history yet. This is the harness that will answer the promotion question once
+enough pipeline runs have accumulated PIT history for them; it does not answer it today, and
+this pass makes no promotion claim for any of them.
+
+## Gross margin trend and the inventory correction flag
+
+Two smaller additions from the companion semis/SaaS/hardware worked-examples research (Micron,
+Datadog, Dell): `fundamentals_extended.py::derive_margins` now computes `gross_margin_trend`
+(this year's gross margin less last year's, the same construction as the existing
+`operating_margin_trend`) — the semiconductor gross-margin bridge that research calls the single
+most decision-relevant semis read is, at minimum, now a real level-and-direction number rather
+than absent. `derive_working_capital_trends` now also emits `inventory_correction_flag`
+(`"lean"` / `"normal"` / `"elevated"`), a heuristic on the year-over-year drift in
+`inventory_days_trend` (≤ -10% lean, ≥ +15% elevated) rather than the absolute day count, since
+what counts as lean inventory is sector-relative (120 days is lean for a memory chipmaker
+mid-shortage, elevated for a grocer) and this pipeline has no sector-relative inventory-days
+percentile built. Both are PIT-logged; both are informational, same reasoning as everything
+above. Capex intensity (capex/revenue) and a semiconductor cycle-stage tag
+(trough/peak-margin/correction) from the same research are not implemented.
 
 ## Operating-KPI text extraction (off by default)
 

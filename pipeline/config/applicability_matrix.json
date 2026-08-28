@@ -11,7 +11,16 @@
     "commodity_producer",
     "profitable_biotechnology",
     "pre_profit_biotechnology",
-    "other_pre_profit"
+    "other_pre_profit",
+    "insurance_broker",
+    "managed_care_insurer",
+    "midstream_mlp",
+    "airline",
+    "aerospace_defense",
+    "capital_markets",
+    "asset_manager",
+    "homebuilder",
+    "independent_power_producer"
   ],
   "rules": {
     "general": {},
@@ -325,13 +334,163 @@
     "semiconductor": {
       "capex_to_depreciation": [
         "suppressed",
-        "gross_margin_cycle",
+        "gross_margin_trend",
         "A low capex-to-depreciation ratio is structural for a fabless designer that outsources fabrication, not evidence of under-investment. Distinguishing fabless from integrated manufacturers requires a filing parse this pipeline does not yet do, so the interpretation is suppressed for the whole industry rather than applied wrongly to part of it."
       ],
       "inventory_days_trend": [
         "suppressed",
-        "inventory_cycle",
+        "inventory_correction_flag",
         "Semiconductor inventory swings with the industry cycle and customer build plans; a rising trend is not an accounting-quality signal."
+      ]
+    },
+    "insurance_broker": {
+      "price_to_book": [
+        "suppressed",
+        "forward_pe",
+        "Insurance brokers earn commission and fee income and take no underwriting risk or investment float; acquisition-driven goodwill in this roll-up-heavy sub-industry makes book value uninformative -- valued like an asset-light services business, not an underwriter."
+      ],
+      "altman_z": [
+        "suppressed",
+        "forward_pe",
+        "Distress model calibrated for asset-heavy manufacturers; a fee-based broker carries no inventory or heavy fixed assets for it to read correctly."
+      ],
+      "inventory_days_trend": [
+        "suppressed",
+        null,
+        "Insurance brokers hold no inventory."
+      ],
+      "days_sales_outstanding_trend": [
+        "suppressed",
+        null,
+        "Commission and fee income does not generate a receivable-days signal comparable to industrial DSO."
+      ]
+    },
+    "managed_care_insurer": {
+      "$inherits": "property_casualty_insurer",
+      "combined_ratio": [
+        "suppressed",
+        "medical_loss_ratio",
+        "Combined ratio is a P&C underwriting construct; medical loss ratio (health-plan costs over premium revenue) is the health-insurer analog."
+      ]
+    },
+    "midstream_mlp": {
+      "forward_pe": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Accelerated depreciation on an asset-intensive pipeline/storage base makes P/E nearly meaningless for midstream; EV/EBITDA is the sector-standard multiple."
+      ],
+      "peg": [
+        "suppressed",
+        "ev_to_ebitda",
+        "PEG compounds the same forward-P/E distortion, on the same grounds as forward_pe above."
+      ],
+      "free_cash_flow_yield": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Growth capex depresses FCF during the build phase; EV/EBITDA and distribution coverage (not yet computed by this pipeline) are the standard midstream reads, not FCF yield."
+      ],
+      "current_ratio": [
+        "suppressed",
+        null,
+        "Midstream working capital is not the liquidity signal it is for an industrial company; leverage (net_debt_to_ebitda) and interest coverage carry that read instead."
+      ]
+    },
+    "airline": {
+      "forward_pe": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Airlines are a textbook peak-earnings/trough-multiple cyclical; EV/EBITDA on mid-cycle margins is preferred to a point-in-time P/E, which reads cheapest exactly at the top of the cycle."
+      ],
+      "peg": [
+        "suppressed",
+        "ev_to_ebitda",
+        "PEG compounds the same cyclical forward-P/E distortion, on the same grounds as forward_pe above."
+      ],
+      "current_ratio": [
+        "suppressed",
+        null,
+        "Airlines run structurally low current ratios by design -- advance ticket sales are a current liability that funds operations -- so this is not the liquidity signal it is for a typical industrial company."
+      ]
+    },
+    "aerospace_defense": {
+      "current_ratio": [
+        "suppressed",
+        null,
+        "Long-cycle program working capital (progress billings, customer advances) is not the short-term liquidity signal current ratio represents for a typical industrial company."
+      ],
+      "peg": [
+        "suppressed",
+        "forward_pe",
+        "Program-timing lumpiness in trailing growth breaks the PEG denominator; forward P/E against backlog-supported growth reads better."
+      ]
+    },
+    "capital_markets": {
+      "$inherits": "bank",
+      "gross_profits_to_assets": [
+        "suppressed",
+        "return_on_equity",
+        "Capital-markets firms report no gross-profit line; trading and underwriting revenue over risk capital is the comparable read, approximated here by return on equity pending a computed net-revenue-per-risk-capital metric."
+      ]
+    },
+    "asset_manager": {
+      "price_to_book": [
+        "suppressed",
+        "forward_pe",
+        "Asset managers are asset-light and fee-driven; earnings power (P/E) is the standard read, not balance-sheet book value."
+      ],
+      "net_debt_to_ebitda": [
+        "suppressed",
+        null,
+        "Leverage is a minor input to an asset-light, fee-revenue business model."
+      ],
+      "current_ratio": [
+        "suppressed",
+        null,
+        "Working-capital liquidity is not the balance-sheet risk that matters here; AUM, net flows, and fee-rate stability are (not yet computed by this pipeline beyond the unaudited filing-extraction layer)."
+      ],
+      "gross_profits_to_assets": [
+        "suppressed",
+        null,
+        "No meaningful gross-profit-to-assets frame for a fee-based, asset-light business."
+      ]
+    },
+    "homebuilder": {
+      "altman_z": [
+        "suppressed",
+        "price_to_book",
+        "Heavy land and work-in-process inventory carrying, plus structurally elevated leverage through the build cycle, break the industrial-manufacturer calibration Altman's model assumes."
+      ],
+      "free_cash_flow_yield": [
+        "suppressed",
+        "price_to_book",
+        "Cash flow moves inversely to growth for a homebuilder: land and work-in-process spend consumes cash fastest exactly when order growth (and future revenue) is strongest, so FCF yield reads worst at the best points in the cycle."
+      ],
+      "ev_to_fcf": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Same cash-flow-inverted-to-growth distortion as free_cash_flow_yield above."
+      ],
+      "days_sales_outstanding_trend": [
+        "suppressed",
+        null,
+        "Homebuilder receivables are not a meaningful earnings-quality signal set against work-in-process inventory accounting."
+      ],
+      "accruals_ratio": [
+        "suppressed",
+        null,
+        "Land and work-in-process inventory accounting produces structurally large accruals unrelated to the earnings-quality signal this ratio targets elsewhere."
+      ]
+    },
+    "independent_power_producer": {
+      "forward_pe": [
+        "suppressed",
+        "ev_to_ebitda",
+        "Merchant power prices are commodity-cyclical; a point-in-time P/E is the same peak-earnings/trough-multiple trap it is for other commodity producers."
+      ],
+      "peg": [
+        "suppressed",
+        "ev_to_ebitda",
+        "PEG compounds the same cyclical forward-P/E distortion, on the same grounds as forward_pe above."
       ]
     }
   },

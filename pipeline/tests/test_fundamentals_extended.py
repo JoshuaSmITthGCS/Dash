@@ -93,6 +93,15 @@ class ProfitabilityTests(unittest.TestCase):
         # $100 of new revenue carried $50 of new operating profit.
         self.assertAlmostEqual(margins["incremental_margin"], 0.5, places=4)
 
+    def test_gross_margin_trend(self):
+        margins = fx.derive_margins(INCOME)
+        self.assertAlmostEqual(margins["gross_margin"], 0.6, places=4)
+        self.assertAlmostEqual(margins["gross_margin_trend"], 600 / 1000 - 520 / 900, places=4)
+
+    def test_gross_margin_trend_is_none_without_a_prior_period(self):
+        one_period = {"periods": ["2025"], "rows": {"Total Revenue": [1000.0], "Gross Profit": [600.0]}}
+        self.assertIsNone(fx.derive_margins(one_period)["gross_margin_trend"])
+
 
 class HealthTests(unittest.TestCase):
     def test_interest_coverage(self):
@@ -190,6 +199,22 @@ class AccountingQualityTests(unittest.TestCase):
         # Receivables grew slower than revenue, so days outstanding fell.
         self.assertLess(trends["days_sales_outstanding_trend"], 0)
         self.assertIsNotNone(trends["inventory_days_trend"])
+        # A ~2.5% drift on this fixture sits inside the neutral band.
+        self.assertEqual(trends["inventory_correction_flag"], "normal")
+
+    def test_inventory_correction_flag_lean_and_elevated(self):
+        lean = dict(BALANCE)
+        lean["rows"] = {**BALANCE["rows"], "Inventory": [50.0, 80.0, 76.0, 74.0]}
+        self.assertEqual(fx.derive_working_capital_trends(INCOME, lean)["inventory_correction_flag"], "lean")
+
+        elevated = dict(BALANCE)
+        elevated["rows"] = {**BALANCE["rows"], "Inventory": [110.0, 80.0, 76.0, 74.0]}
+        self.assertEqual(
+            fx.derive_working_capital_trends(INCOME, elevated)["inventory_correction_flag"], "elevated")
+
+    def test_inventory_correction_flag_is_none_without_a_trend(self):
+        no_prior = {"periods": ["2025"], "rows": {"Cost Of Revenue": [400.0], "Inventory": [80.0]}}
+        self.assertIsNone(fx.derive_working_capital_trends(INCOME, no_prior)["inventory_correction_flag"])
 
 
 class CapitalAllocationTests(unittest.TestCase):

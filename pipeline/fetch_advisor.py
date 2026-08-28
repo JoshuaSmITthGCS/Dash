@@ -25,6 +25,7 @@ from fundamentals_extended import (derive_extended, earnings_surprise_rows, exte
 from insider_signal import summarize as summarize_insiders
 from reverse_dcf import derive_market_implied_growth
 from filing_extraction import collect_operating_kpi_signals, filing_extraction_group
+import return_attribution
 from concentration_risk import summarize as summarize_concentration
 from geographic_exposure import summarize as summarize_geography
 from institutional_ownership import decay as institutional_decay
@@ -63,6 +64,7 @@ UNIVERSE = load_json("advisor_universe.json", from_config=True) or {}
 DEFAULT_SYMBOLS = tuple(UNIVERSE.get("symbols", ()))
 PUBLISH_LIMIT = int(UNIVERSE.get("publish_limit", 20))
 REVERSE_DCF_ASSUMPTIONS = SETTINGS.get("reverse_dcf", {})
+RETURN_ATTRIBUTION_MONTHS_BACK = int(SETTINGS.get("return_attribution", {}).get("months_back", 12))
 NEWS_CONFIG = SETTINGS["news_intelligence"]
 # The event layer reuses the article annotation vocabulary (source tiers, event-type markers,
 # title-similarity threshold) and adds materiality, per-event half-lives and horizon settings
@@ -2069,6 +2071,17 @@ def run():
         # Display-only, unaudited, off by default -- see settings.json's filing_extraction
         # block. Never a champion-score input; not even a challenger one yet.
         row["filing_extracted_metrics"] = filing_extraction_signals.get(symbol)
+        # Multiple-expansion decomposition (pipeline/return_attribution.py): how much of this
+        # company's realized return over the window was re-rating vs. implied fundamental
+        # delivery, computed purely from this ticker's own archived price/multiple history --
+        # no new data, no network call, and None until pit_store has accumulated a long enough
+        # baseline. Informational only, same reasoning as market_implied_growth above.
+        return_attribution_multiple = ("price_to_ffo"
+                                       if classify_profile(context["snapshot"]) == "reit"
+                                       else "forward_pe")
+        row["return_attribution"] = return_attribution.attribute_return_from_history(
+            symbol, multiple_field=return_attribution_multiple,
+            months_back=RETURN_ATTRIBUTION_MONTHS_BACK, pit_store=pit_store)
         # Expectation change - the leg the catalyst and analyst-conviction models were missing.
         # The previous run's consensus target is the only comparison point that exists for
         # target drift: Yahoo serves today's view and nothing else, which is precisely why
