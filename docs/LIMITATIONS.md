@@ -47,31 +47,42 @@ more depth.
   inventory/DSO days) that are actively misleading for that profile; for those four, the
   replacement KPIs the doc's suppression-matrix framing calls for remain unimplemented, same
   as the rest of this group.
-- **A free-text extraction path now exists (`pipeline/filing_text.py`, `pipeline/operating_kpis.py`,
-  `pipeline/collect_operating_kpis.py`), crossing the boundary the two limitations above
-  describe, for exactly one metric: same-store/comparable sales growth for retail and
-  restaurants, sourced from an 8-K Item 2.02 filing's Exhibit 99.x earnings-release text
-  (reusing the accessions `pipeline/collect_earnings_releases.py` already collects) rather
-  than XBRL. It is standalone and opt-in — a `collect_*.py` script in the existing
-  `collect_estimates.py`/`collect_earnings_releases.py` pattern, not part of
-  `fetch_advisor.py`'s scheduled run — and it is **not wired into scoring**: no
-  `comparable_sales_growth` entry exists in `metric_registry.json` or
-  `settings.json`'s `fundamentals.metric_weights` yet, on purpose. The reason is specific,
-  not general caution: this was built in a sandboxed environment with no network access to
-  SEC EDGAR (`www.sec.gov`/`data.sec.gov` both blocked at the proxy), so the extraction
-  patterns in `operating_kpis.py` — which sector and restaurant earnings releases phrase
-  same-store sales in a small, well-known set of conventions ("comparable store sales
-  increased X%", "same-store sales of (X)%", etc.) — were written from that documented
-  convention and unit-tested against synthetic text, but **have never been run against a
-  single real filing**. `pipeline/collect_operating_kpis.py --report` after a run with real
-  SEC EDGAR access (any normal CI/scheduled environment has this) reports the match rate;
-  wiring the store into scoring is the next step once that rate is known, not before — the
-  same `>80% coverage before activating a KPI in production ranking` bar the research brief
-  itself proposes. Extending this to the rest of the sector-KPI list (ARPU/churn, MAU/DAU,
-  ARR/NRR, rate base, capacity factor, book-to-bill, AFFO, and the rest) is now a
-  bounded, well-defined follow-up per metric — a new phrasing pattern in
-  `operating_kpis.py`, validated the same way — not a new architecture each time, but none
-  of them are implemented.
+- **A free-text extraction path now exists (`pipeline/filing_text.py` plus seven
+  `pipeline/operating_kpis*.py` modules and their `pipeline/collect_operating_kpis*.py`
+  collectors), crossing the boundary the two limitations above describe, for seven sectors'
+  worth of operating KPIs, each sourced from an 8-K Item 2.02 filing's Exhibit 99.x
+  earnings-release text (reusing the accessions `pipeline/collect_earnings_releases.py`
+  already collects) rather than XBRL:
+
+  | Sector | Module | Metric(s) |
+  |---|---|---|
+  | Retail / restaurants | `operating_kpis.py` | `comparable_sales_growth` |
+  | Telecom | `operating_kpis_telecom.py` | `postpaid_phone_churn_rate`, `postpaid_phone_arpu` |
+  | Media / internet | `operating_kpis_media.py` | `monthly_active_users`, `daily_active_users` |
+  | SaaS | `operating_kpis_saas.py` | `annual_recurring_revenue`, `net_revenue_retention_rate` |
+  | REITs | `operating_kpis_reit_affo.py` | `affo_per_share` (headline figure as stated, not recomputed — distinct from `fundamentals_extended.derive_reit_ffo`'s structural, XBRL-based simplified FFO) |
+  | Semiconductors / aerospace-defense | `operating_kpis_semi_aerospace.py` | `book_to_bill_ratio` |
+  | Asset managers / broker-dealers | `operating_kpis_asset_manager.py` | `assets_under_management`, `net_flows` |
+
+  Each collector is standalone and opt-in — the `collect_*.py` pattern
+  `collect_estimates.py`/`collect_earnings_releases.py` already use, not part of
+  `fetch_advisor.py`'s scheduled run — with its own `pipeline/config/operating_kpi_universe*.json`
+  scoping it to that sector's real tickers in the current universe. All seven are **not wired
+  into scoring**: no entry for any of these metrics exists in `metric_registry.json` or
+  `settings.json`'s `fundamentals.metric_weights` yet, on purpose. The reason is specific, not
+  general caution: every one of these was built in a sandboxed environment with no network
+  access to SEC EDGAR (`www.sec.gov`/`data.sec.gov` both blocked at the proxy), so every
+  extraction pattern was written from documented, well-known earnings-release phrasing
+  conventions and unit-tested against synthetic text, but **none has been run against a single
+  real filing**. Each `collect_operating_kpis*.py --report` after a run with real SEC EDGAR
+  access (any normal CI/scheduled environment has this) reports that module's match rate;
+  wiring a given metric's store into scoring is the next step once its rate is known, not
+  before, per-metric — the same `>80% coverage before activating a KPI in production ranking`
+  bar the research brief itself proposes. Rate base/allowed-ROE (utilities) and capacity
+  factor/spark spread (independent power producers) remain unimplemented: both live more in
+  regulatory rate-case filings and operating-data tables than in earnings-release prose, a
+  meaningfully different and harder extraction problem than the seven above, and were
+  deliberately not attempted rather than shipped at low confidence.
 
 ## Validation
 
