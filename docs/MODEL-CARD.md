@@ -145,6 +145,37 @@ theme-maturity/crowding labeling (return dispersion, pairwise correlation, suppl
 from the same research are not implemented — both need new modules and are tracked as follow-on
 work.
 
+## Operating-KPI text extraction (off by default)
+
+A follow-on research pass (`research/valuesignal-remaining-sectors-kpi-research.md`) made the
+same data-gap finding as above its own headline conclusion: same-store sales, net
+interest margin, ARPU, FFO/AFFO, rate base, and nearly every other sub-industry operating KPI
+across all nine remaining GICS sectors live in 8-K Exhibit 99.x earnings-release tables and
+10-Q/10-K MD&A prose, not standardized XBRL — the SEC's own guidance treats "same-store sales
+calculated from GAAP revenues" as an MD&A disclosure, not a tagged financial-statement fact.
+
+`pipeline/filing_extraction.py` is a first, deliberately narrow slice of that: it locates a
+company's Exhibit 99.x documents (reusing `SecEdgarClient.filing_index`/`filing_document`,
+already built for Form 4 and XBRL work), flattens the HTML into lines (one per table row or
+paragraph, so a label and its value stay on the same line), and regex-matches a small metric
+registry — same-store/comparable sales (retail, restaurants), net interest margin and
+efficiency ratio (banks), ARPU and postpaid churn (telecom). Every reading carries
+`"unaudited": True` and surfaces only as a display field (`row.filing_extracted_metrics`) —
+never a score input, matching how reverse_dcf and the new sector metrics above are handled.
+
+**This has not been validated against a single live SEC EDGAR fetch.** It was written in a
+sandboxed session whose outbound network policy blocked `sec.gov` outright (a proxy-level 403,
+not a timeout), so every extraction pattern was checked only against synthetic HTML fixtures
+built from the known structure of real earnings releases — see
+`pipeline/tests/test_filing_extraction.py` and the module's own docstring. `settings.json`'s
+`filing_extraction.enabled` defaults to `false` for exactly this reason; flipping it on should
+wait for a session with real SEC EDGAR access to confirm extraction accuracy against actual
+filings and to check the configured `minimum_coverage` (0.8) is actually cleared before any of
+this is trusted, let alone scored. The remaining six GICS sectors from that research (capital
+markets/asset managers, REIT subtypes, aerospace/industrials book-to-bill, SaaS ARR/NRR/Rule of
+40, semiconductor utilization/inventory, utilities/IPP/chemicals) are not implemented at all —
+this slice covers only the sub-industries that research itself called most template-consistent.
+
 ## Validation state
 
 **No signal has been promoted.** The IC harness has observed 0 of the 24 eligible periods

@@ -8,6 +8,16 @@
     "_comment": "Semantic model and additive advisor artifact schema versions. Every published JSON artifact receives this version plus the producing git SHA, full settings hash, and generation timestamp."
   },
   "normalization_mode": "bands",
+  "filing_extraction": {
+    "enabled": false,
+    "minimum_coverage": 0.8,
+    "limit_per_ticker": 4,
+    "metrics_by_profile": {
+      "general": ["same_store_sales_growth", "average_revenue_per_user", "postpaid_churn"],
+      "bank": ["net_interest_margin", "efficiency_ratio"]
+    },
+    "_comment": "Off by default. pipeline/filing_extraction.py parses 8-K Exhibit 99.x earnings releases for operating KPIs (same-store sales, NIM, ARPU, etc.) that are not standardized XBRL facts -- but it has NOT been validated against a single live SEC EDGAR fetch (see that module's docstring for why: this session's sandbox blocked sec.gov). A human must confirm its extraction against real filings and check minimum_coverage is actually cleared before setting enabled to true. Even once enabled, every reading is tagged unaudited and stays out of the scored composite, same as reverse_dcf and the new sector metrics above."
+  },
   "reverse_dcf": {
     "risk_free_rate": 0.04,
     "equity_risk_premium": 0.045,
