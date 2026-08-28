@@ -251,6 +251,12 @@ def derive_margins(income):
     return {
         "operating_margin": rounded(now),
         "operating_margin_trend": rounded(None if now is None or prior is None else now - prior),
+        # 1 - operating_margin, i.e. (revenue - operating_income) / revenue: the same inputs
+        # already above, just complemented. An honest approximation of railroads'/trucking's
+        # own headline "operating ratio" KPI, not an exact match -- their disclosed figure is
+        # often an adjusted one (excluding one-time items, and for trucking sometimes net of
+        # fuel-surcharge revenue), which this proxy does not attempt to replicate.
+        "operating_ratio_proxy": rounded(None if now is None else 1 - now),
         "gross_margin": rounded(gross_now),
         # Semiconductor/cyclical KPI-layer research: the gross-margin bridge (level and
         # direction) is the single most decision-relevant read for a memory/foundry name,
@@ -509,6 +515,13 @@ def derive_capital_allocation(income, balance, cashflow, market_cap=None):
         "stock_comp_to_revenue": rounded(ratio(abs(stock_comp) if stock_comp else None, revenue)),
         "capex_to_depreciation": rounded(ratio(abs(capex) if capex else None,
                                                abs(depreciation) if depreciation else None), 2),
+        # Capex/revenue -- zero new data (both already fetched here). Discriminates asset-heavy
+        # long-cycle industrials (rail, waste management, marine shipping) from asset-light
+        # service models sharing the same generic profitability ratios; see the profiles that
+        # name it a replacement metric in business_profiles.json for which of those it's useful
+        # for versus not (staffing/consulting: not discriminating, near-zero for the whole
+        # sub-industry; industrial distribution: marginal, most names run similarly low).
+        "capex_intensity": rounded(ratio(abs(capex) if capex else None, revenue)),
     }
 
 
@@ -738,6 +751,7 @@ COVERAGE_KEYS = (
     "stock_comp_to_revenue", "capex_to_depreciation", "asset_growth", "ev_to_ebitda",
     "ev_to_ebit", "ev_to_sales", "ev_to_fcf", "price_to_tangible_book",
     "return_on_tangible_common_equity", "funds_from_operations", "gross_margin_trend",
+    "capex_intensity", "operating_ratio_proxy",
 )
 
 # Every statement-derived metric the legacy scorer weighs (pipeline/config/settings.json's
@@ -754,6 +768,8 @@ EXTENDED_METRIC_UNITS = {
     "free_cash_flow": "usd",
     "total_debt": "usd",
     "gross_margin_trend": "decimal",
+    "capex_intensity": "decimal",
+    "operating_ratio_proxy": "decimal",
     "ev_to_ebitda": "multiple",
     "ev_to_ebit": "multiple",
     "ev_to_fcf": "multiple",

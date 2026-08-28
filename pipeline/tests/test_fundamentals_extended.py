@@ -98,6 +98,10 @@ class ProfitabilityTests(unittest.TestCase):
         self.assertAlmostEqual(margins["gross_margin"], 0.6, places=4)
         self.assertAlmostEqual(margins["gross_margin_trend"], 600 / 1000 - 520 / 900, places=4)
 
+    def test_operating_ratio_proxy_is_the_complement_of_operating_margin(self):
+        margins = fx.derive_margins(INCOME)
+        self.assertAlmostEqual(margins["operating_ratio_proxy"], 1 - 0.25, places=4)
+
     def test_gross_margin_trend_is_none_without_a_prior_period(self):
         one_period = {"periods": ["2025"], "rows": {"Total Revenue": [1000.0], "Gross Profit": [600.0]}}
         self.assertIsNone(fx.derive_margins(one_period)["gross_margin_trend"])
@@ -233,6 +237,10 @@ class CapitalAllocationTests(unittest.TestCase):
         allocation = fx.derive_capital_allocation(INCOME, BALANCE, CASHFLOW, market_cap=4000)
         self.assertAlmostEqual(allocation["stock_comp_to_revenue"], 0.03, places=4)
         self.assertAlmostEqual(allocation["capex_to_depreciation"], 60 / 55, places=2)
+
+    def test_capex_intensity(self):
+        allocation = fx.derive_capital_allocation(INCOME, BALANCE, CASHFLOW, market_cap=4000)
+        self.assertAlmostEqual(allocation["capex_intensity"], 60 / 1000, places=4)
 
 
 class ValuationTests(unittest.TestCase):

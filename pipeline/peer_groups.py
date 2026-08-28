@@ -47,6 +47,25 @@ TIER_LABELS = {
 TIER_MIDPOINTS = {"most_expensive_third": 16.7, "middle_third": 50.0, "cheapest_third": 83.3}
 
 
+def _sector_fallback_group(snapshot):
+    sector = snapshot.get("sector") or "Unclassified"
+    return f"sector:{sector.lower().replace(' ', '_')}", sector
+
+
+# The seven profiles the THG audit (see module docstring) was built around: coarse enough that
+# each already approximates a whole GICS sector's worth of comparably-valued names, and the
+# reason a below-minimum group here must stay silent rather than roll up -- broadening a P&C
+# insurer's peer set to "all Financial Services" mixes it with banks and asset managers, which
+# is the exact category error this module exists to prevent. Every other profile
+# classify_profile() returns is a narrower sub-industry split added for metric-applicability
+# precision, never a deliberate peer-comparison design choice, so those are free to roll up to
+# their sector when their own sample can't carry a claim (below).
+LEGACY_PEER_COMPARISON_PROFILES = frozenset({
+    "bank", "property_casualty_insurer", "life_insurer", "diversified_insurer",
+    "reit", "utility", "commodity_producer",
+})
+
+
 def peer_group(snapshot):
     override = BUSINESS_PROFILES.get("ticker_overrides", {}).get(str(snapshot.get("ticker") or "").upper(), {})
     if override.get("peer_group_id"):
@@ -63,8 +82,7 @@ def peer_group(snapshot):
     }
     if profile != "general":
         return profile, labels.get(profile, profile.replace("_", " ").title())
-    sector = snapshot.get("sector") or "Unclassified"
-    return f"sector:{sector.lower().replace(' ', '_')}", sector
+    return _sector_fallback_group(snapshot)
 
 
 def _tier_for(rank_fraction):
@@ -104,13 +122,34 @@ def canonical_percentiles(rows, key="valuation", constructed_at=None, minimum=MI
     populated so a consumer can see how thin the sample was.
     """
     constructed_at = constructed_at or date.today().isoformat()
-    groups = {}
-    for row in rows:
-        group_id, label = peer_group(row)
-        value = (row.get("categories") or {}).get(key)
-        groups.setdefault(group_id, {"label": label, "total": 0, "valid": []})["total"] += 1
-        if isinstance(value, (int, float)):
-            groups[group_id]["valid"].append((row["ticker"], float(value)))
+
+    def build_groups(group_of):
+        built = {}
+        for row in rows:
+            group_id, label = group_of(row)
+            value = (row.get("categories") or {}).get(key)
+            built.setdefault(group_id, {"label": label, "total": 0, "valid": []})["total"] += 1
+            if isinstance(value, (int, float)):
+                built[group_id]["valid"].append((row["ticker"], float(value)))
+        return built
+
+    groups = build_groups(peer_group)
+
+    # A profile-specific peer group too thin to support a tier claim rolls up into the
+    # broader sector bucket instead of publishing nothing for every member -- the same
+    # fallback already used for the generic "general" profile, applied once more when a
+    # narrower profile's own sample can't carry a claim. classify_profile()'s finer
+    # distinctions still govern which *metrics* apply to each name; this only changes the
+    # population a valuation percentile is measured against.
+    thin_profile_groups = {group_id for group_id, group in groups.items()
+                           if len(group["valid"]) < minimum and not group_id.startswith("sector:")
+                           and group_id not in LEGACY_PEER_COMPARISON_PROFILES}
+    if thin_profile_groups:
+        def group_of(row):
+            group_id, label = peer_group(row)
+            return _sector_fallback_group(row) if group_id in thin_profile_groups else (group_id, label)
+        groups = build_groups(group_of)
+
     result = {}
     for group_id, group in groups.items():
         ordered = sorted(group["valid"], key=lambda item: (item[1], item[0]))
