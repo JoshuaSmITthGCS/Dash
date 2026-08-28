@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0.0",
+  "config_version": "operating-kpi-universe-media-v1.0.0",
+  "_comment": "Tickers to collect monthly/daily active user counts for -- the media/internet subset of advisor_universe.json, not the whole universe: fetching every universe ticker's earnings-release exhibit to look for MAU/DAU phrasing that only user-facing platforms report would spend most of the SEC rate-limit budget on companies that were always going to return 'not_found'. Derived once from public/data/advisor.json's screen_universe sector/industry classification (2026-08-27 snapshot) for the Yahoo industries: Internet Content & Information, Entertainment, and Broadcasting. Not every listed ticker will actually report MAU/DAU in this phrasing -- NFLX has moved away from subscriber-adjacent MAU-style disclosure in some periods, DIS/WBD report streaming subscriber counts rather than MAU, and broadcasters like NXST report neither -- 'not_found' for those is the correct, honest extraction result, not a bug. A company's sector/industry classification changes rarely enough that this list does not need to be regenerated every run; regenerate by re-filtering a fresh screen_universe snapshot on the same industry set if it drifts.",
+  "metric": ["monthly_active_users", "daily_active_users"],
+  "media_symbols": [
+    "DIS", "GOOGL", "LYV", "META", "MSGS", "MTCH", "NBIS", "NFLX", "NWSA",
+    "NXST", "PINS", "ROKU", "TKO", "WBD", "ZG"
+  ]
+}
