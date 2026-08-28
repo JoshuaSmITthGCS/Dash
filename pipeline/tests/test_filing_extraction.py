@@ -40,6 +40,56 @@ TELECOM_EXHIBIT_HTML = """
 
 NO_MATCH_HTML = "<html><body><p>This press release contains forward-looking statements.</p></body></html>"
 
+CAPITAL_MARKETS_EXHIBIT_HTML = """
+<html><body>
+<p>Assets under management were $1.2 trillion as of quarter end, up from $1.1 trillion a
+year ago.</p>
+<p>Organic growth rate of 4.5% for the trailing twelve months.</p>
+<table><tr><td>Effective fee rate</td><td>42 bps</td></tr></table>
+</body></html>
+"""
+
+REIT_EXHIBIT_HTML = """
+<html><body>
+<table><tr><td>Same store NOI growth</td><td>3.8%</td></tr></table>
+<p>Occupancy was 94.2% at quarter end.</p>
+<p>Leasing spread of 12.5% on new and renewal leases signed during the quarter.</p>
+</body></html>
+"""
+
+AEROSPACE_EXHIBIT_HTML = """
+<html><body>
+<p>Book-to-bill ratio of 1.3x for the quarter.</p>
+<p>Backlog of $88.4 billion at quarter end, a company record.</p>
+</body></html>
+"""
+
+SAAS_EXHIBIT_HTML = """
+<html><body>
+<p>Net dollar-based retention rate of 123% for the quarter.</p>
+</body></html>
+"""
+
+SEMICONDUCTOR_EXHIBIT_HTML = """
+<html><body>
+<p>Capacity utilization was 87.5% for the quarter.</p>
+<p>Book-to-bill ratio of 1.05 for the segment.</p>
+</body></html>
+"""
+
+UTILITY_EXHIBIT_HTML = """
+<html><body>
+<p>Rate base growth of 7.2% annually through the plan period.</p>
+<p>Authorized return on equity of 10.95%, approved by the commission.</p>
+</body></html>
+"""
+
+IPP_EXHIBIT_HTML = """
+<html><body>
+<p>Capacity factor was 58.3% for the fleet during the quarter.</p>
+</body></html>
+"""
+
 
 class HtmlToLinesTests(unittest.TestCase):
     def test_table_rows_stay_on_one_line(self):
@@ -72,6 +122,107 @@ class ExtractKpisTests(unittest.TestCase):
         result = fe.extract_kpis(lines, ["average_revenue_per_user", "postpaid_churn"])
         self.assertAlmostEqual(result["average_revenue_per_user"]["value"], 46.50, places=2)
         self.assertAlmostEqual(result["postpaid_churn"]["value"], 0.0085, places=4)
+
+    def test_extracts_capital_markets_metrics(self):
+        lines = fe.html_to_lines(CAPITAL_MARKETS_EXHIBIT_HTML)
+        result = fe.extract_kpis(
+            lines, ["assets_under_management", "net_flows_organic_growth", "fee_rate_bps"])
+        self.assertAlmostEqual(result["assets_under_management"]["value"], 1.2e12, delta=1)
+        self.assertAlmostEqual(result["net_flows_organic_growth"]["value"], 0.045, places=4)
+        self.assertAlmostEqual(result["fee_rate_bps"]["value"], 0.0042, places=6)
+
+    def test_extracts_reit_metrics(self):
+        lines = fe.html_to_lines(REIT_EXHIBIT_HTML)
+        result = fe.extract_kpis(lines, ["same_store_noi_growth", "occupancy_rate", "leasing_spread"])
+        self.assertAlmostEqual(result["same_store_noi_growth"]["value"], 0.038, places=4)
+        self.assertAlmostEqual(result["occupancy_rate"]["value"], 0.942, places=4)
+        self.assertAlmostEqual(result["leasing_spread"]["value"], 0.125, places=4)
+
+    def test_extracts_aerospace_metrics(self):
+        lines = fe.html_to_lines(AEROSPACE_EXHIBIT_HTML)
+        result = fe.extract_kpis(lines, ["book_to_bill_ratio", "backlog_value"])
+        self.assertAlmostEqual(result["book_to_bill_ratio"]["value"], 1.3, places=3)
+        self.assertAlmostEqual(result["backlog_value"]["value"], 88.4e9, delta=1)
+
+    def test_extracts_saas_net_revenue_retention(self):
+        lines = fe.html_to_lines(SAAS_EXHIBIT_HTML)
+        result = fe.extract_kpis(lines, ["net_revenue_retention"])
+        self.assertAlmostEqual(result["net_revenue_retention"]["value"], 1.23, places=4)
+
+    def test_extracts_semiconductor_metrics(self):
+        lines = fe.html_to_lines(SEMICONDUCTOR_EXHIBIT_HTML)
+        result = fe.extract_kpis(lines, ["capacity_utilization", "book_to_bill_ratio"])
+        self.assertAlmostEqual(result["capacity_utilization"]["value"], 0.875, places=4)
+        self.assertAlmostEqual(result["book_to_bill_ratio"]["value"], 1.05, places=3)
+
+    def test_extracts_utility_metrics(self):
+        lines = fe.html_to_lines(UTILITY_EXHIBIT_HTML)
+        result = fe.extract_kpis(lines, ["rate_base_growth", "allowed_roe"])
+        self.assertAlmostEqual(result["rate_base_growth"]["value"], 0.072, places=4)
+        self.assertAlmostEqual(result["allowed_roe"]["value"], 0.1095, places=4)
+
+    def test_extracts_ipp_capacity_factor(self):
+        lines = fe.html_to_lines(IPP_EXHIBIT_HTML)
+        result = fe.extract_kpis(lines, ["capacity_factor"])
+        self.assertAlmostEqual(result["capacity_factor"]["value"], 0.583, places=4)
+
+
+class FilingExtractionGroupTests(unittest.TestCase):
+    def test_bank(self):
+        self.assertEqual(fe.filing_extraction_group({"industry": "Banks - Regional"}), "bank")
+
+    def test_reit(self):
+        self.assertEqual(fe.filing_extraction_group({"sector": "Real Estate", "industry": "REIT - Office"}), "reit")
+
+    def test_capital_markets(self):
+        self.assertEqual(
+            fe.filing_extraction_group({"industry": "Asset Management"}), "capital_markets")
+
+    def test_aerospace_defense(self):
+        self.assertEqual(
+            fe.filing_extraction_group({"industry": "Aerospace & Defense"}), "aerospace_defense")
+
+    def test_semiconductor(self):
+        self.assertEqual(
+            fe.filing_extraction_group({"industry": "Semiconductor Equipment & Materials"}),
+            "semiconductor")
+
+    def test_independent_power_producer(self):
+        self.assertEqual(
+            fe.filing_extraction_group({"industry": "Utilities - Independent Power Producers"}),
+            "independent_power_producer")
+
+    def test_regulated_utility(self):
+        self.assertEqual(fe.filing_extraction_group({"sector": "Utilities", "industry": "Utilities - Regulated Electric"}),
+                         "utility")
+
+    def test_commodity_producer(self):
+        self.assertEqual(fe.filing_extraction_group({"industry": "Specialty Chemicals"}), "commodity_producer")
+
+    def test_saas(self):
+        self.assertEqual(
+            fe.filing_extraction_group({"industry": "Software - Application"}), "saas")
+
+    def test_general_fallback(self):
+        self.assertEqual(fe.filing_extraction_group({"industry": "Restaurants"}), "general")
+
+    def test_ticker_override_free(self):
+        # No ticker_overrides escape hatch exists for this router (unlike classify_profile) --
+        # it is sector/industry text only, on purpose (see the function's docstring).
+        self.assertEqual(fe.filing_extraction_group({}), "general")
+
+    def test_a_label_alone_with_no_trailing_value_does_not_match(self):
+        # Regression: an alternation inside a label pattern that escapes its own group (e.g.
+        # "a|b" instead of "(?:a|b)") lets the bare label satisfy the whole compiled pattern,
+        # silently matching with the value groups all None. Every label below must require its
+        # trailing number to actually be present.
+        for metric_id, line in (
+            ("assets_under_management", "Assets under management grew nicely this quarter."),
+            ("fee_rate_bps", "Our fee rate remained stable."),
+        ):
+            with self.subTest(metric=metric_id):
+                spec = fe.KPI_PATTERNS[metric_id]
+                self.assertIsNone(spec["pattern"].search(line))
 
     def test_a_metric_with_no_matching_line_is_simply_absent(self):
         lines = fe.html_to_lines(NO_MATCH_HTML)

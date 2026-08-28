@@ -154,27 +154,35 @@ across all nine remaining GICS sectors live in 8-K Exhibit 99.x earnings-release
 10-Q/10-K MD&A prose, not standardized XBRL — the SEC's own guidance treats "same-store sales
 calculated from GAAP revenues" as an MD&A disclosure, not a tagged financial-statement fact.
 
-`pipeline/filing_extraction.py` is a first, deliberately narrow slice of that: it locates a
-company's Exhibit 99.x documents (reusing `SecEdgarClient.filing_index`/`filing_document`,
-already built for Form 4 and XBRL work), flattens the HTML into lines (one per table row or
-paragraph, so a label and its value stay on the same line), and regex-matches a small metric
-registry — same-store/comparable sales (retail, restaurants), net interest margin and
-efficiency ratio (banks), ARPU and postpaid churn (telecom). Every reading carries
-`"unaudited": True` and surfaces only as a display field (`row.filing_extracted_metrics`) —
-never a score input, matching how reverse_dcf and the new sector metrics above are handled.
+`pipeline/filing_extraction.py` locates a company's Exhibit 99.x documents (reusing
+`SecEdgarClient.filing_index`/`filing_document`, already built for Form 4 and XBRL work),
+flattens the HTML into lines (one per table row or paragraph, so a label and its value stay on
+the same line), and regex-matches a metric registry now covering every sub-industry the source
+research names: same-store/comparable sales (retail, restaurants), net interest margin and
+efficiency ratio (banks), ARPU and postpaid churn (telecom), AUM/net-flows/fee-rate (capital
+markets and asset managers), same-store NOI/occupancy/leasing spread (REITs), book-to-bill and
+backlog (aerospace & defense, semiconductors), net revenue retention (SaaS), capacity
+utilization (semiconductors, chemicals/metals/paper, independent power producers), rate-base
+growth and allowed ROE (regulated utilities), and capacity factor (independent power
+producers). A company is routed to its subset by `filing_extraction_group()` — sector/industry
+text matching kept deliberately independent of `canonical_metrics.classify_profile`, so this
+routing can't perturb the live scored composite. Every reading carries `"unaudited": True` and
+surfaces only as a display field (`row.filing_extracted_metrics`) — never a score input,
+matching how reverse_dcf and the new sector metrics above are handled.
 
 **This has not been validated against a single live SEC EDGAR fetch.** It was written in a
 sandboxed session whose outbound network policy blocked `sec.gov` outright (a proxy-level 403,
 not a timeout), so every extraction pattern was checked only against synthetic HTML fixtures
 built from the known structure of real earnings releases — see
-`pipeline/tests/test_filing_extraction.py` and the module's own docstring. `settings.json`'s
-`filing_extraction.enabled` defaults to `false` for exactly this reason; flipping it on should
-wait for a session with real SEC EDGAR access to confirm extraction accuracy against actual
-filings and to check the configured `minimum_coverage` (0.8) is actually cleared before any of
-this is trusted, let alone scored. The remaining six GICS sectors from that research (capital
-markets/asset managers, REIT subtypes, aerospace/industrials book-to-bill, SaaS ARR/NRR/Rule of
-40, semiconductor utilization/inventory, utilities/IPP/chemicals) are not implemented at all —
-this slice covers only the sub-industries that research itself called most template-consistent.
+`pipeline/tests/test_filing_extraction.py` and the module's own docstring. (One real bug this
+already caught: two label patterns used a bare `a|b` alternation instead of `(?:a|b)`, so the
+label alone silently satisfied the whole compiled pattern with the value groups all `None` —
+fixed, and now covered by a regression test, but it's a concrete example of the class of
+mistake that only surfaces against a real filing's actual phrasing, not a hand-written
+fixture.) `settings.json`'s `filing_extraction.enabled` defaults to `false` for exactly this
+reason; flipping it on should wait until a session with real SEC EDGAR access confirms
+extraction accuracy against actual filings and checks the configured `minimum_coverage` (0.8)
+is actually cleared per metric.
 
 ## Validation state
 

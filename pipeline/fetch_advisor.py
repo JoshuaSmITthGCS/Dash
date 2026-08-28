@@ -24,7 +24,7 @@ from fundamentals_extended import (derive_extended, earnings_surprise_rows, exte
                                    extended_observations)
 from insider_signal import summarize as summarize_insiders
 from reverse_dcf import derive_market_implied_growth
-from filing_extraction import collect_operating_kpi_signals
+from filing_extraction import collect_operating_kpi_signals, filing_extraction_group
 from concentration_risk import summarize as summarize_concentration
 from geographic_exposure import summarize as summarize_geography
 from institutional_ownership import decay as institutional_decay
@@ -1987,7 +1987,7 @@ def run():
         filing_extraction_signals, filing_extraction_diagnostics = collect_operating_kpi_signals(
             sec, insider_candidates,
             metrics_by_profile=filing_extraction_cfg.get("metrics_by_profile", {}),
-            profile_for_ticker=lambda ticker: classify_profile(snapshot_by_symbol.get(ticker, {})),
+            profile_for_ticker=lambda ticker: filing_extraction_group(snapshot_by_symbol.get(ticker, {})),
             limit_per_ticker=filing_extraction_cfg.get("limit_per_ticker", 4),
         )
 

@@ -16,10 +16,14 @@ structure of real earnings-release exhibits, not a fetched document. Confirm aga
 filings before trusting its output in production -- see ``KPI_PATTERNS`` and
 ``pipeline/tests/test_filing_extraction.py`` for exactly what was and was not exercised.
 
-Deliberately narrow scope: same-store/comparable sales (retail, restaurants), net interest
-margin and efficiency ratio (banks), and ARPU/postpaid churn (telecom) -- the sub-industries
-the source research (docs/... KPI-layer research) itself calls most template-consistent, not
-all nine remaining GICS sectors. Extending coverage means adding registry entries and, before
+Covers same-store/comparable sales (retail, restaurants), net interest margin and efficiency
+ratio (banks), ARPU/postpaid churn (telecom), AUM/net-flows/fee-rate (capital markets and
+asset managers), same-store NOI/occupancy/leasing spread (REITs), book-to-bill and backlog
+(aerospace & defense, semiconductors), net revenue retention (SaaS), capacity utilization
+(semiconductors, chemicals/metals/paper, independent power producers), rate-base growth and
+allowed ROE (regulated utilities), and capacity factor (independent power producers) -- see
+``KPI_PATTERNS`` for the full registry and ``filing_extraction_group`` for how a company is
+routed to its subset. Extending coverage further means adding registry entries and, before
 trusting them, checking real filings.
 """
 
@@ -77,6 +81,42 @@ def _dollar_value(match):
     return round(float(match.group(1)), 2)
 
 
+# AUM, backlog, and similar figures are reported at a magnitude ("$1.2 trillion", "$450.3
+# billion") rather than in raw dollars -- a bare number with no scale is meaningless for these.
+_SCALE_MULTIPLIERS = {"trillion": 1e12, "billion": 1e9, "million": 1e6, "thousand": 1e3}
+
+
+def _dollar_with_scale_after(label_pattern):
+    return re.compile(
+        label_pattern + r".{0,60}?\$\s?(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*"
+        r"(trillion|billion|million|thousand)?", re.IGNORECASE)
+
+
+def _dollar_scaled_value(match):
+    amount = float(match.group(1).replace(",", ""))
+    scale = (match.group(2) or "").lower()
+    return round(amount * _SCALE_MULTIPLIERS.get(scale, 1), 2)
+
+
+def _ratio_after(label_pattern):
+    """A label, then a bare or 'Nx'-style ratio (book-to-bill, coverage, ...)."""
+    return re.compile(label_pattern + r".{0,40}?(\d{1,2}(?:\.\d+)?)\s*x?\b", re.IGNORECASE)
+
+
+def _ratio_value(match):
+    return round(float(match.group(1)), 3)
+
+
+def _bps_after(label_pattern):
+    """A label, then a basis-point figure (fee rates are usually quoted this way, not as %)."""
+    return re.compile(label_pattern + r".{0,60}?(\d{1,4}(?:\.\d+)?)\s*(?:bps|basis\s+points)",
+                      re.IGNORECASE)
+
+
+def _bps_value(match):
+    return round(float(match.group(1)) / 10000, 6)
+
+
 # Canonical metric -> (applicable business profiles, compiled pattern, value parser,
 # human label). Kept intentionally small; see this file's module docstring for why.
 KPI_PATTERNS = {
@@ -119,7 +159,143 @@ KPI_PATTERNS = {
         "unit": "decimal",
         "label": "Postpaid churn",
     },
+    # ---- Capital markets / asset managers ----
+    "assets_under_management": {
+        "profiles": ("capital_markets",),
+        "pattern": _dollar_with_scale_after(r"(?:assets\s+under\s+management|\bAUM\b)"),
+        "parse": _dollar_scaled_value,
+        "unit": "usd",
+        "label": "Assets under management",
+    },
+    "net_flows_organic_growth": {
+        "profiles": ("capital_markets",),
+        "pattern": _percent_after(r"organic\s+(?:asset\s+)?growth(?:\s+rate)?"),
+        "parse": _percent_value,
+        "unit": "decimal",
+        "label": "Net flows / organic growth rate",
+    },
+    "fee_rate_bps": {
+        "profiles": ("capital_markets",),
+        "pattern": _bps_after(r"(?:(?:effective\s+)?fee\s+rate|revenue\s+yield)"),
+        "parse": _bps_value,
+        "unit": "decimal",
+        "label": "Fee rate / revenue yield",
+    },
+    # ---- REITs ----
+    "same_store_noi_growth": {
+        "profiles": ("reit",),
+        "pattern": _percent_after(r"same[\s-]?(?:store|property)\s+NOI"),
+        "parse": _percent_value,
+        "unit": "decimal",
+        "label": "Same-store / same-property NOI growth",
+    },
+    "occupancy_rate": {
+        "profiles": ("reit",),
+        "pattern": _bps_or_percent_after(r"occupancy(?:\s+rate|\s+was|\s+of)?"),
+        "parse": _percent_value,
+        "unit": "decimal",
+        "label": "Occupancy rate",
+    },
+    "leasing_spread": {
+        "profiles": ("reit",),
+        "pattern": _percent_after(r"leasing\s+spread"),
+        "parse": _percent_value,
+        "unit": "decimal",
+        "label": "Leasing spread",
+    },
+    # ---- Aerospace & defense / industrials / semiconductors ----
+    "book_to_bill_ratio": {
+        "profiles": ("aerospace_defense", "semiconductor"),
+        "pattern": _ratio_after(r"book[\s-]to[\s-]bill(?:\s+ratio)?(?:\s+of)?"),
+        "parse": _ratio_value,
+        "unit": "multiple",
+        "label": "Book-to-bill ratio",
+    },
+    "backlog_value": {
+        "profiles": ("aerospace_defense",),
+        "pattern": _dollar_with_scale_after(r"backlog(?:\s+of|\s+was|\s+totaled)?"),
+        "parse": _dollar_scaled_value,
+        "unit": "usd",
+        "label": "Backlog",
+    },
+    # ---- SaaS ----
+    "net_revenue_retention": {
+        "profiles": ("saas",),
+        "pattern": _bps_or_percent_after(r"net\s+(?:dollar[\s-]based\s+|revenue[\s-]based\s+)?retention(?:\s+rate)?"),
+        "parse": _percent_value,
+        "unit": "decimal",
+        "label": "Net revenue retention",
+    },
+    # ---- Semiconductors / chemicals / metals / paper / IPPs (shared) ----
+    "capacity_utilization": {
+        "profiles": ("semiconductor", "commodity_producer", "independent_power_producer"),
+        "pattern": _bps_or_percent_after(r"(?:capacity\s+utilization|utilization\s+rate)"),
+        "parse": _percent_value,
+        "unit": "decimal",
+        "label": "Capacity utilization",
+    },
+    # ---- Regulated utilities ----
+    "rate_base_growth": {
+        "profiles": ("utility",),
+        "pattern": _percent_after(r"rate\s+base\s+growth"),
+        "parse": _percent_value,
+        "unit": "decimal",
+        "label": "Rate base growth",
+    },
+    "allowed_roe": {
+        "profiles": ("utility",),
+        "pattern": _bps_or_percent_after(r"(?:allowed|authorized)\s+(?:return\s+on\s+equity|ROE)"),
+        "parse": _percent_value,
+        "unit": "decimal",
+        "label": "Allowed / authorized return on equity",
+    },
+    # ---- Independent power producers ----
+    "capacity_factor": {
+        "profiles": ("independent_power_producer",),
+        "pattern": _bps_or_percent_after(r"capacity\s+factor"),
+        "parse": _percent_value,
+        "unit": "decimal",
+        "label": "Capacity factor",
+    },
 }
+
+
+def filing_extraction_group(snapshot):
+    """Which KPI subset a company should be tried against, for filing extraction only.
+
+    Deliberately independent of ``canonical_metrics.classify_profile``: that function drives
+    live-score suppression/replacement and touching it to add routing-only groups (capital
+    markets, aerospace/defense, SaaS, IPP) would risk the scored composite for a purpose that
+    has nothing to do with scoring. This is sector/industry substring matching against the
+    same snapshot fields, kept local to this module, used only to pick a metric subset.
+    """
+    snapshot = snapshot or {}
+    sector = str(snapshot.get("sector") or "").lower()
+    industry = str(snapshot.get("industry") or "").lower()
+    text = f"{sector} {industry}"
+    if "bank" in industry:
+        return "bank"
+    if "reit" in text or "real estate investment trust" in text:
+        return "reit"
+    if any(term in industry for term in
+           ("asset management", "capital markets", "financial data", "exchange")):
+        return "capital_markets"
+    if any(term in industry for term in ("aerospace", "defense")):
+        return "aerospace_defense"
+    if "semiconductor" in text:
+        return "semiconductor"
+    if "independent power" in industry or "power producers" in industry:
+        return "independent_power_producer"
+    if "utilit" in sector:
+        return "utility"
+    if any(term in text for term in
+           ("chemical", "paper", "packaging", "steel", "aluminum", "copper", "metals",
+            "oil", "gas", "mining", "gold", "coal")):
+        return "commodity_producer"
+    if any(term in industry for term in
+           ("software", "internet content", "information technology services")):
+        return "saas"
+    return "general"
 
 
 def extract_kpis(lines, metric_ids):
