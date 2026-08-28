@@ -20,7 +20,8 @@ from edgar_sue import ANNOUNCEMENT_ANCHOR_NOTE, announcement_age_trading_days, s
 from peer_groups import peer_group
 from screen_inputs import (backtest_entry, latest_observations, median_dollar_volume,
                            universe_rows, with_current_price)
-from swing_signals import (BASELINE_VARIANT, DECAY_HAIRCUT, DEFAULT_CONFIG, HOLDING_HORIZON,
+from swing_signals import (BASELINE_VARIANT, CONTEXT_SIGNAL_EVIDENCE, CONTRACTION_NOTE,
+                           DECAY_HAIRCUT, DEFAULT_CONFIG, HOLDING_HORIZON,
                            SHORT_INTEREST_EVIDENCE, SWING_EVIDENCE, SWING_SUBFACTORS,
                            SWING_VARIANTS, SWING_WEIGHTS, capacity_profile, leg_coverage,
                            legs_resolved_distribution, pead_anchor_diagnostic, sector_cap_log,
@@ -31,7 +32,7 @@ from swing_tiers import (ALPHA_NOTE, ANNOUNCEMENT_EVIDENCE, ASSUMED_GROSS_ALPHA_
                          TIER_SPECS, UPSIDE_NOTE, score_tier, tier_config, tier_evidence,
                          tier_spec, tier_summary)
 
-SCHEMA_VERSION = "1.1.0"
+SCHEMA_VERSION = "1.2.0"
 MODEL_VERSION = "swing-v1.1.0"
 CONFIG_VERSION = "screens-v2.0.0"
 OUTPUT = "screens/swing.json"
@@ -197,6 +198,8 @@ def to_result(rank, row, weights=None):
         # Descriptive price position, never a scoring leg. See swing_signals.TREND_NOTE.
         "trend": factors.get("trend"),
         "range_position_52w": _rounded(factors.get("range_position_52w")),
+        # Descriptive setup context, never a scoring leg. See swing_signals.CONTRACTION_NOTE.
+        "contraction": factors.get("contraction"),
         "pead_status": factors.get("pead_status"),
         "pead_detail": {key: factors.get(key) for key in
                         ("pead_basis", "pead_period_end", "pead_announced_on",
@@ -257,6 +260,8 @@ def payload(results, scored, generated_at, tiers=None):
         },
         "trend_states": TREND_STATES,
         "trend_note": TREND_NOTE,
+        "contraction_note": CONTRACTION_NOTE,
+        "context_signal_evidence": CONTEXT_SIGNAL_EVIDENCE,
         "schema_version": SCHEMA_VERSION, "model_version": MODEL_VERSION,
         "config_version": CONFIG_VERSION, "generated_at": generated_at,
         "status": "success",

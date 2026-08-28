@@ -595,6 +595,175 @@ def trend_state(closes, window=252):
     }
 
 
+# ---------------------------------------------------------------------------
+# Volatility-contraction / mean-reversion context (published, never scored)
+# ---------------------------------------------------------------------------
+#
+# None of what follows is a sixth leg. TREND_NOTE draws the line this follows: a fact about
+# where a name's price or volume sits is useful context for reading the five scored legs, but
+# earns a weight only once it clears the same evidence bar those five did (docs/
+# VALIDATION-METHODOLOGY.md), and none of this has been. Bollinger BandWidth squeeze and
+# 2-period RSI mean reversion are the best-evidenced items in the outside literature review
+# that motivated adding them (independent backtests with positive expectancy; Connors &
+# Alvarez's replicated 70%+ win rates respectively), but that literature is about the published
+# construct's own backtest, not about this composite - wiring either in as a weight change
+# belongs behind the same harness_freeze.json prospective-clock process the three registered
+# reversal variants (A/B/C) above went through, not a citation. Crabel-style NR7/ATR range
+# compression is not published at all: it needs the intraday high and low, and this pipeline's
+# cached daily series carries only close and volume, so an NR7 read here would silently
+# substitute a close-only proxy for a range-based construct with a different economic story.
+CONTEXT_SIGNAL_EVIDENCE = {
+    "bandwidth_squeeze": {
+        "label": "Bollinger BandWidth squeeze",
+        "horizon": "days to weeks after the squeeze",
+        "direction": "direction-neutral - flags imminent volatility expansion, not which way",
+        "citation": "John Bollinger, Bollinger on Bollinger Bands (2002)",
+        "effect": "Independent backtests on S&P 500 components report positive expectancy over "
+                  "5-10 bar holds when BandWidth sits at a 6-month low, filtered by a "
+                  "volume-confirmed breakout; reported directional win rates cluster 40-60%, so "
+                  "the edge is in reward:risk at the breakout, not hit rate.",
+        "caveat": "Never a scoring leg here: it says a move is coming, not which way, and this "
+                  "composite is long-only continuation plus one reversal leg. Published so a "
+                  "reader can see a name is coiled before deciding whether the other five legs "
+                  "agree on a direction.",
+    },
+    "volume_dry_up": {
+        "label": "Volume dry-up",
+        "horizon": "setup preceding a breakout",
+        "direction": "direction-neutral - supply exhaustion, not a directional call",
+        "citation": "Practitioner construct (O'Neil/Minervini heritage); quantification is thin",
+        "effect": "Trailing volume meaningfully below its own 50-day average is read as absorbed "
+                  "supply ahead of a move; the breakout itself is expected to clear on volume "
+                  "expansion, which this pipeline already scores as the high_volume_premium leg.",
+        "caveat": "Weak-to-moderate, mostly anecdotal evidence. Published as a setup flag beside "
+                  "the volume-premium leg, never as its own weight.",
+    },
+    "rsi_2": {
+        "label": "2-period RSI (Connors-style mean-reversion read)",
+        "horizon": "2-10 days",
+        "direction": "contrarian - low reads oversold, high reads overbought",
+        "citation": "Connors & Alvarez, Short Term Trading Strategies That Work (2008); "
+                    "independent replications (e.g. QuantifiedStrategies SPY 1993-present)",
+        "effect": "RSI(2) below 10 with price above its 200-day average has independently "
+                  "replicated win rates in the 70s% on SPY and the high 60s% across the S&P 500 "
+                  "cross-section in out-of-sample tests since publication.",
+        "caveat": "The best-evidenced mean-reversion construct at this horizon, and it overlaps "
+                  "the existing short_term_reversal leg's economic story (both are contrarian on "
+                  "very recent price action). Published as an alternate reversal read rather than "
+                  "substituted for that leg's return_5d/residual_return_5d subfactor, because a "
+                  "substitution changes a registered variant's weight and this construct has not "
+                  "been run through the same prospective validation the three registered reversal "
+                  "variants were.",
+    },
+}
+
+CONTRACTION_NOTE = (
+    "Setup context, never a scoring leg - see CONTEXT_SIGNAL_EVIDENCE for why. A "
+    "volatility-contraction concept (BandWidth squeeze) says a move is coming without saying "
+    "which way; a supply-exhaustion concept (volume dry-up) says selling pressure has thinned "
+    "without saying which way it resolves; a mean-reversion read (2-period RSI) is directional "
+    "but overlaps the existing short_term_reversal leg and has not been run through this "
+    "composite's prospective validation. All three are published beside the five scored legs "
+    "so a reader can see whether a name is coiled and where it sits on a short mean-reversion "
+    "read, not because any of them adds to the composite. True Crabel-style NR7/ATR range "
+    "compression is not published here: it needs intraday high/low data this pipeline's cached "
+    "daily series does not carry.")
+
+# Below this many trailing BandWidth readings, "at a 6-month low" is describing a handful of
+# overlapping windows rather than a real distribution - the same floor forward_return_distribution
+# applies to its own overlapping windows, reused here for the same reason.
+MINIMUM_BANDWIDTH_HISTORY = MINIMUM_FORWARD_WINDOWS
+
+# Convention from the published construct: squeezed means at or inside the 10th percentile of
+# the name's own trailing distribution, not an absolute threshold, because BandWidth's scale
+# depends on the name's own baseline volatility.
+BANDWIDTH_SQUEEZE_PERCENTILE = .10
+BANDWIDTH_SQUEEZE_LOOKBACK = 126  # ~6 months of trading sessions, the published squeeze window.
+
+# Convention from the practitioner construct: "dried up" means trailing volume below 70% of the
+# longer-window average.
+VOLUME_DRY_UP_THRESHOLD = .70
+
+
+def bollinger_bandwidth(closes, window=20, num_std=2):
+    """(Upper - Lower) / Middle for a `window`-session Bollinger Band, John Bollinger's BandWidth.
+
+    None with fewer than `window` valid closes - never a fabricated value on thin history.
+    """
+    series = [close for close in (closes or [])[-window:] if _finite(close) and close > 0]
+    if len(series) < window:
+        return None
+    middle = sum(series) / len(series)
+    if not middle:
+        return None
+    variance = sum((value - middle) ** 2 for value in series) / len(series)
+    return (2 * num_std * math.sqrt(variance)) / middle
+
+
+def bandwidth_squeeze(closes, window=20, num_std=2, lookback=BANDWIDTH_SQUEEZE_LOOKBACK):
+    """Whether today's BandWidth sits at (or near) its own trailing `lookback`-session low.
+
+    `lookback` defaults to the ~6-month window the published squeeze definition is stated
+    against. The percentile is read off the name's own trailing history rather than an absolute
+    threshold, because BandWidth's scale tracks the name's own baseline volatility. None until
+    there is enough history to have a distribution to compare against.
+    """
+    series = [close for close in (closes or []) if _finite(close) and close > 0]
+    if len(series) < window + lookback:
+        return None
+    history = [value for value in
+               (bollinger_bandwidth(series[:end], window, num_std)
+                for end in range(len(series) - lookback, len(series) + 1))
+               if value is not None]
+    if len(history) < MINIMUM_BANDWIDTH_HISTORY:
+        return None
+    current = history[-1]
+    percentile = sum(1 for value in history if value <= current) / len(history)
+    return {
+        "bandwidth": round(current, 4),
+        "percentile_of_own_history": round(percentile, 3),
+        "squeezed": percentile <= BANDWIDTH_SQUEEZE_PERCENTILE,
+    }
+
+
+def volume_dry_up(volumes, recent=10, reference=50, threshold=VOLUME_DRY_UP_THRESHOLD):
+    """Whether trailing `recent`-session average volume sits below `threshold` of the longer
+    `reference`-session average - the supply-exhaustion setup ahead of a volume-confirmed
+    breakout. See CONTEXT_SIGNAL_EVIDENCE['volume_dry_up'].
+    """
+    series = [volume for volume in (volumes or []) if _finite(volume) and volume >= 0]
+    if len(series) < reference:
+        return None
+    baseline = sum(series[-reference:]) / reference
+    if not baseline:
+        return None
+    window = series[-recent:] if recent else series[-reference:]
+    ratio = (sum(window) / len(window)) / baseline
+    return {"ratio_to_50d_average": round(ratio, 3), "dried_up": ratio < threshold}
+
+
+def rsi_2(closes):
+    """2-period Wilder RSI - the Connors-style mean-reversion read. Reuses
+    technical_indicators.relative_strength_index rather than a second implementation of the
+    same formula. See CONTEXT_SIGNAL_EVIDENCE['rsi_2'].
+    """
+    from technical_indicators import relative_strength_index
+    return relative_strength_index(closes, window=2)
+
+
+def contraction_setup(closes, volumes):
+    """The three descriptive, non-scored context signals as one dict.
+
+    Never read by swing_scores or any scoring leg - see CONTRACTION_NOTE. A component that
+    cannot resolve on this row's history is None rather than a fabricated read.
+    """
+    return {
+        "bandwidth_squeeze": bandwidth_squeeze(closes),
+        "volume_dry_up": volume_dry_up(volumes),
+        "rsi_2": rsi_2(closes) if closes else None,
+    }
+
+
 def volume_surge(volumes, recent=1, reference=50):
     """Recent volume against its own trailing reference average.
 
@@ -852,6 +1021,8 @@ def swing_factors(row, closes=None, volumes=None, config=None, sue=None, market_
         # Descriptive only, never scored. See TREND_NOTE.
         "range_position_52w": range_position_52w(closes),
         "trend": trend_state(closes),
+        # Descriptive only, never scored. See CONTRACTION_NOTE.
+        "contraction": contraction_setup(closes, volumes),
         # Keyed by horizon as a string, because this rides through JSON. The horizons come from
         # the tiers rather than being hardcoded here: this module must not know what a tier is.
         "forward_returns": {str(horizon): forward_return_distribution(closes, horizon)

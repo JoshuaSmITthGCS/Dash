@@ -55,6 +55,62 @@ def test_volume_surge_measures_a_stock_against_its_own_normal():
     assert swing_signals.volume_surge([1_000_000.0] * 10) is None
 
 
+# ---------------------------------------------------------------------------
+# Volatility-contraction / mean-reversion context (descriptive, never a leg)
+# ---------------------------------------------------------------------------
+
+def test_bandwidth_squeeze_flags_a_name_at_its_own_low_volatility_percentile():
+    # A quiet, tightly-ranging series has to actually compress relative to its own trailing
+    # 6-month distribution before it reads as squeezed - not merely low-volatility throughout.
+    wide = [100 + 20 * ((index % 40) / 40 - .5) for index in range(200)]
+    tight = [100 + .2 * ((index % 5) / 5 - .5) for index in range(20)]
+    series = wide + tight
+
+    squeeze = swing_signals.bandwidth_squeeze(series)
+
+    assert squeeze is not None
+    assert squeeze["squeezed"] is True
+    assert squeeze["percentile_of_own_history"] <= swing_signals.BANDWIDTH_SQUEEZE_PERCENTILE
+
+
+def test_bandwidth_squeeze_is_none_on_thin_history():
+    assert swing_signals.bandwidth_squeeze([100.0] * 50) is None
+
+
+def test_volume_dry_up_flags_volume_meaningfully_below_its_own_average():
+    normal = [1_000_000.0] * 50
+    thinned = [1_000_000.0] * 40 + [600_000.0] * 10
+
+    assert swing_signals.volume_dry_up(normal)["dried_up"] is False
+    dried = swing_signals.volume_dry_up(thinned)
+    assert dried["dried_up"] is True
+    assert dried["ratio_to_50d_average"] < swing_signals.VOLUME_DRY_UP_THRESHOLD
+
+
+def test_rsi_2_reads_overbought_on_a_persistent_rally_and_oversold_on_a_selloff():
+    rally = [100 * 1.01 ** index for index in range(10)]
+    selloff = [100 * .99 ** index for index in range(10)]
+
+    assert swing_signals.rsi_2(rally) > 70
+    assert swing_signals.rsi_2(selloff) < 30
+
+
+def test_contraction_setup_is_never_a_declared_leg():
+    """These are published beside the five scored legs, never as a sixth one."""
+    assert "contraction" not in swing_signals.SWING_WEIGHTS
+    assert "contraction" not in swing_signals.SWING_SUBFACTORS
+    for subfactors in swing_signals.SWING_SUBFACTORS.values():
+        for name, _ in subfactors:
+            assert name not in ("bandwidth_squeeze", "volume_dry_up", "rsi_2")
+
+
+def test_contraction_setup_reports_none_components_on_insufficient_history():
+    # Ten flat closes are enough for RSI(2) (neutral 50, not a fabricated read) but not for the
+    # squeeze (needs ~6 months) or the volume dry-up (needs a 50-session reference average).
+    setup = swing_signals.contraction_setup([100.0] * 10, [1_000_000.0] * 10)
+    assert setup == {"bandwidth_squeeze": None, "volume_dry_up": None, "rsi_2": 50.0}
+
+
 def test_reversal_leg_is_signed_against_the_prior_week():
     rows = [
         {"ticker": "UP", "median_dollar_volume_60d": 1e9, "factors": {"return_5d": 12.0}},
@@ -590,6 +646,11 @@ def test_run_publishes_ranked_rows_with_their_evidence(monkeypatch, tmp_path):
     assert result["decay_haircut"]["post_publication"] == .58
     assert set(result["leg_coverage"]) == set(swing_signals.SWING_WEIGHTS)
     assert result["negative_screen"]["direction"].startswith("negative")
+    # The contraction context is published beside the score on every row, and its evidence
+    # travels with it, but it must never be one of the declared, weighted legs.
+    assert all("contraction" in row for row in result["results"])
+    assert set(result["context_signal_evidence"]) == {"bandwidth_squeeze", "volume_dry_up", "rsi_2"}
+    assert not set(result["context_signal_evidence"]) & set(result["weights"])
 
 
 def test_run_publishes_an_unavailable_file_rather_than_nothing(monkeypatch):

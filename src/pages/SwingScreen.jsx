@@ -555,6 +555,34 @@ export default function SwingScreen() {
       },
     },
     {
+      key: 'setup', label: 'Setup', full: true,
+      hint: 'Volatility-contraction and volume context (Bollinger BandWidth squeeze, volume '
+        + 'dry-up, 2-period RSI). Descriptive, never a scoring leg — a coiled or thinned-out '
+        + 'name is not a directional call by itself.',
+      sortValue: (row) => (row.contraction?.bandwidth_squeeze?.squeezed ? 1 : 0)
+        + (row.contraction?.volume_dry_up?.dried_up ? 1 : 0),
+      cell: (row) => {
+        const setup = row.contraction
+        if (!setup) return <span className="swing-trend">–</span>
+        const badges = []
+        if (setup.bandwidth_squeeze?.squeezed) badges.push('Squeeze')
+        if (setup.volume_dry_up?.dried_up) badges.push('Volume dry-up')
+        const rsi = setup.rsi_2
+        return (
+          <span className="swing-trend neutral"
+            title={`RSI(2): ${rsi == null ? '–' : rsi.toFixed(0)}`
+              + (setup.bandwidth_squeeze
+                ? ` · BandWidth ${Math.round(setup.bandwidth_squeeze.percentile_of_own_history * 100)}th pct of its own 6-month range`
+                : '')
+              + (setup.volume_dry_up
+                ? ` · volume ${(setup.volume_dry_up.ratio_to_50d_average * 100).toFixed(0)}% of its 50-day average`
+                : '')}>
+            {badges.length ? badges.join(', ') : '–'}
+          </span>
+        )
+      },
+    },
+    {
       key: 'sector', label: 'Sector', sortValue: (row) => row.sector, defaultSortDir: 'asc', full: true,
       cell: (row) => row.sector || '–',
     },
@@ -620,9 +648,12 @@ export default function SwingScreen() {
             The five signals with real peer-reviewed support at the swing horizon, ranked cross-sectionally
             and combined into one composite: post-earnings drift, the change in analyst consensus, the
             high-volume return premium, 52-week-high proximity, and a small cost-gated prior-week reversal
-            tilt. Short interest is a negative screen, not a leg. RSI 70/30, MACD crossovers, Bollinger
-            signals, VWAP, OBV and candlestick patterns are deliberately absent — none of them survive
-            data-snooping correction and costs in US single-stock data.
+            tilt. Short interest is a negative screen, not a leg. MACD crossovers, VWAP and candlestick
+            patterns are deliberately absent — none of them survive data-snooping correction and costs
+            in US single-stock data. A Bollinger BandWidth squeeze, volume dry-up and 2-period RSI read
+            are published in the Setup column as context only, not as legs: they say a name is coiled or
+            thinned out, not which way it resolves, and have not been run through this composite's own
+            validation.
           </>}
         </p>
       </div>
