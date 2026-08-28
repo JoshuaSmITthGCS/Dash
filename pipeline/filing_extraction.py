@@ -32,6 +32,21 @@ import re
 from bs4 import BeautifulSoup
 
 
+# Confirmed against a real filing (Citigroup 8-K Exhibit 99.x, 2026-08-28 live-extraction run):
+# SEC filers pad earnings-release tables with spacer cells containing only a zero-width space
+# (U+200B) -- invisible, but not whitespace by Python's definition, so str.strip() leaves it
+# alone and it survives as a "non-empty" cell: the real evidence line for a matched
+# efficiency_ratio reading was
+#   "Efficiency Ratio (...) | ​ | 57.4% | ​ | 58.1% | ​ | 62.7% | ​ | (70) bps | ​ | (530) bps"
+# Every one of those spacer cells burns characters out of the label-to-value search window
+# below for no informational reason.
+_INVISIBLE_FORMATTING_CHARS = "​‌‍﻿"
+
+
+def _clean_cell_text(text):
+    return text.translate({ord(char): None for char in _INVISIBLE_FORMATTING_CHARS})
+
+
 def html_to_lines(html):
     """Flatten one filing document into lines: one per table row, one per paragraph/heading.
 
@@ -43,7 +58,7 @@ def html_to_lines(html):
     soup = BeautifulSoup(html or "", "html.parser")
     lines = []
     for row in soup.find_all("tr"):
-        cells = [cell.get_text(" ", strip=True) for cell in row.find_all(["td", "th"])]
+        cells = [_clean_cell_text(cell.get_text(" ", strip=True)) for cell in row.find_all(["td", "th"])]
         cells = [cell for cell in cells if cell]
         if cells:
             lines.append(" | ".join(cells))
@@ -58,9 +73,21 @@ def html_to_lines(html):
     return lines
 
 
+# A real matched line (see _clean_cell_text's docstring above) put the value 52 characters
+# after its label, even after stripping spacer cells -- multi-column comparison tables (this
+# quarter | prior quarter | prior year, sometimes with a units/footnote cell between each)
+# routinely spend that much space before the first number. The original 60/40-character
+# budgets were tight enough that a slightly longer label parenthetical or one extra column
+# would have missed a real, present value. Widened once, from that evidence, not tuned per
+# metric -- there still isn't enough live data to justify anything more surgical.
+_LABEL_TO_VALUE_CHARS = 110
+_LABEL_TO_RATIO_CHARS = 70
+
+
 def _percent_after(label_pattern):
-    """A label, then the first signed percentage within ~60 characters of it."""
-    return re.compile(label_pattern + r".{0,60}?([+-]?\d{1,3}(?:\.\d+)?)\s*%", re.IGNORECASE)
+    """A label, then the first signed percentage within range of it."""
+    return re.compile(label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?([+-]?\d{{1,3}}(?:\.\d+)?)\s*%",
+                      re.IGNORECASE)
 
 
 def _percent_value(match):
@@ -70,11 +97,13 @@ def _percent_value(match):
 def _bps_or_percent_after(label_pattern):
     """A label, then a percentage (margin/ratio levels are usually reported as a level, not
     a change) within range."""
-    return re.compile(label_pattern + r".{0,60}?(\d{1,3}(?:\.\d+)?)\s*%", re.IGNORECASE)
+    return re.compile(label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?(\d{{1,3}}(?:\.\d+)?)\s*%",
+                      re.IGNORECASE)
 
 
 def _dollar_after(label_pattern):
-    return re.compile(label_pattern + r".{0,60}?\$\s?(\d{1,4}(?:\.\d+)?)", re.IGNORECASE)
+    return re.compile(label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?\$\s?(\d{{1,4}}(?:\.\d+)?)",
+                      re.IGNORECASE)
 
 
 def _dollar_value(match):
@@ -88,7 +117,7 @@ _SCALE_MULTIPLIERS = {"trillion": 1e12, "billion": 1e9, "million": 1e6, "thousan
 
 def _dollar_with_scale_after(label_pattern):
     return re.compile(
-        label_pattern + r".{0,60}?\$\s?(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*"
+        label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?\$\s?(\d{{1,3}}(?:,\d{{3}})*(?:\.\d+)?)\s*"
         r"(trillion|billion|million|thousand)?", re.IGNORECASE)
 
 
@@ -100,7 +129,8 @@ def _dollar_scaled_value(match):
 
 def _ratio_after(label_pattern):
     """A label, then a bare or 'Nx'-style ratio (book-to-bill, coverage, ...)."""
-    return re.compile(label_pattern + r".{0,40}?(\d{1,2}(?:\.\d+)?)\s*x?\b", re.IGNORECASE)
+    return re.compile(label_pattern + rf".{{0,{_LABEL_TO_RATIO_CHARS}}}?(\d{{1,2}}(?:\.\d+)?)\s*x?\b",
+                      re.IGNORECASE)
 
 
 def _ratio_value(match):
@@ -109,7 +139,7 @@ def _ratio_value(match):
 
 def _bps_after(label_pattern):
     """A label, then a basis-point figure (fee rates are usually quoted this way, not as %)."""
-    return re.compile(label_pattern + r".{0,60}?(\d{1,4}(?:\.\d+)?)\s*(?:bps|basis\s+points)",
+    return re.compile(label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?(\d{{1,4}}(?:\.\d+)?)\s*(?:bps|basis\s+points)",
                       re.IGNORECASE)
 
 

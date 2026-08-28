@@ -375,19 +375,40 @@ routing can't perturb the live scored composite. Every reading carries `"unaudit
 surfaces only as a display field (`row.filing_extracted_metrics`) — never a score input,
 matching how reverse_dcf and the new sector metrics above are handled.
 
-**This has not been validated against a single live SEC EDGAR fetch.** It was written in a
-sandboxed session whose outbound network policy blocked `sec.gov` outright (a proxy-level 403,
-not a timeout), so every extraction pattern was checked only against synthetic HTML fixtures
-built from the known structure of real earnings releases — see
-`pipeline/tests/test_filing_extraction.py` and the module's own docstring. (One real bug this
-already caught: two label patterns used a bare `a|b` alternation instead of `(?:a|b)`, so the
-label alone silently satisfied the whole compiled pattern with the value groups all `None` —
-fixed, and now covered by a regression test, but it's a concrete example of the class of
-mistake that only surfaces against a real filing's actual phrasing, not a hand-written
-fixture.) `settings.json`'s `filing_extraction.enabled` defaults to `false` for exactly this
-reason; flipping it on should wait until a session with real SEC EDGAR access confirms
-extraction accuracy against actual filings and checks the configured `minimum_coverage` (0.8)
-is actually cleared per metric.
+**It has now run once against live SEC EDGAR data (2026-08-28, refresh commit `0f911d94`, from
+an environment with real network access — this development sandbox's own policy still blocks
+`sec.gov` outright), and the result confirms the risk this section originally flagged.** The run
+fetched 658 real filing documents and resolved exactly one metric on one ticker:
+Citigroup's `efficiency_ratio` at 57.4%, pulled from a real 8-K Exhibit 99.x table row
+(`"Efficiency Ratio (total operating expenses/total revenues, net) | 57.4% | 58.1% | 62.7% |
+(70) bps | (530) bps"`). That single hit proves the mechanism works end to end against a real
+filing — the exhibit lookup, the HTML-to-lines flattening, and the regex all fired correctly —
+but a 1-in-658 resolution rate across same-store sales, NIM, ARPU, AUM, same-store NOI,
+book-to-bill, NRR, capacity utilization, rate base, and allowed ROE means the patterns, tuned
+only against synthetic fixtures, mostly don't match real filing phrasing.
+
+That one real match was also informative about *why*: the evidence line showed the label sat
+52-56 characters before its value even after the original 60-character search-window budget,
+and real filer tables pad alignment with spacer cells containing only a zero-width space
+(U+200B) — invisible, but not whitespace by Python's own definition, so it survived
+`str.strip()` as a "non-empty" cell and ate into that budget for no informational reason. Two
+fixes followed directly from this: `html_to_lines` now strips zero-width and other invisible
+formatting characters before deciding whether a cell is empty, and every label-to-value search
+window widened (60 → 110 characters for percent/dollar/bps patterns, 40 → 70 for ratios) to
+tolerate a longer label parenthetical or an extra comparison column without missing a value
+that is actually there. Both are evidence-informed, not blind widening — see
+`pipeline/filing_extraction.py`'s `_LABEL_TO_VALUE_CHARS` comment and
+`pipeline/tests/test_filing_extraction.py`'s `REAL_CITIGROUP_EFFICIENCY_RATIO_HTML` fixture,
+which reproduces the actual matched table rather than an invented one. This has *not* been
+re-validated against a second live run yet — that's the next step before trusting any
+improvement in the resolution rate — and every other pattern's near-total miss rate on real
+filings is still unexplained by this one data point; each may need its own investigation once
+more real matches (or near-misses) are available to look at. (Earlier bug for context: two
+label patterns used a bare `a|b` alternation instead of `(?:a|b)`, so the label alone silently
+satisfied the whole compiled pattern with the value groups all `None` — fixed pre-launch, now
+covered by a regression test.) `settings.json`'s `filing_extraction.enabled` is `true`; treat
+every reading it produces as unvalidated until the configured `minimum_coverage` (0.8) is
+actually cleared per metric on a live run, which it is nowhere close to today.
 
 ## Validation state
 
