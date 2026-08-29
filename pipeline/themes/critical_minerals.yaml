@@ -1,0 +1,97 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: critical_minerals
+  display_name: "Critical Minerals & Rare Earths"
+  taxonomy_tag: CRITICAL_MINERALS_AND_RARE_EARTHS
+  root_driver_tag: DEGLOBALIZATION_SECURITY
+  version: 1
+  status: active
+  created: 2026-08-29
+
+  chain:
+    root_driver: >
+      A small number of countries control rare-earth and critical-mineral processing, and export
+      controls on that processing have turned magnet and battery-metal supply into a national-
+      security question with a multi-year, government-backed response rather than a commodity
+      cycle that clears on price alone.
+    first_order: >
+      Domestic and allied miners and separators of rare earths and battery-relevant minerals,
+      increasingly funded by government offtake and price-floor agreements rather than spot
+      pricing alone.
+    second_order: >
+      The magnet, alloy and specialty-chemical processors who turn separated material into a
+      usable input, and the defense and electrification buyers whose named contracts anchor it.
+    disconfirming: >
+      Offtake and price-floor agreements not renewed at expiration; export controls easing rather
+      than tightening; a dominant producer flooding the spot market to undercut new domestic
+      capacity, the tactic that has repeatedly ended prior attempts at this buildout.
+  roles:
+    root:
+      industries: ["other industrial metals & mining", "uranium", "other precious metals & mining"]
+      tickers: [MP, UUUU, PPTA]
+    supplier:
+      industries: ["specialty chemicals"]
+  thesis: >
+    This buildout has failed before on the same mechanism every time: a dominant producer
+    undercuts new domestic capacity on price before it reaches scale. What is different this
+    round is that offtake and price-floor agreements are increasingly government-backed rather
+    than spot-price bets, which is why contracted volume and named-customer evidence matter more
+    here than for most themes in this screen.
+
+  seed_tickers: [MP, UUUU, PPTA]
+  expand_via_tnic: true
+  sectors: [Basic Materials, Industrials]
+  industries:
+    - "other industrial metals & mining"
+    - "uranium"
+    - "other precious metals & mining"
+    - "specialty chemicals"
+  keywords:
+    include:
+      - "rare earth"
+      - "neodymium"
+      - "praseodymium"
+      - "critical minerals"
+      - "offtake agreement"
+      - "separation and processing"
+      - "magnet supply chain"
+      - "antimony"
+      - "export controls"
+      - "price floor"
+    exclude:
+      # Unrelated senses of "critical" and "controls" that show up in every large filer's
+      # risk-factor boilerplate.
+      - "critical accounting"
+      - "internal controls"
+      - "critical infrastructure protection"
+  sic_codes: [1040, 1044, 2819]
+  icb_subsectors: []
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.15
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.30
+    # Offtake and price-floor agreements are the contracted-volume evidence this theme's thesis
+    # actually rests on, ahead of spot-price-exposed revenue.
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.25
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.30
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

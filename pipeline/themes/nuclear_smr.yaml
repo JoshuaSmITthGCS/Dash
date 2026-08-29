@@ -1,0 +1,102 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: nuclear_smr
+  display_name: "Nuclear Power Restart & SMRs"
+  taxonomy_tag: NUCLEAR_POWER_AND_SMR
+  root_driver_tag: ELECTRIFICATION_DEMAND
+  version: 1
+  status: active
+  created: 2026-08-29
+
+  chain:
+    root_driver: >
+      Data-center and reshored-industrial load growth needs firm, round-the-clock power that
+      intermittent generation cannot supply alone, and a hyperscaler signing a multi-year power
+      purchase agreement for existing or restarted nuclear capacity is a buyer of firmness, not
+      of a particular technology.
+    first_order: >
+      Utilities and independent power producers restarting or extending existing reactors, and
+      the enriched-fuel supply chain those reactors and any future small modular reactor fleet
+      both depend on.
+    second_order: >
+      Small modular reactor developers pursuing first-of-a-kind licenses and site work - years
+      from revenue, and the more speculative half of this theme by construction.
+    disconfirming: >
+      Power purchase agreements for restarted capacity not renewed or extended; SMR licensing
+      timelines slipping further rather than holding; HALEU supply bottlenecks easing rather than
+      tightening; data-center operators substituting gas or storage instead of firm nuclear.
+  roles:
+    root:
+      industries: ["utilities - independent power producers", "utilities - regulated electric"]
+      tickers: [CEG]
+    supplier:
+      industries: ["uranium", "specialty industrial machinery"]
+      tickers: [CCJ, LEU]
+    infrastructure:
+      tickers: [OKLO, SMR]
+  thesis: >
+    A hyperscaler underwriting a nuclear restart is buying firm power years before an SMR fleet
+    could deliver any, which is why this theme separates a demand-confirmed near-term case
+    (restarted and existing reactors, the enrichment supply chain) from a pre-revenue, licensing-
+    dependent one (SMR developers) rather than treating both as the same bet.
+
+  seed_tickers: [CEG, CCJ, LEU, OKLO, SMR]
+  expand_via_tnic: true
+  sectors: [Utilities, Energy, Industrials]
+  industries:
+    - "utilities - independent power producers"
+    - "utilities - regulated electric"
+    - "uranium"
+    - "specialty industrial machinery"        # reactor components, fuel fabrication equipment
+  keywords:
+    include:
+      - "small modular reactor"
+      - "SMR"
+      - "HALEU"
+      - "nuclear restart"
+      - "power purchase agreement"
+      - "reactor license"
+      - "uranium enrichment"
+      - "capacity factor"
+      - "interconnection agreement"
+    exclude:
+      # "Nuclear" is also common courtroom-verdict and family-law language; neither is this theme.
+      - "nuclear verdict"
+      - "nuclear family"
+      - "nuclear option"
+  sic_codes: [4911, 1094]   # electric services; uranium-radium-vanadium ores
+  icb_subsectors: []
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.10
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.30
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.15
+    # The hyperscalers underwriting power purchase agreements for restarted and new nuclear
+    # capacity are the demand-side confirmation this theme is upstream of.
+    - name: spender_capex_growth
+      source: edgar_xbrl_capex
+      universe: [MSFT, GOOGL, AMZN, META]
+      leading: true
+      weight: 0.25
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.20
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

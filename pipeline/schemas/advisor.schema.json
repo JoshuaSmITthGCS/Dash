@@ -773,6 +773,24 @@
                   "null"
                 ]
               },
+              "root_driver_tag": {
+                "_comment": "One of five macro demand drivers this theme is a claim about (see theme_screen.connectivity.root_driver_taxonomy), or null for a theme that is not a claim about one of the five - e.g. cybersecurity, digital payments.",
+                "enum": [
+                  "ELECTRIFICATION_DEMAND",
+                  "DEGLOBALIZATION_SECURITY",
+                  "AGING_LABOR_SCARCITY",
+                  "METABOLIC_CHRONIC_DISEASE",
+                  "RESOURCE_WATER_FOOD_SECURITY",
+                  null
+                ]
+              },
+              "mean_confidence_eligible": {
+                "_comment": "Mean signal-weight confidence across every eligible candidate this run scored for this theme (not just the published rows) - the evidence leg theme_screen.connectivity.per_theme.<id>.structural_rank is computed from.",
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
               "chain": {
                 "_comment": "The growth chain as declared in the theme file: what changed, who sells into it first, who supplies them, and what would falsify the thesis.",
                 "type": "object",
@@ -865,6 +883,87 @@
                 }
               }
             },
+            "additionalProperties": true
+          }
+        },
+        "connectivity": {
+          "_comment": "The edge-weighted connectivity graph over theme_screen.themes, computed by pipeline/theme_graph.py: which companies' theme memberships are real diversification versus one macro driver counted several times, a sequential ranking of the themes themselves, and each theme's cross-theme leaderboard and tail-exclusivity pick.",
+          "type": "object",
+          "properties": {
+            "root_driver_taxonomy": {
+              "type": "object"
+            },
+            "methodology": {
+              "type": "string"
+            },
+            "by_ticker": {
+              "_comment": "Per-ticker edges among its cleared (eligible) themes, its raw connectivity_score (sum of edge weights), and effective_theme_count after collapsing any run of >=3 cleared themes sharing one root driver into one effective theme.",
+              "type": "object"
+            },
+            "per_theme": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "structural_rank": {
+                    "_comment": "The theme's position in the ranked index. Reads price (via excess_return_normalized) and must declare contributes_to_exposure: false, exactly like theme_screen.themes[].trend - validate_data enforces both the flag and that no price-behavior field leaks in.",
+                    "type": ["object", "null"],
+                    "properties": {
+                      "contributes_to_exposure": {
+                        "const": false
+                      },
+                      "composite_score": {
+                        "type": ["number", "null"]
+                      },
+                      "tier": {
+                        "enum": ["broadening", "mixed", "cooling", "unmeasured"]
+                      }
+                    },
+                    "additionalProperties": true
+                  },
+                  "connectivity_leaders": {
+                    "type": "array"
+                  },
+                  "tail_pick": {
+                    "_comment": "The theme's tail-exclusivity pick with an honest fallback ladder: Tier 1 (zero connectivity to any other theme), Tier 2 (relaxed, must publish a caveat naming the secondary exposure - never rendered as a clean pure play), Tier 4 (no eligible candidate, must publish the reason). There is no Tier 3 by design.",
+                    "type": "object",
+                    "required": ["tier"],
+                    "properties": {
+                      "tier": {
+                        "enum": [1, 2, 4]
+                      },
+                      "ticker": {
+                        "type": ["string", "null"]
+                      },
+                      "caveat": {
+                        "type": ["string", "null"]
+                      },
+                      "reason": {
+                        "type": ["string", "null"]
+                      }
+                    },
+                    "additionalProperties": true
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "ranked_themes": {
+              "_comment": "Theme ids ordered by structural_rank.composite_score, descending.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "watchlist": {
+          "_comment": "Candidate themes deliberately not scored (see pipeline/config/theme_watchlist.json) - reference data only, never ranked or included in `themes` or `connectivity`.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "display_name"],
             "additionalProperties": true
           }
         }

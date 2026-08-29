@@ -1,0 +1,55 @@
+{
+  "generated_at": "2026-08-29T18:27:20.252526+00:00",
+  "data_integrity": "prospective_point_in_time",
+  "reconstructed_history": {
+    "included": false,
+    "label": "no history exists before theme_pit_store began recording - this module never reconstructs a theme score for a date it did not observe"
+  },
+  "snapshot_dates_recorded": 0,
+  "primary_horizon": "3M",
+  "metrics": {
+    "theme_exposure_score": {
+      "requires_live_sample": true,
+      "eligible_periods": 0,
+      "minimum_icir_periods": 24,
+      "status": "accumulating",
+      "mean_rank_ic": null,
+      "icir": null,
+      "t_stat": null,
+      "hit_rate": null,
+      "clears_multiple_testing_bar": false,
+      "periods": []
+    },
+    "connectivity_score": {
+      "requires_live_sample": true,
+      "eligible_periods": 0,
+      "minimum_icir_periods": 24,
+      "status": "accumulating",
+      "mean_rank_ic": null,
+      "icir": null,
+      "t_stat": null,
+      "hit_rate": null,
+      "clears_multiple_testing_bar": false,
+      "periods": []
+    },
+    "structural_rank_composite": {
+      "requires_live_sample": true,
+      "eligible_periods": 0,
+      "minimum_icir_periods": 24,
+      "status": "accumulating",
+      "mean_rank_ic": null,
+      "icir": null,
+      "t_stat": null,
+      "hit_rate": null,
+      "clears_multiple_testing_bar": false,
+      "periods": []
+    }
+  },
+  "model_version": "3.2.0",
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "92ec526af42e8b1a23b283ab2ee9eb4a71ffcf8f",
+    "config_hash": "a0b747109820f48effbd8dabf5a30f2760e191e1e63f004cdc13c18247360c63",
+    "generated_at": "2026-08-29T18:27:20.252526+00:00"
+  }
+}

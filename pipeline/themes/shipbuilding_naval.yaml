@@ -1,0 +1,97 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: shipbuilding_naval
+  display_name: "Shipbuilding & Naval Capacity"
+  taxonomy_tag: SHIPBUILDING_AND_NAVAL_CAPACITY
+  root_driver_tag: DEGLOBALIZATION_SECURITY
+  version: 1
+  status: active
+  created: 2026-08-29
+
+  chain:
+    root_driver: >
+      Naval shipbuilding capacity has fallen well behind fleet-replacement and allied-order
+      demand, and the policy response - multi-year drydock and submarine-construction investment
+      - is a capacity build, not a one-time order, so it shows up in backlog and capex years
+      before it shows up in delivered hulls.
+    first_order: >
+      The prime shipbuilders holding submarine and surface-combatant programs, whose remaining
+      performance obligation is disclosed years ahead of the revenue it converts to.
+    second_order: >
+      The specialty-metal, sensor and systems suppliers into those hulls, kept a distinct role
+      from the primes since capacity constraints and backlog conversion are read differently at
+      each stage.
+    disconfirming: >
+      Program appropriations slipping or rescinded; primes citing capacity rather than orders as
+      the constraint on delivery; drydock investment plans deferred; backlog growing while
+      delivery schedules keep slipping further out, the sign of a demand problem becoming a
+      capacity problem instead of resolving one.
+  roles:
+    root:
+      industries: ["aerospace & defense"]
+      tickers: [HII]
+    supplier:
+      # General Dynamics holds its own submarine and surface-combatant programs, but is scored
+      # here as a supplier into naval capacity specifically - it is the root of the broader
+      # defense_rearmament theme, and a company's role is a property of the relationship, not of
+      # the company (see pipeline/themes.py assign_role).
+      industries: ["aerospace & defense", "metal fabrication", "scientific & technical instruments"]
+      tickers: [GD]
+  thesis: >
+    A submarine or surface-combatant program is disclosed as remaining performance obligation
+    years before it converts to revenue, which is why this theme reads backlog growth as the
+    earliest honest signal - the same discipline the defense_rearmament theme applies to
+    munitions - rather than treating this as a subset of that broader theme, since drydock and
+    hull-fabrication capacity is a distinct, physically separate constraint from munitions
+    production capacity.
+
+  seed_tickers: [HII, GD]
+  expand_via_tnic: true
+  sectors: [Industrials]
+  industries:
+    - "aerospace & defense"
+    - "metal fabrication"
+    - "scientific & technical instruments"
+  keywords:
+    include:
+      - "shipbuilding"
+      - "naval vessel"
+      - "submarine construction"
+      - "Maritime Action Plan"
+      - "drydock"
+      - "hull fabrication"
+      - "surface combatant"
+    exclude:
+      # Commercial and consumer shipping/travel language, not naval construction.
+      - "cruise ship"
+      - "container shipping"
+      - "commercial vessel charter"
+  sic_codes: [3731]
+  icb_subsectors: []
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.10
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.30
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.40
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.20
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

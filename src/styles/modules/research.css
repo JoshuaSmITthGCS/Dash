@@ -352,6 +352,24 @@ td { padding: var(--sp-3); border-bottom: 1px solid var(--border); font-size: va
 .theme-index .chip.trend-pos { color: var(--up); }
 .theme-index .chip.trend-watch { color: var(--warn); }
 .theme-index .chip.trend-neg { color: var(--down); }
+/* Same tone scale, unscoped: the tail-exclusivity picks section and the root-driver legend use
+   the identical chip/tone vocabulary outside the theme index nav. */
+.chip.trend-pos { color: var(--up); }
+.chip.trend-watch { color: var(--warn); }
+.chip.trend-neg { color: var(--down); }
+
+/* Root-driver taxonomy legend. */
+.root-driver-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp-3); margin-top: var(--sp-3); }
+.root-driver-group { padding: var(--sp-2-5); border-radius: var(--control-radius); background: var(--bg-card); }
+.root-driver-group h3 { font-size: var(--fs-xs); margin: 0 0 var(--sp-2); }
+.root-driver-group ul { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--sp-1); }
+.root-driver-group li { font-size: var(--fs-2xs); }
+
+/* Tail-exclusivity picks. */
+.tail-picks-list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--sp-1-5); }
+.tail-picks-list li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); padding: var(--sp-2); border-radius: var(--control-radius); background: var(--bg-elev); font-size: var(--fs-2xs); }
+.tail-picks-list b { font: var(--fw-bold) var(--fs-xs) var(--font-mono); }
+.tail-picks-list small { color: var(--text-faint); flex-basis: 100%; }
 
 /* Per-row reason. Open by default would triple every table's height, so the first clause -
    how the company got into the section - stays visible and the evidence expands under it. */

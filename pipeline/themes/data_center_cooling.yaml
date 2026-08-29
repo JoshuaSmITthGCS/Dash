@@ -1,0 +1,103 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: data_center_cooling
+  display_name: "Data Center Cooling & Thermal Management"
+  taxonomy_tag: DATA_CENTER_THERMAL_MANAGEMENT
+  root_driver_tag: ELECTRIFICATION_DEMAND
+  version: 1
+  status: active
+  created: 2026-08-29
+
+  chain:
+    root_driver: >
+      Accelerator rack density has moved past what air cooling can remove, so liquid cooling has
+      gone from an option to a specification for the newest accelerator generations - a physical
+      constraint on the AI buildout, not a preference.
+    first_order: >
+      The thermal-management and power-quality vendors data-center operators specify directly:
+      liquid cooling loops, coolant distribution units, and the power gear that shares the rack.
+    second_order: >
+      Heat-exchange and thermal component suppliers, and the contractors who retrofit or build
+      halls to the new cooling specification.
+    disconfirming: >
+      Accelerator generations reverting to air-cooled designs; hyperscaler cooling capex guidance
+      cut; liquid-cooling attach rates flattening in disclosed data-center wins; a shift to
+      lower-density inference-only buildouts that do not need it.
+  roles:
+    root:
+      industries: ["electrical equipment", "specialty industrial machinery"]
+      tickers: [VRT]
+    supplier:
+      industries: ["specialty industrial machinery", "electronic components"]
+      tickers: [MOD, NVT]
+    infrastructure:
+      industries: ["engineering & construction"]
+  thesis: >
+    Liquid cooling changed from an option to a rack-density specification, which makes attach
+    rate the thing worth measuring rather than the presence of a "cooling" segment: a vendor with
+    a legacy air-cooling or automotive-thermal business looks similar on a keyword screen to one
+    whose growth is entirely in liquid cooling for accelerators, and only segment and backlog
+    evidence tells them apart.
+
+  seed_tickers: [VRT, MOD, NVT, ETN]
+  expand_via_tnic: true
+  sectors: [Industrials, Technology]
+  industries:
+    - "electrical equipment"
+    - "specialty industrial machinery"
+    - "building products & equipment"
+    - "engineering & construction"
+  keywords:
+    include:
+      - "liquid cooling"
+      - "direct-to-chip"
+      - "rack density"
+      - "thermal management"
+      - "data center cooling"
+      - "immersion cooling"
+      - "coolant distribution unit"
+      - "heat rejection"
+      - "power density"
+    exclude:
+      # Modine and nVent both carry non-data-center thermal businesses (vehicle and building
+      # HVAC); without this the theme would score legacy automotive cooling revenue as exposure.
+      - "vehicle thermal management"
+      - "automotive cooling"
+      - "engine cooling"
+      - "hvac for commercial buildings"
+  sic_codes: [3585, 3612]
+  icb_subsectors: []
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.15
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.35
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.20
+    # Same measurement as AI Infra's hyperscaler_capex_growth - kept under that name here too
+    # since this theme's demand-side spenders are the identical cheque-writers.
+    - name: hyperscaler_capex_growth
+      source: edgar_xbrl_capex
+      universe: [MSFT, GOOGL, AMZN, META]
+      leading: true
+      weight: 0.15
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.15
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

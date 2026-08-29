@@ -1,0 +1,98 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: ot_industrial_cybersecurity
+  display_name: "OT/Industrial Cybersecurity"
+  taxonomy_tag: OT_INDUSTRIAL_CYBERSECURITY
+  # Not one of the five macro demand drivers this taxonomy classifies - see cybersecurity.yaml,
+  # which makes the same call for the same reason: protecting infrastructure is not itself a
+  # claim about one of the five buildouts.
+  root_driver_tag: null
+  version: 1
+  status: active
+  created: 2026-08-29
+
+  chain:
+    root_driver: >
+      Industrial control systems and operational-technology networks were built assuming
+      physical isolation, and connecting them to IT networks and the internet - which the rest of
+      the electrification and reshoring buildout in this screen requires - has removed that
+      isolation faster than purpose-built OT security has been deployed to replace it.
+    first_order: >
+      Security vendors selling into industrial, utility and critical-infrastructure operators
+      specifically, as distinct from the same vendors' much larger general enterprise business.
+    second_order: >
+      Industrial-automation and control-system vendors who embed security into the systems they
+      already sell, rather than selling security as a standalone product.
+    disconfirming: >
+      Named OT/ICS-security revenue flat while overall enterprise-security revenue grows, which
+      would mean this is enterprise cybersecurity discussed in infrastructure language rather
+      than a distinct OT business; a major public pure-play (Dragos, Claroty and similar are
+      private today) never reaching the public market to test that distinction directly.
+  roles:
+    root:
+      industries: ["software - infrastructure"]
+      tickers: [PANW, FTNT]
+  thesis: >
+    The two credible public candidates for this theme (Palo Alto, Fortinet) are both dominated by
+    general enterprise cybersecurity revenue, and the genuine OT/ICS pure-plays (Dragos, Claroty)
+    are private. This theme is declared anyway, with a narrow keyword scope built to exclude the
+    dominant enterprise business, because "no name clears the guardrails on the evidence
+    available" is itself the correct, honest answer this screen should be able to publish rather
+    than lowering the bar to force a pick.
+
+  seed_tickers: [PANW, FTNT]
+  expand_via_tnic: true
+  sectors: [Technology, Industrials]
+  industries:
+    - "software - infrastructure"
+    - "specialty industrial machinery"
+  keywords:
+    include:
+      - "operational technology security"
+      - "ICS security"
+      - "SCADA security"
+      - "industrial control system"
+      - "critical infrastructure protection"
+      - "OT network segmentation"
+      - "IEC 62443"
+    exclude:
+      # The dominant general-enterprise cybersecurity language at both named candidates - without
+      # this exclusion list the theme would simply re-score their core business.
+      - "next-generation firewall for the enterprise"
+      - "secure access service edge"
+      - "SASE"
+      - "zero trust network access"
+      - "enterprise endpoint"
+      - "email security"
+  sic_codes: [7372]
+  icb_subsectors: []
+
+  signals:
+    # Segment reporting essentially never breaks out OT/ICS revenue at these filers, so the
+    # keyword trend carries more of this theme's weight than in most others - flagged in the
+    # thesis above rather than concealed by the weighting alone.
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.30
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.25
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.15
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.30
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

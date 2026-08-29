@@ -53,6 +53,8 @@ from signal_report import write_signal_report
 from explainability import attach_explainability, attribution_errors, build_score_history
 from sec_edgar import SecEdgarClient
 from theme_signals import EdgarThemeSignals, recent_10k_filings
+from theme_graph import build_connectivity
+import theme_pit_store
 from themes import build_theme_screen, empty_screen, expand_theme_candidates, load_themes
 from validation.experiment_manifest import sha256_of_file
 from validation.ic_harness import (append_refresh as append_ic_refresh,
@@ -1410,6 +1412,24 @@ def build_theme_layer(sec, rows):
     screen = build_theme_screen(themes, rows, provider)
     LOG.info(f"Theme screen: {len(screen['themes'])} theme(s), "
              f"{sum(theme['count'] for theme in screen['themes'])} scored exposures")
+    # The connectivity graph is pure arithmetic over what build_theme_screen just published -
+    # no re-scoring, no new fetches. Computed even when a theme's own signals came back thin,
+    # since a graph over N-1 working themes is still real; only a wholly empty screen skips it.
+    if screen.get("themes"):
+        screen["connectivity"] = build_connectivity(screen["themes"], screen.get("by_ticker") or {})
+    # Candidate themes deliberately not scored (see pipeline/config/theme_watchlist.json for
+    # why) - hand-maintained reference data, published verbatim so the frontend can note them as
+    # "watching, not promoted" rather than silently absent.
+    watchlist = load_json("theme_watchlist.json", from_config=True)
+    if watchlist:
+        screen["watchlist"] = watchlist.get("candidates") or []
+    # Point-in-time capture for future rank-IC validation (Phase 5) - starts recording today,
+    # never reconstructs history. See theme_pit_store.py and validation/theme_ic.py.
+    try:
+        price_by_ticker = {row.get("ticker"): row.get("price") for row in rows if row.get("ticker")}
+        theme_pit_store.append_snapshot(screen, price_by_ticker)
+    except Exception as exc:  # noqa: BLE001
+        LOG.warn(f"theme_pit_store snapshot failed ({type(exc).__name__}): {exc}")
     return screen
 
 

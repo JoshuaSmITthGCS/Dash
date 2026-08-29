@@ -648,4 +648,123 @@ describe('Theme Exposure screen', () => {
 
     expect(screen.getByText('no signals')).toBeInTheDocument()
   })
+
+  describe('connectivity graph', () => {
+    // Same shape pipeline/theme_graph.build_connectivity actually publishes, attached to
+    // multiThemeData's two themes (ai_infrastructure, grid_electrification).
+    const connectivityData = {
+      ...multiThemeData,
+      theme_screen: {
+        ...multiThemeData.theme_screen,
+        themes: multiThemeData.theme_screen.themes.map((theme) => ({
+          ...theme, root_driver_tag: theme.id === 'ai_infrastructure' ? 'ELECTRIFICATION_DEMAND' : 'ELECTRIFICATION_DEMAND',
+        })),
+        connectivity: {
+          root_driver_taxonomy: { ELECTRIFICATION_DEMAND: 'Electricity demand & electrification' },
+          methodology: 'Edge weights are a declared heuristic.',
+          by_ticker: {
+            ETN: { connectivity_score: 3.0, effective_theme_count: 1, cleared_theme_count: 2 },
+          },
+          per_theme: {
+            ai_infrastructure: {
+              structural_rank: { contributes_to_exposure: false, composite_score: 0.82, tier: 'broadening' },
+              connectivity_leaders: [{ ticker: 'ETN', role: 'infrastructure', theme_exposure_score: 74,
+                connectivity_score: 3.0, effective_theme_count: 1, cleared_theme_count: 2 }],
+              tail_pick: { tier: 1, ticker: 'NVDA', caveat: null },
+            },
+            grid_electrification: {
+              structural_rank: { contributes_to_exposure: false, composite_score: 0.41, tier: 'mixed' },
+              connectivity_leaders: [],
+              tail_pick: { tier: 2, ticker: 'ETN', caveat: 'Secondary exposure to AI Infrastructure Buildout (shared root driver)' },
+            },
+          },
+          ranked_themes: ['ai_infrastructure', 'grid_electrification'],
+        },
+        watchlist: [{
+          id: 'humanoid_robotics', display_name: 'Humanoid & General-Purpose Robotics',
+          why_not_promoted: 'No deployed, revenue-generating per-unit product yet.',
+          promotion_threshold: 'Real per-unit deployment revenue.', recheck_cadence: 'quarterly',
+        }],
+      },
+    }
+
+    it('groups themes under their root driver, with a link to each theme panel', () => {
+      useData.mockImplementation(() => ({ data: connectivityData, loading: false, error: null }))
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      expect(screen.getByText('Electricity demand & electrification')).toBeInTheDocument()
+      const heading = screen.getByRole('heading', { name: /Root drivers/ })
+      const group = heading.closest('section')
+      expect(within(group).getAllByRole('link', { name: 'AI Infrastructure Buildout' }).length).toBeGreaterThan(0)
+    })
+
+    it('ranks a theme panel s cross-theme leaderboard by connectivity score', () => {
+      useData.mockImplementation(() => ({ data: connectivityData, loading: false, error: null }))
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      expect(screen.getByRole('heading', { name: /Cross-theme leaderboard/ })).toBeInTheDocument()
+      expect(screen.getByText(/connectivity 3/)).toBeInTheDocument()
+      expect(screen.getByText(/1 effective of 2 cleared themes/)).toBeInTheDocument()
+    })
+
+    it('publishes a tail pick per theme, never rendering a relaxed pick as clean', () => {
+      useData.mockImplementation(() => ({ data: connectivityData, loading: false, error: null }))
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      expect(screen.getByRole('heading', { name: /Cleanest single-theme picks/ })).toBeInTheDocument()
+      expect(screen.getAllByText('Clean pick').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('Relaxed pick').length).toBeGreaterThan(0)
+      expect(screen.getByText(/Secondary exposure to AI Infrastructure Buildout/)).toBeInTheDocument()
+    })
+
+    it('reports a Tier 4 theme as no unique pick, with its reason', () => {
+      useData.mockImplementation(() => ({
+        data: {
+          ...connectivityData,
+          theme_screen: {
+            ...connectivityData.theme_screen,
+            connectivity: {
+              ...connectivityData.theme_screen.connectivity,
+              per_theme: {
+                ...connectivityData.theme_screen.connectivity.per_theme,
+                grid_electrification: {
+                  ...connectivityData.theme_screen.connectivity.per_theme.grid_electrification,
+                  tail_pick: { tier: 4, ticker: null, caveat: null, reason: 'no candidate cleared this theme\'s guardrails to pick from' },
+                },
+              },
+            },
+          },
+        },
+        loading: false, error: null,
+      }))
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      expect(screen.getAllByText('No unique pick').length).toBeGreaterThan(0)
+      expect(screen.getByText(/no candidate cleared this theme's guardrails/)).toBeInTheDocument()
+    })
+
+    it('sorts the theme index by evidence by default, and lets a reader switch to trend', () => {
+      useData.mockImplementation(() => ({ data: connectivityData, loading: false, error: null }))
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      const nav = screen.getByRole('navigation', { name: 'Themes in this report' })
+      const links = () => within(nav).getAllByRole('link').map((link) => link.textContent)
+      // AI Infrastructure's composite (0.82) outranks Grid's (0.41) - the evidence-sorted default.
+      expect(links()).toEqual(['AI Infrastructure Buildout', 'Grid & Electrification Buildout'])
+
+      fireEvent.click(screen.getByRole('button', { name: 'By trend' }))
+      // Neither theme fixture declares a trend verdict, so the trend sort falls back to its
+      // own tiebreak - this only asserts the toggle re-renders without crashing and the evidence
+      // scores stop being what is shown, not a specific trend order.
+      expect(screen.queryByText('0.82 · broadening')).not.toBeInTheDocument()
+    })
+
+    it('notes a watchlist candidate as watched, not scored', () => {
+      useData.mockImplementation(() => ({ data: connectivityData, loading: false, error: null }))
+      render(<MemoryRouter><ThemeExposureScreen /></MemoryRouter>)
+
+      expect(screen.getByRole('heading', { name: /Watching, not promoted/ })).toBeInTheDocument()
+      expect(screen.getByText(/Humanoid & General-Purpose Robotics/)).toBeInTheDocument()
+    })
+  })
 })

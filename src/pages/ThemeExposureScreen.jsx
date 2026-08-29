@@ -82,6 +82,9 @@ const ROLE_LABEL = {
   infrastructure: 'Infrastructure', service: 'Service',
 }
 
+const TAIL_TIER_TONE = { 1: 'pos', 2: 'watch', 4: 'neutral' }
+const TAIL_TIER_LABEL = { 1: 'Clean pick', 2: 'Relaxed pick', 4: 'No unique pick' }
+
 // Verdict wording is the pipeline's; this only decides how loudly to render it. "Strong but
 // already priced" is deliberately a warning tone rather than a positive one - it is the exact
 // setup thematic products have historically bought at the wrong moment.
@@ -215,6 +218,46 @@ function BiggestPlayers({ players, onOpen, byTicker }) {
     <p className="disclaimer">The theme's largest members by market capitalization, with their
       exposure score — ranked by size, not by the exposure leaderboard, because the companies
       most identified with a trend are frequently not the ones the evidence ranks first.</p>
+  </div>
+}
+
+// Edge-weighted, not size-weighted: a name leads this list because its connections into other
+// themes are real (same root driver, or a genuine supplier role elsewhere), not because it is
+// the biggest company in the theme — that question is BiggestPlayers', a different one.
+function ConnectivityLeaders({ leaders, onOpen, byTicker }) {
+  if (!leaders?.length) return null
+  return <div className="theme-players">
+    <h4>Cross-theme leaderboard
+      <InfoTag label="Cross-theme leaderboard">
+        <strong>Cross-theme leaderboard</strong>
+        <p>This theme's members ranked by connectivity score — the sum of edge weights into
+          every other theme they clear the guardrails on. A shared macro demand driver (the same
+          buildout, counted once) weighs most; a shared supplier role across different drivers
+          next; a coincidental sector overlap least. See the root-driver legend near the top of
+          this page for the full methodology.</p>
+      </InfoTag>
+    </h4>
+    <ul>
+      {leaders.map((leader) => {
+        const row = { ...byTicker.get(leader.ticker), ...leader }
+        return <li key={leader.ticker}>
+          <button className="text-button--inline" onClick={() => onOpen(row)}>
+            <b>{leader.ticker}</b>
+          </button>
+          <span>{row.name || leader.ticker}</span>
+          <small>
+            connectivity {leader.connectivity_score}
+            {' · '}{leader.effective_theme_count} effective of {leader.cleared_theme_count} cleared theme{leader.cleared_theme_count === 1 ? '' : 's'}
+            {leader.role ? ` · ${(ROLE_LABEL[leader.role] || leader.role).toLowerCase()} here` : ''}
+          </small>
+        </li>
+      })}
+    </ul>
+    <p className="disclaimer">Ranked by Σ edge weight across the connectivity graph, not by
+      exposure or size — effective theme count is the count after collapsing three or more
+      cleared themes that share one root driver into a single effective theme, so a name real in
+      one buildout across several themes is not read as diversified across that many independent
+      ones.</p>
   </div>
 }
 
@@ -406,6 +449,126 @@ function GroupCount({ shown, total }) {
   return <span className="chip">Showing {shown} of {total}</span>
 }
 
+// The five macro demand drivers themes are grouped under, and the correlated-cluster rule that
+// keeps a company real in one buildout across several of them from reading as diversified across
+// that many independent drivers. Themes with no root_driver_tag (cybersecurity, digital
+// payments - durable businesses, not a claim about one of the five) are listed separately.
+function RootDriverLegend({ connectivity, themes }) {
+  const taxonomy = connectivity?.root_driver_taxonomy || {}
+  const byTag = new Map(Object.keys(taxonomy).map((tag) => [tag, []]))
+  const untagged = []
+  for (const theme of themes) {
+    if (theme.root_driver_tag && byTag.has(theme.root_driver_tag)) byTag.get(theme.root_driver_tag).push(theme)
+    else if (theme.root_driver_tag) byTag.set(theme.root_driver_tag, [theme])
+    else untagged.push(theme)
+  }
+  if (!byTag.size && !untagged.length) return null
+  return <section className="card theme-exposure-panel" aria-labelledby="root-driver-heading">
+    <header>
+      <h2 id="root-driver-heading">Root drivers
+        <InfoTag label="Root drivers">
+          <strong>Root drivers</strong>
+          <p>Five macro demand drivers, coarser than any one theme. Themes sharing a root driver
+            are treated as one buildout wearing different costumes: if a company clears three or
+            more of them, they collapse to a single effective theme before anything on this
+            screen calls it diversified — the "one macro theme in four costumes" problem.</p>
+          <p>{connectivity?.methodology}</p>
+        </InfoTag>
+      </h2>
+      <p>Every theme on this screen is a claim about one of these five drivers, or about
+        neither — cybersecurity and digital payments are durable businesses, not a growth-chain
+        root, and are listed on their own rather than forced into one of the five.</p>
+    </header>
+    <div className="root-driver-groups">
+      {[...byTag.entries()].filter(([, group]) => group.length).map(([tag, group]) => (
+        <div className="root-driver-group" key={tag}>
+          <h3>{taxonomy[tag] || tag}</h3>
+          <ul>
+            {group.map((theme) => <li key={theme.id}><a href={`#theme-${theme.id}`}>{theme.display_name}</a></li>)}
+          </ul>
+        </div>
+      ))}
+      {untagged.length > 0 && (
+        <div className="root-driver-group" key="untagged">
+          <h3>Not one of the five drivers</h3>
+          <ul>
+            {untagged.map((theme) => <li key={theme.id}><a href={`#theme-${theme.id}`}>{theme.display_name}</a></li>)}
+          </ul>
+        </div>
+      )}
+    </div>
+  </section>
+}
+
+function TailPickRow({ themeId, themeName, pick }) {
+  const tone = TAIL_TIER_TONE[pick?.tier] || 'neutral'
+  return <li>
+    <a href={`#theme-${themeId}`}>{themeName}</a>
+    <span className={`chip trend-${tone}`}>{TAIL_TIER_LABEL[pick?.tier] || 'Unranked'}</span>
+    {pick?.ticker ? <b>{pick.ticker}</b> : <span className="disclaimer">no pick</span>}
+    {pick?.caveat && <small>{pick.caveat}</small>}
+    {pick?.tier === 4 && pick?.reason && <small>{pick.reason}</small>}
+  </li>
+}
+
+// One exclusivity pick per theme, with the fallback tier always visible: a Tier 2 (relaxed)
+// pick is never rendered as if it were a clean single-theme play, and a Tier 4 theme says
+// plainly that no candidate cleared the bar rather than being silently absent from the list.
+function TailPicksSection({ themes, perThemeConnectivity }) {
+  const rows = themes
+    .map((theme) => ({ theme, pick: perThemeConnectivity[theme.id]?.tail_pick }))
+    .filter((row) => row.pick)
+  if (!rows.length) return null
+  return <section className="card theme-exposure-panel" aria-labelledby="tail-picks-heading">
+    <header>
+      <h2 id="tail-picks-heading">Cleanest single-theme picks
+        <InfoTag label="Cleanest single-theme picks">
+          <strong>Cleanest single-theme picks</strong>
+          <p>For each theme, the highest-opportunity eligible name whose connectivity to every
+            <em> other</em> theme is exactly zero — a genuine single-theme pure play, not merely
+            the top of the leaderboard.</p>
+          <p><b>Clean pick</b> (Tier 1) — zero connectivity to any other theme.</p>
+          <p><b>Relaxed pick</b> (Tier 2) — no zero-connectivity candidate existed in the ranked
+            pool, so this is the least-connected one available, with its secondary exposure
+            named. Never a clean pure play; reported as one would misstate what it is.</p>
+          <p><b>No unique pick</b> (Tier 4) — no eligible candidate cleared this theme's
+            guardrails at all. A real finding, not a gap in the screen.</p>
+        </InfoTag>
+      </h2>
+    </header>
+    <ul className="tail-picks-list">
+      {rows.map(({ theme, pick }) => (
+        <TailPickRow key={theme.id} themeId={theme.id} themeName={theme.display_name} pick={pick} />
+      ))}
+    </ul>
+  </section>
+}
+
+function WatchlistNote({ watchlist }) {
+  if (!watchlist?.length) return null
+  return <section className="card theme-exposure-panel" aria-labelledby="watchlist-heading">
+    <header>
+      <h2 id="watchlist-heading">Watching, not promoted
+        <InfoTag label="Watching, not promoted">
+          <strong>Watching, not promoted</strong>
+          <p>Candidate themes deliberately not scored: promoting them would mean measuring
+            speculative language rather than the disclosed segment revenue, backlog or
+            named-customer evidence every scored theme on this screen requires. Re-checked on
+            the cadence stated below, not scored in the meantime.</p>
+        </InfoTag>
+      </h2>
+    </header>
+    <ul className="row-why-list">
+      {watchlist.map((candidate) => (
+        <li key={candidate.id}>
+          <b>{candidate.display_name}</b> — {candidate.why_not_promoted}
+          <br /><small>Promotion threshold: {candidate.promotion_threshold} (rechecked {candidate.recheck_cadence})</small>
+        </li>
+      ))}
+    </ul>
+  </section>
+}
+
 export default function ThemeExposureScreen() {
   const { data, loading, error, reload } = useData('advisor.json')
   // The sector-connected tier, re-ranked across the whole peer pool by the separate
@@ -417,6 +580,12 @@ export default function ThemeExposureScreen() {
   const { data: peerScreen } = useData('theme-peers.json')
   const [selectedStock, setSelectedStock] = useState(null)
   const [hideHoldings, setHideHoldings] = useState(false)
+  // 'evidence' (theme_screen.connectivity's structural_rank composite - this build's own ranked
+  // index) is the default: it is the headline artifact of the connectivity graph, evidence-
+  // weighted rather than trend-only, so a real-but-unpriced theme (high evidence, mixed trend)
+  // can outrank a thin-evidence one that merely happens to be up. 'trend' keeps the screen's
+  // original, simpler "how is it doing right now" ordering for anyone who wants it.
+  const [themeSort, setThemeSort] = useState('evidence')
   const { positions } = useFirebasePortfolio()
 
   const holdings = useMemo(
@@ -460,6 +629,28 @@ export default function ThemeExposureScreen() {
       .map((row) => ({ ...byTicker.get(row.ticker), ...row })),
     [data, byTicker, visible],
   )
+
+  // The connectivity graph over theme_screen.themes: root-driver taxonomy, each theme's
+  // structural rank / cross-theme leaderboard / tail-exclusivity pick, and the ranked index.
+  // Computed server-side in pipeline/theme_graph.py - this page only renders it. Absent on an
+  // older cached advisor.json (a graceful gap, not an error): every read below falls back to
+  // the theme's original trend-only rendering when it is missing.
+  const connectivity = data?.theme_screen?.connectivity
+  const perThemeConnectivity = connectivity?.per_theme || {}
+  const watchlist = data?.theme_screen?.watchlist || []
+
+  // Composite-score sort falls back to the trend ordering for a theme connectivity has not
+  // scored (too few members measured to rank at all - see theme_graph.structural_rank), rather
+  // than dropping it to the bottom of the list unexplained.
+  function themesByEvidence(left, right) {
+    const score = (theme) => perThemeConnectivity[theme.id]?.structural_rank?.composite_score
+    const leftScore = score(left), rightScore = score(right)
+    if (leftScore == null && rightScore == null) return themesByTrend(left, right)
+    if (leftScore == null) return 1
+    if (rightScore == null) return -1
+    return rightScore - leftScore
+  }
+  const sortedThemes = [...themes].sort(themeSort === 'evidence' ? themesByEvidence : themesByTrend)
 
   return <>
     <ScreenNavigation />
@@ -516,7 +707,14 @@ export default function ThemeExposureScreen() {
       <nav className="card theme-index" aria-label="Themes in this report">
         <h2>Structural trends in this report
           <InfoTag label="Reading the index">
-            <strong>Trend</strong>
+            <strong>Ranked by evidence</strong>
+            <p>0.40 × evidence strength (mean signal confidence across eligible members) + 0.35 ×
+              excess return (price-derived, read the same deliberate way the trend block reads
+              price - never fed back into any exposure score) + 0.25 × breadth (share of scored
+              candidates that cleared the guardrails). A theme can be real and thinly priced-in at
+              once: strong evidence can outrank a "broadening" theme whose evidence is thin, which
+              is the point - this index does not let a hot trend alone decide the ranking.</p>
+            <strong>Ranked by trend</strong>
             <p><b>Broadening</b> – the group is beating the market, most members are
               participating, and it is not yet priced as an expensive third of its sectors.</p>
             <p><b>Narrow leadership</b> – the group is up, but the advance belongs to a minority
@@ -525,15 +723,31 @@ export default function ThemeExposureScreen() {
               reflect it. This is the setup specialized thematic products have historically
               bought at the wrong moment, so it is never shown as a clean signal.</p>
             <p><b>Cooling</b> – the group is lagging and not recovering.</p>
-            <p>Measured from price, breadth and estimate revisions across each theme's members.
-              None of it touches any company's exposure score.</p>
           </InfoTag>
         </h2>
+        <div className="swing-view-toggle">
+          <span id="theme-sort-label">Sort</span>
+          <div role="group" aria-labelledby="theme-sort-label">
+            <button type="button" aria-pressed={themeSort === 'evidence'}
+              className={themeSort === 'evidence' ? 'is-active' : ''} onClick={() => setThemeSort('evidence')}>
+              By evidence
+            </button>
+            <button type="button" aria-pressed={themeSort === 'trend'}
+              className={themeSort === 'trend' ? 'is-active' : ''} onClick={() => setThemeSort('trend')}>
+              By trend
+            </button>
+          </div>
+        </div>
         <ul>
-          {[...themes].sort(themesByTrend).map((theme) => (
-            <li key={theme.id}>
+          {sortedThemes.map((theme) => {
+            const rank = perThemeConnectivity[theme.id]?.structural_rank
+            return <li key={theme.id}>
               <a href={`#theme-${theme.id}`}>{theme.display_name}</a>
-              {theme.trend?.verdict?.label && (
+              {themeSort === 'evidence' && rank?.composite_score != null ? (
+                <span className={`chip trend-${VERDICT_TONE[theme.trend?.verdict?.label] || 'neutral'}`}>
+                  {rank.composite_score.toFixed(2)} · {rank.tier}
+                </span>
+              ) : theme.trend?.verdict?.label && (
                 <span className={`chip trend-${VERDICT_TONE[theme.trend.verdict.label] || 'neutral'}`}>
                   {theme.trend.verdict.label}
                 </span>
@@ -543,12 +757,14 @@ export default function ThemeExposureScreen() {
                 {theme.trend?.direction?.relative_strength_median != null
                   && ` · ${signed(theme.trend.direction.relative_strength_median)} vs market`}</small>
             </li>
-          ))}
+          })}
         </ul>
-        <p className="disclaimer">Ordered by how the trend reads right now, strongest first —
-          a theme can be real and going nowhere, and a screen that only ranked evidence would
-          never say so.</p>
+        <p className="disclaimer">{themeSort === 'evidence'
+          ? 'Ordered by the evidence-weighted composite score, strongest first — a theme with thin evidence does not outrank one with strong evidence just because it is currently hotter.'
+          : 'Ordered by how the trend reads right now, strongest first — a theme can be real and going nowhere, and a screen that only ranked evidence would never say so.'}</p>
       </nav>
+
+      {connectivity && <RootDriverLegend connectivity={connectivity} themes={themes} />}
 
       {crossTheme.length > 0 && <section className="card theme-exposure-panel" aria-labelledby="cross-theme-heading">
         <header>
@@ -577,7 +793,9 @@ export default function ThemeExposureScreen() {
         <CrossThemeTable rows={crossTheme} onOpen={setSelectedStock} />
       </section>}
 
-      {themes.map((theme) => {
+      {connectivity && <TailPicksSection themes={themes} perThemeConnectivity={perThemeConnectivity} />}
+
+      {sortedThemes.map((theme) => {
         const rows = (theme.rows || []).map((row) => ({ ...byTicker.get(row.ticker), ...row }))
         const leaderTheme = { ...theme, rows: rows.filter((row) => row.candidate_source !== 'sector_peer') }
         // Ranked the same way the connected group is - eligible first, then opportunity, then
@@ -627,6 +845,8 @@ export default function ThemeExposureScreen() {
             <GrowthChain chain={theme.chain} />
             <ThemeTrend trend={theme.trend} chain={theme.chain} />
             <BiggestPlayers players={visible(theme.biggest_players || [])} onOpen={setSelectedStock} byTicker={byTicker} />
+            <ConnectivityLeaders leaders={visible(perThemeConnectivity[theme.id]?.connectivity_leaders || [])}
+              onOpen={setSelectedStock} byTicker={byTicker} />
             <div className="research-card-badges">
               <span className="chip">{theme.count ?? theme.rows.length} scored</span>
               <span className="chip">{theme.eligible_count ?? 0} cleared the guardrails</span>
@@ -693,6 +913,7 @@ export default function ThemeExposureScreen() {
             : <ThemeTable rows={connected} onOpen={setSelectedStock} />}
         </section>
       })}
+      <WatchlistNote watchlist={watchlist} />
       </>}
       <p className="disclaimer">
         A separate screen, never a modifier on the fundamentals research score. Names already in the
