@@ -410,6 +410,20 @@ covered by a regression test.) `settings.json`'s `filing_extraction.enabled` is 
 every reading it produces as unvalidated until the configured `minimum_coverage` (0.8) is
 actually cleared per metric on a live run, which it is nowhere close to today.
 
+**A second live run (2026-08-28, refresh commit `e36751bb`, after the fix above) resolved 3 of
+676 attempted filings, up from 2 of 599 before it** — real movement, still far from
+`minimum_coverage`. This session cannot fetch a live filing itself (this sandbox's own network
+policy blocks `sec.gov`), so `pipeline/filing_extraction.py::near_miss_samples` closes that
+gap a different way: for a metric that resolves on zero tickers in a run,
+`collect_operating_kpi_signals` now captures a bounded number of real evidence lines (capped
+per metric, published at `capability_status.filing_extracted_operating_kpis.near_miss_samples`)
+where the metric's *label* matched real filing text but no value-shaped match followed closely
+enough. That distinguishes two very different problems a bare resolution count can't tell
+apart — a filer that simply doesn't disclose a metric, versus one that discloses it phrased in
+a way the pattern doesn't recognize — and is what will let the next round of pattern fixes be
+evidence-based again, the same way the zero-width-space and window fixes above were, without
+needing live network access to get there.
+
 ## Validation state
 
 **No signal has been promoted.** The IC harness has observed 0 of the 24 eligible periods

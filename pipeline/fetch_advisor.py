@@ -1997,7 +1997,8 @@ def run():
     # validates it against real filings. Every reading carries "unaudited": True and is
     # informational only, same reasoning as reverse_dcf and the new sector metrics.
     filing_extraction_cfg = SETTINGS.get("filing_extraction") or {}
-    filing_extraction_signals, filing_extraction_diagnostics = {}, {"attempted": 0, "resolved_tickers": 0}
+    filing_extraction_signals, filing_extraction_diagnostics = {}, {
+        "attempted": 0, "resolved_tickers": 0, "near_misses": {}}
     if filing_extraction_cfg.get("enabled"):
         snapshot_by_symbol = {context["symbol"]: context["snapshot"] for context in contexts}
         filing_extraction_signals, filing_extraction_diagnostics = collect_operating_kpi_signals(
@@ -2414,14 +2415,24 @@ def run():
                 "source": "SEC EDGAR 8-K Exhibit 99.x earnings releases (text/table extraction)",
                 "filings_attempted": filing_extraction_diagnostics["attempted"],
                 "tickers_resolved": filing_extraction_diagnostics["resolved_tickers"],
+                # Diagnostic only, never a value: for a metric that resolved on 0 tickers this
+                # run, a real filing line where its label matched but no value-shaped text
+                # followed it closely enough. Distinguishes "this filer doesn't disclose it"
+                # from "the pattern doesn't recognize how it's phrased" -- see
+                # filing_extraction.near_miss_samples. Capped small per metric (the batch stops
+                # collecting a metric's samples once it has enough), so this never grows with
+                # universe size.
+                "near_miss_samples": filing_extraction_diagnostics.get("near_misses", {}),
                 "note": "Same-store sales, NIM, ARPU, and similar operating KPIs that are not "
                         "standardized XBRL facts (pipeline/filing_extraction.py). Off by default "
                         "(settings.json filing_extraction.enabled) and, even enabled, informational "
                         "only -- display field row.filing_extracted_metrics, no score input. Has "
-                        "never run against a live SEC EDGAR fetch: this was written in a sandboxed "
-                        "session whose network policy blocked sec.gov, so every extraction pattern "
-                        "was verified against synthetic fixtures only. Confirm real-filing accuracy "
-                        "and settings.json's minimum_coverage before treating its output as reliable.",
+                        "run against live SEC EDGAR fetches (first: 2026-08-28, refresh commit "
+                        "0f911d94); resolution rate is still low (a handful of tickers out of the "
+                        "whole universe). near_miss_samples above is the diagnostic for improving "
+                        "that: real evidence lines for labels that matched without resolving a "
+                        "value. Confirm settings.json's minimum_coverage is actually cleared per "
+                        "metric before treating any reading here as reliable.",
             },
             "earnings_surprise_momentum": {
                 "status": "available" if EARNINGS_SURPRISE_ENABLED else "opt_in",

@@ -297,6 +297,46 @@ class FilingExtractionGroupTests(unittest.TestCase):
         self.assertEqual(result, {})
 
 
+NIM_LABEL_NO_VALUE_HTML = """
+<html><body>
+<p>Net interest margin declined modestly compared to the prior quarter, reflecting the
+rate environment described elsewhere in this release.</p>
+</body></html>
+"""
+
+
+class NearMissSamplesTests(unittest.TestCase):
+    def test_a_label_present_with_no_recognizable_value_is_a_near_miss(self):
+        # This is the diagnostic case the live run actually hit: the label is real filing
+        # text, but nothing shaped like a percentage/dollar/ratio follows it closely enough
+        # for the value regex to recognize -- distinct from the label never appearing at all.
+        lines = fe.html_to_lines(NIM_LABEL_NO_VALUE_HTML)
+        samples = fe.near_miss_samples(lines, ["net_interest_margin"])
+        self.assertIn("net_interest_margin", samples)
+        self.assertIn("Net interest margin declined", samples["net_interest_margin"][0])
+
+    def test_a_label_that_never_appears_is_not_a_near_miss(self):
+        lines = fe.html_to_lines(NO_MATCH_HTML)
+        samples = fe.near_miss_samples(lines, ["net_interest_margin"])
+        self.assertEqual(samples, {})
+
+    def test_a_fully_resolved_metric_is_not_reported_as_a_near_miss_by_the_caller(self):
+        # near_miss_samples itself only ever looks at the metric ids it's given -- the
+        # "already resolved, don't bother" filtering is the caller's job (see
+        # extract_operating_kpis_for_ticker), exercised in ExtractOperatingKpisForTickerTests.
+        lines = fe.html_to_lines(BANK_EXHIBIT_HTML)
+        samples = fe.near_miss_samples(lines, ["net_interest_margin"])
+        self.assertIn("net_interest_margin", samples)  # the label matches; this fixture
+                                                        # would also resolve a real value if
+                                                        # extract_kpis were asked instead
+
+    def test_limit_per_metric_caps_samples_from_repeated_labels(self):
+        lines = ["Net interest margin remained stable.",
+                 "Net interest margin was discussed at length in the call."]
+        samples = fe.near_miss_samples(lines, ["net_interest_margin"], limit_per_metric=1)
+        self.assertEqual(len(samples["net_interest_margin"]), 1)
+
+
 class _FakeSecClient:
     """Mirrors the three SecEdgarClient methods find/extract need -- no network."""
 
@@ -392,6 +432,40 @@ class ExtractOperatingKpisForTickerTests(unittest.TestCase):
         self.assertEqual(results, {})
         self.assertEqual(attempted, 1)
 
+    def test_near_miss_sink_captures_an_unresolved_labels_evidence_line(self):
+        client = _FakeSecClient(
+            filings=[{"cik": 123, "accession": "0001-26-000010", "form": "8-K", "filed": "2026-08-06"}],
+            index_by_accession={"0001-26-000010": ["a-ex991.htm"]},
+            documents_by_key={("0001-26-000010", "a-ex991.htm"): NIM_LABEL_NO_VALUE_HTML},
+        )
+        near_miss_sink = {}
+        results, _ = fe.extract_operating_kpis_for_ticker(
+            client, "FAKE", ["net_interest_margin"], near_miss_sink=near_miss_sink)
+        self.assertNotIn("net_interest_margin", results)
+        self.assertIn("net_interest_margin", near_miss_sink)
+
+    def test_near_miss_sink_omits_a_metric_that_did_resolve(self):
+        client = _FakeSecClient(
+            filings=[{"cik": 123, "accession": "0001-26-000011", "form": "8-K", "filed": "2026-08-06"}],
+            index_by_accession={"0001-26-000011": ["a-ex991.htm"]},
+            documents_by_key={("0001-26-000011", "a-ex991.htm"): BANK_EXHIBIT_HTML},
+        )
+        near_miss_sink = {}
+        results, _ = fe.extract_operating_kpis_for_ticker(
+            client, "FAKE", ["net_interest_margin"], near_miss_sink=near_miss_sink)
+        self.assertIn("net_interest_margin", results)
+        self.assertNotIn("net_interest_margin", near_miss_sink)
+
+    def test_near_miss_sink_left_none_by_default_changes_nothing(self):
+        client = _FakeSecClient(
+            filings=[{"cik": 123, "accession": "0001-26-000012", "form": "8-K", "filed": "2026-08-06"}],
+            index_by_accession={"0001-26-000012": ["a-ex991.htm"]},
+            documents_by_key={("0001-26-000012", "a-ex991.htm"): NIM_LABEL_NO_VALUE_HTML},
+        )
+        results, attempted = fe.extract_operating_kpis_for_ticker(client, "FAKE", ["net_interest_margin"])
+        self.assertEqual(results, {})
+        self.assertEqual(attempted, 1)
+
 
 class CollectOperatingKpiSignalsTests(unittest.TestCase):
     def test_routes_each_ticker_to_its_profiles_metric_set(self):
@@ -417,6 +491,35 @@ class CollectOperatingKpiSignalsTests(unittest.TestCase):
             profile_for_ticker=lambda ticker: "general")
         self.assertEqual(results, {})
         self.assertEqual(diagnostics["attempted"], 0)
+        self.assertEqual(diagnostics["near_misses"], {})
+
+    def test_diagnostics_carry_a_near_miss_sample_for_an_unresolved_metric(self):
+        client = _FakeSecClient(
+            filings=[{"cik": 123, "accession": "0001-26-000013", "form": "8-K", "filed": "2026-08-06"}],
+            index_by_accession={"0001-26-000013": ["a-ex991.htm"]},
+            documents_by_key={("0001-26-000013", "a-ex991.htm"): NIM_LABEL_NO_VALUE_HTML},
+        )
+        _, diagnostics = fe.collect_operating_kpi_signals(
+            client, ["BANKCO"], metrics_by_profile={"bank": ["net_interest_margin"]},
+            profile_for_ticker=lambda ticker: "bank")
+        self.assertIn("net_interest_margin", diagnostics["near_misses"])
+        sample = diagnostics["near_misses"]["net_interest_margin"][0]
+        self.assertEqual(sample["ticker"], "BANKCO")
+        self.assertIn("Net interest margin declined", sample["evidence_line"])
+
+    def test_near_miss_cap_stops_collecting_once_a_metric_has_enough_samples(self):
+        client = _FakeSecClient(
+            filings=[{"cik": 123, "accession": "0001-26-000014", "form": "8-K", "filed": "2026-08-06"}],
+            index_by_accession={"0001-26-000014": ["a-ex991.htm"]},
+            documents_by_key={("0001-26-000014", "a-ex991.htm"): NIM_LABEL_NO_VALUE_HTML},
+        )
+        _, diagnostics = fe.collect_operating_kpi_signals(
+            client, ["BANKCO_A", "BANKCO_B", "BANKCO_C"],
+            metrics_by_profile={"bank": ["net_interest_margin"]},
+            profile_for_ticker=lambda ticker: "bank", near_miss_limit_per_metric=1)
+        self.assertEqual(len(diagnostics["near_misses"]["net_interest_margin"]), 1)
+        # The very first ticker already filled the cap, so only its sample is kept.
+        self.assertEqual(diagnostics["near_misses"]["net_interest_margin"][0]["ticker"], "BANKCO_A")
 
     def test_falls_back_to_general_metrics_for_an_unlisted_profile(self):
         client = _FakeSecClient(

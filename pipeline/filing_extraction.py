@@ -84,10 +84,32 @@ _LABEL_TO_VALUE_CHARS = 110
 _LABEL_TO_RATIO_CHARS = 70
 
 
+class _LabelValuePattern:
+    """A compiled label+value regex that also exposes its label-only half.
+
+    ``extract_kpis`` only ever calls ``.search()``, so this is a drop-in replacement for a
+    bare compiled pattern everywhere that matters -- but ``near_miss_samples`` below can also
+    reach ``.label_pattern`` to tell "this label never appears in the filing" apart from "the
+    label appears, but no value-shaped text follows it the regex recognizes", which is the
+    difference between a metric this filer simply doesn't disclose and one whose pattern
+    needs fixing. A bare ``re.Pattern`` can't carry that second regex as an attribute (it has
+    no ``__dict__``), hence the wrapper.
+    """
+
+    def __init__(self, value_pattern, label_pattern):
+        self.value_pattern = value_pattern
+        self.label_pattern = label_pattern
+
+    def search(self, line):
+        return self.value_pattern.search(line)
+
+
 def _percent_after(label_pattern):
     """A label, then the first signed percentage within range of it."""
-    return re.compile(label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?([+-]?\d{{1,3}}(?:\.\d+)?)\s*%",
-                      re.IGNORECASE)
+    return _LabelValuePattern(
+        re.compile(label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?([+-]?\d{{1,3}}(?:\.\d+)?)\s*%",
+                  re.IGNORECASE),
+        re.compile(label_pattern, re.IGNORECASE))
 
 
 def _percent_value(match):
@@ -97,13 +119,17 @@ def _percent_value(match):
 def _bps_or_percent_after(label_pattern):
     """A label, then a percentage (margin/ratio levels are usually reported as a level, not
     a change) within range."""
-    return re.compile(label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?(\d{{1,3}}(?:\.\d+)?)\s*%",
-                      re.IGNORECASE)
+    return _LabelValuePattern(
+        re.compile(label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?(\d{{1,3}}(?:\.\d+)?)\s*%",
+                  re.IGNORECASE),
+        re.compile(label_pattern, re.IGNORECASE))
 
 
 def _dollar_after(label_pattern):
-    return re.compile(label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?\$\s?(\d{{1,4}}(?:\.\d+)?)",
-                      re.IGNORECASE)
+    return _LabelValuePattern(
+        re.compile(label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?\$\s?(\d{{1,4}}(?:\.\d+)?)",
+                  re.IGNORECASE),
+        re.compile(label_pattern, re.IGNORECASE))
 
 
 def _dollar_value(match):
@@ -116,9 +142,11 @@ _SCALE_MULTIPLIERS = {"trillion": 1e12, "billion": 1e9, "million": 1e6, "thousan
 
 
 def _dollar_with_scale_after(label_pattern):
-    return re.compile(
-        label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?\$\s?(\d{{1,3}}(?:,\d{{3}})*(?:\.\d+)?)\s*"
-        r"(trillion|billion|million|thousand)?", re.IGNORECASE)
+    return _LabelValuePattern(
+        re.compile(
+            label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?\$\s?(\d{{1,3}}(?:,\d{{3}})*(?:\.\d+)?)\s*"
+            r"(trillion|billion|million|thousand)?", re.IGNORECASE),
+        re.compile(label_pattern, re.IGNORECASE))
 
 
 def _dollar_scaled_value(match):
@@ -129,8 +157,10 @@ def _dollar_scaled_value(match):
 
 def _ratio_after(label_pattern):
     """A label, then a bare or 'Nx'-style ratio (book-to-bill, coverage, ...)."""
-    return re.compile(label_pattern + rf".{{0,{_LABEL_TO_RATIO_CHARS}}}?(\d{{1,2}}(?:\.\d+)?)\s*x?\b",
-                      re.IGNORECASE)
+    return _LabelValuePattern(
+        re.compile(label_pattern + rf".{{0,{_LABEL_TO_RATIO_CHARS}}}?(\d{{1,2}}(?:\.\d+)?)\s*x?\b",
+                  re.IGNORECASE),
+        re.compile(label_pattern, re.IGNORECASE))
 
 
 def _ratio_value(match):
@@ -139,8 +169,10 @@ def _ratio_value(match):
 
 def _bps_after(label_pattern):
     """A label, then a basis-point figure (fee rates are usually quoted this way, not as %)."""
-    return re.compile(label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?(\d{{1,4}}(?:\.\d+)?)\s*(?:bps|basis\s+points)",
-                      re.IGNORECASE)
+    return _LabelValuePattern(
+        re.compile(label_pattern + rf".{{0,{_LABEL_TO_VALUE_CHARS}}}?(\d{{1,4}}(?:\.\d+)?)\s*(?:bps|basis\s+points)",
+                  re.IGNORECASE),
+        re.compile(label_pattern, re.IGNORECASE))
 
 
 def _bps_value(match):
@@ -352,6 +384,35 @@ def extract_kpis(lines, metric_ids):
     return results
 
 
+def near_miss_samples(lines, metric_ids, *, limit_per_metric=1):
+    """For each of these (still-unresolved) metrics, up to ``limit_per_metric`` lines where
+    the label matched real filing text but no value-shaped match followed close enough.
+
+    This is the diagnostic this module has needed since its first live run: a resolution
+    count alone can't say whether a metric is absent from the filing (this filer just doesn't
+    disclose it) or present but phrased in a way the value regex doesn't recognize (the
+    pattern needs fixing). Every prior fix to this file could only be made from the one metric
+    that happened to resolve; every other pattern's near-total miss rate was otherwise
+    unexplained. Returns ``{metric_id: [line, ...]}`` -- never a value, and a metric already
+    resolved should not be passed in here at all (the caller filters that).
+    """
+    samples = {}
+    for metric_id in metric_ids:
+        spec = KPI_PATTERNS.get(metric_id)
+        label_pattern = getattr(spec.get("pattern") if spec else None, "label_pattern", None)
+        if label_pattern is None:
+            continue
+        found = []
+        for line in lines:
+            if label_pattern.search(line):
+                found.append(line)
+                if len(found) >= limit_per_metric:
+                    break
+        if found:
+            samples[metric_id] = found
+    return samples
+
+
 # Exhibits carrying the earnings-release financial tables and MD&A-style commentary this
 # module reads. EDGAR gives every filer a free hand in exhibit naming, so this matches by
 # filename pattern rather than a fixed convention -- the same problem filing_index()'s own
@@ -379,13 +440,20 @@ def find_exhibit_documents(client, ticker, *, forms=("8-K",), limit=4):
     return enriched
 
 
-def extract_operating_kpis_for_ticker(client, ticker, metric_ids, *, forms=("8-K",), limit=4):
+def extract_operating_kpis_for_ticker(client, ticker, metric_ids, *, forms=("8-K",), limit=4,
+                                      near_miss_sink=None):
     """Fetch this ticker's most recent qualifying exhibits and extract the requested metrics.
 
     Stops at the first exhibit that resolves every requested metric; otherwise merges across
     exhibits (a metric found in an earlier, more recent filing is never overwritten by a
     later, older one). Returns ``(results, filings_attempted)`` so a caller can report
     extraction coverage -- how many filings were readable, not just what was found in them.
+
+    ``near_miss_sink``, if given a dict, is populated in place with ``{metric_id: [line, ...]}``
+    for metrics whose label matched somewhere but never resolved a value -- see
+    ``near_miss_samples``. Left ``None`` by default so existing callers see no behavior change;
+    this only exists as an optional diagnostic channel, never returned positionally, so it
+    can't change this function's return arity for anyone not asking for it.
     """
     results = {}
     filings_attempted = 0
@@ -397,17 +465,27 @@ def extract_operating_kpis_for_ticker(client, ticker, metric_ids, *, forms=("8-K
             except Exception:  # noqa: BLE001 - an unreadable exhibit must not sink the batch
                 continue
             lines = html_to_lines(html)
-            found = extract_kpis(lines, [metric for metric in metric_ids if metric not in results])
+            pending = [metric for metric in metric_ids if metric not in results]
+            found = extract_kpis(lines, pending)
             for metric_id, reading in found.items():
                 results[metric_id] = {**reading, "filed": filing.get("filed"),
                                       "form": filing.get("form")}
+                if near_miss_sink is not None:
+                    near_miss_sink.pop(metric_id, None)
+            if near_miss_sink is not None:
+                still_pending = [metric for metric in pending if metric not in found]
+                for metric_id, lines_hit in near_miss_samples(lines, still_pending).items():
+                    bucket = near_miss_sink.setdefault(metric_id, [])
+                    for line in lines_hit:
+                        if line not in bucket:
+                            bucket.append(line)
         if len(results) == len(metric_ids):
             break
     return results, filings_attempted
 
 
 def collect_operating_kpi_signals(client, tickers, *, metrics_by_profile, profile_for_ticker,
-                                  limit_per_ticker=4):
+                                  limit_per_ticker=4, near_miss_limit_per_metric=1):
     """Extracted operating KPIs for a batch of tickers, keyed by ticker.
 
     ``profile_for_ticker(ticker)`` resolves each ticker's applicability profile (see
@@ -421,19 +499,31 @@ def collect_operating_kpi_signals(client, tickers, *, metrics_by_profile, profil
     filer-defined figures pulled from prose/tables, not a GAAP-tagged fact, following this
     module's own recommendation to flag non-standardized metrics rather than present them
     with the same confidence as an XBRL-sourced one.
+
+    The returned diagnostics dict also carries ``"near_misses"``: up to
+    ``near_miss_limit_per_metric`` real evidence lines per metric where the label matched but
+    no value resolved, the first time each metric hits that cap across the whole batch (a
+    metric already at its cap is skipped for every later ticker, so this stays cheap across a
+    ~900-name universe). This is what makes the next pattern fix evidence-based rather than a
+    guess: a resolution count alone can't distinguish "this filer doesn't disclose it" from
+    "the pattern doesn't recognize how this filer phrases it."
     """
     if not getattr(client, "available", True):
-        return {}, {"attempted": 0, "resolved_tickers": 0}
+        return {}, {"attempted": 0, "resolved_tickers": 0, "near_misses": {}}
     results_by_ticker = {}
     filings_attempted_total = 0
+    near_misses = {}
     for ticker in tickers:
         profile = profile_for_ticker(ticker)
         metric_ids = metrics_by_profile.get(profile, metrics_by_profile.get("general", []))
         if not metric_ids:
             continue
+        needs_near_miss = any(len(near_misses.get(metric_id, [])) < near_miss_limit_per_metric
+                              for metric_id in metric_ids)
+        near_miss_sink = {} if needs_near_miss else None
         try:
             readings, attempted = extract_operating_kpis_for_ticker(
-                client, ticker, metric_ids, limit=limit_per_ticker)
+                client, ticker, metric_ids, limit=limit_per_ticker, near_miss_sink=near_miss_sink)
         except Exception:  # noqa: BLE001 - one ticker's EDGAR failure must not sink the batch
             continue
         filings_attempted_total += attempted
@@ -441,8 +531,16 @@ def collect_operating_kpi_signals(client, tickers, *, metrics_by_profile, profil
             results_by_ticker[ticker] = {
                 metric_id: {**reading, "unaudited": True} for metric_id, reading in readings.items()
             }
+        if near_miss_sink:
+            for metric_id, lines_hit in near_miss_sink.items():
+                bucket = near_misses.setdefault(metric_id, [])
+                for line in lines_hit:
+                    if len(bucket) >= near_miss_limit_per_metric:
+                        break
+                    bucket.append({"ticker": ticker, "evidence_line": line})
     return results_by_ticker, {"attempted": filings_attempted_total,
-                               "resolved_tickers": len(results_by_ticker)}
+                               "resolved_tickers": len(results_by_ticker),
+                               "near_misses": near_misses}
 
 
 def summarize_extraction_coverage(results_by_ticker, metric_ids):
