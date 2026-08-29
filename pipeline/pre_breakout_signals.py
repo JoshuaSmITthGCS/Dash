@@ -271,6 +271,45 @@ def volatility_contraction_score(closes, highs=None, lows=None):
     return sum(readings) / len(readings) if readings else None
 
 
+STAGE_THRESHOLDS = {
+    # z-score cutoffs on the cross-sectionally standardized momentum_12_1 and
+    # volatility_contraction subfactors already computed for the momentum_rs leg -- this is a
+    # coarser read of two inputs that already exist, not a new signal or a fourth leg.
+    "extended_momentum_z": 1.5,   # already run far -- a raging trend, not a setup
+    "breakout_momentum_z": 0.25,  # meaningfully positive and rising, not yet extended
+    "coiling_contraction_z": 0.5, # unusually tight versus the name's own trailing history
+}
+
+
+def classify_stage(momentum_z, contraction_z, thresholds=None):
+    """Coarse stage read from two already-standardized subfactors -- not scored into the
+    composite, published purely so a reader can tell "about to move" from "already moving",
+    which the blended composite score alone cannot: a row can reach the same score via strong
+    existing momentum, a tight squeeze with no move yet, or some mix of both, and nothing in
+    the composite itself distinguishes which happened.
+
+    - ``"extended"``: momentum_z at or above extended_momentum_z -- already run far.
+    - ``"breaking_out"``: momentum_z between breakout_momentum_z and extended_momentum_z --
+      meaningfully positive, not yet extended.
+    - ``"coiling"``: momentum_z below breakout_momentum_z AND contraction_z at or above
+      coiling_contraction_z -- flat-to-quiet price action, but unusually tight versus the
+      name's own trailing volatility history. The literal "pre-breakout" case: hasn't moved
+      yet, but coiled tighter than its own history.
+    - ``"unclassified"``: momentum_z unresolved, or neither condition above is met (flat
+      momentum with no meaningful squeeze either -- no stage signal either way).
+    """
+    thresholds = thresholds or STAGE_THRESHOLDS
+    if momentum_z is None:
+        return "unclassified"
+    if momentum_z >= thresholds["extended_momentum_z"]:
+        return "extended"
+    if momentum_z >= thresholds["breakout_momentum_z"]:
+        return "breaking_out"
+    if contraction_z is not None and contraction_z >= thresholds["coiling_contraction_z"]:
+        return "coiling"
+    return "unclassified"
+
+
 def short_interest_change(history, as_of, lookback_observations=6):
     """Percent decline off the trailing local high in short-interest-as-percent-of-float.
 
@@ -365,6 +404,15 @@ def _composite_from_legs(sub_scores, weights=None):
     return sum(value * weight for value, weight in available) / total_weight if total_weight else None
 
 
+def _factor_z(standardized, name, index):
+    """One subfactor's standardized value for one row, or None if the subfactor isn't
+    declared at all (e.g. after volatility_contraction is dropped per the module's own
+    "droppable leg" design -- classify_stage degrades to momentum-only staging rather than
+    raising)."""
+    values = standardized.get(name)
+    return values[index] if values is not None else None
+
+
 def _score_row(row, index, standardized, config):
     sub_scores, leg_detail = {}, {}
     for leg, subfactors in PRE_BREAKOUT_SUBFACTORS.items():
@@ -388,11 +436,14 @@ def _score_row(row, index, standardized, config):
     applied_leg_weight = sum(PRE_BREAKOUT_WEIGHTS[leg] for leg, score in sub_scores.items()
                              if score is not None)
     reasons = _gate_reasons(row, legs_resolved, config)
+    stage = classify_stage(_factor_z(standardized, "momentum_12_1", index),
+                           _factor_z(standardized, "volatility_contraction", index))
 
     return {
         **row,
         "score": composite,
         "sub_scores": leg_detail,
+        "classification": stage,
         "legs_resolved": legs_resolved,
         "legs_declared": len(PRE_BREAKOUT_WEIGHTS),
         "coverage": round(applied_leg_weight / declared_leg_weight, 3) if declared_leg_weight else 0.0,

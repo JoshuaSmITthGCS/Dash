@@ -27,8 +27,8 @@ from fundamentals_extended import derive_margins, derive_roa_delta
 from peer_groups import peer_group
 from pit_store import history as pit_history
 from pre_breakout_signals import (DEFAULT_CONFIG, PRE_BREAKOUT_EVIDENCE, PRE_BREAKOUT_SUBFACTORS,
-                                  PRE_BREAKOUT_WEIGHTS, SUBWEIGHTS_BY_LEG, leg_coverage,
-                                  legs_resolved_distribution, pre_breakout_scores,
+                                  PRE_BREAKOUT_WEIGHTS, STAGE_THRESHOLDS, SUBWEIGHTS_BY_LEG,
+                                  leg_coverage, legs_resolved_distribution, pre_breakout_scores,
                                   short_interest_change, signed_path_smoothness,
                                   volatility_contraction_score)
 from price_archive import load_series as archive_series_for
@@ -197,6 +197,10 @@ def to_result(rank, row):
         "current_membership": bool(row.get("current_membership")),
         "percentile": round(row["percentile"], 2) if row.get("percentile") is not None else None,
         "composite_z": _rounded(row.get("score")),
+        # Coiling (about to move, not yet) vs. breaking_out/extended (already moving) --
+        # see pre_breakout_signals.classify_stage. Read by ResearchScreen.jsx's shared table
+        # the same way build_quality_value_screen.py's own "classification" field already is.
+        "classification": row.get("classification"),
         "coverage": row.get("coverage"),
         "legs_resolved": row.get("legs_resolved"),
         "legs_declared": row.get("legs_declared"),
@@ -232,6 +236,16 @@ def payload(results, scored, generated_at, config):
                        for leg, subfactors in PRE_BREAKOUT_SUBFACTORS.items()},
         "evidence": PRE_BREAKOUT_EVIDENCE,
         "thresholds": config,
+        "stage_thresholds": STAGE_THRESHOLDS,
+        "stage_note": (
+            "`classification` (coiling / breaking_out / extended / unclassified) is a "
+            "derived read of two already-scored subfactors (momentum_12_1, "
+            "volatility_contraction), published so a reader can tell whether a row's score "
+            "came from a name that hasn't moved yet versus one already in motion -- the "
+            "composite score alone cannot distinguish the two. It is not a fourth leg: it "
+            "does not feed the composite and carries no weight of its own. See "
+            "pre_breakout_signals.classify_stage."
+        ),
         "leg_coverage": leg_coverage(scored),
         "legs_resolved": legs_resolved_distribution(scored, config),
         "scored_count": len(scored),

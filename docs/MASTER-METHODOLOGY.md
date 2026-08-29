@@ -833,6 +833,17 @@ coverage < 1.0), reused rather than re-thresholded. A row resolving fewer than 2
 named legs is excluded from the ranked output entirely, the same renormalize-then-floor
 pattern §10.7's swing composite uses.
 
+The composite score alone cannot say *why* a row ranks highly — a name can get there on
+existing momentum, on a tight squeeze that hasn't broken yet, or some mix of both, and the
+blend gives no way to tell which. `pre_breakout_signals.classify_stage` derives a coarse
+`classification` label per row from two subfactors the composite already standardizes
+(`momentum_12_1`, `volatility_contraction`), published but never scored into the composite
+itself: **coiling** (momentum flat, volatility unusually tight versus the name's own
+history — the literal pre-breakout case), **breaking_out** (momentum meaningfully positive,
+not yet extended), **extended** (momentum far above the cross-section — already run), or
+**unclassified** (neither condition clears). Read via the same `classification` field
+`ResearchScreen.jsx`'s shared table already renders for §10.5's quality-value screen.
+
 Two signals here are genuinely new to this codebase and reuse existing infrastructure rather
 than adding new fetching: `pipeline/earnings_acceleration.py` derives the second derivative
 of earnings/revenue growth from the same PIT quarterly-fact store `edgar_sue.py` already

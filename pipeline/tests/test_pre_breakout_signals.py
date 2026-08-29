@@ -65,6 +65,44 @@ def test_short_interest_change_needs_at_least_two_observations():
     assert pbs.short_interest_change([], as_of="2026-01-01") is None
 
 
+# ---------------- classify_stage ----------------
+
+def test_classify_stage_extended_when_momentum_is_far_above_the_cross_section():
+    assert pbs.classify_stage(momentum_z=2.0, contraction_z=0.0) == "extended"
+
+
+def test_classify_stage_breaking_out_when_momentum_is_meaningfully_positive_but_not_extended():
+    assert pbs.classify_stage(momentum_z=0.5, contraction_z=0.0) == "breaking_out"
+    # Right at the extended boundary itself reads extended, not breaking_out.
+    assert pbs.classify_stage(momentum_z=1.5, contraction_z=0.0) == "extended"
+
+
+def test_classify_stage_coiling_when_momentum_is_flat_but_tightly_contracted():
+    assert pbs.classify_stage(momentum_z=0.0, contraction_z=0.8) == "coiling"
+    # Right at the coiling boundary itself reads coiling.
+    assert pbs.classify_stage(momentum_z=0.0, contraction_z=0.5) == "coiling"
+
+
+def test_classify_stage_unclassified_when_neither_condition_is_met():
+    assert pbs.classify_stage(momentum_z=0.0, contraction_z=0.0) == "unclassified"
+    assert pbs.classify_stage(momentum_z=0.0, contraction_z=None) == "unclassified"
+
+
+def test_classify_stage_unclassified_without_a_momentum_reading():
+    # No momentum reading at all -- a squeeze alone, with no idea which way price has been
+    # drifting, is not enough to call a stage.
+    assert pbs.classify_stage(momentum_z=None, contraction_z=0.9) == "unclassified"
+
+
+def test_classify_stage_never_scores_into_the_composite():
+    """Structural guard: classify_stage must stay a pure, standalone read -- it must not
+    appear in any leg's declared subfactors or weights."""
+    declared_subfactor_names = {name for subfactors in pbs.PRE_BREAKOUT_SUBFACTORS.values()
+                                for name, _negate in subfactors}
+    assert "classification" not in declared_subfactor_names
+    assert "stage" not in declared_subfactor_names
+
+
 # ---------------- leg / composite blending ----------------
 
 def _row(ticker, raw_factors, **extra):
@@ -97,6 +135,27 @@ def test_a_fully_resolved_row_is_eligible_and_scored_on_all_three_legs():
     assert all(leg["applied"] for leg in top["sub_scores"].values())
     # AAA has the largest raw factors across the board, so it should rank highest.
     assert scored[0]["ticker"] == "AAA"
+    assert all(row["classification"] in ("coiling", "breaking_out", "extended", "unclassified")
+              for row in scored)
+
+
+def test_classification_distinguishes_an_already_moving_row_from_a_coiled_one():
+    """Composite-level regression for the gap that prompted classify_stage: a row with
+    strong existing momentum and no squeeze must not read the same as a flat, tightly
+    coiled one, even though the blended composite score alone cannot tell them apart."""
+    rows = [
+        _row("MOVER", {**_full_coverage_factors(), "momentum_12_1": 5.0, "volatility_contraction": 0.1}),
+        _row("COILED", {**_full_coverage_factors(), "momentum_12_1": 0.0, "volatility_contraction": 5.0}),
+        _row("FLAT", {**_full_coverage_factors(), "momentum_12_1": 0.0, "volatility_contraction": 0.0}),
+        _row("MIDDLE", {**_full_coverage_factors(), "momentum_12_1": 1.0, "volatility_contraction": 1.0}),
+    ]
+
+    scored = pbs.pre_breakout_scores(rows)
+    by_ticker = {row["ticker"]: row for row in scored}
+
+    assert by_ticker["MOVER"]["classification"] in ("breaking_out", "extended")
+    assert by_ticker["COILED"]["classification"] == "coiling"
+    assert by_ticker["COILED"]["classification"] != by_ticker["MOVER"]["classification"]
 
 
 def test_gates_apply_once_at_the_top_never_per_leg():
