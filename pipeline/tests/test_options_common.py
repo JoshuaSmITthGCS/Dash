@@ -375,3 +375,71 @@ def test_research_universe_factors_applies_staleness_discount():
     zeroed = module.research_universe_factors(entry, fully_stale, TODAY, direction=1, sentiment_mode="signed")
     assert zeroed["news_sentiment"] == 0.0
     assert zeroed["research_confidence"] == 0.0
+
+
+def test_iv_skew_returns_put_iv_minus_call_iv_at_matched_deltas():
+    calls = FakeFrame([contract(strike=110, bid=1.0, ask=1.05, iv=0.30)])  # OTM call
+    puts = FakeFrame([contract(strike=90, bid=1.0, ask=1.05, iv=0.40)])    # OTM put, richer IV
+    skew = module.iv_skew(calls, puts, price=100, dte=30)
+    assert skew is not None
+    assert abs(skew - (0.40 - 0.30)) < 1e-9
+
+
+def test_iv_skew_none_when_a_wing_is_unavailable():
+    calls = FakeFrame([contract(strike=110, bid=1.0, ask=1.05, iv=0.30)])
+    puts = FakeFrame([])
+    assert module.iv_skew(calls, puts, price=100, dte=30) is None
+
+
+def test_put_call_oi_ratio_sums_open_interest_across_the_full_frame():
+    calls = FakeFrame([contract(strike=100, bid=1.0, ask=1.05, open_interest=500),
+                       contract(strike=110, bid=0.5, ask=0.55, open_interest=300)])
+    puts = FakeFrame([contract(strike=90, bid=1.0, ask=1.05, open_interest=1600)])
+    assert module.put_call_oi_ratio(calls, puts) == 2.0
+
+
+def test_put_call_oi_ratio_none_without_call_open_interest():
+    calls = FakeFrame([])
+    puts = FakeFrame([contract(strike=90, bid=1.0, ask=1.05, open_interest=100)])
+    assert module.put_call_oi_ratio(calls, puts) is None
+
+
+def _synthetic_closes(*segments):
+    """Chains alternating-sign daily percentage steps into a continuous price series
+    starting at 100 - segments is a sequence of (count, amplitude) pairs, so a caller can
+    stitch together a quiet stretch followed by a volatile one (or vice versa) to test
+    realized_vol_percentile's ranking without needing a real price history fixture."""
+    closes = [100.0]
+    for count, amplitude in segments:
+        for index in range(count):
+            step = amplitude if index % 2 == 0 else -amplitude
+            closes.append(closes[-1] * (1 + step))
+    return closes
+
+
+def test_realized_vol_percentile_ranks_a_volatility_spike_near_the_top():
+    # 150 quiet sessions, then a 25-session spike - the trailing 20d window (today's
+    # reading) sits entirely inside the spike, so it should rank near the top of its own
+    # history rather than blending in with the quiet majority.
+    closes = _synthetic_closes((150, 0.001), (25, 0.05))
+    percentile = module.realized_vol_percentile(closes)
+    assert percentile is not None
+    assert percentile > 90
+
+
+def test_realized_vol_percentile_ranks_a_calm_stretch_near_the_bottom():
+    closes = _synthetic_closes((150, 0.05), (25, 0.001))
+    percentile = module.realized_vol_percentile(closes)
+    assert percentile is not None
+    assert percentile < 10
+
+
+def test_realized_vol_percentile_none_below_minimum_samples():
+    # 60 closes -> only 40 rolling 20d observations, short of MINIMUM_VOL_PERCENTILE_SAMPLES
+    # (60) - never fabricate a percentile off a handful of points.
+    closes = _synthetic_closes((59, 0.01))
+    assert module.realized_vol_percentile(closes) is None
+
+
+def test_realized_vol_percentile_none_with_too_little_history():
+    assert module.realized_vol_percentile([100.0] * 10) is None

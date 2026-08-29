@@ -20,9 +20,10 @@ from datetime import datetime, timezone
 from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
-from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expiration_spans_earnings, liquidity_factor,
-                            next_earnings_date, realized_volatility_20d, research_universe_factors,
-                            select_by_target_delta, select_by_target_moneyness, select_expiration, trend_20d)
+from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expiration_spans_earnings, iv_skew, liquidity_factor,
+                            next_earnings_date, put_call_oi_ratio, realized_volatility_20d, realized_vol_percentile,
+                            research_universe_factors, select_by_target_delta, select_by_target_moneyness,
+                            select_expiration, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
@@ -84,6 +85,9 @@ def build_row(entry, yf, as_of=None, generated_at=None):
     if call["strike"] <= put["strike"]:
         return None
 
+    skew = iv_skew(chain.calls, chain.puts, price, dte)
+    pc_oi_ratio = put_call_oi_ratio(chain.calls, chain.puts)
+    vol_percentile = realized_vol_percentile(closes)
     net_cost = put["mid"] - call["mid"]
     net_cost_pct = net_cost / price
     floor_price = put["strike"]
@@ -109,6 +113,7 @@ def build_row(entry, yf, as_of=None, generated_at=None):
             "floor_price": floor_price, "cap_price": cap_price,
             "range_width_pct": round(range_width_pct, 4),
             "max_loss_pct": round(max_loss_pct, 4), "max_gain_pct": round(max_gain_pct, 4),
+            "iv_skew": skew, "put_call_oi_ratio": pc_oi_ratio, "realized_volatility_percentile": vol_percentile,
             "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
             "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
@@ -181,7 +186,7 @@ def to_result(rank, row):
 
 def unavailable(reason_code, generated_at):
     return {
-        "schema_version": "1.0.0", "model_version": "collar-v1.0.0",
+        "schema_version": "1.0.0", "model_version": "collar-v1.1.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at,
         "status": "unavailable", "reason_code": reason_code, "results": [],
     }
@@ -219,7 +224,7 @@ def run(as_of=None):
     scored = score_rows(rows)
     results = [to_result(rank + 1, row) for rank, row in enumerate(scored)]
     result = {
-        "schema_version": "1.0.0", "model_version": "collar-v1.0.0",
+        "schema_version": "1.0.0", "model_version": "collar-v1.1.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
         "window": {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION,
                    "max_days_to_expiration": MAX_DAYS_TO_EXPIRATION,

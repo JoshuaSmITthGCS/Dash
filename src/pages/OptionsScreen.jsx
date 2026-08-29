@@ -13,6 +13,7 @@ const number = (value, digits = 1) => value == null ? '–' : Number(value).toFi
 const pct = (value, digits = 1) => value == null ? '–' : `${(value * 100).toFixed(digits)}%`
 const money = (value) => value == null ? '–' : `$${Number(value).toFixed(2)}`
 const signed = (value) => value == null ? '–' : `${value >= 0 ? '+' : ''}${Number(value).toFixed(2)}`
+const percentileLabel = (value) => value == null ? '–' : `${Math.round(value)}th pct.`
 const dateLabel = (value) => {
   if (!value) return '–'
   const parsed = new Date(`${value}T00:00:00Z`)
@@ -31,6 +32,11 @@ function reasonsFor(row) {
   }
   if (row.trend_20d != null) {
     reasons.push(`Underlying ${row.trend_20d >= 0 ? 'up' : 'down'} ${pct(Math.abs(row.trend_20d))} over 20 days — why this is a ${row.option_type === 'put' ? 'put' : 'call'} idea, not a prediction of what happens next.`)
+  }
+  if (row.iv_skew != null && Math.abs(row.iv_skew) >= 0.03) {
+    reasons.push(row.iv_skew > 0
+      ? `Puts are pricing ${pct(row.iv_skew)} richer than calls at matched deltas — the usual hedging-demand skew, shown for context, not a signal in the score.`
+      : `Calls are pricing ${pct(Math.abs(row.iv_skew))} richer than puts at matched deltas — an unusual skew inversion, shown for context, not a signal in the score.`)
   }
   return reasons
 }
@@ -72,6 +78,9 @@ function OptionIdeaCard({ row, onOpen }) {
       <div><dt>Implied vol.</dt><dd>{pct(row.implied_volatility)}</dd></div>
       <div><dt>IV / RV (20d)</dt><dd>{number(row.implied_realized_vol_ratio, 2)}×</dd></div>
       <div><dt>20d trend</dt><dd><Move pct={row.trend_20d} /></dd></div>
+      <div><dt>Put/call IV skew</dt><dd>{signed(row.iv_skew != null ? row.iv_skew * 100 : null)}pp</dd></div>
+      <div><dt>Put/call OI ratio</dt><dd>{number(row.put_call_oi_ratio, 2)}×</dd></div>
+      <div><dt>Realized vol percentile</dt><dd>{percentileLabel(row.realized_volatility_percentile)}</dd></div>
       <div><dt>News sentiment tilt</dt><dd>{signed(row.news_sentiment)}</dd></div>
       <div><dt>Research confidence tilt</dt><dd>{signed(row.research_confidence)}</dd></div>
     </dl>
@@ -168,6 +177,12 @@ export default function OptionsScreen() {
             { key: 'implied_volatility', label: 'IV', numeric: true, cell: (row) => <span className="mono">{pct(row.implied_volatility)}</span> },
             { key: 'implied_realized_vol_ratio', label: 'IV / RV', numeric: true,
               cell: (row) => <span className="mono">{number(row.implied_realized_vol_ratio, 2)}×</span> },
+            { key: 'iv_skew', label: 'Skew', numeric: true,
+              cell: (row) => <span className="mono">{signed(row.iv_skew != null ? row.iv_skew * 100 : null)}pp</span> },
+            { key: 'put_call_oi_ratio', label: 'P/C OI', numeric: true,
+              cell: (row) => <span className="mono">{number(row.put_call_oi_ratio, 2)}×</span> },
+            { key: 'realized_volatility_percentile', label: 'RV pctile', numeric: true,
+              cell: (row) => <span className="mono">{percentileLabel(row.realized_volatility_percentile)}</span> },
             { key: 'spread_pct', label: 'Spread', numeric: true, cell: (row) => <span className="mono">{pct(row.spread_pct)}</span> },
             { key: 'open_interest', label: 'Open int.', numeric: true, cell: (row) => <span className="mono">{row.open_interest ?? '\u2013'}</span> },
             { key: 'score', label: 'Score', numeric: true, cell: (row) => <span className="mono score-cell">{number(row.score, 2)}</span> },

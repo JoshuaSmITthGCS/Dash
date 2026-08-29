@@ -12,6 +12,29 @@ const GENERIC_RISK_NOTE = 'Research screen, not a trade instruction. Confirm liv
   'open interest, and your own risk limits in your broker before acting on anything here — ' +
   'nothing in this app places orders or connects to a brokerage account.'
 
+// Position-management guidance for the screens that sell premium (covered call,
+// cash-secured put, iron condor): close at roughly half of max profit and don't hold past
+// ~21 days to expiration, where gamma risk accelerates. Sourced to tastytrade's own
+// 314-trade strangle study (managed exits: 90% win rate / $7,209 total P&L vs. 82% /
+// $12,297 held to expiration) — self-published practitioner data, not peer-reviewed, and
+// the trade-off (higher win rate, lower total profit) is stated plainly rather than sold
+// as a pure improvement. See the "Managed exit (50% / 21 DTE)" glossary entry.
+const MANAGED_EXIT_NOTE = ' A commonly cited practitioner rule (not peer-reviewed, and not ' +
+  'free — it trades some total profit for a higher win rate and smaller worst-case losses): ' +
+  'close the position once it has captured roughly half its maximum possible profit, and ' +
+  'exit by about 21 days to expiration regardless, since gamma risk accelerates sharply in ' +
+  'an option’s final weeks.'
+
+// iv_skew/put_call_oi_ratio/realized_volatility_percentile are informational context on
+// every options screen (see options_common.py) — never scoring inputs, since none of the
+// three has a validated day-to-day ranking edge (see each field's own docstring/glossary
+// entry for the literature this pipeline draws that from).
+const VOLATILITY_CONTEXT_METRICS = [
+  ['iv_skew', 'Put/call IV skew', 'pct'],
+  ['put_call_oi_ratio', 'Put/call open interest ratio', 'ratio'],
+  ['realized_volatility_percentile', 'Realized vol percentile (1y)', 'percentile'],
+]
+
 export const STRATEGY_SCREENS = {
   'covered-call': {
     file: 'screens/covered-calls.json',
@@ -23,7 +46,7 @@ export const STRATEGY_SCREENS = {
       'liquidity, and how much the premium cushions a decline.',
     riskNote: GENERIC_RISK_NOTE + ' Selling calls caps your upside at the strike — a hard ' +
       'rally means missing the rest of the move, and you may be assigned (forced to sell ' +
-      'your shares) before expiration. Requires owning 100 shares per contract.',
+      'your shares) before expiration. Requires owning 100 shares per contract.' + MANAGED_EXIT_NOTE,
     strategyLabel: () => 'Covered call',
     metricsConfig: () => [
       ['expected_value_pct', 'Expected value (net of est. cost)', 'pct'],
@@ -34,6 +57,7 @@ export const STRATEGY_SCREENS = {
       ['max_return_if_assigned_pct', 'Max return if assigned', 'pct'],
       ['probability_assigned', 'Probability assigned (risk-neutral)', 'pct'],
       ['downside_cushion_pct', 'Downside cushion', 'pct'],
+      ...VOLATILITY_CONTEXT_METRICS,
       ['news_sentiment', 'News sentiment tilt', 'signed'],
       ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
@@ -52,7 +76,8 @@ export const STRATEGY_SCREENS = {
       'smaller account, that collateral requirement (shown as "Collateral required" above) can ' +
       'be more capital than you have — a defined-risk put credit spread caps both the collateral ' +
       'and the loss, at the cost of paying commissions and a bid/ask spread on two legs instead ' +
-      'of one, which eats a bigger share of a small trade’s edge. See the Vertical spread screen.',
+      'of one, which eats a bigger share of a small trade’s edge. See the Vertical spread screen.' +
+      MANAGED_EXIT_NOTE,
     strategyLabel: () => 'Cash-secured put',
     metricsConfig: () => [
       ['expected_value_pct', 'Expected value (net of est. cost)', 'pct'],
@@ -63,6 +88,7 @@ export const STRATEGY_SCREENS = {
       ['collateral', 'Collateral required', 'money'],
       ['probability_otm', 'Probability OTM, risk-neutral (keep premium)', 'pct'],
       ['probability_assigned', 'Probability assigned (risk-neutral)', 'pct'],
+      ...VOLATILITY_CONTEXT_METRICS,
       ['news_sentiment', 'News sentiment tilt', 'signed'],
       ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
@@ -84,6 +110,7 @@ export const STRATEGY_SCREENS = {
       ['cost', 'Cost per share', 'money'],
       ['floor_price', 'Floor price', 'money'],
       ['max_loss_with_hedge_pct', 'Max loss, hedged', 'pct'],
+      ...VOLATILITY_CONTEXT_METRICS,
       ['news_sentiment', 'News sentiment tilt', 'signed'],
       ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
@@ -106,6 +133,7 @@ export const STRATEGY_SCREENS = {
       ['range_width_pct', 'Range width', 'pct'],
       ['max_loss_pct', 'Max loss', 'pct'],
       ['max_gain_pct', 'Max gain', 'pct'],
+      ...VOLATILITY_CONTEXT_METRICS,
       ['news_sentiment', 'News sentiment tilt', 'signed'],
       ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
@@ -128,6 +156,7 @@ export const STRATEGY_SCREENS = {
       ['max_profit', 'Max profit', 'money'],
       ['max_loss', 'Max loss', 'money'],
       ['width', 'Spread width', 'money'],
+      ...VOLATILITY_CONTEXT_METRICS,
       ['news_sentiment', 'News sentiment tilt', 'signed'],
       ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
@@ -143,14 +172,17 @@ export const STRATEGY_SCREENS = {
       'either direction) from the same option chain. This screen has no earnings-calendar ' +
       'awareness — straddle candidates are ranked as cheap-volatility ideas, not catalyst-timed ones.',
     riskNote: GENERIC_RISK_NOTE + ' Iron condors have defined but real loss potential if price ' +
-      'moves outside the short strikes before expiration. Straddles cost two premiums and need ' +
-      'a big move just to break even — time decay works against both legs every day the stock sits still.',
+      'moves outside the short strikes before expiration.' + MANAGED_EXIT_NOTE + ' Straddles ' +
+      'cost two premiums and need a big move just to break even — time decay works against ' +
+      'both legs every day the stock sits still (the managed-exit rule above is for the ' +
+      'iron condor side; it doesn’t apply to a long straddle).',
     strategyLabel: (row) => row.strategy === 'iron_condor' ? 'Iron condor' : 'Straddle',
     metricsConfig: (row) => row.strategy === 'iron_condor' ? [
       ['probability_in_range', 'Probability in range (risk-neutral)', 'pct'],
       ['net_credit', 'Net credit', 'money'],
       ['max_profit', 'Max profit', 'money'],
       ['max_loss', 'Max loss', 'money'],
+      ...VOLATILITY_CONTEXT_METRICS,
       ['news_sentiment', 'News calm tilt (low = controversial)', 'signed'],
       ['research_confidence', 'Research confidence tilt', 'signed'],
     ] : [
@@ -159,6 +191,7 @@ export const STRATEGY_SCREENS = {
       ['breakeven_up', 'Breakeven, upside', 'money'],
       ['breakeven_down', 'Breakeven, downside', 'money'],
       ['required_move_pct', 'Required move', 'pct'],
+      ...VOLATILITY_CONTEXT_METRICS,
       ['news_sentiment', 'News attention tilt', 'signed'],
       ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
@@ -186,6 +219,7 @@ export const STRATEGY_SCREENS = {
       ['realized_volatility_20d', 'Realized volatility (20d)', 'pct'],
       ['implied_realized_vol_ratio', 'Implied / realized vol', 'ratio'],
       ['moneyness', 'Moneyness', 'pct'],
+      ...VOLATILITY_CONTEXT_METRICS,
       ['news_sentiment', 'News sentiment tilt', 'signed'],
       ['research_confidence', 'Research confidence tilt', 'signed'],
     ] : row.strategy === 'sell_call' ? [
@@ -196,6 +230,7 @@ export const STRATEGY_SCREENS = {
       ['breakeven', 'Breakeven', 'money'],
       ['probability_assigned', 'Probability assigned (risk-neutral)', 'pct'],
       ['downside_cushion_pct', 'Downside cushion', 'pct'],
+      ...VOLATILITY_CONTEXT_METRICS,
       ['news_sentiment', 'News sentiment tilt', 'signed'],
       ['research_confidence', 'Research confidence tilt', 'signed'],
     ] : [
@@ -206,6 +241,7 @@ export const STRATEGY_SCREENS = {
       ['effective_cost_basis', 'Effective cost basis', 'money'],
       ['collateral', 'Collateral required', 'money'],
       ['probability_otm', 'Probability OTM, risk-neutral (keep premium)', 'pct'],
+      ...VOLATILITY_CONTEXT_METRICS,
       ['news_sentiment', 'News sentiment tilt', 'signed'],
       ['research_confidence', 'Research confidence tilt', 'signed'],
     ],

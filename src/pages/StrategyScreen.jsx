@@ -25,6 +25,7 @@ function formatMetric(value, format) {
     case 'money': return money(value)
     case 'ratio': return `${Number(value).toFixed(2)}×`
     case 'signed': return `${value >= 0 ? '+' : ''}${Number(value).toFixed(2)}`
+    case 'percentile': return `${Math.round(Number(value))}th pct.`
     default: return String(value)
   }
 }

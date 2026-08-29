@@ -113,9 +113,10 @@ def make_entry(ticker="AAA", market_cap=5e9, sector="Technology", score=70, conf
 
 
 def make_setup(entry, chain, price=100, dte=30, trend=0.05, realized=0.25, history_sessions=40,
-               generated_at=None, as_of=None):
+               generated_at=None, as_of=None, closes=None):
+    closes = closes if closes is not None else [price] * history_sessions
     return (entry["ticker"], price, dte, EXPIRATION, trend, realized, chain, entry, history_sessions,
-            generated_at, as_of)
+            generated_at, as_of, closes)
 
 
 def wobble_history():

@@ -36,6 +36,9 @@ MINIMUM_PRICE = 5
 MINIMUM_MARKET_CAP = 300_000_000
 RESEARCH_SNAPSHOT_MAX_AGE_DAYS = 5
 CONTRACT_FEE = 0.65  # dollars per contract - matches Fidelity's disclosed per-contract options fee
+# Floor for realized_vol_percentile: never rank today's vol against a handful of rolling
+# observations and call the result a percentile - see that function's docstring.
+MINIMUM_VOL_PERCENTILE_SAMPLES = 60
 
 
 def realized_volatility_20d(closes):
@@ -43,6 +46,41 @@ def realized_volatility_20d(closes):
         return None
     returns = [math.log(closes[index] / closes[index - 1]) for index in range(len(closes) - 20, len(closes))]
     return statistics.stdev(returns) * math.sqrt(252) if len(returns) > 1 else None
+
+
+def realized_vol_percentile(closes, lookback=252, window=20):
+    """Where today's rolling `window`-session realized vol sits (0-100) among its own
+    trailing `lookback`-session distribution - the "volatility cone" percentile technique,
+    applied to REALIZED (not implied) volatility.
+
+    This is deliberately NOT an IV rank. A real IV rank - (current IV - 52wk low) / (52wk
+    high - 52wk low) - needs a persisted year of implied-volatility history per ticker,
+    which this pipeline doesn't collect: option chains are fetched fresh and unstored on
+    every run (see MODULE docstring). Building that collector is infrastructure on the
+    scale of the PIT store (see research/STATE.md), not a screen tweak. This function is
+    the honest substitute available from data already fetched - the ticker's own price
+    history - and every caller must publish it as `realized_volatility_percentile`, never
+    relabel it `iv_rank`.
+
+    Requires at least MINIMUM_VOL_PERCENTILE_SAMPLES rolling observations or returns None -
+    a name with a short trading history (recent IPO/spin-off) gets no fabricated percentile
+    off a handful of points.
+    """
+    if len(closes) < window + 1:
+        return None
+    series = []
+    for end in range(window + 1, len(closes) + 1):
+        window_closes = closes[end - window - 1:end]
+        if any(value <= 0 for value in window_closes):
+            continue
+        returns = [math.log(window_closes[index] / window_closes[index - 1]) for index in range(1, len(window_closes))]
+        if len(returns) > 1:
+            series.append(statistics.stdev(returns) * math.sqrt(252))
+    series = series[-lookback:]  # most recent `lookback` rolling observations only
+    if len(series) < MINIMUM_VOL_PERCENTILE_SAMPLES:
+        return None
+    current = series[-1]
+    return round(100 * sum(1 for value in series if value <= current) / len(series), 2)
 
 
 def trend_20d(closes):
@@ -252,6 +290,41 @@ def select_by_target_delta(frame, price, dte, side, target_delta, moneyness_floo
         if best is None or distance < best[0]:
             best = (distance, candidate)
     return best[1] if best else None
+
+
+def iv_skew(calls, puts, price, dte, target_delta=0.25):
+    """Put IV minus call IV at matched ~target_delta wings, from the option chain a caller
+    already has in scope (no extra network call). Positive means the put is priced richer
+    than the call - the reverse-skew pattern equities have carried since the 1987 crash,
+    read as persistent hedging demand rather than a symmetric view on up/down moves.
+    Skew flattening toward multi-year lows has preceded volatility spikes (e.g. late
+    January 2018, ahead of the Feb 5 2018 VIX explosion) - informational context here, not
+    a scoring input, since a single-day reading says nothing about whether it's flattening
+    or steepening. None if either wing can't be found with adequate liquidity.
+    """
+    put = select_by_target_delta(puts, price, dte, side="put", target_delta=target_delta)
+    call = select_by_target_delta(calls, price, dte, side="call", target_delta=target_delta)
+    if put is None or call is None or put["implied_volatility"] is None or call["implied_volatility"] is None:
+        return None
+    return round(put["implied_volatility"] - call["implied_volatility"], 4)
+
+
+def put_call_oi_ratio(calls, puts):
+    """Total put open interest / total call open interest across the full chain frames at
+    the selected expiration - context only, never a scoring factor. The literature this
+    pipeline draws on (Wall Street Courier/Koch, CBOE equity P/C 2007-2022) treats the raw
+    ratio as a weak, contrarian signal that only means anything at its own historical
+    extremes, not something with an established edge to rank candidates by; a single day's
+    reading here has no such history to compare against. None if there's no call open
+    interest to divide by.
+    """
+    def total_open_interest(frame):
+        return sum(_finite(contract.get("openInterest"), 0) for _, contract in frame.iterrows())
+
+    call_oi = total_open_interest(calls)
+    if call_oi <= 0:
+        return None
+    return round(total_open_interest(puts) / call_oi, 4)
 
 
 def snapshot_staleness_discount(generated_at, as_of=None):

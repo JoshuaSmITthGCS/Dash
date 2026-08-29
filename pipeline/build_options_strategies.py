@@ -37,9 +37,10 @@ from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, wa
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
 from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expected_value_pct, expiration_spans_earnings,
-                            liquidity_factor, next_earnings_date, probability_above, realized_volatility_20d,
-                            research_universe_factors, select_by_target_delta, select_contract,
-                            select_expiration, suggested_position_pct, transaction_cost_pct, trend_20d)
+                            iv_skew, liquidity_factor, next_earnings_date, probability_above, put_call_oi_ratio,
+                            realized_volatility_20d, realized_vol_percentile, research_universe_factors,
+                            select_by_target_delta, select_contract, select_expiration, suggested_position_pct,
+                            transaction_cost_pct, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
@@ -53,10 +54,10 @@ WINDOW = {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION, "max_days_to_expirat
           "target_days_to_expiration": TARGET_DAYS_TO_EXPIRATION, "target_delta": TARGET_DELTA}
 
 FILE_MODEL_VERSIONS = {
-    "screens/options.json": "multiday-options-v1.0.0",
-    "screens/covered-calls.json": "covered-call-v1.0.0",
-    "screens/cash-secured-puts.json": "cash-secured-put-v1.0.0",
-    "screens/short-term-trades.json": "short-term-trades-v1.0.0",
+    "screens/options.json": "multiday-options-v1.1.0",
+    "screens/covered-calls.json": "covered-call-v1.1.0",
+    "screens/cash-secured-puts.json": "cash-secured-put-v1.1.0",
+    "screens/short-term-trades.json": "short-term-trades-v1.1.0",
 }
 
 
@@ -93,7 +94,7 @@ def fetch_chain(entry, yf, as_of=None, generated_at=None):
         return None
     return {"ticker": ticker, "entry": entry, "price": price, "trend": trend, "realized": realized,
             "expiration": expiration, "dte": dte, "calls": chain.calls, "puts": chain.puts,
-            "history_sessions": len(closes), "generated_at": generated_at, "as_of": as_of}
+            "closes": closes, "history_sessions": len(closes), "generated_at": generated_at, "as_of": as_of}
 
 
 def build_buy_row(setup):
@@ -105,6 +106,9 @@ def build_buy_row(setup):
         return None
     iv_rv_ratio = (contract["implied_volatility"] / realized
                    if contract["implied_volatility"] and realized else None)
+    skew = iv_skew(setup["calls"], setup["puts"], price, setup["dte"])
+    pc_oi_ratio = put_call_oi_ratio(setup["calls"], setup["puts"])
+    vol_percentile = realized_vol_percentile(setup["closes"])
     entry = setup["entry"]
     direction = -1 if option_type == "put" else 1
     research_factors = research_universe_factors(entry, setup["generated_at"], setup["as_of"],
@@ -119,6 +123,7 @@ def build_buy_row(setup):
         "realized_volatility_20d": round(realized, 4) if realized is not None else None,
         "option_type": option_type, "expiration": setup["expiration"], "days_to_expiration": setup["dte"],
         "implied_realized_vol_ratio": round(iv_rv_ratio, 4) if iv_rv_ratio is not None else None,
+        "iv_skew": skew, "put_call_oi_ratio": pc_oi_ratio, "realized_volatility_percentile": vol_percentile,
         "contract": contract,
         "news_sentiment": research_factors["news_sentiment"], "research_confidence": research_factors["research_confidence"],
         "factors": {
@@ -136,6 +141,9 @@ def build_sell_call_row(setup):
     call = select_by_target_delta(setup["calls"], price, setup["dte"], side="call", target_delta=TARGET_DELTA)
     if call is None:
         return None
+    skew = iv_skew(setup["calls"], setup["puts"], price, setup["dte"])
+    pc_oi_ratio = put_call_oi_ratio(setup["calls"], setup["puts"])
+    vol_percentile = realized_vol_percentile(setup["closes"])
     premium = call["mid"]
     breakeven = price - premium
     max_return_if_assigned_pct = ((call["strike"] - price) + premium) / price
@@ -168,6 +176,7 @@ def build_sell_call_row(setup):
             "probability_assigned": round(probability_assigned, 4) if probability_assigned is not None else None,
             "downside_cushion_pct": round(downside_cushion_pct, 4),
             "suggested_position_pct": round(position_pct, 4) if position_pct is not None else None,
+            "iv_skew": skew, "put_call_oi_ratio": pc_oi_ratio, "realized_volatility_percentile": vol_percentile,
             "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
             "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
@@ -186,6 +195,9 @@ def build_sell_put_row(setup):
     put = select_by_target_delta(setup["puts"], price, setup["dte"], side="put", target_delta=TARGET_DELTA)
     if put is None:
         return None
+    skew = iv_skew(setup["calls"], setup["puts"], price, setup["dte"])
+    pc_oi_ratio = put_call_oi_ratio(setup["calls"], setup["puts"])
+    vol_percentile = realized_vol_percentile(setup["closes"])
     strike = put["strike"]
     premium = put["mid"]
     collateral = strike * 100
@@ -220,6 +232,7 @@ def build_sell_put_row(setup):
             "probability_otm": round(probability_otm, 4) if probability_otm is not None else None,
             "probability_assigned": round(probability_assigned, 4) if probability_assigned is not None else None,
             "suggested_position_pct": round(position_pct, 4) if position_pct is not None else None,
+            "iv_skew": skew, "put_call_oi_ratio": pc_oi_ratio, "realized_volatility_percentile": vol_percentile,
             "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
             "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
@@ -317,6 +330,8 @@ def to_result_short_term(rank, strategy, row):
             "realized_volatility_20d": row.get("realized_volatility_20d"),
             "implied_realized_vol_ratio": row.get("implied_realized_vol_ratio"),
             "moneyness": contract.get("moneyness"),
+            "iv_skew": row.get("iv_skew"), "put_call_oi_ratio": row.get("put_call_oi_ratio"),
+            "realized_volatility_percentile": row.get("realized_volatility_percentile"),
             "news_sentiment": round(row["news_sentiment"], 4) if row.get("news_sentiment") is not None else None,
             "research_confidence": round(row["research_confidence"], 4) if row.get("research_confidence") is not None else None,
         }
