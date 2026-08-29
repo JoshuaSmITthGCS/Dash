@@ -26,6 +26,14 @@ function formatMetric(value, format) {
     case 'ratio': return `${Number(value).toFixed(2)}×`
     case 'signed': return `${value >= 0 ? '+' : ''}${Number(value).toFixed(2)}`
     case 'percentile': return `${Math.round(Number(value))}th pct.`
+    case 'gex': {
+      const sign = value < 0 ? '-' : ''
+      const abs = Math.abs(Number(value))
+      if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(2)}B`
+      if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(1)}M`
+      if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(0)}K`
+      return `${sign}$${abs.toFixed(0)}`
+    }
     default: return String(value)
   }
 }

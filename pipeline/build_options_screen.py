@@ -23,6 +23,7 @@ from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
 from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expiration_spans_earnings, iv_skew, liquidity_factor,
                             next_earnings_date, put_call_oi_ratio, realized_volatility_20d, realized_vol_percentile,
+                            single_expiration_gex,
                             research_universe_factors, select_contract, trend_20d)
 from options_common import select_expiration as _select_expiration
 from peer_groups import peer_group
@@ -97,6 +98,7 @@ def build_row(entry, yf, as_of=None, generated_at=None):
                    if contract["implied_volatility"] and realized else None)
     skew = iv_skew(chain.calls, chain.puts, price, dte)
     pc_oi_ratio = put_call_oi_ratio(chain.calls, chain.puts)
+    gex = single_expiration_gex(chain.calls, chain.puts, price, dte)
     vol_percentile = realized_vol_percentile(closes)
     direction = -1 if option_type == "put" else 1
     research_factors = research_universe_factors(entry, generated_at, as_of, direction=direction,
@@ -115,7 +117,7 @@ def build_row(entry, yf, as_of=None, generated_at=None):
         # Read-only lookup - this module's own build_row() never writes to iv_archive; only
         # build_options_strategies.py's shared fetch does, to keep the archived series to a
         # single target-DTE tenor. See iv_archive.py's module docstring.
-        "iv_percentile": iv_archive.iv_percentile(ticker),
+        "iv_percentile": iv_archive.iv_percentile(ticker), "single_expiration_gex": gex,
         "contract": contract,
         "news_sentiment": research_factors["news_sentiment"], "research_confidence": research_factors["research_confidence"],
         "factors": {
@@ -177,7 +179,7 @@ def to_result(rank, row):
         "implied_realized_vol_ratio": row.get("implied_realized_vol_ratio"),
         "iv_skew": row.get("iv_skew"), "put_call_oi_ratio": row.get("put_call_oi_ratio"),
         "realized_volatility_percentile": row.get("realized_volatility_percentile"),
-        "iv_percentile": row.get("iv_percentile"),
+        "iv_percentile": row.get("iv_percentile"), "single_expiration_gex": row.get("single_expiration_gex"),
         "open_interest": contract.get("open_interest"), "volume": contract.get("volume"),
         "moneyness": contract.get("moneyness"),
         "news_sentiment": round(row["news_sentiment"], 4) if row.get("news_sentiment") is not None else None,
@@ -188,7 +190,7 @@ def to_result(rank, row):
 
 def unavailable(reason_code, generated_at):
     return {
-        "schema_version": "1.0.0", "model_version": "multiday-options-v1.2.0",
+        "schema_version": "1.0.0", "model_version": "multiday-options-v1.3.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at,
         "status": "unavailable", "reason_code": reason_code, "results": [],
     }
@@ -227,7 +229,7 @@ def run(as_of=None):
     scored = score_rows(rows)
     results = [to_result(rank + 1, row) for rank, row in enumerate(scored)]
     result = {
-        "schema_version": "1.0.0", "model_version": "multiday-options-v1.2.0",
+        "schema_version": "1.0.0", "model_version": "multiday-options-v1.3.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
         "window": {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION,
                    "max_days_to_expiration": MAX_DAYS_TO_EXPIRATION,

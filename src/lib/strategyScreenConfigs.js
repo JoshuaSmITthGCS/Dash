@@ -25,18 +25,20 @@ const MANAGED_EXIT_NOTE = ' A commonly cited practitioner rule (not peer-reviewe
   'exit by about 21 days to expiration regardless, since gamma risk accelerates sharply in ' +
   'an option’s final weeks.'
 
-// iv_skew/put_call_oi_ratio/realized_volatility_percentile/iv_percentile are informational
-// context on every options screen (see options_common.py and iv_archive.py) — never scoring
-// inputs, since none has a validated day-to-day ranking edge (see each field's own
-// docstring/glossary entry for the literature this pipeline draws that from). iv_percentile
-// is the real thing realized_volatility_percentile was always a stand-in for — a genuine IV
-// rank computed from an archived history — but it needs roughly three months of accumulated
-// history per ticker before it stops reading blank; see its glossary entry.
+// iv_skew/put_call_oi_ratio/realized_volatility_percentile/iv_percentile/
+// single_expiration_gex are informational context on every options screen (see
+// options_common.py and iv_archive.py) — never scoring inputs, since none has a validated
+// day-to-day ranking edge (see each field's own docstring/glossary entry for the literature
+// this pipeline draws that from). iv_percentile is the real thing
+// realized_volatility_percentile was always a stand-in for — a genuine IV rank computed
+// from an archived history — but it needs roughly three months of accumulated history per
+// ticker before it stops reading blank; see its glossary entry.
 const VOLATILITY_CONTEXT_METRICS = [
   ['iv_skew', 'Put/call IV skew', 'pct'],
   ['put_call_oi_ratio', 'Put/call open interest ratio', 'ratio'],
   ['realized_volatility_percentile', 'Realized vol percentile (1y)', 'percentile'],
   ['iv_percentile', 'IV percentile (1y)', 'percentile'],
+  ['single_expiration_gex', 'Single-expiry GEX', 'gex'],
 ]
 
 export const STRATEGY_SCREENS = {

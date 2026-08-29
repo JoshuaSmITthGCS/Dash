@@ -459,3 +459,51 @@ def test_atm_iv_uses_whichever_leg_is_available():
 
 def test_atm_iv_none_when_neither_leg_is_available():
     assert module.atm_iv(FakeFrame([]), FakeFrame([]), price=100) is None
+
+
+def test_option_gamma_is_positive_and_peaks_at_the_money():
+    atm = module.option_gamma(price=100, strike=100, iv=0.3, dte=30)
+    otm = module.option_gamma(price=100, strike=130, iv=0.3, dte=30)
+    assert atm is not None and atm > 0
+    assert otm is not None and otm > 0
+    assert atm > otm
+
+
+def test_option_gamma_none_for_degenerate_inputs():
+    assert module.option_gamma(price=100, strike=100, iv=0, dte=30) is None
+    assert module.option_gamma(price=100, strike=100, iv=0.3, dte=0) is None
+
+
+def test_single_expiration_gex_calls_positive_puts_negative():
+    # One call-heavy chain and one put-heavy chain, otherwise identical - the call-heavy
+    # book must net positive, the put-heavy book must net negative, under this module's
+    # documented naive dealer-inventory convention.
+    call_heavy = module.single_expiration_gex(
+        FakeFrame([contract(strike=100, bid=2.0, ask=2.1, open_interest=5000, iv=0.3)]),
+        FakeFrame([contract(strike=100, bid=2.0, ask=2.1, open_interest=100, iv=0.3)]),
+        price=100, dte=30)
+    put_heavy = module.single_expiration_gex(
+        FakeFrame([contract(strike=100, bid=2.0, ask=2.1, open_interest=100, iv=0.3)]),
+        FakeFrame([contract(strike=100, bid=2.0, ask=2.1, open_interest=5000, iv=0.3)]),
+        price=100, dte=30)
+    assert call_heavy > 0
+    assert put_heavy < 0
+
+
+def test_single_expiration_gex_skips_contracts_with_no_open_interest_or_iv():
+    calls = FakeFrame([
+        contract(strike=100, bid=2.0, ask=2.1, open_interest=0, iv=0.3),
+        contract(strike=105, bid=1.0, ask=1.1, open_interest=500, iv=float("nan")),
+    ])
+    puts = FakeFrame([])
+    assert module.single_expiration_gex(calls, puts, price=100, dte=30) == 0
+
+
+def test_single_expiration_gex_zero_for_an_empty_chain():
+    assert module.single_expiration_gex(FakeFrame([]), FakeFrame([]), price=100, dte=30) == 0
+
+
+def test_single_expiration_gex_none_without_price_or_dte():
+    calls = FakeFrame([contract(strike=100, bid=2.0, ask=2.1, open_interest=500, iv=0.3)])
+    assert module.single_expiration_gex(calls, FakeFrame([]), price=None, dte=30) is None
+    assert module.single_expiration_gex(calls, FakeFrame([]), price=100, dte=0) is None

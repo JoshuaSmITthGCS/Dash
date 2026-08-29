@@ -270,6 +270,11 @@ def test_run_publishes_all_four_files_from_one_fetch_per_ticker(monkeypatch):
     assert saved["screens/options.json"]["results"][0]["iv_percentile"] is None
     assert saved["screens/covered-calls.json"]["results"][0]["metrics"]["iv_percentile"] is None
 
+    # single_expiration_gex needs no history - it's a same-day chain computation - so it
+    # should be a real number (not None) wherever the chain has usable IV/OI.
+    assert isinstance(saved["screens/options.json"]["results"][0]["single_expiration_gex"], (int, float))
+    assert isinstance(saved["screens/covered-calls.json"]["results"][0]["metrics"]["single_expiration_gex"], (int, float))
+
 
 def test_run_skips_when_flag_not_set(monkeypatch):
     monkeypatch.delenv("ENABLE_MULTIDAY_OPTIONS_SCREEN", raising=False)

@@ -37,7 +37,8 @@ from fetch_advisor import yahoo_history
 from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, contract_liquidity, expiration_spans_earnings,
                             iv_skew, liquidity_factor, next_earnings_date, probability_below, put_call_oi_ratio,
                             realized_volatility_20d, realized_vol_percentile, research_universe_factors,
-                            select_by_target_delta, select_contract, select_expiration, trend_20d)
+                            select_by_target_delta, select_contract, select_expiration,
+                            single_expiration_gex, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
 
@@ -142,6 +143,7 @@ def build_iron_condor_row(setup):
     credit_efficiency = net_credit / max_loss
     skew = iv_skew(chain.calls, chain.puts, price, dte)
     pc_oi_ratio = put_call_oi_ratio(chain.calls, chain.puts)
+    gex = single_expiration_gex(chain.calls, chain.puts, price, dte)
     vol_percentile = realized_vol_percentile(closes)
     research_factors = research_universe_factors(entry, generated_at, as_of, sentiment_mode="calm")
 
@@ -160,7 +162,7 @@ def build_iron_condor_row(setup):
             "max_loss": round(max_loss, 4),
             "probability_in_range": round(probability_in_range, 4) if probability_in_range is not None else None,
             "iv_skew": skew, "put_call_oi_ratio": pc_oi_ratio, "realized_volatility_percentile": vol_percentile,
-            "iv_percentile": iv_archive.iv_percentile(ticker),
+            "iv_percentile": iv_archive.iv_percentile(ticker), "single_expiration_gex": gex,
             "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
             "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
@@ -219,6 +221,7 @@ def build_straddle_row(setup):
                              else 1 - (prob_below_up - prob_below_down))
     skew = iv_skew(chain.calls, chain.puts, price, dte)
     pc_oi_ratio = put_call_oi_ratio(chain.calls, chain.puts)
+    gex = single_expiration_gex(chain.calls, chain.puts, price, dte)
     vol_percentile = realized_vol_percentile(closes)
     research_factors = research_universe_factors(entry, generated_at, as_of, sentiment_mode="attention")
 
@@ -238,7 +241,7 @@ def build_straddle_row(setup):
             "required_move_pct": round(required_move_pct, 4),
             "probability_of_profit": round(probability_of_profit, 4) if probability_of_profit is not None else None,
             "iv_skew": skew, "put_call_oi_ratio": pc_oi_ratio, "realized_volatility_percentile": vol_percentile,
-            "iv_percentile": iv_archive.iv_percentile(ticker),
+            "iv_percentile": iv_archive.iv_percentile(ticker), "single_expiration_gex": gex,
             "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
             "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
@@ -330,7 +333,7 @@ def to_result(rank, row):
 
 def unavailable(reason_code, generated_at):
     return {
-        "schema_version": "1.0.0", "model_version": "advanced-options-v1.2.0",
+        "schema_version": "1.0.0", "model_version": "advanced-options-v1.3.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at,
         "status": "unavailable", "reason_code": reason_code, "results": [],
     }
@@ -371,7 +374,7 @@ def run(as_of=None):
     results = ([to_result(rank + 1, row) for rank, row in enumerate(scored_condors)]
               + [to_result(rank + 1, row) for rank, row in enumerate(scored_straddles)])
     result = {
-        "schema_version": "1.0.0", "model_version": "advanced-options-v1.2.0",
+        "schema_version": "1.0.0", "model_version": "advanced-options-v1.3.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
         "window": {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION,
                    "max_days_to_expiration": MAX_DAYS_TO_EXPIRATION,

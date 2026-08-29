@@ -136,6 +136,18 @@ def put_delta(price, strike, iv, dte, r=0.0):
     return None if d1 is None else normal_cdf(d1) - 1
 
 
+def option_gamma(price, strike, iv, dte, r=0.0):
+    """Black-Scholes gamma - identical for a call and a put at the same strike/expiration,
+    which is what makes summing it across a whole chain (see single_expiration_gex below)
+    meaningful regardless of which side a given open-interest figure sits on.
+    """
+    d1, _ = bs_d1_d2(price, strike, iv, dte, r)
+    if d1 is None:
+        return None
+    t = dte / 365
+    return math.exp(-d1 ** 2 / 2) / math.sqrt(2 * math.pi) / (price * iv * math.sqrt(t))
+
+
 def probability_above(price, strike, iv, dte, r=0.0):
     """Risk-neutral probability the stock finishes above `strike` at expiration."""
     _, d2 = bs_d1_d2(price, strike, iv, dte, r)
@@ -252,6 +264,54 @@ def atm_iv(calls, puts, price):
     put = select_contract(puts, price)
     values = [c["implied_volatility"] for c in (call, put) if c and c["implied_volatility"] is not None]
     return statistics.mean(values) if values else None
+
+
+def single_expiration_gex(calls, puts, price, dte, r=0.0):
+    """Net dealer gamma exposure for ONE expiration's chain, in dollars of underlying a
+    delta-hedging dealer must trade per 1% move (gamma x open interest x 100-share
+    multiplier x spot^2 x 0.01), calls positive and puts negative.
+
+    Two honest simplifications, both stated here rather than left implicit:
+
+    1. Sign convention. Positive/calls, negative/puts is the "naive" dealer-inventory
+       assumption (dealers end up net long the calls and net short the puts retail
+       customers buy) that a 2026 SSRN paper ("Sign of Dealer Gamma") formalized as
+       exactly that - an assumption, not an observed fact. Real market-making desks carry
+       inventory this pipeline has no visibility into; this is the same convention
+       SqueezeMetrics' 2016 GEX methodology popularized, not a claim that it is always
+       correct.
+    2. Single expiration, not the full term structure. Vendor GEX products (SpotGamma,
+       SqueezeMetrics) sum across every listed expiration for a ticker. This pipeline only
+       ever fetches ONE expiration's chain per screen, so this is a proxy for that one
+       expiration's contribution, not the ticker's aggregate net gamma - a screen with a
+       7-day window and one with a 30-day window will read different numbers for the same
+       ticker on the same day, and that's expected, not a bug.
+
+    Sums across the FULL chain (every strike with usable IV and open interest), not just
+    the near-the-money contracts the rest of this module selects from - real dealer gamma
+    comes from accumulated positioning at every strike, not only the liquid ones. None if
+    `price`/`dte` themselves are unusable; a chain with no usable contracts on either side
+    returns 0.0, not None (a real, if boring, dealer-gamma reading of "no measurable
+    exposure found").
+    """
+    if not price or not dte or dte <= 0:
+        return None
+
+    def side_notional(frame, sign):
+        total = 0.0
+        for _, contract in frame.iterrows():
+            iv = _finite(contract.get("impliedVolatility"))
+            open_interest = _finite(contract.get("openInterest"), 0)
+            strike = _finite(contract.get("strike"))
+            if not iv or iv <= 0 or open_interest <= 0 or not strike:
+                continue
+            gamma = option_gamma(price, strike, iv, dte, r)
+            if gamma is None:
+                continue
+            total += sign * gamma * open_interest * 100 * price ** 2 * 0.01
+        return total
+
+    return round(side_notional(calls, 1) + side_notional(puts, -1))
 
 
 def liquidity_factor(contract):

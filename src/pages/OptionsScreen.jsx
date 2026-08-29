@@ -14,6 +14,15 @@ const pct = (value, digits = 1) => value == null ? '–' : `${(value * 100).toFi
 const money = (value) => value == null ? '–' : `$${Number(value).toFixed(2)}`
 const signed = (value) => value == null ? '–' : `${value >= 0 ? '+' : ''}${Number(value).toFixed(2)}`
 const percentileLabel = (value) => value == null ? '–' : `${Math.round(value)}th pct.`
+const gexLabel = (value) => {
+  if (value == null) return '–'
+  const sign = value < 0 ? '-' : ''
+  const abs = Math.abs(value)
+  if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(2)}B`
+  if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(1)}M`
+  if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(0)}K`
+  return `${sign}$${abs.toFixed(0)}`
+}
 const dateLabel = (value) => {
   if (!value) return '–'
   const parsed = new Date(`${value}T00:00:00Z`)
@@ -82,6 +91,7 @@ function OptionIdeaCard({ row, onOpen }) {
       <div><dt>Put/call OI ratio</dt><dd>{number(row.put_call_oi_ratio, 2)}×</dd></div>
       <div><dt>Realized vol percentile</dt><dd>{percentileLabel(row.realized_volatility_percentile)}</dd></div>
       <div><dt>IV percentile (1y)</dt><dd>{percentileLabel(row.iv_percentile)}</dd></div>
+      <div><dt>Single-expiry GEX</dt><dd>{gexLabel(row.single_expiration_gex)}</dd></div>
       <div><dt>News sentiment tilt</dt><dd>{signed(row.news_sentiment)}</dd></div>
       <div><dt>Research confidence tilt</dt><dd>{signed(row.research_confidence)}</dd></div>
     </dl>
@@ -186,6 +196,8 @@ export default function OptionsScreen() {
               cell: (row) => <span className="mono">{percentileLabel(row.realized_volatility_percentile)}</span> },
             { key: 'iv_percentile', label: 'IV pctile', numeric: true,
               cell: (row) => <span className="mono">{percentileLabel(row.iv_percentile)}</span> },
+            { key: 'single_expiration_gex', label: 'GEX', numeric: true,
+              cell: (row) => <span className="mono">{gexLabel(row.single_expiration_gex)}</span> },
             { key: 'spread_pct', label: 'Spread', numeric: true, cell: (row) => <span className="mono">{pct(row.spread_pct)}</span> },
             { key: 'open_interest', label: 'Open int.', numeric: true, cell: (row) => <span className="mono">{row.open_interest ?? '\u2013'}</span> },
             { key: 'score', label: 'Score', numeric: true, cell: (row) => <span className="mono score-cell">{number(row.score, 2)}</span> },
