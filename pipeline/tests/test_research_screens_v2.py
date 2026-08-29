@@ -1,8 +1,9 @@
 from datetime import date, timedelta
 
 from research_screens_v2 import (classify_quality_value, historical_percentile, momentum_factors,
-                                 momentum_scores, position_size, robust_value_score,
-                                 sleeve_volatility_scale, tactical_score, winsorize, zscores)
+                                 momentum_path_smoothness, momentum_scores, position_size,
+                                 robust_value_score, sleeve_volatility_scale, tactical_score,
+                                 winsorize, zscores)
 
 
 def test_winsorize_preserves_length_when_every_value_is_none():
@@ -67,3 +68,46 @@ def test_own_history_percentiles_and_revision_gate():
 def test_position_risk_and_sleeve_volatility_are_separate():
     assert position_size(100_000, 50, 2, maximum_position=.05) == 100
     assert sleeve_volatility_scale(.24, target=.12) == .5
+
+
+def _monotonic_prices(days=300, start=date(2023, 1, 1)):
+    return [{"date": (start + timedelta(days=index)).isoformat(), "adjusted_close": 100 + index}
+            for index in range(days)]
+
+
+def _sawtooth_prices(days=300, start=date(2023, 1, 1)):
+    # Alternates a larger up move and a smaller down move so the path nets positive overall
+    # while roughly half its daily moves are negative - the "discrete information" case
+    # Da-Gurun-Warachka contrast against a smooth, continuously-rising path.
+    price, rows = 100.0, []
+    for index in range(days):
+        rows.append({"date": (start + timedelta(days=index)).isoformat(), "adjusted_close": round(price, 6)})
+        price *= 1.03 if index % 2 == 0 else 0.99
+    return rows
+
+
+def test_path_smoothness_orders_a_monotonic_path_above_a_sawtooth_path():
+    monotonic, sawtooth = _monotonic_prices(), _sawtooth_prices()
+    smooth_monotonic = momentum_path_smoothness(monotonic, as_of=monotonic[-1]["date"])
+    smooth_sawtooth = momentum_path_smoothness(sawtooth, as_of=sawtooth[-1]["date"])
+
+    assert smooth_monotonic == 1.0
+    assert smooth_sawtooth < smooth_monotonic
+    assert 0.3 < smooth_sawtooth < 0.7
+
+
+def test_path_smoothness_requires_enough_formation_history():
+    assert momentum_path_smoothness(_monotonic_prices(days=100), as_of="2023-04-10") is None
+
+
+def test_path_smoothness_never_sees_a_row_after_as_of():
+    prices = _monotonic_prices()
+    cutoff = prices[273]["date"]  # exactly the minimum history the default window needs
+    truncated_view = momentum_path_smoothness(prices, as_of=cutoff)
+
+    # Corrupting every row after the cutoff must not change the result: a caller passing a
+    # price history that runs past as_of must not have those later rows leak into the score.
+    corrupted = [dict(row) for row in prices]
+    for row in corrupted[274:]:
+        row["adjusted_close"] = 1_000_000
+    assert momentum_path_smoothness(corrupted, as_of=cutoff) == truncated_view

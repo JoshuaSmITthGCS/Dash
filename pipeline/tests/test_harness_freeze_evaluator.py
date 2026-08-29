@@ -24,6 +24,27 @@ def test_the_real_committed_freeze_file_loads_and_has_the_expected_shape():
     assert freeze["promotion_criteria_champion_or_challenger"]["minimum_periods"] == 24
 
 
+def test_every_additional_model_registration_carries_the_required_fields():
+    """No automated check previously caught a malformed additional_models entry -- this
+    would have let a registration like pre-breakout-v0.1.0's silently drift from swing-
+    v1.1.0's own shape. Structural only: it does not evaluate the content, just that a
+    reader (or a future evaluator) can rely on every entry exposing the same fields."""
+    required = {"model", "registered_at", "definition", "why_registered", "weights_are",
+               "clock_start", "expected_completion_at_monthly_frequency", "measured_against",
+               "open_questions_the_clock_must_answer", "changes_that_reset_this_clock"}
+    freeze = _load_freeze()
+    models = freeze["additional_models"]
+    assert len(models) >= 2  # swing-v1.1.0 and pre-breakout-v0.1.0, at minimum
+    for entry in models:
+        missing = required - set(entry)
+        assert not missing, f"{entry.get('model')} is missing {missing}"
+        assert entry["open_questions_the_clock_must_answer"]
+        assert entry["changes_that_reset_this_clock"]
+    ids = [entry["model"] for entry in models]
+    assert len(ids) == len(set(ids)), "duplicate model id in additional_models"
+    assert "pre-breakout-v0.1.0" in ids
+
+
 def test_fewer_than_the_minimum_periods_is_reported_as_insufficient_not_guessed_at():
     result = evaluate_against_promotion_criteria(
         ic_series=strong_series(1, n=10), returns=strong_series(2, n=10),

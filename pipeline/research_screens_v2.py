@@ -83,6 +83,45 @@ def momentum_boundary_diagnostics(prices, as_of=None):
     return output
 
 
+def momentum_path_smoothness(prices, as_of=None, lookback_sessions=252, skip_sessions=21):
+    """Frog-in-the-pan path smoothness over the momentum formation window.
+
+    Da, Gurun & Warachka ("Frog in the Pan: Continuous Information and Momentum", Review of
+    Financial Studies 27(7), 2014) find momentum profits concentrate in names whose
+    formation-period gain accrues through many small, same-signed daily moves rather than a
+    few large jumps - "continuous information" earns more than "discrete information" at the
+    same cumulative return. This is a simplified, one-sided reading of their information
+    discreteness measure: the fraction of formation-window daily returns whose sign matches
+    the sign of the window's own total return. 1.0 is a monotonic path; a path with as many
+    up days as down days scores near 0.5 regardless of which direction it netted out.
+
+    Unlike ``momentum_factors``, which measures 12-1 on exact month-end boundaries, this
+    needs daily granularity to see individual up/down days, so the formation window here is
+    approximated in trading sessions (default 252 ~ 12 months, skipping the most recent 21
+    ~ 1 month) rather than calendar months. Duplicates ``momentum_factors``' own as-of
+    cutoff rather than trusting the caller to have pre-filtered ``prices``.
+    """
+    cutoff = str(as_of or date.max)[:10]
+    daily = [float(row["adjusted_close"]) for row in prices
+             if str(row["date"])[:10] <= cutoff and row.get("adjusted_close") is not None]
+    needed = lookback_sessions + skip_sessions
+    if len(daily) < needed + 1:
+        return None
+    window = daily[-needed:-skip_sessions] if skip_sessions else daily[-needed:]
+    if len(window) < 2 or not window[0]:
+        return None
+    total_return = window[-1] / window[0] - 1
+    if total_return == 0:
+        return None
+    direction = total_return > 0
+    daily_returns = [window[index] / window[index - 1] - 1 for index in range(1, len(window))
+                     if window[index - 1]]
+    if not daily_returns:
+        return None
+    same_sign = sum(1 for value in daily_returns if value != 0 and (value > 0) == direction)
+    return same_sign / len(daily_returns)
+
+
 def industry_relative_returns(rows, minimum_peer_count=4, weighting="median"):
     """Compute a leave-one-out industry benchmark; a company never benchmarks itself."""
     if weighting not in {"median", "equal_weight"}:

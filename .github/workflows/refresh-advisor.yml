@@ -369,6 +369,15 @@ jobs:
         # the backtest cache's closes and volumes), so it runs on the rescore path too and
         # costs no provider requests.
         run: python pipeline/build_swing_screen.py || echo "::warning::Swing screen build failed; keeping previous swing.json"
+      - name: Build the pre-breakout screen
+        if: steps.refresh_window.outputs.should_run == 'true'
+        # Same disk-only inputs as the swing screen above (advisor snapshot, backtest cache
+        # closes/volumes/statements, EDGAR point-in-time fundamentals, the observation store).
+        # Positioned after build_swing_screen.py for cache-warmth convention only - it reads
+        # none of swing's or congress's output, so it has no ordering dependency on either.
+        # No out-of-sample record yet: registered in pipeline/validation/harness_freeze.json
+        # (additional_models, pre-breakout-v0.1.0) on the same prospective clock as swing.
+        run: python pipeline/build_pre_breakout_screen.py || echo "::warning::Pre-breakout screen build failed; keeping previous pre-breakout.json"
       - name: Build the earnings-timeliness and structural-tactical screens
         if: steps.refresh_window.outputs.should_run == 'true'
         # Must precede shadow_portfolios.py, which selects a sleeve from structural-tactical.json.

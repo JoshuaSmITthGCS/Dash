@@ -121,6 +121,25 @@
         "relation_to_open_questions": "Gives a preliminary, non-authoritative read on open_questions_the_clock_must_answer's third item (whether short-term-reversal survives in its naive form): on this partial, 4-leg historical slice, none of A/B/C shows a usable signal, so there is no visible case for preferring one reversal treatment over another yet. The clock, not this backtest, still has to answer it.",
         "note": "Consistent with Rounds 5/6's finding that no technical sub-signal clears the noise standard on the as-filed research-score spine - this is the same result, independently reached, on a different model and a different (partial) data slice."
       }
+    },
+    {
+      "model": "pre-breakout-v0.1.0",
+      "registered_at": "2026-08-29",
+      "definition": "pipeline/pre_breakout_signals.py three-leg equal-weighted composite (fundamental_inflection .333, momentum_rs .333, flow_sentiment .333), each leg itself a subweighted blend of named subfactors (fundamental_inflection: earnings_acceleration .30, revenue_acceleration .20, roa_delta .20, margin_turn .15, standardized_unexpected_earnings .15; momentum_rs: momentum_12_1 .40, path_smoothness .25, industry_relative_momentum .25, volatility_contraction .10; flow_sentiment: insider_cluster_score .60, short_interest_change .40), scored per pre_breakout_signals.pre_breakout_scores with per-row renormalization at both the subfactor-to-leg and leg-to-composite levels and a minimum-two-of-three-legs-resolved floor, published to public/data/screens/pre-breakout.json",
+      "why_registered": "It has no out-of-sample record of any kind, per docs/PRE-BREAKOUT-SCREEN-RESEARCH.md (the Stage-0 design brief this model implements, registered before any outcome data was touched). Two of its five fundamental_inflection subfactors (earnings_acceleration, revenue_acceleration) are genuinely new constructs never computed anywhere in this codebase before this model, with zero prior validation history here. The momentum_rs leg's volatility_contraction subfactor is explicitly Tier C in that brief -- no peer-reviewed base rate exists for squeeze-to-directional-breakout, the squeeze is non-directional by construction, and published practitioner 'success rates' are marketing with unstated methodology -- included as an unvalidated hypothesis to test, weighted lowest inside its own leg. Until this clock reports, it is a research filter and the app says so.",
+      "weights_are": "declared priors ordered by evidence quality per docs/PRE-BREAKOUT-SCREEN-RESEARCH.md, frozen before any measurement on this universe - explicitly not fitted optima and not claims of expected return",
+      "clock_start": "2026-09-01",
+      "expected_completion_at_monthly_frequency": "2028-09-01",
+      "measured_against": "the same promotion_criteria_champion_or_challenger above, with the horizon-appropriate change that the IC is measured at whatever holding window the eventual prospective evaluation registers for this model, consistent with how swing-v1.1.0 is measured at the 2-to-40-session window rather than monthly",
+      "open_questions_the_clock_must_answer": [
+        "whether the volatility_contraction subfactor inside momentum_rs adds anything over the fundamental_inflection leg and momentum_rs's other three subfactors alone - the brief's own stated weakest-evidence leg, weighted lowest inside momentum_rs for exactly this reason",
+        "whether momentum_rs and flow_sentiment's short_interest_change subfactor are capturing the same crowding/short-squeeze dynamic under two different names rather than two independent signals",
+        "whether earnings_acceleration and revenue_acceleration - the two genuinely novel signals this model introduces, standardized by each firm's own trailing history of seasonal differences the same way edgar_sue.py standardizes SUE - carry any of the composite's realized IC once real periods accrue, since neither has any prior validation history in this codebase unlike standardized_unexpected_earnings/margin_turn/momentum_12_1, which are reused, already-scored constructs",
+        "realized turnover and capacity, which no backtest has yet produced for this screen"
+      ],
+      "changes_that_reset_this_clock": [
+        "any change to leg weights, subfactor weights, subfactor membership, standardization, coverage handling or the gates"
+      ]
     }
   ],
   "spec_amendments": {

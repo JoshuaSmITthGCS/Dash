@@ -201,11 +201,15 @@ def quarterly_series(cik, concept, as_of):
             for end, (filed, value, derived) in sorted(quarters.items())]
 
 
-def _seasonal_differences(series):
+def seasonal_differences(series):
     """[(period_end, filed, difference)] where a quarter ~one year earlier exists.
 
     Matched on period end rather than on position, so a gap in the series drops the pairs it
     breaks instead of silently comparing a quarter to the wrong season.
+
+    Public because pre_breakout_signals/earnings_acceleration.py reuses this exact
+    period-matched differencing to build the second derivative (earnings/revenue
+    acceleration) on top of the same d_t = x_t - x_{t-4} series SUE is built from.
     """
     differences = []
     for index, quarter in enumerate(series):
@@ -237,7 +241,7 @@ def _sue_from_series(series, basis):
     every single quarter, which is a growth signal wearing a surprise's name. That failure
     mode is pinned by a test in pipeline/tests/test_edgar_sue.py.
     """
-    differences = _seasonal_differences(series)
+    differences = seasonal_differences(series)
     if len(differences) < SUE_MIN_HISTORY + 1:
         return None
     period_end, filed, latest = differences[-1]
