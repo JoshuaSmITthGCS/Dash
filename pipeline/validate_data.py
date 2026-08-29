@@ -120,6 +120,51 @@ def etf_peer_group_errors(payload):
     return errors
 
 
+# Every context-only field the swing screen's extended context layer publishes - see
+# pipeline/swing_signals.py's CONTEXT_SIGNAL_EVIDENCE/CONTEXT_NOTE and
+# pipeline/market_regime.py's MARKET_REGIME_EVIDENCE. None of these may ever appear as a
+# declared weight or among a row's scored legs - this is the structural check for that
+# promise, mirroring theme_screen_errors's anti-hype guardrail pattern for a different screen.
+SWING_CONTEXT_ONLY_FIELDS = {
+    "bandwidth_squeeze", "volume_dry_up", "rsi_2", "narrow_range", "atr_compression", "vcp",
+    "chaikin_money_flow", "weinstein_stage2", "sector_relative_strength",
+    "above_50dma_pct", "above_200dma_pct", "hurst", "regime_gate",
+}
+
+
+def swing_context_signal_errors():
+    """Context signals published on ``screens/swing.json`` must never enter a scored leg.
+
+    A missing file is not reported here, matching congress_trades_schema_errors: this screen
+    legitimately does not exist yet in a fresh checkout or an environment that has never run
+    build_swing_screen.py.
+    """
+    data_path = os.path.join(DATA_DIR, "screens", "swing.json")
+    if not os.path.exists(data_path):
+        return []
+    swing = load(data_path)
+    errors = []
+    if SWING_CONTEXT_ONLY_FIELDS & set(swing.get("weights") or {}):
+        errors.append("screens/swing.json: a context-only signal appears in the top-level "
+                      "declared weights")
+    for index, row in enumerate(swing.get("results") or []):
+        if SWING_CONTEXT_ONLY_FIELDS & set(row.get("legs") or {}):
+            errors.append(f"screens/swing.json:results.{index}: a context-only signal "
+                          "appears among the scored legs")
+    for tier_key, tier in (swing.get("tiers") or {}).items():
+        if SWING_CONTEXT_ONLY_FIELDS & set(tier.get("weights") or {}):
+            errors.append(f"screens/swing.json:tiers.{tier_key}: a context-only signal "
+                          "appears in this tier's declared weights")
+        for index, row in enumerate(tier.get("results") or []):
+            if SWING_CONTEXT_ONLY_FIELDS & set(row.get("legs") or {}):
+                errors.append(f"screens/swing.json:tiers.{tier_key}.results.{index}: a "
+                              "context-only signal appears among the scored legs")
+    if "observations" in ((swing.get("regime_gate") or {}).get("vix") or {}):
+        errors.append("screens/swing.json: raw FRED observations must not be published "
+                      "inside regime_gate.vix")
+    return errors
+
+
 def congress_trades_schema_errors():
     """``screens/*.json`` files sit outside the ``FILES`` loop above, which only covers
     fixtures at ``DATA_DIR`` root - congress-trades.json is the first screen file to get
@@ -298,6 +343,7 @@ def validate(production=False):
     errors.extend(theme_screen_errors(advisor.get("theme_screen")))
     errors.extend(etf_peer_group_errors(payloads.get("etfs", {})))
     errors.extend(congress_trades_schema_errors())
+    errors.extend(swing_context_signal_errors())
     errors.extend(pre_breakout_screen_errors())
 
     # Legacy political fixtures stay explicitly demo while the independent advisor and ETF

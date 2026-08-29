@@ -64,6 +64,11 @@ const TREND_TONE = {
   range_bound: 'neutral', falling: 'cool', at_low: 'cool',
 }
 
+// Same reasoning as TREND_TONE: descriptive, not a verdict. "Stage 1" (basing) is not a sell
+// and "Stage 2" (advancing) is not a buy — see swing_signals.CONTEXT_NOTE.
+const STAGE_LABELS = { stage_1: 'Basing', stage_2: 'Advancing', stage_3: 'Topping', stage_4: 'Declining' }
+const STAGE_TONE = { stage_1: 'neutral', stage_2: 'high', stage_3: 'watch', stage_4: 'cool' }
+
 /**
  * Where a row stands, in one word, from what the screen already published.
  *
@@ -163,17 +168,39 @@ function topDriver(row) {
 }
 
 /**
+ * One reading-guidance sentence from the market-wide regime gate, keyed to which tier is
+ * showing. Never changes a score or an eligibility gate - see market_regime.py's
+ * REGIME_GATE_NOTE, which this restates for the tier actually on screen rather than making a
+ * reader translate the general note themselves. Returns null rather than guessing when the
+ * regime gate itself did not resolve, or when neither condition below is clearly met.
+ */
+function regimeHint(regimeGate, tierKey) {
+  if (!regimeGate) return null
+  const { breadth, hurst, vix } = regimeGate
+  if (tierKey === 'S' && breadth?.above_200dma_pct >= 60 && vix?.label !== 'restrictive') {
+    return 'Broad breadth and a non-restrictive VIX read currently favor this book’s '
+      + 'continuation legs.'
+  }
+  if (tierKey === 'F' && hurst?.label === 'mean_reverting') {
+    return 'The market’s current mean-reverting regime is the setting this book’s reversal '
+      + 'leg and context signals were built for.'
+  }
+  return null
+}
+
+/**
  * The tier, in one sentence, before any number.
  *
  * The panel below it carries six statistics and the table carries a dozen columns. Neither
  * answers "should I be looking at this list at all", which is the first question and the one
  * the numbers only answer once you have combined three of them.
  */
-function TierHeadline({ tier }) {
+function TierHeadline({ tier, tierKey, regimeGate }) {
   if (!tier) return null
   const clears = tier.book_clearing_cost
   const total = tier.book_count
   const none = total > 0 && clears === 0
+  const hint = regimeHint(regimeGate, tierKey)
   return (
     <p className={`swing-headline${none ? ' is-warning' : ''}`} role="note">
       Hold about <b>{tier.target_hold_sessions} trading {tier.target_hold_sessions === 1 ? 'session' : 'sessions'}</b>.
@@ -181,7 +208,44 @@ function TierHeadline({ tier }) {
       {total === 0 ? ' Nothing clears this tier’s gates right now.' : none
         ? ` None of them is expected to earn more than it costs to trade at this speed, so read this as a ranking rather than a shortlist.`
         : ` ${clears} of ${total} are expected to earn more than they cost to trade.`}
+      {hint ? ` ${hint}` : ''}
     </p>
+  )
+}
+
+/**
+ * Market-wide breadth, a Hurst-exponent trend/mean-reversion read, and the VIX regime,
+ * published once per run - "regime is a gate, not a trigger". Reading guidance only: nothing
+ * here changes a score, an eligibility gate, or which tier's book a name belongs to, and the
+ * panel says so in its own note rather than only in this comment.
+ */
+function RegimeGatePanel({ regimeGate }) {
+  if (!regimeGate) return null
+  const { breadth, hurst, vix, evidence } = regimeGate
+  return (
+    <section className="card swing-evidence" aria-labelledby="swing-regime-title">
+      <h2 id="swing-regime-title">Market regime</h2>
+      <ul className="swing-evidence-list swing-tier-econ">
+        <li><b>{breadth ? `${breadth.above_200dma_pct}%` : '–'}</b>
+          <span>of the universe above its 200-day average</span></li>
+        <li><b>{breadth ? `${breadth.above_50dma_pct}%` : '–'}</b>
+          <span>above its 50-day average</span></li>
+        <li><b>{hurst ? hurst.label.replace('_', ' ') : '–'}</b>
+          <span>{hurst ? `Hurst exponent ${hurst.hurst.toFixed(2)}` : 'Hurst exponent'}</span></li>
+        <li><b>{vix ? vix.label : '–'}</b>
+          <span>VIX regime{vix?.score != null ? ` (${vix.score})` : ''}</span></li>
+      </ul>
+      <p className="swing-evidence-caveat">{regimeGate.note}</p>
+      {['breadth_50_200dma', 'hurst_regime', 'vix_regime'].map((key) => {
+        const item = evidence?.[key]
+        if (!item) return null
+        return (
+          <p key={key} className="swing-evidence-cite">
+            <b>{item.label}:</b> {item.citation}
+          </p>
+        )
+      })}
+    </section>
   )
 }
 
@@ -557,14 +621,16 @@ export default function SwingScreen() {
     {
       key: 'setup', label: 'Setup', full: true,
       hint: 'Volatility-contraction and volume context (Bollinger BandWidth squeeze, NR7, '
-        + 'ATR-percentile compression, volume dry-up, 2-period RSI). Descriptive, never a '
-        + 'scoring leg — a coiled or thinned-out name is not a directional call by itself. NR7 '
-        + 'and ATR compression read a separate, younger data store than the rest, so they show '
-        + '"–" on most names until it has grown or been backfilled.',
+        + 'ATR-percentile compression, volume dry-up, 2-period RSI, a multi-week volatility '
+        + 'contraction pattern). Descriptive, never a scoring leg — a coiled or thinned-out '
+        + 'name is not a directional call by itself. NR7, ATR compression and VCP read a '
+        + 'separate data store than the rest, so they show "–" on a name too new to the '
+        + 'universe to have accrued it.',
       sortValue: (row) => (row.contraction?.bandwidth_squeeze?.squeezed ? 1 : 0)
         + (row.contraction?.volume_dry_up?.dried_up ? 1 : 0)
         + (row.contraction?.narrow_range?.is_nr7 ? 1 : 0)
-        + (row.contraction?.atr_compression?.squeezed ? 1 : 0),
+        + (row.contraction?.atr_compression?.squeezed ? 1 : 0)
+        + (row.contraction?.vcp?.sequentially_tightening ? 1 : 0),
       cell: (row) => {
         const setup = row.contraction
         if (!setup) return <span className="swing-trend">–</span>
@@ -573,6 +639,7 @@ export default function SwingScreen() {
         if (setup.narrow_range?.is_nr7) badges.push('NR7')
         if (setup.atr_compression?.squeezed) badges.push('ATR compression')
         if (setup.volume_dry_up?.dried_up) badges.push('Volume dry-up')
+        if (setup.vcp?.sequentially_tightening) badges.push('VCP')
         const rsi = setup.rsi_2
         return (
           <span className="swing-trend neutral"
@@ -585,8 +652,59 @@ export default function SwingScreen() {
                 : '')
               + (setup.volume_dry_up
                 ? ` · volume ${(setup.volume_dry_up.ratio_to_50d_average * 100).toFixed(0)}% of its 50-day average`
+                : '')
+              + (setup.vcp
+                ? ` · ${setup.vcp.contraction_count} trailing monthly BandWidth checkpoints, `
+                  + `${setup.vcp.sequentially_tightening ? 'each narrower than the last' : 'not sequentially narrowing'}`
                 : '')}>
             {badges.length ? badges.join(', ') : '–'}
+          </span>
+        )
+      },
+    },
+    {
+      key: 'accumulation', label: 'Accumulation', full: true,
+      hint: 'Chaikin Money Flow (accumulation vs. distribution pressure) and 20-session '
+        + 'relative strength against this name’s own peer group, leave-one-out. Descriptive, '
+        + 'never a scoring leg.',
+      sortValue: (row) => row.context?.chaikin_money_flow?.cmf ?? null,
+      cell: (row) => {
+        const context = row.context
+        const cmf = context?.chaikin_money_flow
+        const rs = context?.sector_relative_strength
+        if (!cmf && !rs) return <span className="swing-trend">–</span>
+        const badges = []
+        if (cmf) badges.push(cmf.accumulating ? 'Accumulating' : 'Distributing')
+        if (rs?.status === 'success' && rs.relative_strength != null) {
+          badges.push(rs.relative_strength > 0 ? 'RS leader' : 'RS laggard')
+        }
+        return (
+          <span className="swing-trend neutral"
+            title={(cmf ? `Chaikin Money Flow: ${cmf.cmf.toFixed(2)}` : 'Chaikin Money Flow: –')
+              + (rs?.status === 'success' && rs.relative_strength != null
+                ? ` · 20-day return vs. ${rs.peer_count} peers: `
+                  + `${rs.relative_strength > 0 ? '+' : ''}${rs.relative_strength.toFixed(1)}pp`
+                : ' · not enough peers for a relative-strength read')}>
+            {badges.length ? badges.join(', ') : '–'}
+          </span>
+        )
+      },
+    },
+    {
+      key: 'stage', label: 'Stage', full: true,
+      hint: 'An approximation of Weinstein’s four-stage cycle: price against a 150-session '
+        + 'moving average and its own trailing slope. Descriptive, never a scoring leg.',
+      sortValue: (row) => row.context?.weinstein_stage2?.stage ?? null,
+      cell: (row) => {
+        const stage = row.context?.weinstein_stage2
+        if (!stage) return <span className="swing-trend">–</span>
+        return (
+          <span className={`swing-trend ${STAGE_TONE[stage.stage] || 'neutral'}`}
+            title={`${stage.above_ma150 ? 'Above' : 'Below'} its 150-session average, which is `
+              + `${stage.ma150_rising ? 'rising' : 'falling'}`
+              + (stage.volume_confirmed == null ? ''
+                : stage.volume_confirmed ? ' · volume confirms' : ' · volume does not confirm')}>
+            {STAGE_LABELS[stage.stage] || stage.stage}
           </span>
         )
       },
@@ -652,7 +770,10 @@ export default function SwingScreen() {
           {tiers ? <>
             Three separate books, one per holding period. Each carries only the signals that pay off
             inside its own window, so switching horizon changes which columns exist, not just which
-            names are on top.
+            names are on top. Chaikin Money Flow, an approximate Weinstein trend stage and
+            20-session sector-relative strength are also published as context in the Accumulation
+            and Stage columns, alongside a market-wide breadth/VIX/Hurst regime read — never a leg,
+            see “How this works” below.
           </> : <>
             The five signals with real peer-reviewed support at the swing horizon, ranked cross-sectionally
             and combined into one composite: post-earnings drift, the change in analyst consensus, the
@@ -660,9 +781,12 @@ export default function SwingScreen() {
             tilt. Short interest is a negative screen, not a leg. MACD crossovers, VWAP and candlestick
             patterns are deliberately absent — none of them survive data-snooping correction and costs
             in US single-stock data. A Bollinger BandWidth squeeze, NR7, ATR-percentile compression,
-            volume dry-up and 2-period RSI read are published in the Setup column as context only, not
-            as legs: they say a name is coiled or thinned out, not which way it resolves, and have not
-            been run through this composite's own validation.
+            volume dry-up, a multi-week volatility contraction pattern and 2-period RSI read are
+            published in the Setup column as context only, not as legs: they say a name is coiled or
+            thinned out, not which way it resolves, and have not been run through this composite's own
+            validation. Chaikin Money Flow, an approximate Weinstein trend stage and sector-relative
+            strength are published the same way in the Accumulation and Stage columns, and a
+            market-wide breadth/VIX/Hurst regime read is published once for the whole screen.
           </>}
         </p>
       </div>
@@ -674,7 +798,7 @@ export default function SwingScreen() {
     ) : <>
       {tiers ? <>
         <TierSwitcher tiers={tiers} order={tierOrder} active={activeKey} onSelect={setTierKey} />
-        <TierHeadline tier={tier} />
+        <TierHeadline tier={tier} tierKey={activeKey} regimeGate={data?.regime_gate} />
       </> : null}
 
       {/* Everything that explains the model rather than the names. It was three cards deep
@@ -702,6 +826,7 @@ export default function SwingScreen() {
               data.
             </p>
           ) : null}
+          <RegimeGatePanel regimeGate={data?.regime_gate} />
           <TierEconomics tier={tier} alpha={data?.alpha_assumption} />
           <EvidencePanel data={data} legs={legs} tier={tier} />
           <CostPanel model={data?.cost_model} />
