@@ -443,3 +443,19 @@ def test_realized_vol_percentile_none_below_minimum_samples():
 
 def test_realized_vol_percentile_none_with_too_little_history():
     assert module.realized_vol_percentile([100.0] * 10) is None
+
+
+def test_atm_iv_averages_the_near_the_money_call_and_put():
+    calls = FakeFrame([contract(strike=100, bid=2.0, ask=2.1, iv=0.30)])
+    puts = FakeFrame([contract(strike=100, bid=2.0, ask=2.1, iv=0.40)])
+    assert module.atm_iv(calls, puts, price=100) == 0.35
+
+
+def test_atm_iv_uses_whichever_leg_is_available():
+    calls = FakeFrame([contract(strike=100, bid=2.0, ask=2.1, iv=0.30)])
+    puts = FakeFrame([])
+    assert module.atm_iv(calls, puts, price=100) == 0.30
+
+
+def test_atm_iv_none_when_neither_leg_is_available():
+    assert module.atm_iv(FakeFrame([]), FakeFrame([]), price=100) is None

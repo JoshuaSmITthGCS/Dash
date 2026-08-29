@@ -16,6 +16,7 @@ posts collateral, or talks to a brokerage.
 import os
 from datetime import datetime, timezone
 
+import iv_archive
 from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
@@ -124,6 +125,9 @@ def build_row(entry, yf, as_of=None, generated_at=None):
             "probability_assigned": round(probability_assigned, 4) if probability_assigned is not None else None,
             "suggested_position_pct": round(position_pct, 4) if position_pct is not None else None,
             "iv_skew": skew, "put_call_oi_ratio": pc_oi_ratio, "realized_volatility_percentile": vol_percentile,
+            # Read-only - see build_options_screen.py's identical comment: only
+            # build_options_strategies.py's shared fetch writes to iv_archive.
+            "iv_percentile": iv_archive.iv_percentile(ticker),
             "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
             "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
@@ -190,7 +194,7 @@ def to_result(rank, row):
 
 def unavailable(reason_code, generated_at):
     return {
-        "schema_version": "1.0.0", "model_version": "cash-secured-put-v1.1.0",
+        "schema_version": "1.0.0", "model_version": "cash-secured-put-v1.2.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at,
         "status": "unavailable", "reason_code": reason_code, "results": [],
     }
@@ -229,7 +233,7 @@ def run(as_of=None):
     scored = score_rows(rows)
     results = [to_result(rank + 1, row) for rank, row in enumerate(scored)]
     result = {
-        "schema_version": "1.0.0", "model_version": "cash-secured-put-v1.1.0",
+        "schema_version": "1.0.0", "model_version": "cash-secured-put-v1.2.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
         "window": {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION,
                    "max_days_to_expiration": MAX_DAYS_TO_EXPIRATION,

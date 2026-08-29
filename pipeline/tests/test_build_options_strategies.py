@@ -1,7 +1,22 @@
 import sys
 from datetime import date, timedelta
 
+import pytest
+
 import build_options_strategies as module
+import iv_archive
+
+
+@pytest.fixture(autouse=True)
+def _isolated_iv_archive(tmp_path, monkeypatch):
+    """fetch_chain() writes to iv_archive.py on every call in this module - isolate every
+    test in this file from the real pipeline/data/iv_archive/ directory, the same way
+    test_price_archive.py isolates price_archive's ARCHIVE_DIR/CONFLICTS. MANIFEST is
+    derived from ARCHIVE_DIR at import time, so it needs its own monkeypatch too.
+    """
+    archive_dir = tmp_path / "iv_archive"
+    monkeypatch.setattr(iv_archive, "ARCHIVE_DIR", str(archive_dir))
+    monkeypatch.setattr(iv_archive, "MANIFEST", str(archive_dir / "archive_manifest.json"))
 
 
 class FakeFrame:
@@ -246,6 +261,14 @@ def test_run_publishes_all_four_files_from_one_fetch_per_ticker(monkeypatch):
     assert short_term_ranks == sorted(short_term_ranks)
     for row in saved["screens/short-term-trades.json"]["results"]:
         assert row["strategy"] in {"buy_call", "buy_put", "sell_call", "sell_put"}
+
+    # iv_archive.py: this run() is its sole write path. A fresh two-ticker/one-day run
+    # writes today's ATM IV for each, publishes a healthy archive_health() (a run just
+    # happened), and correctly withholds iv_percentile - miles short of the 60-sample floor.
+    assert saved["screens/options.json"]["iv_archive_health"]["state"] == "healthy"
+    assert iv_archive.load_series("AAA")["dates"] == [TODAY.isoformat()]
+    assert saved["screens/options.json"]["results"][0]["iv_percentile"] is None
+    assert saved["screens/covered-calls.json"]["results"][0]["metrics"]["iv_percentile"] is None
 
 
 def test_run_skips_when_flag_not_set(monkeypatch):

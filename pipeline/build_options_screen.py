@@ -17,6 +17,7 @@ places option orders or talks to a brokerage.
 import os
 from datetime import datetime, timezone
 
+import iv_archive
 from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
@@ -111,6 +112,10 @@ def build_row(entry, yf, as_of=None, generated_at=None):
         "option_type": option_type, "expiration": expiration, "days_to_expiration": dte,
         "implied_realized_vol_ratio": round(iv_rv_ratio, 4) if iv_rv_ratio is not None else None,
         "iv_skew": skew, "put_call_oi_ratio": pc_oi_ratio, "realized_volatility_percentile": vol_percentile,
+        # Read-only lookup - this module's own build_row() never writes to iv_archive; only
+        # build_options_strategies.py's shared fetch does, to keep the archived series to a
+        # single target-DTE tenor. See iv_archive.py's module docstring.
+        "iv_percentile": iv_archive.iv_percentile(ticker),
         "contract": contract,
         "news_sentiment": research_factors["news_sentiment"], "research_confidence": research_factors["research_confidence"],
         "factors": {
@@ -172,6 +177,7 @@ def to_result(rank, row):
         "implied_realized_vol_ratio": row.get("implied_realized_vol_ratio"),
         "iv_skew": row.get("iv_skew"), "put_call_oi_ratio": row.get("put_call_oi_ratio"),
         "realized_volatility_percentile": row.get("realized_volatility_percentile"),
+        "iv_percentile": row.get("iv_percentile"),
         "open_interest": contract.get("open_interest"), "volume": contract.get("volume"),
         "moneyness": contract.get("moneyness"),
         "news_sentiment": round(row["news_sentiment"], 4) if row.get("news_sentiment") is not None else None,
@@ -182,7 +188,7 @@ def to_result(rank, row):
 
 def unavailable(reason_code, generated_at):
     return {
-        "schema_version": "1.0.0", "model_version": "multiday-options-v1.1.0",
+        "schema_version": "1.0.0", "model_version": "multiday-options-v1.2.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at,
         "status": "unavailable", "reason_code": reason_code, "results": [],
     }
@@ -221,7 +227,7 @@ def run(as_of=None):
     scored = score_rows(rows)
     results = [to_result(rank + 1, row) for rank, row in enumerate(scored)]
     result = {
-        "schema_version": "1.0.0", "model_version": "multiday-options-v1.1.0",
+        "schema_version": "1.0.0", "model_version": "multiday-options-v1.2.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
         "window": {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION,
                    "max_days_to_expiration": MAX_DAYS_TO_EXPIRATION,

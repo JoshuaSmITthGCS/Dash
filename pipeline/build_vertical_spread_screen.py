@@ -17,6 +17,7 @@ orders or talks to a brokerage.
 import os
 from datetime import datetime, timezone
 
+import iv_archive
 from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
@@ -123,6 +124,7 @@ def build_row(entry, yf, as_of=None, generated_at=None):
             "max_profit": round(max_profit, 4), "max_loss": round(max_loss, 4),
             "risk_reward": round(risk_reward, 4),
             "iv_skew": skew, "put_call_oi_ratio": pc_oi_ratio, "realized_volatility_percentile": vol_percentile,
+            "iv_percentile": iv_archive.iv_percentile(ticker),
             "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
             "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
@@ -196,7 +198,7 @@ def to_result(rank, row):
 
 def unavailable(reason_code, generated_at):
     return {
-        "schema_version": "1.0.0", "model_version": "vertical-spread-v1.1.0",
+        "schema_version": "1.0.0", "model_version": "vertical-spread-v1.2.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at,
         "status": "unavailable", "reason_code": reason_code, "results": [],
     }
@@ -235,7 +237,7 @@ def run(as_of=None):
     scored = score_rows(rows)
     results = [to_result(rank + 1, row) for rank, row in enumerate(scored)]
     result = {
-        "schema_version": "1.0.0", "model_version": "vertical-spread-v1.1.0",
+        "schema_version": "1.0.0", "model_version": "vertical-spread-v1.2.0",
         "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
         "window": {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION,
                    "max_days_to_expiration": MAX_DAYS_TO_EXPIRATION,

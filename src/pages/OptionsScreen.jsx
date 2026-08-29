@@ -81,6 +81,7 @@ function OptionIdeaCard({ row, onOpen }) {
       <div><dt>Put/call IV skew</dt><dd>{signed(row.iv_skew != null ? row.iv_skew * 100 : null)}pp</dd></div>
       <div><dt>Put/call OI ratio</dt><dd>{number(row.put_call_oi_ratio, 2)}×</dd></div>
       <div><dt>Realized vol percentile</dt><dd>{percentileLabel(row.realized_volatility_percentile)}</dd></div>
+      <div><dt>IV percentile (1y)</dt><dd>{percentileLabel(row.iv_percentile)}</dd></div>
       <div><dt>News sentiment tilt</dt><dd>{signed(row.news_sentiment)}</dd></div>
       <div><dt>Research confidence tilt</dt><dd>{signed(row.research_confidence)}</dd></div>
     </dl>
@@ -183,6 +184,8 @@ export default function OptionsScreen() {
               cell: (row) => <span className="mono">{number(row.put_call_oi_ratio, 2)}×</span> },
             { key: 'realized_volatility_percentile', label: 'RV pctile', numeric: true,
               cell: (row) => <span className="mono">{percentileLabel(row.realized_volatility_percentile)}</span> },
+            { key: 'iv_percentile', label: 'IV pctile', numeric: true,
+              cell: (row) => <span className="mono">{percentileLabel(row.iv_percentile)}</span> },
             { key: 'spread_pct', label: 'Spread', numeric: true, cell: (row) => <span className="mono">{pct(row.spread_pct)}</span> },
             { key: 'open_interest', label: 'Open int.', numeric: true, cell: (row) => <span className="mono">{row.open_interest ?? '\u2013'}</span> },
             { key: 'score', label: 'Score', numeric: true, cell: (row) => <span className="mono score-cell">{number(row.score, 2)}</span> },

@@ -241,6 +241,19 @@ def select_contract(frame, price):
     return best
 
 
+def atm_iv(calls, puts, price):
+    """Mean of the near-the-money call's and put's implied vol - a direction-neutral "ATM
+    IV" reading for a chain, independent of whichever side a screen's own directional pick
+    lands on. Same averaging build_advanced_options_screen.build_straddle_row already does
+    inline; factored out so the daily iv_archive writer (build_options_strategies.py) and
+    the straddle screen share one definition. None if neither leg has a usable IV.
+    """
+    call = select_contract(calls, price)
+    put = select_contract(puts, price)
+    values = [c["implied_volatility"] for c in (call, put) if c and c["implied_volatility"] is not None]
+    return statistics.mean(values) if values else None
+
+
 def liquidity_factor(contract):
     """Higher is better: rewards open interest, penalizes a wide bid/ask spread."""
     if not contract:

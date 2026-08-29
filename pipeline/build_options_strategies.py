@@ -28,18 +28,20 @@ combined replacement for that live fetch, not an additional one.
 """
 
 import os
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 import build_cash_secured_put_screen as sell_put_screen
 import build_covered_call_screen as sell_call_screen
 import build_options_screen as buy_screen
+import iv_archive
 from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
-from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expected_value_pct, expiration_spans_earnings,
-                            iv_skew, liquidity_factor, next_earnings_date, probability_above, put_call_oi_ratio,
-                            realized_volatility_20d, realized_vol_percentile, research_universe_factors,
-                            select_by_target_delta, select_contract, select_expiration, suggested_position_pct,
+from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, atm_iv, expected_value_pct,
+                            expiration_spans_earnings, iv_skew, liquidity_factor, next_earnings_date,
+                            probability_above, put_call_oi_ratio, realized_volatility_20d,
+                            realized_vol_percentile, research_universe_factors, select_by_target_delta,
+                            select_contract, select_expiration, suggested_position_pct,
                             transaction_cost_pct, trend_20d)
 from peer_groups import peer_group
 from research_screens_v2 import winsorize, zscores
@@ -54,15 +56,23 @@ WINDOW = {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION, "max_days_to_expirat
           "target_days_to_expiration": TARGET_DAYS_TO_EXPIRATION, "target_delta": TARGET_DELTA}
 
 FILE_MODEL_VERSIONS = {
-    "screens/options.json": "multiday-options-v1.1.0",
-    "screens/covered-calls.json": "covered-call-v1.1.0",
-    "screens/cash-secured-puts.json": "cash-secured-put-v1.1.0",
-    "screens/short-term-trades.json": "short-term-trades-v1.1.0",
+    "screens/options.json": "multiday-options-v1.2.0",
+    "screens/covered-calls.json": "covered-call-v1.2.0",
+    "screens/cash-secured-puts.json": "cash-secured-put-v1.2.0",
+    "screens/short-term-trades.json": "short-term-trades-v1.2.0",
 }
 
 
 def fetch_chain(entry, yf, as_of=None, generated_at=None):
-    """One shared per-ticker fetch: history, trend/realized vol, one expiration, one chain."""
+    """One shared per-ticker fetch: history, trend/realized vol, one expiration, one chain.
+
+    Also the sole write path into iv_archive.py: this is the one options-screen script the
+    scheduled refresh-advisor.yml job runs unconditionally, at a fixed ~7-DTE target shared
+    across every mechanism derived from it - see that module's docstring for why archiving
+    from more than one target-DTE screen would mix tenors in one time series. The archive
+    write and the iv_percentile read both happen here, once per ticker, so every mechanism
+    built from this setup sees the same ticker-level number.
+    """
     ticker = entry.get("ticker")
     if not ticker or yf is None:
         return None
@@ -92,9 +102,16 @@ def fetch_chain(entry, yf, as_of=None, generated_at=None):
     except Exception as exc:  # noqa: BLE001
         LOG.warn(f"{ticker}: option chain unavailable ({type(exc).__name__})")
         return None
+
+    observation_date = (as_of or date.today()).isoformat()
+    iv_archive_added = iv_archive.append_observation(
+        ticker, observation_date, atm_iv(chain.calls, chain.puts, price), dte, "build_options_strategies")
+    ticker_iv_percentile = iv_archive.iv_percentile(ticker)
+
     return {"ticker": ticker, "entry": entry, "price": price, "trend": trend, "realized": realized,
             "expiration": expiration, "dte": dte, "calls": chain.calls, "puts": chain.puts,
-            "closes": closes, "history_sessions": len(closes), "generated_at": generated_at, "as_of": as_of}
+            "closes": closes, "history_sessions": len(closes), "generated_at": generated_at, "as_of": as_of,
+            "iv_archive_added": iv_archive_added, "iv_percentile": ticker_iv_percentile}
 
 
 def build_buy_row(setup):
@@ -124,6 +141,7 @@ def build_buy_row(setup):
         "option_type": option_type, "expiration": setup["expiration"], "days_to_expiration": setup["dte"],
         "implied_realized_vol_ratio": round(iv_rv_ratio, 4) if iv_rv_ratio is not None else None,
         "iv_skew": skew, "put_call_oi_ratio": pc_oi_ratio, "realized_volatility_percentile": vol_percentile,
+        "iv_percentile": setup.get("iv_percentile"),
         "contract": contract,
         "news_sentiment": research_factors["news_sentiment"], "research_confidence": research_factors["research_confidence"],
         "factors": {
@@ -177,6 +195,7 @@ def build_sell_call_row(setup):
             "downside_cushion_pct": round(downside_cushion_pct, 4),
             "suggested_position_pct": round(position_pct, 4) if position_pct is not None else None,
             "iv_skew": skew, "put_call_oi_ratio": pc_oi_ratio, "realized_volatility_percentile": vol_percentile,
+            "iv_percentile": setup.get("iv_percentile"),
             "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
             "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
@@ -233,6 +252,7 @@ def build_sell_put_row(setup):
             "probability_assigned": round(probability_assigned, 4) if probability_assigned is not None else None,
             "suggested_position_pct": round(position_pct, 4) if position_pct is not None else None,
             "iv_skew": skew, "put_call_oi_ratio": pc_oi_ratio, "realized_volatility_percentile": vol_percentile,
+            "iv_percentile": setup.get("iv_percentile"),
             "news_sentiment": round(research_factors["news_sentiment"], 4) if research_factors["news_sentiment"] is not None else None,
             "research_confidence": round(research_factors["research_confidence"], 4) if research_factors["research_confidence"] is not None else None,
         },
@@ -245,13 +265,23 @@ def build_sell_put_row(setup):
     }
 
 
-def build_rows(universe, yf, as_of=None, generated_at=None):
-    """One shared fetch per ticker, fanned out to all three mechanisms."""
+def build_rows(universe, yf, as_of=None, generated_at=None, iv_archive_counts=None):
+    """One shared fetch per ticker, fanned out to all three mechanisms.
+
+    `iv_archive_counts`, when passed a dict, is updated in place with `tickers_seen` and
+    `rows_added` as fetch_chain() writes to iv_archive.py - an optional out-parameter so
+    existing callers (and the test that indexes this function's own return value) don't
+    need to change shape for it. run() passes one so it can call iv_archive.record_run().
+    """
     buy_rows, sell_call_rows, sell_put_rows = [], [], []
     for entry in universe:
         setup = fetch_chain(entry, yf, as_of, generated_at)
         if setup is None:
             continue
+        if iv_archive_counts is not None:
+            iv_archive_counts["tickers_seen"] = iv_archive_counts.get("tickers_seen", 0) + 1
+            if setup.get("iv_archive_added"):
+                iv_archive_counts["rows_added"] = iv_archive_counts.get("rows_added", 0) + 1
         buy_row = build_buy_row(setup)
         if buy_row is not None:
             buy_rows.append(buy_row)
@@ -332,6 +362,7 @@ def to_result_short_term(rank, strategy, row):
             "moneyness": contract.get("moneyness"),
             "iv_skew": row.get("iv_skew"), "put_call_oi_ratio": row.get("put_call_oi_ratio"),
             "realized_volatility_percentile": row.get("realized_volatility_percentile"),
+            "iv_percentile": row.get("iv_percentile"),
             "news_sentiment": round(row["news_sentiment"], 4) if row.get("news_sentiment") is not None else None,
             "research_confidence": round(row["research_confidence"], 4) if row.get("research_confidence") is not None else None,
         }
@@ -394,7 +425,9 @@ def run(as_of=None):
             save_json(name, unavailable(model_version, "YFINANCE_UNAVAILABLE", generated_at))
         return None
 
-    grouped = build_rows(universe, yf, as_of, snapshot_generated_at)
+    iv_archive_counts = {}
+    grouped = build_rows(universe, yf, as_of, snapshot_generated_at, iv_archive_counts=iv_archive_counts)
+    iv_archive.record_run({"mode": "run", **iv_archive_counts})
     scored_buy = score_group(grouped["buy"], buy_screen.WEIGHTS)
     scored_sell_call = score_group(grouped["sell_call"], sell_call_screen.WEIGHTS)
     scored_sell_put = score_group(grouped["sell_put"], sell_put_screen.WEIGHTS)
@@ -408,6 +441,12 @@ def run(as_of=None):
         "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
         "window": {"min_days_to_expiration": MIN_DAYS_TO_EXPIRATION, "max_days_to_expiration": MAX_DAYS_TO_EXPIRATION,
                    "target_days_to_expiration": TARGET_DAYS_TO_EXPIRATION},
+        # Same key-name pattern fetch_advisor.py already uses for price_archive_health in
+        # advisor.json - iv_archive.py is the same shape of append-only, staleness-checked
+        # archive, just for implied vol instead of price. Published here rather than from
+        # fetch_advisor.py because that script runs (and publishes) BEFORE this one - it has
+        # no visibility into today's options-chain fetch.
+        "iv_archive_health": iv_archive.archive_health(),
         "results": buy_results,
     })
     save_json("screens/covered-calls.json", {
