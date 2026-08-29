@@ -427,6 +427,24 @@ def derive_piotroski(income, balance, cashflow):
     return round(9 * sum(answered.values()) / len(answered), 1), tests
 
 
+def derive_roa_delta(income, balance):
+    """ROA turn: roa - roa_prior, net income over total assets, current less year-ago period.
+
+    ``derive_piotroski`` already computes this internally (as ``roa``/``roa_prior``) but only
+    ever exposes the boolean ``rising_roa`` -- the sign, not the magnitude. This is the same
+    ratio, computed the same way, published as its own numeric value for
+    pre_breakout_signals.py's fundamental-inflection sub-score, which needs the size of the
+    turn rather than just its direction. Kept as a standalone function rather than added onto
+    ``derive_piotroski``'s returned ``tests`` dict, because that dict's non-None values are
+    summed directly into the nine-point score (``sum(answered.values())``) -- a numeric field
+    dropped in among its booleans would silently corrupt that arithmetic.
+    """
+    assets_now, assets_prior = at(line(balance, "total_assets")), at(line(balance, "total_assets"), 1)
+    net_income, net_income_prior = at(line(income, "net_income")), at(line(income, "net_income"), 1)
+    roa, roa_prior = ratio(net_income, assets_now), ratio(net_income_prior, assets_prior)
+    return None if roa is None or roa_prior is None else rounded(roa - roa_prior)
+
+
 # ---------------- accounting quality ----------------
 
 def derive_accruals_ratio(income, balance, cashflow):

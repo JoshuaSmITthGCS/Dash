@@ -186,6 +186,25 @@ class HealthTests(unittest.TestCase):
         score, _ = fx.derive_piotroski(thin, thin, thin)
         self.assertIsNone(score)
 
+    def test_piotroski_return_shape_and_test_count_are_unchanged(self):
+        """Regression guard: derive_roa_delta is additive and must not have touched this."""
+        score, tests = fx.derive_piotroski(INCOME, BALANCE, CASHFLOW)
+        self.assertIsInstance(score, float)
+        self.assertEqual(len(tests), 9)
+        self.assertTrue(all(isinstance(value, bool) for value in tests.values()))
+
+    def test_roa_delta_matches_the_same_roa_piotroski_computes_internally(self):
+        # Net Income 180 now / 140 prior over Total Assets 2000 now / 1800 prior:
+        # roa = 0.09, roa_prior = 140/1800 = 0.077778, delta = 0.012222.
+        delta = fx.derive_roa_delta(INCOME, BALANCE)
+        self.assertAlmostEqual(delta, 180 / 2000 - 140 / 1800, places=4)
+        _, tests = fx.derive_piotroski(INCOME, BALANCE, CASHFLOW)
+        self.assertEqual(tests["rising_roa"], delta > 0)
+
+    def test_roa_delta_is_none_without_both_periods(self):
+        thin = {"periods": ["2025"], "rows": {"Net Income": [10.0], "Total Assets": [100.0]}}
+        self.assertIsNone(fx.derive_roa_delta(thin, thin))
+
 
 class AccountingQualityTests(unittest.TestCase):
     def test_accruals_ratio_is_negative_when_cash_leads_earnings(self):

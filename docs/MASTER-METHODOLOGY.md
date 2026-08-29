@@ -37,6 +37,7 @@ state" (§9) before treating any number here as predictive.
     - 10.6 [ETF composite score](#106-etf-composite-score)
     - 10.7 [Swing-horizon composite (2 trading days – 8 weeks)](#107-swing-horizon-composite-2-trading-days--8-weeks)
     - 10.8 [Watchlist quality score](#108-watchlist-quality-score)
+    - 10.9 [Pre-breakout composite (research filter, no out-of-sample record)](#109-pre-breakout-composite-research-filter-no-out-of-sample-record)
 11. [MarketPulse — the macro backdrop](#11-marketpulse--the-macro-backdrop)
 12. [Stance, guidance, and recommendation policy](#12-stance-guidance-and-recommendation-policy)
 13. [Where every score is displayed in the app](#13-where-every-score-is-displayed-in-the-app)
@@ -809,6 +810,69 @@ using smooth sigmoid transitions around configured centers (not hard cutoffs):
 A hard confidence/coverage floor (0.45) or a published SELL guidance blocks position sizing
 regardless of the blended quality number; everything else is soft.
 
+### 10.9 Pre-breakout composite (research filter, no out-of-sample record)
+
+`pipeline/pre_breakout_signals.py::pre_breakout_scores` + `pipeline/build_pre_breakout_screen.py`
+→ `/screens/pre-breakout`. Implements the design brief at
+`docs/PRE-BREAKOUT-SCREEN-RESEARCH.md`: three **equal-weighted** named sub-scores, each itself
+a weighted blend of subfactors, standardized and renormalized the same way at both levels
+(winsorized then z-scored across the cross-section, weighted sum divided by the weight that
+actually resolved on a row).
+
+| Sub-score | Weight | Subfactors (weight within the sub-score) | Evidence |
+|---|---:|---|---|
+| Fundamental inflection | 33.3% | earnings_acceleration (30%), revenue_acceleration (20%), roa_delta (20%), margin_turn (15%), standardized_unexpected_earnings (15%) | He & Narayanamoorthy (*JAE* 2020); Novy-Marx (*JFE* 2013); Piotroski 2000; Foster, Olsen & Shevlin (*TAR* 1984); Bernard & Thomas (*JAR* 1989, *JAE* 1990) |
+| Momentum / relative strength | 33.3% | momentum_12_1 (40%), path_smoothness (25%), industry_relative_momentum (25%), volatility_contraction (10%) | Jegadeesh & Titman (*JF* 1993); Moskowitz & Grinblatt (*JF* 1999); Da, Gurun & Warachka (*RFS* 2014) |
+| Flow / sentiment | 33.3% | insider_cluster_score (60%), short_interest_change (40%) | Cohen, Malloy & Pomorski (*JF* 2012); Kang, Kim & Wang 2018; Boehmer, Huszar & Jordan 2009 |
+
+Gates are hard exclusions only — never a signal itself, per the brief's own instruction that
+gating destroys Grinold-Kahn breadth: the same $5 price / $300M cap / $2M 60-day median
+dollar volume / 253-session history floors the momentum screen uses, plus the distress gate
+`build_quality_value_screen.py::is_distressed` already enforces (Altman Z < 1.8 or interest
+coverage < 1.0), reused rather than re-thresholded. A row resolving fewer than 2 of the 3
+named legs is excluded from the ranked output entirely, the same renormalize-then-floor
+pattern §10.7's swing composite uses.
+
+The composite score alone cannot say *why* a row ranks highly — a name can get there on
+existing momentum, on a tight squeeze that hasn't broken yet, or some mix of both, and the
+blend gives no way to tell which. `pre_breakout_signals.classify_stage` derives a coarse
+`classification` label per row from two subfactors the composite already standardizes
+(`momentum_12_1`, `volatility_contraction`), published but never scored into the composite
+itself: **coiling** (momentum flat, volatility unusually tight versus the name's own
+history — the literal pre-breakout case), **breaking_out** (momentum meaningfully positive,
+not yet extended), **extended** (momentum far above the cross-section — already run), or
+**unclassified** (neither condition clears). Read via the same `classification` field
+`ResearchScreen.jsx`'s shared table already renders for §10.5's quality-value screen.
+
+Two signals here are genuinely new to this codebase and reuse existing infrastructure rather
+than adding new fetching: `pipeline/earnings_acceleration.py` derives the second derivative
+of earnings/revenue growth from the same PIT quarterly-fact store `edgar_sue.py` already
+reads for SUE, standardized by each firm's own trailing history of seasonal differences (the
+same construction SUE's scale uses) so a mega-cap's dollar-scale swings and a small-cap's are
+comparable cross-sectionally rather than the composite ranking almost entirely on company
+size. `pipeline/research_screens_v2.py::momentum_path_smoothness` implements a simplified,
+one-sided reading of Da-Gurun-Warachka's frog-in-the-pan construct, signed by the row's own
+12-1 momentum direction (`pre_breakout_signals.signed_path_smoothness`) since smoothness
+alone carries no direction. Every other subfactor reuses an existing, already-scored
+construction as-is: SUE (`edgar_sue.sue_for`, aged out of a 60-trading-session drift window
+the same way §10.7's PEAD leg is), margin trend (`fundamentals_extended.derive_margins`),
+12-1/industry-relative momentum (`research_screens_v2.py`), the Bollinger/ATR squeeze
+percentile-of-own-history readings (`swing_signals.bandwidth_squeeze`/`atr_compression`),
+and insider-cluster scoring (`insider_signal.score_insider_activity`, already computed and
+published on every research/portfolio row by `fetch_advisor.py` — this screen reads it
+rather than re-fetching Form 4 filings).
+
+**This model has no out-of-sample record of any kind.** It is registered in
+`pipeline/validation/harness_freeze.json` (`additional_models`, `pre-breakout-v0.1.0`) on the
+same prospective clock as §10.7's swing composite, and should be read as a research filter
+until that clock reports. The `volatility_contraction` subfactor is explicitly Tier C in the
+design brief — no peer-reviewed base rate exists for squeeze-to-directional-breakout, and it
+is weighted lowest inside its own leg for exactly that reason; it is the first candidate the
+clock is expected to drop or reweight. No dedicated JSON Schema exists for
+`screens/pre-breakout.json` (matching `swing.json`'s own precedent);
+`pipeline/validate_data.py::pre_breakout_screen_errors` is the compensating semantic check
+instead.
+
 ---
 
 ## 11. MarketPulse — the macro backdrop
@@ -880,6 +944,7 @@ low confidence.
 | Structural / Timeliness (v2) | `/screens/validation` (shadow diagnostics) | `LiveValidation.jsx` |
 | Momentum screen | `/screens/momentum` | `ResearchScreen.jsx` |
 | Swing-horizon composite | `/screens/swing`, and as the *Swing setup* ranking model on `/research` | `SwingScreen.jsx`, `Picks.jsx` (`rankingModels.js`) |
+| Pre-breakout composite (research filter) | `/screens/pre-breakout` | `ResearchScreen.jsx` |
 | Tactical / structural-tactical matrix | `/screens/earnings`, `/screens/matrix` | `ResearchScreen.jsx` |
 | Quality-value screen | `/screens/quality-value` | `ResearchScreen.jsx` |
 | Political score | `/screens/politics` | `CongressTrades.jsx` |
@@ -898,14 +963,16 @@ These are cross-sectional screens over the screen universe for a given run (typi
 stocks + 126 ETFs from static config, plus any held portfolio symbols merged in and deduped —
 926 in a recent run, not a fixed configured count) — distinct
 from the per-stock research score (§3). Top-level navigation order (`SCREEN_NAV`,
-`src/pages/ResearchScreen.jsx`): Swing signals, Fast growth, Options, Momentum, Quality at
-valuation lows, Earnings timeliness, Structural vs tactical, Early session, Shadow portfolios,
-Live validation, Politics trade alert, Institutional accumulation, Inside information, Theme
-exposure, Backtest comparison. The `Screens` entry in the primary nav lands on `/screens/swing`.
+`src/pages/ResearchScreen.jsx`): Swing signals, Pre-breakout, Fast growth, Options, Momentum,
+Quality at valuation lows, Earnings timeliness, Structural vs tactical, Early session, Shadow
+portfolios, Live validation, Politics trade alert, Institutional accumulation, Inside
+information, Theme exposure, Backtest comparison. The `Screens` entry in the primary nav
+lands on `/screens/swing`.
 
 | Route | Data file | What it ranks |
 |---|---|---|
 | `/screens/swing` | `screens/swing.json` | §10.7 — the swing-horizon composite (2 trading days to 8 weeks) |
+| `/screens/pre-breakout` | `screens/pre-breakout.json` | §10.9 — the pre-breakout composite (fundamental inflection / momentum-RS / flow-sentiment); no out-of-sample record yet |
 | `/screens/fast-growth` | `report.json` (client-computed, see below) | Two client-side sub-screens: Breakouts and Emerging growth |
 | `/screens/options` and 7 sub-strategies | `screens/options.json` + 6 more, see §15 | Multi-day options ideas per mechanism |
 | `/screens/momentum` | `screens/momentum.json` | §10.3 — 12-1/12-7/6-1 momentum, 52w proximity, industry-relative momentum |

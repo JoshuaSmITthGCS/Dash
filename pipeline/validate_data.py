@@ -12,6 +12,8 @@ from common import DATA_DIR
 SCHEMA_DIR = os.path.join(os.path.dirname(__file__), "schemas")
 FILES = ("trades", "prices", "news", "politicians", "signals", "picks", "status", "advisor", "etfs")
 CONGRESS_TRADES_SCHEMA = os.path.join(SCHEMA_DIR, "congress-trades.schema.json")
+PRE_BREAKOUT_SCREEN_PATH = os.path.join(DATA_DIR, "screens", "pre-breakout.json")
+PRE_BREAKOUT_LEGS = {"fundamental_inflection", "momentum_rs", "flow_sentiment"}
 
 
 def load(path):
@@ -182,6 +184,44 @@ def congress_trades_schema_errors():
             for error in sorted(validator.iter_errors(payload), key=lambda e: list(e.path))]
 
 
+def pre_breakout_screen_errors():
+    """Enforce the pre-breakout composite's own honesty contract, the same way
+    theme_screen_errors enforces the theme screen's.
+
+    No dedicated JSON Schema exists for screens/pre-breakout.json, matching swing.json's own
+    precedent (see build_pre_breakout_screen.py's module docstring for that decision) -- this
+    is the compensating semantic check instead. A missing file is not reported here, unlike a
+    FILES fixture: this screen legitimately does not exist yet in a fresh checkout or before
+    build_pre_breakout_screen.py has ever run, the same reasoning
+    congress_trades_schema_errors() applies to congress-trades.json.
+    """
+    if not os.path.exists(PRE_BREAKOUT_SCREEN_PATH):
+        return []
+    screen = load(PRE_BREAKOUT_SCREEN_PATH)
+    if screen.get("status") != "success":
+        return []
+    errors = []
+    epsilon = 1e-6
+    weights = screen.get("weights") or {}
+    for leg, weight in weights.items():
+        if weight > (1 / 3) + epsilon:
+            errors.append(f"screens/pre-breakout.json: leg '{leg}' weight {weight} exceeds "
+                          "the declared equal-weighted 1/3 + epsilon")
+    minimum_legs_resolved = (screen.get("thresholds") or {}).get("minimum_legs_resolved", 2)
+    for index, row in enumerate(screen.get("results") or []):
+        missing = PRE_BREAKOUT_LEGS - set(row.get("sub_scores") or {})
+        if missing:
+            errors.append(f"screens/pre-breakout.json:results.{index}: row for "
+                          f"{row.get('ticker')} is missing sub_scores {sorted(missing)}")
+        legs_resolved = row.get("legs_resolved")
+        if (row.get("eligibility") and legs_resolved is not None
+                and legs_resolved < minimum_legs_resolved):
+            errors.append(f"screens/pre-breakout.json:results.{index}: row for "
+                          f"{row.get('ticker')} is eligible despite resolving only "
+                          f"{legs_resolved} of {minimum_legs_resolved} required legs")
+    return errors
+
+
 def validate(production=False):
     errors = []
     payloads = {}
@@ -304,6 +344,7 @@ def validate(production=False):
     errors.extend(etf_peer_group_errors(payloads.get("etfs", {})))
     errors.extend(congress_trades_schema_errors())
     errors.extend(swing_context_signal_errors())
+    errors.extend(pre_breakout_screen_errors())
 
     # Legacy political fixtures stay explicitly demo while the independent advisor and ETF
     # datasets are live.
