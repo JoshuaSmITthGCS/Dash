@@ -546,6 +546,108 @@ describe('SwingScreen upside and trend', () => {
   })
 })
 
+// ---------------------------------------------------------------------------
+// Extended context layer: accumulation/stage columns and the market regime panel
+// ---------------------------------------------------------------------------
+
+describe('SwingScreen accumulation and stage columns', () => {
+  it('shows accumulation and stage badges from the published context, never as a leg', () => {
+    const data = tieredPayload()
+    data.tiers.S.results = [tierRow('CTX', {
+      rank: 1,
+      context: {
+        chaikin_money_flow: { cmf: 0.32, accumulating: true },
+        sector_relative_strength: { status: 'success', peer_count: 8, relative_strength: 4.2 },
+        weinstein_stage2: { stage: 'stage_2', above_ma150: true, ma150_rising: true, volume_confirmed: true },
+      },
+    })]
+    useData.mockReturnValue({ data, loading: false, error: null })
+    renderScreen()
+    showEveryNumber()
+
+    expect(screen.getByRole('columnheader', { name: 'Accumulation' })).toBeVisible()
+    expect(screen.getByRole('columnheader', { name: 'Stage' })).toBeVisible()
+    expect(screen.getByText('Accumulating, RS leader')).toBeVisible()
+    expect(screen.getByText('Advancing')).toBeVisible()
+  })
+
+  it('shows an absent context as a dash rather than a fabricated badge', () => {
+    const data = tieredPayload()
+    data.tiers.S.results = [tierRow('NOCTX', { rank: 1, context: null })]
+    useData.mockReturnValue({ data, loading: false, error: null })
+    renderScreen()
+    showEveryNumber()
+
+    const row = screen.getAllByText('NOCTX')[0].closest('tr')
+    expect(within(row).getAllByText('–').length).toBeGreaterThan(0)
+  })
+
+  it('flags VCP in the Setup column when the trailing squeeze has been sequentially tightening', () => {
+    const data = tieredPayload()
+    data.tiers.S.results = [tierRow('TIGHT', {
+      rank: 1,
+      contraction: { vcp: { contraction_count: 3, sequentially_tightening: true, currently_squeezed: true } },
+    })]
+    useData.mockReturnValue({ data, loading: false, error: null })
+    renderScreen()
+    showEveryNumber()
+
+    expect(screen.getByText('VCP')).toBeVisible()
+  })
+})
+
+describe('SwingScreen regime gate', () => {
+  const regimeGate = {
+    breadth: { above_50dma_pct: 62.0, above_200dma_pct: 71.5, universe_count: 900, as_of: '2026-08-28' },
+    hurst: { hurst: 0.58, label: 'trending', window: 252, as_of: '2026-08-28' },
+    vix: { score: 68.0, label: 'supportive', as_of: '2026-08-28' },
+    evidence: {
+      breadth_50_200dma: { label: 'Market breadth', citation: 'Zweig, Winning on Wall Street 1986' },
+      hurst_regime: { label: 'Hurst exponent', citation: 'H.E. Hurst 1951' },
+      vix_regime: { label: 'VIX regime', citation: 'pipeline/fred.py::derive_regime' },
+    },
+    note: 'Reading guidance, never a trigger and never a per-name score.',
+  }
+
+  it('publishes market breadth, the Hurst read and the VIX regime inside the method panel', () => {
+    useData.mockReturnValue({ data: tieredPayload({ regime_gate: regimeGate }), loading: false, error: null })
+    renderScreen()
+    openMethod()
+
+    expect(screen.getByText('Market regime')).toBeVisible()
+    expect(screen.getByText('71.5%')).toBeVisible()
+    expect(screen.getByText('62%')).toBeVisible()
+    expect(screen.getByText('trending')).toBeVisible()
+    expect(screen.getByText('supportive')).toBeVisible()
+    expect(screen.getByText(/Zweig, Winning on Wall Street 1986/)).toBeVisible()
+  })
+
+  it('tolerates a missing regime gate rather than breaking the page', () => {
+    useData.mockReturnValue({ data: tieredPayload({ regime_gate: undefined }), loading: false, error: null })
+    renderScreen()
+    openMethod()
+
+    expect(screen.queryByText('Market regime')).toBeNull()
+  })
+
+  it('adds a reading-guidance sentence to the tier headline when the regime clearly favors it', () => {
+    const data = tieredPayload({ regime_gate: regimeGate })
+    useData.mockReturnValue({ data, loading: false, error: null })
+    renderScreen()
+
+    // Default tier is S; broad breadth (71.5% > 60) and a non-restrictive VIX favor it.
+    expect(screen.getByText(/currently favor this book.s continuation legs/)).toBeVisible()
+  })
+
+  it('adds no reading-guidance sentence when the regime does not clearly favor the tier', () => {
+    const flat = { ...regimeGate, breadth: { ...regimeGate.breadth, above_200dma_pct: 40 } }
+    useData.mockReturnValue({ data: tieredPayload({ regime_gate: flat }), loading: false, error: null })
+    renderScreen()
+
+    expect(screen.queryByText(/currently favor this book/)).toBeNull()
+  })
+})
+
 describe('SwingScreen verdict and upside agree', () => {
   it('does not call a name worth buying beside a negative upside', () => {
     const data = tieredPayload()

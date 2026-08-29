@@ -17,23 +17,24 @@ from datetime import datetime, timezone
 
 from common import LOG, load_json, save_json
 from edgar_sue import ANNOUNCEMENT_ANCHOR_NOTE, announcement_age_trading_days, sue_for
+from market_regime import regime_gate as compute_market_regime_gate
 from peer_groups import peer_group
 from price_archive import load_series as archive_series_for
 from screen_inputs import (backtest_entry, latest_observations, median_dollar_volume,
                            universe_rows, with_current_price)
-from swing_signals import (BASELINE_VARIANT, CONTEXT_SIGNAL_EVIDENCE, CONTRACTION_NOTE,
-                           DECAY_HAIRCUT, DEFAULT_CONFIG, HOLDING_HORIZON,
+from swing_signals import (BASELINE_VARIANT, CONTEXT_NOTE, CONTEXT_SIGNAL_EVIDENCE,
+                           CONTRACTION_NOTE, DECAY_HAIRCUT, DEFAULT_CONFIG, HOLDING_HORIZON,
                            SHORT_INTEREST_EVIDENCE, SWING_EVIDENCE, SWING_SUBFACTORS,
                            SWING_VARIANTS, SWING_WEIGHTS, capacity_profile, leg_coverage,
                            legs_resolved_distribution, pead_anchor_diagnostic, sector_cap_log,
-                           TREND_NOTE, TREND_STATES, swing_factors, swing_scores,
-                           trailing_dollar_volume, universe_daily_returns)
+                           sector_relative_strength, TREND_NOTE, TREND_STATES, swing_factors,
+                           swing_scores, trailing_dollar_volume, universe_daily_returns)
 from swing_tiers import (ALPHA_NOTE, ANNOUNCEMENT_EVIDENCE, ASSUMED_GROSS_ALPHA_BPS_PER_MONTH,
                          DECAY_CAPTURE, DECAY_CAPTURE_NOTE, DEFAULT_BOOK_DOLLARS, TIER_ORDER,
                          TIER_SPECS, UPSIDE_NOTE, score_tier, tier_config, tier_evidence,
                          tier_spec, tier_summary)
 
-SCHEMA_VERSION = "1.2.0"
+SCHEMA_VERSION = "1.3.0"
 MODEL_VERSION = "swing-v1.1.0"
 CONFIG_VERSION = "screens-v2.0.0"
 OUTPUT = "screens/swing.json"
@@ -141,8 +142,17 @@ def build_rows(universe, entry_for=None, observations=None, as_of=None, sue_reso
                                      forward_horizons=FORWARD_HORIZONS,
                                      archive_highs=archive.get("highs"),
                                      archive_lows=archive.get("lows"),
-                                     archive_closes=archive.get("closes")),
+                                     archive_closes=archive.get("closes"),
+                                     archive_volumes=archive.get("volumes")),
         })
+    # Cross-sectional, so it runs once over the whole built list rather than inside
+    # swing_factors: sector_relative_strength needs every row's own return_20d, which only
+    # exists once every row above has been through swing_factors. See
+    # swing_signals.CONTEXT_NOTE and sector_relative_strength's own docstring.
+    relative_strength = sector_relative_strength(rows)
+    for scored_row in rows:
+        scored_row["factors"]["sector_relative_strength"] = relative_strength.get(
+            scored_row["ticker"])
     return rows
 
 
@@ -211,6 +221,13 @@ def to_result(rank, row, weights=None):
         "range_position_52w": _rounded(factors.get("range_position_52w")),
         # Descriptive setup context, never a scoring leg. See swing_signals.CONTRACTION_NOTE.
         "contraction": factors.get("contraction"),
+        # Descriptive accumulation/trend-stage/relative-strength context, never a scoring
+        # leg. See swing_signals.CONTEXT_NOTE.
+        "context": {
+            "sector_relative_strength": factors.get("sector_relative_strength"),
+            "chaikin_money_flow": factors.get("chaikin_money_flow"),
+            "weinstein_stage2": factors.get("weinstein_stage2"),
+        },
         "pead_status": factors.get("pead_status"),
         "pead_detail": {key: factors.get(key) for key in
                         ("pead_basis", "pead_period_end", "pead_announced_on",
@@ -250,7 +267,7 @@ def previous_tier_members(screen):
             for tier in TIER_ORDER}
 
 
-def payload(results, scored, generated_at, tiers=None):
+def payload(results, scored, generated_at, tiers=None, regime_gate=None):
     return {
         "tiers": tiers or {},
         "tier_order": list(TIER_ORDER),
@@ -273,6 +290,8 @@ def payload(results, scored, generated_at, tiers=None):
         "trend_note": TREND_NOTE,
         "contraction_note": CONTRACTION_NOTE,
         "context_signal_evidence": CONTEXT_SIGNAL_EVIDENCE,
+        "context_note": CONTEXT_NOTE,
+        "regime_gate": regime_gate,
         "schema_version": SCHEMA_VERSION, "model_version": MODEL_VERSION,
         "config_version": CONFIG_VERSION, "generated_at": generated_at,
         "status": "success",
@@ -364,7 +383,10 @@ def run():
     results = [to_result(rank + 1, row) for rank, row in enumerate(publishable(scored))]
     previous = previous_tier_members(existing)
     tiers = {tier: tier_book(rows, tier, previous) for tier in TIER_ORDER}
-    result = payload(results, scored, generated_at, tiers)
+    advisor = load_json("advisor.json") or {}
+    macro_regime = (advisor.get("market") or {}).get("macro", {}).get("regime") or {}
+    market_regime_gate = compute_market_regime_gate(universe, macro_regime)
+    result = payload(results, scored, generated_at, tiers, market_regime_gate)
     save_json(OUTPUT, result)
     LOG.info(f"Swing screen: scored {len(scored)} tickers "
              f"({result['eligible_count']} eligible, {result['suppressed_count']} suppressed on "

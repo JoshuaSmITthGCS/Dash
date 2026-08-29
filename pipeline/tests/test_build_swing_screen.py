@@ -207,11 +207,11 @@ def test_contraction_setup_is_never_a_declared_leg():
 
 def test_contraction_setup_reports_none_components_on_insufficient_history():
     # Ten flat closes are enough for RSI(2) (neutral 50, not a fabricated read) but not for the
-    # squeeze (needs ~6 months) or the volume dry-up (needs a 50-session reference average).
-    # No archive series is passed at all, so the two range-based reads are also None.
+    # squeeze, vcp (both need ~6 months) or the volume dry-up (needs a 50-session reference
+    # average). No archive series is passed at all, so the two range-based reads are also None.
     setup = swing_signals.contraction_setup([100.0] * 10, [1_000_000.0] * 10)
     assert setup == {"bandwidth_squeeze": None, "volume_dry_up": None, "rsi_2": 50.0,
-                     "narrow_range": None, "atr_compression": None}
+                     "narrow_range": None, "atr_compression": None, "vcp": None}
 
 
 def test_reversal_leg_is_signed_against_the_prior_week():
@@ -781,9 +781,14 @@ def test_run_publishes_ranked_rows_with_their_evidence(monkeypatch, tmp_path):
     # The contraction context is published beside the score on every row, and its evidence
     # travels with it, but it must never be one of the declared, weighted legs.
     assert all("contraction" in row for row in result["results"])
-    assert set(result["context_signal_evidence"]) == {"bandwidth_squeeze", "volume_dry_up", "rsi_2",
-                                                       "narrow_range", "atr_compression"}
+    assert set(result["context_signal_evidence"]) == {
+        "bandwidth_squeeze", "volume_dry_up", "rsi_2", "narrow_range", "atr_compression",
+        "chaikin_money_flow", "weinstein_stage2", "vcp", "sector_relative_strength"}
     assert not set(result["context_signal_evidence"]) & set(result["weights"])
+    # The new accumulation/trend-stage context is published beside the score on every row too,
+    # and the market-wide regime gate is published once at the top level.
+    assert all("context" in row for row in result["results"])
+    assert "regime_gate" in result
 
 
 def test_run_publishes_an_unavailable_file_rather_than_nothing(monkeypatch):
