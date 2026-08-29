@@ -112,13 +112,16 @@ class ScreenPayloadTests(unittest.TestCase):
         source = ""
         # Every client-side reader of the slice: the screen rankers and the ranking models
         # that scan the same tail (src/lib - the swing model's 52-week-high leg is the
-        # reason pct_from_52w_high is published to every row rather than the head), and the
-        # stock-detail "All metrics" panel and its modal (src/components - MetricSections.jsx
-        # reads the @technical.* keys declaratively, StockDetailModal.jsx reads a few more,
-        # like relative_acceleration_detail, directly for its own KPI tiles).
+        # reason pct_from_52w_high is published to every row rather than the head), the
+        # declarative @technical.* SECTIONS table (src/lib/resolvedMetricSections.js - moved
+        # out of src/components/MetricSections.jsx by "Phase 6b: extract
+        # resolvedMetricSections into src/lib", which left MetricSections.jsx a thin
+        # re-export with none of the field-name literals this test greps for), and the
+        # stock-detail modal, which reads a few more fields, like relative_acceleration_detail,
+        # directly for its own KPI tiles (src/components/StockDetailModal.jsx).
         for root, reader in (
             ("lib", "researchScreens.js"), ("lib", "rankingModels.js"),
-            ("components", "MetricSections.jsx"), ("components", "StockDetailModal.jsx"),
+            ("lib", "resolvedMetricSections.js"), ("components", "StockDetailModal.jsx"),
         ):
             with open(os.path.join(src_dir, root, reader)) as handle:
                 source += handle.read()
