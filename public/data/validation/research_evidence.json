@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-29T00:57:26.734188+00:00",
+  "generated_at": "2026-08-29T02:28:38.634730+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "c545d5b695a50cb438a9460b8cf829f1bf4ea6fa",
+  "code_commit_hash": "c8f52ac713f9f955274153c8904c7f8c87ee91c0",
   "config_hash": "a0b747109820f48effbd8dabf5a30f2760e191e1e63f004cdc13c18247360c63",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -891,7 +891,7 @@
             "total": 40
           },
           "valuation": {
-            "scored": 39,
+            "scored": 40,
             "total": 40
           }
         }
@@ -935,7 +935,7 @@
           "n": 875,
           "mean": 63.71,
           "median": 65.1,
-          "stdev": 11.3
+          "stdev": 11.21
         },
         "non_enriched": {
           "n": 3,
@@ -966,7 +966,7 @@
       },
       "market_cap_comparison": {
         "status": "not_measurable",
-        "rows_with_market_cap": 38,
+        "rows_with_market_cap": 40,
         "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
       },
       "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
@@ -976,8 +976,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "c545d5b695a50cb438a9460b8cf829f1bf4ea6fa",
+    "git_commit_sha": "c8f52ac713f9f955274153c8904c7f8c87ee91c0",
     "config_hash": "a0b747109820f48effbd8dabf5a30f2760e191e1e63f004cdc13c18247360c63",
-    "generated_at": "2026-08-29T00:57:26.734188+00:00"
+    "generated_at": "2026-08-29T02:28:38.634730+00:00"
   }
 }

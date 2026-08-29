@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 90,
+  "refreshes_observed": 91,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -17353,6 +17353,66 @@
           ],
           "score_delta": -0.5,
           "confidence_delta": -0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-29T00:57:26.734188+00:00",
+      "current_refresh": "advisor-2026-08-29T02:28:38.634730+00:00",
+      "shared_tickers": 878,
+      "rank_turnover": {
+        "top_40": 0.025,
+        "top_100": 0.025
+      },
+      "tickers_with_availability_driven_change": 5,
+      "tickers_with_availability_driven_change_pct": 0.006,
+      "mean_abs_score_delta": 0.21,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -3.3,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "UEC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 2.1,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "SNX",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -1.1,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -0.9,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "WDC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -0.6,
+          "confidence_delta": 0.01
         }
       ]
     }

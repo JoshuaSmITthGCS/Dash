@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "model_version": "short-term-trades-backtest-v1.0.0",
   "config_version": "screens-v1.0.0",
-  "generated_at": "2026-08-29T00:59:18.538860+00:00",
+  "generated_at": "2026-08-29T02:30:30.766262+00:00",
   "status": "success",
   "methodology": "Simulated: option entry prices are Black-Scholes estimates using trailing realized volatility as the implied-volatility input, not quoted historical prices. Real historical bid/ask spreads, open interest, and fill quality are not modeled. Trade settlement uses real historical closing prices. This combined backtest pools all three mechanisms' (buy, sell call, sell put) period returns together as an approximation of the screen's opportunity set over time - it does not replay the live screen's exact per-ticker best-mechanism selection at each historical date. The live screen's ranking also factors in news sentiment and the ticker's broader research-universe score/confidence; this backtest does not, since no point-in-time history of those signals exists yet to backtest against without look-ahead risk.",
   "universe_tickers": 131,
@@ -15,16 +15,16 @@
   "backtest": {
     "num_trades": 37125,
     "total_return": -1.0,
-    "annualized_return": -0.0321,
-    "sharpe_ratio": 0.108,
-    "skewness": 21.822,
-    "kurtosis": 891.623,
-    "probabilistic_sharpe_ratio": 0.9996,
-    "deflated_sharpe_ratio": 0.9724,
+    "annualized_return": -0.0304,
+    "sharpe_ratio": 0.113,
+    "skewness": 21.532,
+    "kurtosis": 869.642,
+    "probabilistic_sharpe_ratio": 0.9998,
+    "deflated_sharpe_ratio": 0.9817,
     "deflated_sharpe_trials": 8,
     "max_drawdown": -1.0,
-    "win_rate": 0.5815,
-    "average_pnl_per_trade": 13.12,
+    "win_rate": 0.5812,
+    "average_pnl_per_trade": 13.54,
     "equity_curve": [
       1.0,
       0.9563,
@@ -37156,8 +37156,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "c545d5b695a50cb438a9460b8cf829f1bf4ea6fa",
+    "git_commit_sha": "c8f52ac713f9f955274153c8904c7f8c87ee91c0",
     "config_hash": "a0b747109820f48effbd8dabf5a30f2760e191e1e63f004cdc13c18247360c63",
-    "generated_at": "2026-08-29T00:59:18.538860+00:00"
+    "generated_at": "2026-08-29T02:30:30.766262+00:00"
   }
 }
