@@ -615,11 +615,16 @@ def trend_state(closes, window=252):
 # They read `pipeline/data/price_archive/{TICKER}.json` instead - the append-only survivorship
 # archive `price_archive.py` already grows by one real session per ticker on every scheduled
 # refresh, extended (same amendment) to record the session's high and low alongside its close
-# and volume. That archive started 2026-08-11, so on any given refresh most names carry only a
-# few weeks of it: `narrow_range` needs 7 sessions and resolves quickly, `atr_compression` wants
-# a real trailing distribution (its percentile read is meaningless on a handful of points, same
-# reasoning as MINIMUM_BANDWIDTH_HISTORY below) and reports None until the archive has grown
-# into one, or until a one-time historical backfill (pipeline/backfill_price_ranges.py) runs.
+# and volume. High/low recording itself only started 2026-08-28, but a one-time historical
+# backfill (pipeline/backfill_price_ranges.py) ran the same day and reconstructed roughly two
+# years of high/low (back to 2024-08-28) for the tickers in the live-scored universe - `date -d
+# pipeline/data/price_archive/archive_manifest.json` and any archived ticker's own file confirm
+# the depth directly. A ticker added to the universe after that backfill run still only accrues
+# one session's high/low per day until the backfill workflow (.github/workflows/
+# backfill-price-ranges.yml, workflow_dispatch-only) is re-run, so `narrow_range` (needs 7
+# sessions) and `atr_compression`/the range-based half of the VCP read below (want a real
+# trailing distribution, same reasoning as MINIMUM_BANDWIDTH_HISTORY below) can still report
+# None for a recent addition even though most of the universe is well covered.
 # Never backfilled through pipeline/data/backtest_cache/ itself - that tree is a pinned fixture
 # and writing through its symlinks has already corrupted it once (docs/SESSION-HANDOFF.md,
 # docs/SURVIVORSHIP-RECONSTRUCTION-2.md section 3a).
@@ -676,9 +681,11 @@ CONTEXT_SIGNAL_EVIDENCE = {
                   "higher-than-usual probability of a wide-range trend day; independent "
                   "replications (e.g. QuantifiedStrategies) confirm the effect and improve it "
                   "with a trend-direction filter, since NR7 alone says nothing about direction.",
-        "caveat": "Reads pipeline/data/price_archive, which started recording high/low "
-                  "2026-08-28 - see the module-level note above. Resolves as soon as a ticker "
-                  "has 7 archived sessions, unlike atr_compression below.",
+        "caveat": "Reads pipeline/data/price_archive, backfilled to roughly two years of "
+                  "high/low for the live-scored universe on 2026-08-28 - see the module-level "
+                  "note above. Resolves as soon as a ticker has 7 archived sessions, unlike "
+                  "atr_compression below; a name added to the universe after that backfill run "
+                  "still only accrues one session a day until the backfill workflow re-runs.",
     },
     "atr_compression": {
         "label": "ATR-percentile compression",
@@ -692,9 +699,72 @@ CONTEXT_SIGNAL_EVIDENCE = {
                   "true range (which captures a gap) rather than the close-to-close series "
                   "BandWidth uses.",
         "caveat": "Wants a real trailing distribution to read a percentile off, same as "
-                  "bandwidth_squeeze - see MINIMUM_BANDWIDTH_HISTORY. The archive is too young "
-                  "for this on most names until either it grows for several more months or "
-                  "pipeline/backfill_price_ranges.py backfills history once.",
+                  "bandwidth_squeeze - see MINIMUM_BANDWIDTH_HISTORY. The 2026-08-28 backfill "
+                  "(see the module-level note above) already carries enough depth for this on "
+                  "most of the live-scored universe; a name added after that run still reports "
+                  "None here until it accrues enough sessions on its own or the backfill "
+                  "workflow (workflow_dispatch-only) is re-run.",
+    },
+    "chaikin_money_flow": {
+        "label": "Chaikin Money Flow (CMF)",
+        "horizon": "1-3 weeks",
+        "direction": "direction-neutral trend-confirmation - not a standalone directional call",
+        "citation": "Marc Chaikin; popularized in Steven B. Achelis, Technical Analysis from A "
+                    "to Z (1995)",
+        "effect": "A volume-weighted read of where each session closed within its own "
+                  "high-low range, summed over a trailing window: persistently positive reads "
+                  "as accumulation, persistently negative as distribution. Independent "
+                  "quantification of a standalone edge is thin; it is published as a "
+                  "confirmation tell, not a backtested signal.",
+        "caveat": "Reads pipeline/data/price_archive highs/lows/closes/volumes, the same store "
+                  "narrow_range and atr_compression read - see the module-level note above for "
+                  "its coverage depth and the one open gap (a name added after the 2026-08-28 "
+                  "backfill run).",
+    },
+    "weinstein_stage2": {
+        "label": "Weinstein Stage 2 (advancing-stage) read",
+        "horizon": "weeks to months",
+        "direction": "continuation - Stage 2 (price above a rising long moving average, "
+                    "volume-confirmed) is the only stage Weinstein wants a long position in",
+        "citation": "Stan Weinstein, Secrets for Profiting in Bull and Bear Markets (1988)",
+        "effect": "Weinstein's four-stage cycle (basing, advancing, topping, declining) is a "
+                  "practitioner heuristic for reading where a name sits in its own long-cycle "
+                  "trend; independent quantification of a standalone edge is thin.",
+        "caveat": "Weinstein's own method reads *weekly* bars against a 30-week moving "
+                  "average. This approximates it with a 150-session daily SMA and its trailing "
+                  "slope - the same daily-SMA convention trend_state() above already uses for "
+                  "its 20/60-session reads - rather than reconstructing a weekly series. Reads "
+                  "pipeline/data/backtest_cache only, no price_archive dependency.",
+    },
+    "vcp": {
+        "label": "Volatility contraction pattern (VCP)",
+        "horizon": "weeks to a couple of months after the contraction",
+        "direction": "direction-neutral - flags imminent volatility expansion, not which way",
+        "citation": "Mark Minervini, Trade Like a Stock Market Wizard (2013); lineage traced "
+                    "to the Darvas box and Livermore's pivotal-point method",
+        "effect": "Sequentially tighter volatility contractions (each one narrower than the "
+                  "last) are read as a base building toward a breakout; independent "
+                  "quantification of a standalone edge is thin.",
+        "caveat": "Built on the same close-based BandWidth series bandwidth_squeeze reads, not "
+                  "a range/volume box-pattern read of the published construct - a possible "
+                  "future extension once pipeline/data/price_archive is deep enough across the "
+                  "whole universe, not this one. Unvalidated the same way bandwidth_squeeze is.",
+    },
+    "sector_relative_strength": {
+        "label": "Sector-relative strength (20-session, leave-one-out)",
+        "horizon": "1-3 weeks",
+        "direction": "continuation - outperforming peers is read as relative strength",
+        "citation": "William O'Neil, How to Make Money in Stocks (IBD Relative Strength "
+                    "Rating heritage)",
+        "effect": "A name's own trailing return measured against a leave-one-out median of its "
+                  "peer group, rather than the whole universe - O'Neil's research reports the "
+                  "average pre-breakout RS Rating among the best-performing names sat around "
+                  "87 (IBD data, 1950-2008), well above the cross-section.",
+        "caveat": "Reuses the same leave-one-out peer-group construction as "
+                  "research_screens_v2.industry_relative_returns, at a swing-appropriate "
+                  "20-session window rather than that screen's 12-1 skip-month formation - a "
+                  "different horizon on the same machinery, not a duplicate of that screen's "
+                  "construct or its published output.",
     },
 }
 
@@ -705,13 +775,29 @@ CONTRACTION_NOTE = (
     "supply-exhaustion concept (volume dry-up) says selling pressure has thinned without "
     "saying which way it resolves; a mean-reversion read (2-period RSI) is directional but "
     "overlaps the existing short_term_reversal leg and has not been run through this "
-    "composite's prospective validation. All five are published beside the five scored legs "
-    "so a reader can see whether a name is coiled and where it sits on a short mean-reversion "
-    "read, not because any of them adds to the composite. narrow_range and atr_compression read "
-    "a separate, younger data store (pipeline/data/price_archive) than the other three, so they "
-    "report None on names or dates the archive has not reached yet rather than falling back to "
-    "a close-only proxy for a range-based construct - see the module-level note above "
-    "CONTEXT_SIGNAL_EVIDENCE.")
+    "composite's prospective validation. A sixth, vcp, reads the same close-based BandWidth "
+    "series as the squeeze but asks a multi-week question instead of today's reading: whether "
+    "the last several trailing readings have been sequentially tightening, Minervini's "
+    "volatility-contraction-pattern criterion. All six are published beside the five scored "
+    "legs so a reader can see whether a name is coiled and where it sits on a short "
+    "mean-reversion read, not because any of them adds to the composite. narrow_range and "
+    "atr_compression read a separate data store (pipeline/data/price_archive) than the other "
+    "four, so they report None on names or dates the archive has not reached yet rather than "
+    "falling back to a close-only proxy for a range-based construct - see the module-level "
+    "note above CONTEXT_SIGNAL_EVIDENCE.")
+
+CONTEXT_NOTE = (
+    "Accumulation, trend-stage and relative-strength context, never a scoring leg - the same "
+    "rule CONTRACTION_NOTE states for the volatility-contraction family, applied to three "
+    "different signals published alongside it. chaikin_money_flow reads the same "
+    "pipeline/data/price_archive highs/lows/closes/volumes narrow_range and atr_compression "
+    "read; weinstein_stage2 and sector_relative_strength read pipeline/data/backtest_cache "
+    "only, so they carry that store's longer history rather than the archive's. "
+    "sector_relative_strength is the one context signal here that is cross-sectional rather "
+    "than a pure function of one row's own history - it is computed once over the whole "
+    "scored universe in build_swing_screen.build_rows, after every row's own factors have "
+    "resolved, and merged back in rather than being read inside swing_factors. See "
+    "CONTEXT_SIGNAL_EVIDENCE for the citation and caveat behind each.")
 
 # Below this many trailing BandWidth readings, "at a 6-month low" is describing a handful of
 # overlapping windows rather than a real distribution - the same floor forward_return_distribution
@@ -873,14 +959,52 @@ def narrow_range(highs, lows, window=7):
     return {"range": round(current, 4), "is_nr7": current <= min(ranges), "window": window}
 
 
-def contraction_setup(closes, volumes, archive_highs=None, archive_lows=None, archive_closes=None):
-    """The five descriptive, non-scored context signals as one dict.
+def volatility_contraction_pattern(closes, window=20, num_std=2, lookback=BANDWIDTH_SQUEEZE_LOOKBACK,
+                                   checkpoints=3, checkpoint_spacing=21):
+    """Whether trailing BandWidth readings have been sequentially tightening - Minervini's VCP.
 
-    `closes`/`volumes` are the long backtest-cache series bandwidth_squeeze, volume_dry_up and
-    rsi_2 read. `archive_highs`/`archive_lows`/`archive_closes` are the separate, shorter
+    Built on the same close-based bollinger_bandwidth series bandwidth_squeeze reads (never
+    the range-based ATR series - see CONTEXT_SIGNAL_EVIDENCE['vcp'] for why a range-based read
+    is a possible future extension, not this one). Samples `checkpoints` readings spaced
+    `checkpoint_spacing` sessions apart (~monthly by default) rather than comparing
+    day-over-day noise, and calls the pattern "sequentially tightening" only when every
+    checkpoint is narrower than the one before it, oldest to newest. None until there is
+    enough trailing BandWidth history to sample from - same floor as bandwidth_squeeze.
+    """
+    series = [close for close in (closes or []) if _finite(close) and close > 0]
+    if len(series) < window + lookback:
+        return None
+    squeeze = bandwidth_squeeze(closes, window, num_std, lookback)
+    if squeeze is None:
+        return None
+    readings = []
+    for step in range(checkpoints):
+        end = len(series) - step * checkpoint_spacing
+        if end < window:
+            break
+        value = bollinger_bandwidth(series[:end], window, num_std)
+        if value is None:
+            break
+        readings.append(value)
+    # readings[0] is today, readings[-1] the oldest sampled checkpoint - tightening means
+    # each checkpoint further back was wider than the one after it.
+    tightening = len(readings) >= 2 and all(
+        readings[index] > readings[index - 1] for index in range(1, len(readings)))
+    return {
+        "contraction_count": len(readings),
+        "sequentially_tightening": tightening,
+        "currently_squeezed": squeeze["squeezed"],
+    }
+
+
+def contraction_setup(closes, volumes, archive_highs=None, archive_lows=None, archive_closes=None):
+    """The six descriptive, non-scored contraction/mean-reversion context signals as one dict.
+
+    `closes`/`volumes` are the long backtest-cache series bandwidth_squeeze, volume_dry_up,
+    rsi_2 and vcp read. `archive_highs`/`archive_lows`/`archive_closes` are the separate
     price_archive series narrow_range and atr_compression read instead - see the module-level
     note above CONTEXT_SIGNAL_EVIDENCE for why a range-based read cannot come from the same
-    series the other three use. Never read by swing_scores or any scoring leg - see
+    series the other four use. Never read by swing_scores or any scoring leg - see
     CONTRACTION_NOTE. A component that cannot resolve on this row's history is None rather than
     a fabricated read.
     """
@@ -890,7 +1014,65 @@ def contraction_setup(closes, volumes, archive_highs=None, archive_lows=None, ar
         "rsi_2": rsi_2(closes) if closes else None,
         "narrow_range": narrow_range(archive_highs, archive_lows),
         "atr_compression": atr_compression(archive_highs, archive_lows, archive_closes),
+        "vcp": volatility_contraction_pattern(closes),
     }
+
+
+def chaikin_money_flow(highs, lows, closes, volumes, window=20):
+    """20-session Chaikin Money Flow: volume-weighted accumulation/distribution pressure.
+
+    Reads pipeline/data/price_archive highs/lows/closes/volumes - the same store narrow_range
+    and atr_compression read, not the backtest-cache series. None unless every session in the
+    trailing window resolves. See CONTEXT_SIGNAL_EVIDENCE['chaikin_money_flow'].
+    """
+    pairs = list(zip((highs or [])[-window:], (lows or [])[-window:],
+                     (closes or [])[-window:], (volumes or [])[-window:]))
+    if len(pairs) < window:
+        return None
+    money_flow_volume = []
+    for high, low, close, volume in pairs:
+        if not (_finite(high) and _finite(low) and _finite(close) and _finite(volume)):
+            return None
+        span = high - low
+        multiplier = ((close - low) - (high - close)) / span if span > 0 else 0.0
+        money_flow_volume.append(multiplier * volume)
+    total_volume = sum(volume for _, _, _, volume in pairs)
+    if not total_volume:
+        return None
+    value = sum(money_flow_volume) / total_volume
+    return {"cmf": round(value, 4), "accumulating": value > 0}
+
+
+def weinstein_stage2(closes, volumes, window=150, slope_lookback=20):
+    """Approximate Weinstein four-stage read: price against a 150-session moving average and
+    its own trailing slope, with a volume-confirmation flag riding along.
+
+    Weinstein's own method (Secrets for Profiting in Bull and Bear Markets, 1988) reads
+    *weekly* bars against a 30-week moving average; this approximates it with a 150-session
+    daily SMA and its slope - the same daily-SMA convention trend_state() above already uses
+    for its 20/60-session reads - rather than reconstructing a weekly series. Reads
+    pipeline/data/backtest_cache only, no price_archive dependency. Never a scoring leg - see
+    CONTEXT_NOTE. None until both the average and its slope resolve.
+    """
+    from technical_indicators import moving_average_slope
+    average = _moving_average(closes, window)
+    slope = moving_average_slope(closes or [], window=window, lookback=slope_lookback)
+    if average is None or slope is None or not closes or not _finite(closes[-1]):
+        return None
+    price = closes[-1]
+    above, rising = price > average, slope > 0
+    surge = volume_surge(volumes, recent=5, reference=50)
+    volume_confirmed = None if surge is None else surge > 1.0
+    if above and rising:
+        stage = "stage_2"  # advancing
+    elif above and not rising:
+        stage = "stage_3"  # topping
+    elif not above and not rising:
+        stage = "stage_4"  # declining
+    else:
+        stage = "stage_1"  # basing
+    return {"stage": stage, "above_ma150": above, "ma150_rising": rising,
+           "volume_confirmed": volume_confirmed}
 
 
 def volume_surge(volumes, recent=1, reference=50):
@@ -1009,6 +1191,43 @@ def universe_daily_returns(all_closes):
     return returns
 
 
+def sector_relative_strength(rows, field="return_20d", minimum_peer_count=4):
+    """Leave-one-out peer-group-relative ``field`` for every row in ``rows``.
+
+    Mirrors research_screens_v2.industry_relative_returns's leave-one-out construction (a
+    median peer benchmark; a name never benchmarks itself) at a swing-appropriate 20-session
+    window rather than the momentum screen's 12-1 skip-month formation - a different horizon
+    on the same machinery, not a duplicate of that screen's construct or its published output.
+
+    Cross-sectional, so this is meant to be called once over the whole ``rows`` list in
+    build_swing_screen.build_rows, after every row's own factors have resolved, rather than
+    from inside swing_factors, which only ever sees one row at a time. ``rows`` is that
+    module's row shape: each entry needs ``ticker``, ``peer_group`` and
+    ``factors[field]``. See CONTEXT_SIGNAL_EVIDENCE['sector_relative_strength'].
+    """
+    output = {}
+    for row in rows or []:
+        ticker, group = row.get("ticker"), row.get("peer_group")
+        peers = [(peer.get("factors") or {}).get(field) for peer in rows
+                 if peer.get("ticker") != ticker and peer.get("peer_group") == group]
+        peers = [value for value in peers if _finite(value)]
+        own = (row.get("factors") or {}).get(field)
+        if len(peers) < minimum_peer_count:
+            output[ticker] = {"status": "unavailable", "reason_code": "INSUFFICIENT_VALID_PEERS",
+                              "peer_group": group, "peer_count": len(peers),
+                              "minimum_peer_count": minimum_peer_count, "leave_one_out": True}
+            continue
+        sorted_peers = sorted(peers)
+        mid = len(sorted_peers) // 2
+        benchmark = (sorted_peers[mid] if len(sorted_peers) % 2
+                    else (sorted_peers[mid - 1] + sorted_peers[mid]) / 2)
+        output[ticker] = {"status": "success", "peer_group": group, "peer_count": len(peers),
+                          "minimum_peer_count": minimum_peer_count, "leave_one_out": True,
+                          "field": field, "peer_median": round(benchmark, 4),
+                          "relative_strength": None if own is None else round(own - benchmark, 4)}
+    return output
+
+
 def announcement_return(closes, age_sessions, market_returns=None):
     """The [0,+1] abnormal return around the earnings announcement - the EAR surprise.
 
@@ -1091,7 +1310,7 @@ def abnormal_turnover(volumes, recent=1, reference=50):
 
 def swing_factors(row, closes=None, volumes=None, config=None, sue=None, market_returns=None,
                   forward_horizons=(), archive_highs=None, archive_lows=None,
-                  archive_closes=None):
+                  archive_closes=None, archive_volumes=None):
     """Every raw subfactor for one row, before any cross-sectional ranking.
 
     Price and volume subfactors come from the cached daily series; revision subfactors come
@@ -1108,11 +1327,18 @@ def swing_factors(row, closes=None, volumes=None, config=None, sue=None, market_
     over, passed in by the caller because the horizons belong to the tiers and this module has
     no business knowing what a tier is.
 
-    ``archive_highs``/``archive_lows``/``archive_closes`` are price_archive.load_series's
-    output for this ticker, needed only by the two range-based contraction context signals
-    (narrow_range, atr_compression) - see the module-level note above CONTEXT_SIGNAL_EVIDENCE.
-    Omitted, those two read as None, the same degradation any other unresolvable context signal
-    gets.
+    ``archive_highs``/``archive_lows``/``archive_closes``/``archive_volumes`` are
+    price_archive.load_series's output for this ticker, needed only by the range-based
+    contraction context signal pair (narrow_range, atr_compression) and chaikin_money_flow -
+    see the module-level note above CONTEXT_SIGNAL_EVIDENCE. Omitted, those read as None, the
+    same degradation any other unresolvable context signal gets. Note this is a different
+    series from ``volumes`` above, which is the long backtest-cache volume series
+    weinstein_stage2 and the rest of this function read.
+
+    ``sector_relative_strength`` is deliberately absent from this function's output: it is
+    cross-sectional (needs every row's own return_20d, not just this one's), so it is computed
+    once over the whole universe in build_swing_screen.build_rows and merged into this row's
+    factors afterward - see CONTEXT_NOTE and sector_relative_strength's own docstring below.
     """
     config = {**DEFAULT_CONFIG, **(config or {})}
     estimates = row.get("estimate_detail") or {}
@@ -1160,6 +1386,10 @@ def swing_factors(row, closes=None, volumes=None, config=None, sue=None, market_
         # Descriptive only, never scored. See CONTRACTION_NOTE.
         "contraction": contraction_setup(closes, volumes, archive_highs, archive_lows,
                                          archive_closes),
+        # Descriptive only, never scored. See CONTEXT_NOTE.
+        "chaikin_money_flow": chaikin_money_flow(archive_highs, archive_lows, archive_closes,
+                                                 archive_volumes),
+        "weinstein_stage2": weinstein_stage2(closes, volumes),
         # Keyed by horizon as a string, because this rides through JSON. The horizons come from
         # the tiers rather than being hardcoded here: this module must not know what a tier is.
         "forward_returns": {str(horizon): forward_return_distribution(closes, horizon)
