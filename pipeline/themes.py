@@ -210,6 +210,14 @@ def normalize_theme(theme):
         "sectors": [str(sector).strip().lower() for sector in theme.get("sectors") or []],
         "industries": [str(term).strip().lower() for term in theme.get("industries") or []],
         "taxonomy_tag": theme.get("taxonomy_tag"),
+        # One of five macro demand drivers (see theme_graph.ROOT_DRIVER_TAXONOMY), coarser than
+        # taxonomy_tag on purpose: it exists so theme_graph can tell "these two themes are the
+        # same buildout wearing two costumes" (same root_driver_tag) apart from "these two themes
+        # happen to share a supplier" (different root_driver_tag, connected some other way).
+        # Null for themes that are not claims about one of those five drivers - cybersecurity and
+        # digital payments are durable businesses, not a growth-chain root, and forcing them into
+        # one of the five would be a worse answer than admitting they are outside this taxonomy.
+        "root_driver_tag": theme.get("root_driver_tag"),
         "chain": theme.get("chain") or {},
         "roles": {
             role: {
@@ -875,6 +883,18 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_group=PUBLISH
     theme_payloads = []
     for theme in themes:
         candidates = sorted(per_theme[theme["id"]], key=_ranking_key, reverse=True)
+        # Confidence, averaged across every eligible candidate this run actually scored - not
+        # just the published slice. theme_graph.structural_rank reads this rather than
+        # recomputing it from published rows alone, since a theme with more eligible candidates
+        # than fit in published_rows_per_group would otherwise have its evidence leg measured
+        # from a truncated sample instead of the population count.count/eligible_count already
+        # use.
+        eligible_candidates = [item for item in candidates if item["eligible"]]
+        mean_confidence_eligible = (
+            round(sum(item.get("confidence") or 0 for item in eligible_candidates)
+                  / len(eligible_candidates), 4)
+            if eligible_candidates else None
+        )
         leaders = [item for item in candidates
                    if item.get("candidate_source") in LEADER_SOURCES]
         connected = [item for item in candidates
@@ -896,6 +916,7 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_group=PUBLISH
             "sectors": theme.get("sectors") or [],
             "industries": theme.get("industries") or [],
             "taxonomy_tag": theme.get("taxonomy_tag"),
+            "root_driver_tag": theme.get("root_driver_tag"),
             "chain": theme.get("chain") or {},
             "guardrails": theme["guardrails"],
             "signals": [{"name": signal["name"], "weight": signal["weight"],
@@ -904,7 +925,8 @@ def build_theme_screen(themes, rows, signal_provider, *, limit_per_group=PUBLISH
                          "source": signal.get("source")}
                         for signal in theme["signals"]],
             "count": len(candidates),
-            "eligible_count": sum(1 for item in candidates if item["eligible"]),
+            "eligible_count": len(eligible_candidates),
+            "mean_confidence_eligible": mean_confidence_eligible,
             # Pre-truncation sizes, so the UI can say how much of each group it is showing
             # rather than implying the published rows are all that scored.
             "group_counts": {"leaders": len(leaders), "connected": len(connected)},

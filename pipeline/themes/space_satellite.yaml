@@ -1,0 +1,93 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: space_satellite
+  display_name: "Space & Satellite Infrastructure"
+  taxonomy_tag: SPACE_AND_SATELLITE_INFRASTRUCTURE
+  root_driver_tag: DEGLOBALIZATION_SECURITY
+  version: 1
+  status: active
+  created: 2026-08-29
+
+  chain:
+    root_driver: >
+      Falling launch cost has turned proliferated small-satellite constellations from a
+      demonstration into deployable national-security and commercial infrastructure, and defense
+      and intelligence buyers are underwriting that shift with multi-year contracts ahead of the
+      broader commercial market catching up.
+    first_order: >
+      Launch providers and small-satellite/autonomous-systems primes whose manifest and program
+      backlog is the earliest evidence of contracted demand.
+    second_order: >
+      Earth-observation and geospatial-data operators who sell the output of that infrastructure
+      as a service, concentrated in defense and intelligence customers rather than a broad
+      commercial base today.
+    disconfirming: >
+      Launch cadence slipping rather than holding; national-security space budgets flat or cut;
+      earth-observation contracts not renewed at expiration; commercial demand failing to
+      diversify beyond the defense and intelligence customer base that funded the buildout.
+  roles:
+    root:
+      industries: ["aerospace & defense"]
+      tickers: [RKLB, KTOS]
+    service:
+      # Earth-observation data is sold as a subscription service on top of the constellation,
+      # not a hardware sale - a different stage of this chain from the launch and platform
+      # primes above it.
+      tickers: [PL]
+  thesis: >
+    Defense and intelligence budgets, not a broad commercial market, are what is actually funding
+    this buildout today - which is why named-customer concentration is read here as confirming
+    evidence rather than as a risk factor the way it would be for a theme with a diversified
+    commercial base.
+
+  seed_tickers: [RKLB, KTOS, PL, AVAV]
+  expand_via_tnic: true
+  sectors: [Industrials, Technology]
+  industries:
+    - "aerospace & defense"
+    - "scientific & technical instruments"
+    - "electronic components"
+    - "software - application"          # geospatial-data/analytics services
+  keywords:
+    include:
+      - "launch cadence"
+      - "satellite constellation"
+      - "earth observation"
+      - "space domain awareness"
+      - "small satellite"
+      - "launch manifest"
+      - "national security space"
+    exclude:
+      # Generic real-estate and marketing use of "space", not the aerospace sense.
+      - "office space"
+      - "space for growth"
+      - "retail space"
+  sic_codes: [3760, 3663]
+  icb_subsectors: []
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.15
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.30
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.30
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.25
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

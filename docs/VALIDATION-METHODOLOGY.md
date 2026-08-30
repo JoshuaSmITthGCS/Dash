@@ -38,6 +38,21 @@ Run against the real committed store, this diagnosed the Phase 1 enrichment bug 
 dominant cause of the rank churn the user reported — see `docs/BASELINE-2026-08-06.md` and
 `docs/CHANGELOG-QUANT-UPGRADE.md`.
 
+## Theme-screen validation (`pipeline/theme_pit_store.py`, `pipeline/validation/theme_ic.py`,
+added with the structural-theme connectivity graph)
+
+A separate, additive point-in-time store and IC harness for the theme screen's own scores
+(`theme_exposure_score`, the connectivity graph's `connectivity_score`, and
+`structural_rank_composite`) — it does not read from or write into `pipeline/pit_store/` or
+touch the champion/challenger fundamentals harness above. `theme_pit_store` began recording on
+2026-08-29, when the connectivity graph shipped; there is no history before that date, and
+`theme_ic.py` never reconstructs one. Until `minimum_icir_periods` (24, the same bar as the
+fundamentals harness) worth of dated snapshots have cleared the primary horizon, every graded
+metric in `public/data/validation/theme_metrics.json` reports `status: "accumulating"` with no
+mean IC published — the connectivity graph's edge weights and ranking formula are declared
+heuristics (see `pipeline/theme_graph.py`'s module docstring), not yet validated against
+out-of-sample forward returns, and should not be read as validated until this file says so.
+
 ## Signal metrics, split by sample requirement (`pipeline/signal_metrics.py`)
 
 Publishes `public/data/validation/signal_metrics.json`, read by the signal-quality panel on

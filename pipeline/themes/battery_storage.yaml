@@ -1,0 +1,95 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: battery_storage
+  display_name: "Grid-Scale Battery Storage"
+  taxonomy_tag: GRID_SCALE_BATTERY_STORAGE
+  root_driver_tag: ELECTRIFICATION_DEMAND
+  version: 1
+  status: active
+  created: 2026-08-29
+
+  chain:
+    root_driver: >
+      Grid-scale storage is the buffer that lets intermittent generation and firm demand clear
+      the same interconnection queue as thermal and nuclear capacity, so it is funded by the same
+      load-growth pressure driving the rest of the electrification buildout rather than by
+      climate policy alone.
+    first_order: >
+      Utility-scale battery energy storage system integrators, whose order backlog is the
+      earliest evidence of contracted, not merely announced, storage capacity.
+    second_order: >
+      The power-electronics and enclosure suppliers into those systems, and the regulated
+      utilities whose capital plans and interconnection agreements fund the buildout.
+    disconfirming: >
+      Interconnection queues clearing faster than new storage requests arrive; utility storage
+      procurement targets missed rather than raised; backlog-to-revenue conversion stalling while
+      backlog itself keeps growing, the same warning this screen watches for in other themes.
+  roles:
+    root:
+      industries: ["specialty industrial machinery", "electrical equipment"]
+      tickers: [FLNC]
+    supplier:
+      industries: ["electrical equipment"]
+      tickers: [ETN]
+  thesis: >
+    A battery storage backlog is a contracted interconnection commitment, not an announcement -
+    which is why this theme weights order backlog more heavily than most others in the screen:
+    it is the most direct evidence that a project has cleared the queue rather than merely
+    entered it.
+
+  seed_tickers: [FLNC]
+  expand_via_tnic: true
+  sectors: [Industrials, Utilities, Technology]
+  industries:
+    - "specialty industrial machinery"
+    - "electrical equipment"
+    - "utilities - independent power producers"
+    - "utilities - renewable"
+  keywords:
+    include:
+      - "battery energy storage system"
+      - "BESS"
+      - "grid-scale storage"
+      - "interconnection queue"
+      - "storage backlog"
+      - "utility-scale storage"
+      - "capacity market"
+    exclude:
+      # Consumer-electronics and EV-pack battery language, a different supply chain entirely.
+      - "consumer battery"
+      - "battery life of our products"
+      - "EV battery pack"
+  sic_codes: [3612, 3679]
+  icb_subsectors: []
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.15
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.30
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.30
+    - name: spender_capex_growth
+      source: edgar_xbrl_capex
+      universe: [NEE, DUK, SO, AEP, XEL]
+      leading: true
+      weight: 0.10
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.15
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

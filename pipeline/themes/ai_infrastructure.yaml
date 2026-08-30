@@ -8,6 +8,12 @@ theme:
   id: ai_infrastructure
   display_name: "AI Infrastructure Buildout"
   taxonomy_tag: AI_COMPUTE_AND_DATA
+  # One of five macro demand drivers (electrification demand / de-globalization & national
+  # security / demographic aging & labor scarcity / metabolic & chronic disease / resource,
+  # water & food security), coarser than taxonomy_tag - see pipeline/theme_graph.py. Themes
+  # sharing a root_driver_tag are treated as one macro driver wearing different costumes for
+  # correlated-cluster and edge-weighting purposes.
+  root_driver_tag: ELECTRIFICATION_DEMAND
   version: 2
   status: active            # active | watch | retired
   created: 2026-08-02

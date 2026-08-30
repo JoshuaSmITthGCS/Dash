@@ -1,0 +1,107 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: semicap_equipment
+  display_name: "Semiconductor Cap Equipment & Fab Buildout"
+  taxonomy_tag: SEMICONDUCTOR_CAPITAL_EQUIPMENT
+  root_driver_tag: ELECTRIFICATION_DEMAND
+  version: 1
+  status: active
+  created: 2026-08-29
+
+  chain:
+    root_driver: >
+      Leading-edge fab capacity is the physical constraint under both the AI accelerator buildout
+      and the push for fab sovereignty outside Taiwan, so foundries commit multi-year equipment
+      orders years ahead of the wafers those fabs will produce.
+    first_order: >
+      The equipment makers whose tools are the pacing item for a new or expanded fab - EUV and
+      DUV lithography, etch, deposition and metrology - ordered on lead times measured in years.
+    second_order: >
+      The subsystem and component suppliers into that equipment, and the test and measurement
+      tools that qualify a process node before it ships in volume.
+    disconfirming: >
+      Fab operators pushing out capacity announcements; equipment order books shortening rather
+      than extending; utilization falling at existing leading-edge fabs; export-control relief
+      that removes the sovereignty case for building capacity outside existing hubs.
+  roles:
+    root:
+      industries: ["semiconductor equipment & materials"]
+      tickers: [ASML, AMAT, LRCX, KLAC]
+    supplier:
+      industries: ["scientific & technical instruments", "electronic components"]
+      tickers: [ONTO]
+    infrastructure:
+      industries: ["semiconductors"]
+      tickers: [TSM]
+  thesis: >
+    A fab is committed to years before it produces a wafer, and the equipment order is the first
+    hard evidence of that commitment - well ahead of the accelerator revenue the fab will
+    eventually enable. Order books at the leading equipment makers are the earliest honest read
+    on whether the AI-compute buildout is actually being built, as distinct from whether it is
+    being talked about.
+
+  # Anchors for peer expansion and a sanity check on the keyword list, not the universe.
+  seed_tickers: [ASML, AMAT, LRCX, KLAC, ONTO, TER]
+  expand_via_tnic: true
+  # Where this supply chain can physically sit: the tool makers, their instrumentation and
+  # component suppliers, and the fabs whose capacity plans are the demand signal.
+  sectors: [Technology, Industrials]
+  industries:
+    - "semiconductor equipment & materials"
+    - "semiconductors"
+    - "scientific & technical instruments"   # metrology, process control
+    - "electronic components"
+  keywords:
+    include:
+      - "wafer fab equipment"
+      - "extreme ultraviolet"
+      - "EUV"
+      - "lithography"
+      - "etch"
+      - "deposition"
+      - "leading-edge node"
+      - "fab utilization"
+      - "process equipment"
+      - "capacity expansion"
+    exclude:
+      # Guards against unrelated "equipment" language from outside the semicap supply chain.
+      - "medical equipment"
+      - "farm equipment"
+      - "equipment financing"
+  sic_codes: [3559, 3674]   # special industry machinery, semiconductors
+  icb_subsectors: []
+
+  signals:
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.10
+    # Order books are the pacing signal here: equipment lead times are the physical constraint
+    # on the whole buildout, so a growing backlog is the earliest honest evidence there is.
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.25
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.35
+    # Leading-edge fab capex is the demand this theme is upstream of.
+    - name: spender_capex_growth
+      source: edgar_xbrl_capex
+      universe: [TSM, INTC, MU]
+      leading: true
+      weight: 0.15
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.15
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

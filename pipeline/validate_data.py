@@ -8,6 +8,7 @@ from datetime import date
 from jsonschema import Draft202012Validator, FormatChecker
 
 from common import DATA_DIR
+from theme_graph import ROOT_DRIVER_TAXONOMY
 
 SCHEMA_DIR = os.path.join(os.path.dirname(__file__), "schemas")
 FILES = ("trades", "prices", "news", "politicians", "signals", "picks", "status", "advisor", "etfs")
@@ -68,6 +69,53 @@ def theme_screen_errors(screen):
         if trend is not None and trend.get("contributes_to_exposure") is not False:
             errors.append(f"advisor.json:theme_screen.{theme_id}.trend: the trend block reads "
                           "price and must declare contributes_to_exposure: false")
+        root_driver_tag = theme.get("root_driver_tag")
+        if root_driver_tag is not None and root_driver_tag not in ROOT_DRIVER_TAXONOMY:
+            errors.append(f"advisor.json:theme_screen.{theme_id}: root_driver_tag "
+                          f"'{root_driver_tag}' is not one of the five declared macro drivers "
+                          f"({', '.join(sorted(ROOT_DRIVER_TAXONOMY))})")
+
+    errors.extend(connectivity_errors(screen.get("connectivity"), screen["themes"], price_fields))
+    return errors
+
+
+def connectivity_errors(connectivity, themes, price_fields):
+    """The connectivity graph's own contract: structural_rank stays walled off from exposure the
+    same way trend does, and a tail pick that is not a clean (Tier 1) pick must say so - the
+    published enforcement of Stage 3's "never render a relaxed pick as a clean pure play".
+    """
+    if not connectivity:
+        return []
+    errors = []
+    theme_ids = {theme.get("id") for theme in themes}
+    per_theme = connectivity.get("per_theme") or {}
+    for theme_id, entry in per_theme.items():
+        if theme_id not in theme_ids:
+            errors.append(f"advisor.json:theme_screen.connectivity.per_theme.{theme_id}: no "
+                          "matching theme in theme_screen.themes")
+        rank = entry.get("structural_rank")
+        if rank is not None:
+            if rank.get("contributes_to_exposure") is not False:
+                errors.append(f"advisor.json:theme_screen.connectivity.per_theme.{theme_id}"
+                              ".structural_rank: reads price and must declare "
+                              "contributes_to_exposure: false")
+            leaked = [field for field in price_fields if field in rank]
+            if leaked:
+                errors.append(f"advisor.json:theme_screen.connectivity.per_theme.{theme_id}"
+                              f".structural_rank: must not carry price behavior "
+                              f"({', '.join(leaked)})")
+        pick = entry.get("tail_pick") or {}
+        tier = pick.get("tier")
+        if tier == 1 and not pick.get("ticker"):
+            errors.append(f"advisor.json:theme_screen.connectivity.per_theme.{theme_id}"
+                          ".tail_pick: a Tier 1 pick must name a ticker")
+        if tier == 2 and not pick.get("caveat"):
+            errors.append(f"advisor.json:theme_screen.connectivity.per_theme.{theme_id}"
+                          ".tail_pick: a Tier 2 (relaxed) pick must publish a caveat naming its "
+                          "secondary exposure - never rendered as a clean pure play")
+        if tier == 4 and not pick.get("reason"):
+            errors.append(f"advisor.json:theme_screen.connectivity.per_theme.{theme_id}"
+                          ".tail_pick: a Tier 4 (no pick) result must publish the reason")
     return errors
 
 
