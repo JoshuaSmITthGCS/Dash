@@ -321,11 +321,12 @@ jobs:
         run: python pipeline/build_options_strategies.py || echo "::warning::Options strategies build failed; keeping previous screen files"
       - name: Build protective-put screen from the price history just fetched
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
-        # Protective put, collar, vertical spread, and advanced strategies each still cost
-        # their own options-chain request per ticker on top of the shared fetch above - left
-        # opt-in (ENABLE_*_SCREEN unset here) same as ENABLE_OPTIONS_VOLATILITY in
-        # fetch_advisor.py, so four more full sweeps of the universe don't silently multiply
-        # this job's Yahoo request volume and runtime. Set the matching env var to enable one.
+        # Protective put, collar, vertical spread, advanced strategies, iron butterfly, jade
+        # lizard, and PMCC each still cost their own options-chain request per ticker (PMCC
+        # costs two - see its own step below) on top of the shared fetch above - left opt-in
+        # (ENABLE_*_SCREEN unset here) same as ENABLE_OPTIONS_VOLATILITY in fetch_advisor.py,
+        # so seven more full sweeps of the universe don't silently multiply this job's Yahoo
+        # request volume and runtime. Set the matching env var to enable one.
         run: python pipeline/build_protective_put_screen.py || echo "::warning::Protective-put screen build failed; keeping previous protective-puts.json"
       - name: Build collar screen from the price history just fetched
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
@@ -336,6 +337,21 @@ jobs:
       - name: Build advanced-strategies screen from the price history just fetched
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         run: python pipeline/build_advanced_options_screen.py || echo "::warning::Advanced-strategies screen build failed; keeping previous advanced-strategies.json"
+      - name: Build iron-butterfly screen from the price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        # Same opt-in tradeoff as protective-put/collar/vertical-spread/advanced-strategies
+        # above (ENABLE_IRON_BUTTERFLY_SCREEN unset here) - one more full sweep's worth of
+        # options-chain requests left off by default.
+        run: python pipeline/build_iron_butterfly_screen.py || echo "::warning::Iron-butterfly screen build failed; keeping previous iron-butterflies.json"
+      - name: Build jade-lizard screen from the price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        run: python pipeline/build_jade_lizard_screen.py || echo "::warning::Jade-lizard screen build failed; keeping previous jade-lizards.json"
+      - name: Build PMCC screen from the price history just fetched
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        # Costs TWO options-chain requests per ticker (a near-dated chain and a LEAPS
+        # chain) rather than one - see build_pmcc_screen.py's own module docstring. Still
+        # opt-in and off by default, same as every other secondary screen above.
+        run: python pipeline/build_pmcc_screen.py || echo "::warning::PMCC screen build failed; keeping previous pmcc.json"
       - name: Run every options strategy's walk-forward backtest
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         # Unlike the live scanners above, every backtest here prices its option legs with

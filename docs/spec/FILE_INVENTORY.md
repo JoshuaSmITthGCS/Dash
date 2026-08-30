@@ -130,6 +130,13 @@ from GitHub Actions workflows, not via `npm`/`package.json`.
 - `pipeline/build_institutional_screen.py` — Quarterly 13F institutional accumulation/
   distribution screen from curated public managers' filings (`resolve_filer_ciks`,
   `manager_quarters`, `build_results`, `run`); feeds `institutional_ownership_modifier`.
+- `pipeline/build_iron_butterfly_screen.py` — Publishes the ATM short-straddle + OTM-wings
+  iron butterfly screen from one shared option-chain fetch per ticker; probability-in-range is
+  computed against the actual credit-derived breakevens, not the wing strikes (`build_row`,
+  `score_rows`, `run`, `run_backtest`).
+- `pipeline/build_jade_lizard_screen.py` — Publishes the short put + short call spread jade
+  lizard screen, gated on `net_credit < call_spread_width` (the no-upside-risk constraint);
+  `build_row`, `score_rows`, `run`, `run_backtest`.
 - `pipeline/build_momentum_screen.py` — Publishes the Momentum research screen from cached
   Yahoo price history via `research_screens_v2`'s formulas (`build_rows`, `run`).
 - `pipeline/build_normalization_snapshot.py` — Builds the cross-sectional-normalization
@@ -142,6 +149,10 @@ from GitHub Actions workflows, not via `npm`/`package.json`.
 - `pipeline/build_pit_fundamentals.py` — Runnable job backfilling point-in-time fundamentals
   from SEC EDGAR XBRL into `pipeline/data/pit/fundamentals.jsonl`, keyed by CIK
   (`collect_company`, `run`, `main`).
+- `pipeline/build_pmcc_screen.py` — Publishes the poor man's covered call screen from two
+  option-chain fetches per ticker (LEAPS long call + near-dated short call); omits
+  `suggested_position_pct` since the LEAPS-decay simplification would overstate precision
+  (`build_row`, `score_rows`, `run`, `run_backtest`).
 - `pipeline/build_protective_put_screen.py` — Publishes the protective-put portfolio-hedge
   screen; `build_row`, `score_rows`, `run`, `run_backtest`.
 - `pipeline/build_quality_value_screen.py` — Publishes the "quality at valuation lows" screen
@@ -250,6 +261,12 @@ from GitHub Actions workflows, not via `npm`/`package.json`.
 - `pipeline/institutional_ownership.py` — Pure classification of 13F accumulation/
   distribution (`parse_13f_info_table`, `holdings_change`, `score_institutional_ownership`,
   `decay`), consumed by both the screen builder and the advisor-engine modifier.
+- `pipeline/iv_archive.py` — Append-only, per-ticker, date-keyed archive of the daily ATM
+  implied-vol reading `build_options_strategies.py` fetches for free, mirroring
+  `price_archive.py`'s manifest/staleness-health shape; no backfill is possible (Yahoo's
+  options endpoint serves no historical IV), so `iv_percentile` reads `None` until each
+  ticker crosses 60 archived trading days (`append_observation`, `load_series`,
+  `iv_percentile`, `record_run`, `archive_health`).
 - `pipeline/layer_health.py` — Weight renormalization (`renormalize`) and the constant-layer
   guard (`assert_layers_vary`) that fails a build if a scoring layer resolves to one constant
   value for the whole universe.
@@ -289,8 +306,11 @@ from GitHub Actions workflows, not via `npm`/`package.json`.
   fundamentals-category-weight blends, built on `backtest_historical.py`
   (`run_sweep`, `evaluate_holdout`, `main`); exploratory tool, never writes config itself.
 - `pipeline/options_common.py` — Shared option-chain math for all strategy screens: Black-
-  Scholes pricing/delta/probability (`bs_d1_d2`, `call_price`, `put_price`), expiration
-  selection, contract liquidity gating (`contract_liquidity`, `select_contract`).
+  Scholes pricing/delta/probability/gamma (`bs_d1_d2`, `call_price`, `put_price`,
+  `option_gamma`), expiration selection, contract liquidity gating (`contract_liquidity`,
+  `select_contract`), and the volatility/flow context fields (`realized_vol_percentile`,
+  `iv_skew`, `put_call_oi_ratio`, `atm_iv`, `single_expiration_gex`) every screen publishes
+  informationally — none feed the composite score.
 - `pipeline/p0_q1_benchmark_factor_report.py` — WO-4/Q1: RSP/IWM buy-and-hold benchmark legs
   plus a six-factor Newey-West regression against the monthly backtest (`ols_newey_west`,
   `main`).
@@ -433,6 +453,11 @@ from GitHub Actions workflows, not via `npm`/`package.json`.
 - `pipeline/validation/ic_harness.py` — Prospective full-universe information-coefficient
   validation harness; only grades scores recorded before their forward returns existed
   (`append_refresh`, `read_snapshots`, `sector_residual_returns`, `research_trial_count`).
+- `pipeline/validation/realized_vol_percentile_backtest.py` — Genuine historical backtest of
+  `realized_vol_percentile` against real price history (the one volatility-context field this
+  branch could actually backtest, since the others depend on `backtest_common.synthetic_chain`'s
+  flat placeholder IV/OI); reuses `ic_harness`'s rank-IC/ICIR machinery (`run`,
+  `_rolling_realized_vol`, `_percentile_series`).
 - `pipeline/validation/trading_calendar.py` — Real trading-session calendar derived from
   committed SPY daily history, replacing calendar-day arithmetic for horizon math
   (`TradingCalendar`, `default_calendar`).

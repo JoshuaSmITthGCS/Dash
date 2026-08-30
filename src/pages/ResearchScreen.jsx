@@ -36,6 +36,9 @@ export const OPTIONS_NAV = [
   { to: '/screens/options/collar', label: 'Collar', strategyId: 'collar' },
   { to: '/screens/options/vertical-spread', label: 'Vertical spread', strategyId: 'vertical-spread' },
   { to: '/screens/options/advanced-strategies', label: 'Advanced', strategyId: 'advanced-strategies' },
+  { to: '/screens/options/iron-butterfly', label: 'Iron butterfly', strategyId: 'iron-butterfly' },
+  { to: '/screens/options/jade-lizard', label: 'Jade lizard', strategyId: 'jade-lizard' },
+  { to: '/screens/options/pmcc', label: 'PMCC', strategyId: 'pmcc' },
 ]
 
 const capBucket = (value) => value >= 10e9 ? 'large' : value >= 2e9 ? 'mid' : 'small'

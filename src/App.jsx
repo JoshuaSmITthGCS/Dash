@@ -324,6 +324,9 @@ function AppContent() {
           <Route path="/screens/options/collar" element={<StrategyScreen id="collar" />} />
           <Route path="/screens/options/vertical-spread" element={<StrategyScreen id="vertical-spread" />} />
           <Route path="/screens/options/advanced-strategies" element={<StrategyScreen id="advanced-strategies" />} />
+          <Route path="/screens/options/iron-butterfly" element={<StrategyScreen id="iron-butterfly" />} />
+          <Route path="/screens/options/jade-lizard" element={<StrategyScreen id="jade-lizard" />} />
+          <Route path="/screens/options/pmcc" element={<StrategyScreen id="pmcc" />} />
           {OPTIONS_STRATEGY_IDS.map((id) => (
             <Route key={id} path={`/screens/${id}`}
               element={<Navigate to={`/screens/options/${id}`} replace />} />

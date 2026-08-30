@@ -202,6 +202,95 @@ export const STRATEGY_SCREENS = {
       ['research_confidence', 'Research confidence tilt', 'signed'],
     ],
   },
+  'iron-butterfly': {
+    file: 'screens/iron-butterflies.json',
+    backtestFile: 'screens/iron-butterflies-backtest.json',
+    eyebrow: 'Defined risk · range-bound income',
+    title: 'Iron butterfly',
+    description: 'Sell an at-the-money call and put (same strike), buy further-OTM wings on ' +
+      'both sides for defined risk — the iron condor’s close cousin, with the two short ' +
+      'strikes collapsed onto one. Bigger net credit than an iron condor from the same chain, ' +
+      'but a narrower profitable range — break-evens sit right around the entry strike.',
+    riskNote: GENERIC_RISK_NOTE + ' A bigger move in either direction erodes this trade faster ' +
+      'than an iron condor built from the same chain, since the profitable range is narrower ' +
+      'to begin with — break-evens sit at the entry strike plus or minus the credit received, ' +
+      'not spread across a wider short-strike range.' + MANAGED_EXIT_NOTE,
+    strategyLabel: () => 'Iron butterfly',
+    metricsConfig: () => [
+      ['probability_in_range', 'Probability of any profit (risk-neutral)', 'pct'],
+      ['net_credit', 'Net credit', 'money'],
+      ['max_profit', 'Max profit', 'money'],
+      ['max_loss', 'Max loss', 'money'],
+      ['breakeven_up', 'Breakeven, upside', 'money'],
+      ['breakeven_down', 'Breakeven, downside', 'money'],
+      ...VOLATILITY_CONTEXT_METRICS,
+      ['news_sentiment', 'News calm tilt (low = controversial)', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
+    ],
+  },
+  'jade-lizard': {
+    file: 'screens/jade-lizards.json',
+    backtestFile: 'screens/jade-lizards-backtest.json',
+    eyebrow: 'Income · no upside risk by construction',
+    title: 'Jade lizard',
+    description: 'Sell an out-of-the-money put, and sell a call credit spread above it — all ' +
+      'same expiration, structured so the total credit collected is at least as big as the ' +
+      'call spread\'s width. That sizing is what removes all upside risk: a rally through both ' +
+      'calls still can\'t lose money on that side. The only real risk left is downside, ' +
+      'identical in shape to a cash-secured put.',
+    riskNote: GENERIC_RISK_NOTE + ' The put side carries the same risk as a cash-secured put — ' +
+      'assignment below the put strike, uncapped down to zero, even though the call side has ' +
+      'no equivalent upside risk. Requires enough option-chain richness on the put side to ' +
+      'collect a credit at least as large as the call spread\'s width; many chains never clear ' +
+      'that bar, which is why this screen and its backtest can show few or no candidates.' +
+      MANAGED_EXIT_NOTE,
+    strategyLabel: () => 'Jade lizard',
+    metricsConfig: () => [
+      ['expected_value_pct', 'Expected value (net of est. cost)', 'pct'],
+      ['suggested_position_pct', 'Suggested max size (quarter-Kelly, capped 2%)', 'pct'],
+      ['annualized_yield', 'Annualized yield (best case, risk-neutral)', 'pct'],
+      ['net_credit', 'Net credit', 'money'],
+      ['collateral', 'Collateral required', 'money'],
+      ['effective_cost_basis', 'Effective cost basis', 'money'],
+      ['call_spread_width', 'Call spread width', 'money'],
+      ['probability_otm', 'Probability OTM, risk-neutral (keep full credit)', 'pct'],
+      ...VOLATILITY_CONTEXT_METRICS,
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
+    ],
+  },
+  pmcc: {
+    file: 'screens/pmcc.json',
+    backtestFile: 'screens/pmcc-backtest.json',
+    eyebrow: 'Capital-efficient income · LEAPS-financed',
+    title: 'Poor man’s covered call (PMCC)',
+    description: 'Buy a deep-in-the-money, long-dated LEAPS call as a stock stand-in, then ' +
+      'sell a near-dated out-of-the-money call against it for income — the same economics as ' +
+      'a covered call, at a fraction of the capital a real 100-share position requires. Two ' +
+      'different expirations, fetched separately: a ~9-month LEAPS leg and a ~1-month short leg.',
+    riskNote: GENERIC_RISK_NOTE + ' The short call caps your upside exactly like a real covered ' +
+      'call\'s does. Unlike owned shares, the LEAPS leg itself has a limited life and its own ' +
+      'time decay and delta exposure — if the stock falls far enough or the LEAPS is held to ' +
+      'expiration, it can lose most or all of what you paid for it, which a real 100-share ' +
+      'position cannot do. This screen\'s modeled numbers do not fully account for the LEAPS ' +
+      'leg\'s own decay between now and the short leg\'s expiration — see its backtest ' +
+      'methodology for the stated simplifications.' + MANAGED_EXIT_NOTE + ' (The managed-exit ' +
+      'rule above applies to the short leg only — the whole point of a PMCC is that the LEAPS ' +
+      'leg is meant to be held, not rolled every month.)',
+    strategyLabel: () => 'PMCC',
+    metricsConfig: () => [
+      ['expected_value_pct', 'Expected value (net of est. cost)', 'pct'],
+      ['capital_required', 'Capital required', 'money'],
+      ['net_debit', 'Net debit', 'money'],
+      ['max_profit_if_assigned', 'Max profit if assigned', 'money'],
+      ['max_return_if_assigned_pct', 'Max return if assigned (on capital deployed)', 'pct'],
+      ['annualized_premium_yield', 'Annualized premium yield (on capital deployed)', 'pct'],
+      ['probability_assigned', 'Probability assigned (risk-neutral)', 'pct'],
+      ...VOLATILITY_CONTEXT_METRICS,
+      ['news_sentiment', 'News sentiment tilt', 'signed'],
+      ['research_confidence', 'Research confidence tilt', 'signed'],
+    ],
+  },
   'short-term-trades': {
     file: 'screens/short-term-trades.json',
     backtestFile: 'screens/short-term-trades-backtest.json',

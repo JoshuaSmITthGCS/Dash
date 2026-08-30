@@ -16,8 +16,11 @@ import build_advanced_options_screen
 import build_cash_secured_put_screen
 import build_collar_screen
 import build_covered_call_screen
+import build_iron_butterfly_screen
+import build_jade_lizard_screen
 import build_options_screen
 import build_options_strategies
+import build_pmcc_screen
 import build_protective_put_screen
 import build_vertical_spread_screen
 
@@ -30,6 +33,9 @@ BACKTEST_MODULES = [
     ("Vertical spread", build_vertical_spread_screen),
     ("Advanced strategies", build_advanced_options_screen),
     ("Short-term trades (combined)", build_options_strategies),
+    ("Iron butterfly", build_iron_butterfly_screen),
+    ("Jade lizard", build_jade_lizard_screen),
+    ("PMCC", build_pmcc_screen),
 ]
 
 
