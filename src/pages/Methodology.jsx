@@ -168,6 +168,7 @@ export default function Methodology() {
           <li>Share-price momentum contributes exactly zero, enforced in code and re-checked when the data is validated. Specialised thematic funds have a documented history of launching near hype peaks and losing heavily from there; reading price into a theme score is how that happens.</li>
           <li>Companies already priced in the top valuation decile of their sector are flagged, not promoted. The screen exists to find real exposure that is not yet euphoric.</li>
           <li>At least two independent signals must resolve. Segment reporting granularity is set by management and varies wildly between filers, so no single source carries a theme alone.</li>
+          <li>Twenty themes are currently tracked: aging demographics, AI infrastructure, automation and robotics, battery storage, critical minerals, cybersecurity, data center cooling, defense and rearmament, digital payments, energy security, grid electrification, nuclear SMRs, obesity-care supply chain, OT and industrial cybersecurity, reshoring of industrial capacity, semiconductor-capital equipment, shipbuilding and naval, space and satellite, surgical robotics, and water infrastructure.</li>
         </ul>
       </section>
       <section className="card card-pad">
@@ -229,6 +230,15 @@ export default function Methodology() {
           toward rates, financials toward the yield curve – so the same macro backdrop produces a
           different modifier depending on what the company does.
         </li>
+        <li>
+          <b>Business-profile classification, underneath sector.</b> Each name is also classified
+          into one of roughly eighty business profiles – bank, reinsurer, SaaS, railroad, tobacco,
+          pre-profit biotechnology, and so on – read from its disclosed industry, not just its
+          broader sector. That classification decides which metrics apply to a name at all (price
+          to book is suppressed for asset-light software, tangible book value only counts where it
+          is economically meaningful) and, where a profile has enough members, it is tried first
+          as the peer group for the valuation modifier above, sector only as the fallback.
+        </li>
       </ul>
       <p className="body-copy">
         What doesn’t vary by sector: the weights in the fundamental framework above. Sector-specific
@@ -249,6 +259,47 @@ export default function Methodology() {
       </p>
       <ul className="method-list">
         {MODIFIERS.map(([key, title, body]) => <li key={key}><b>{title}</b>: {modifierRange(modifierConfig[key])}{body}</li>)}
+      </ul>
+    </section>
+
+    <div className="sec-label sec-label--section">ETF watchlist</div>
+    <section className="card card-pad">
+      <p className="body-copy body-copy--gap">
+        The roughly 125-fund ETF watchlist runs on a different model from the one above – funds
+        don’t file the statements the fundamental framework reads, so there is no fundamentals-first
+        score to compute for them. Instead each fund gets its own 0–100 composite built from five
+        weighted buckets: performance (28%, percentile of trailing one-month-to-three-year returns),
+        risk (27%, Sortino, Sharpe, one-year max drawdown, and beta – low beta rewarded rather than
+        volatility punished, same as the equity score), cost (17%, expense ratio plus the fund’s own
+        tracking difference against its index plus premium or discount to NAV, deliberately more than
+        expense ratio alone), liquidity (16%, AUM, dollar volume, and bid-ask spread), and quality
+        (12%, an issuer-reputation estimate adjusted down for leverage, synthetic replication, and
+        aggressive securities lending – a stand-in for the paid analyst ratings this pipeline doesn’t
+        have).
+      </p>
+      <ul className="method-list">
+        <li>Every metric is percentile-ranked against peers in the same category – broad market, growth, value, dividend, small cap, international, sector, thematic, bonds, commodity, crypto – so a bond fund’s Sharpe ratio is never compared against a leveraged sector fund’s.</li>
+        <li>A category with fewer than four members is pooled with a related one and flagged as a cross-asset-class comparison rather than shown as apples-to-apples.</li>
+        <li>Separately from the composite score, every fund has its own benchmark-comparison detail – beta, correlation, Sharpe and Sortino, up and down capture, tracking error, and drawdowns against a declared benchmark across windows from one month to the fund’s full history.</li>
+      </ul>
+    </section>
+
+    <div className="sec-label sec-label--section">Other screens</div>
+    <section className="card card-pad">
+      <p className="body-copy body-copy--gap">
+        The research score above is the foundation the rest of the product is built on, but several
+        narrower screens run their own scoring logic for a more specific question than “is this a
+        good business.” None of them feed back into the published research score.
+      </p>
+      <ul className="method-list">
+        <li><b>Momentum, quality-value, pre-breakout, earnings timeliness, structural-tactical.</b> Five factor and tactical screens, each with its own weighted composite: exact skip-month 12-1 momentum with hysteresis-based membership so names don’t flicker in and out; a blend of own-history cheapness, sector-relative cheapness, business quality, and forward estimate revisions; fundamental inflection plus momentum plus insider and short-interest flow, explicitly graded by tier with no out-of-sample record published yet; and revision agreement, magnitude, acceleration, and dispersion trend for earnings-driven names.</li>
+        <li><b>Swing screen.</b> A two-day-to-eight-week horizon screen, with a decay haircut on each signal leg reflecting how quickly that kind of edge is known to fade in the published research.</li>
+        <li><b>Options screens.</b> A directional screen (buy call or put) plus seven strategy screens – short-term trades, covered calls, cash-secured puts, protective puts, collars, vertical spreads, and a broader advanced-strategies view – each ranking candidates for one specific options structure rather than the underlying stock.</li>
+        <li><b>Congressional trading and institutional 13F screens.</b> The full disclosure feeds behind the congressional-buying and institutional-13F modifiers above, published here as their own ranked screens rather than folded into a single number.</li>
+        <li><b>Inside Information.</b> Runs no new scoring – it combines the same two audited functions behind the congressional and institutional modifiers, then applies a notability filter on top: cluster accumulation or distribution across multiple curated managers, or, on the congressional side, an extraordinary buy, three or more representatives trading the same symbol, or a buy-then-sell round trip inside sixty days. It is explicitly not a claim that any of this activity was informed or improper.</li>
+        <li><b>Filings feed.</b> A straight read of SEC EDGAR 10-K, 10-Q, DEF 14A, and 8-K filings – a feed, not a ranked screen.</li>
+        <li><b>Shadow portfolios.</b> Dated, immutable snapshots of alternative strategies tracked forward alongside the live portfolio, so a challenger’s real performance is visible before it is ever promoted.</li>
+        <li><b>Fast-growth screens.</b> “Breakout in progress” and “Emerging growth” are computed client-side from the same published research score, using different sort and filter rules rather than a separate pipeline model.</li>
       </ul>
     </section>
 
