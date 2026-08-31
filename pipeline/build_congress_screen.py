@@ -45,6 +45,7 @@ import os
 import re
 from datetime import date, datetime, timedelta, timezone
 
+import politician_performance
 from common import LOG, STORE_DIR, load_json, save_json
 from congress_trades import (CongressTradesClient, CongressTradesError, SenateEfdClient,
                              StockWatcherClient)
@@ -781,9 +782,25 @@ def run():
     for row in results:
         row.update(performance.get(_trade_key(row), {}))
 
+    # Politician performance scoring, and only politician performance scoring, is scoped to
+    # the published window (same rows notable_signals/top_ticker_aggregates already read) -
+    # not the full accumulated store. Pricing itself (compute_price_performance above) is
+    # already window-scoped for cost reasons, so a politician's track record can only ever
+    # be as deep as the priced buys within PUBLISH_WINDOW_DAYS. That understates a prolific
+    # trader's true history early on; it widens automatically as more weekly runs accumulate
+    # priced buys within the window, and it costs zero additional network requests (SPY's
+    # series is already committed, no new fetch either) - see politician_performance.py's
+    # own docstring for the shrinkage that keeps a short window from producing overconfident
+    # scores. Display-only, same as signals/top_tickers: never an advisor_engine input.
+    political_performance = politician_performance.compute_performance_scores(
+        results, benchmark=politician_performance.load_spy_benchmark())
+    for row in results:
+        row.update(politician_performance.annotate_row(
+            row, political_performance, as_of=generated_at.date()))
+
     status, reason_code = publication_status(results, stored, failures)
     payload = {
-        "schema_version": "1.2.0", "model_version": "congress-trades-v1.3.0",
+        "schema_version": "1.3.0", "model_version": "congress-trades-v1.4.0",
         "generated_at": generated_at.isoformat(), "status": status,
         **({"reason_code": reason_code} if reason_code else {}),
         "publish_window_days": PUBLISH_WINDOW_DAYS, "history_days": history_days,
@@ -796,6 +813,11 @@ def run():
         "summary": summary_stats(results),
         "signals": notable_signals(results, as_of=generated_at.date()),
         "top_tickers": top_ticker_aggregates(results, as_of=generated_at.date()),
+        "politician_performance": {
+            "population": political_performance["population"],
+            "config": political_performance["config"],
+            "leaderboard": politician_performance.leaderboard(political_performance),
+        },
         "results": results,
     }
     save_json("screens/congress-trades.json", payload)

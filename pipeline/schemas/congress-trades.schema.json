@@ -106,7 +106,49 @@
           "filing_delay_days": {"type": ["integer", "null"]},
           "flags": {"type": "array", "items": {"type": "string"}},
           "rare_trader_evaluated": {"type": "boolean"},
-          "return_since_purchase_pct": {"type": ["number", "null"]}
+          "return_since_purchase_pct": {"type": ["number", "null"]},
+          "signal_strength": {"type": "number", "minimum": 0,
+            "description": "politician_performance.signal_strength() - disclosed size x recency x the filer's shrunk performance-vs-SPY track record; display-only ranking/badge input, never an advisor_engine input"},
+          "performance_score": {"type": "number", "minimum": 0, "maximum": 1,
+            "description": "the filer's shrunk performance_score at publish time (population baseline when the filer has no priced buys in-window)"},
+          "performance_confidence": {"enum": ["low", "medium", "high"]}
+        }
+      }
+    },
+    "politician_performance": {
+      "type": "object",
+      "description": "politician_performance.py's in-window, market-relative leaderboard - shrunk alpha-vs-SPY and win rate per filer, display-only, never an advisor_engine input.",
+      "required": ["population", "config", "leaderboard"],
+      "properties": {
+        "population": {
+          "type": "object",
+          "required": ["n_priced_buys", "avg_alpha_pct", "win_rate", "performance_score"],
+          "properties": {
+            "n_priced_buys": {"type": "integer", "minimum": 0},
+            "avg_alpha_pct": {"type": "number"},
+            "win_rate": {"type": "number", "minimum": 0, "maximum": 1},
+            "performance_score": {"type": "number", "minimum": 0, "maximum": 1}
+          }
+        },
+        "config": {"type": "object"},
+        "leaderboard": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["politician", "n_priced_buys", "avg_alpha_pct", "win_rate",
+                        "performance_score", "confidence", "rank"],
+            "properties": {
+              "politician": {"type": "string"},
+              "n_priced_buys": {"type": "integer", "minimum": 1},
+              "raw_avg_alpha_pct": {"type": "number"},
+              "raw_win_rate": {"type": "number", "minimum": 0, "maximum": 1},
+              "avg_alpha_pct": {"type": "number"},
+              "win_rate": {"type": "number", "minimum": 0, "maximum": 1},
+              "performance_score": {"type": "number", "minimum": 0, "maximum": 1},
+              "confidence": {"enum": ["low", "medium", "high"]},
+              "rank": {"type": "integer", "minimum": 1}
+            }
+          }
         }
       }
     }

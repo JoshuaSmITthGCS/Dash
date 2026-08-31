@@ -63,6 +63,46 @@ function monthlyVolume(rows) {
     .map(([month, value]) => ({ id: month, label: month, value }))
 }
 
+// Three tiers over the published per-trade signal_strength (build_congress_screen's
+// politician_performance.signal_strength: disclosed size x recency x the filer's shrunk,
+// market-relative performance track record). Display-only ranking aid, never an
+// advisor_engine input - same disclaimer every other panel on this page already carries.
+const SIGNAL_TIERS = [
+  { id: 'strong', min: 0.8, tone: 'high', label: 'Strong' },
+  { id: 'moderate', min: 0.3, tone: 'watch', label: 'Moderate' },
+  { id: 'weak', min: 0, tone: 'neutral', label: 'Weak' },
+]
+
+function signalTier(strength) {
+  const value = strength ?? 0
+  return SIGNAL_TIERS.find((tier) => value >= tier.min) || SIGNAL_TIERS[SIGNAL_TIERS.length - 1]
+}
+
+function performanceLookup(data) {
+  const board = data?.politician_performance?.leaderboard || []
+  const byName = new Map(board.map((row) => [row.politician, row]))
+  return (representative) => byName.get(representative) || null
+}
+
+// Not a black box: the badge alone is a bucketed strength label, so the expand shows the
+// filer's actual shrunk win rate, average alpha vs SPY, and how many priced buys that is
+// built from - stats absent for a filer with no priced buy yet (their signal still uses
+// the population baseline, but there is nothing politician-specific to show).
+function SignalBadge({ strength, stats }) {
+  const tier = signalTier(strength)
+  return (
+    <details className="trade-identity-reveal signal-badge-reveal">
+      <summary><span className={`tier ${tier.tone}`}>{tier.label}</span></summary>
+      <span className="signal-badge-detail">
+        {stats ? <>
+          <b>{`${Math.round(stats.win_rate * 100)}% beat S&P`}</b>
+          <small>{`avg alpha ${stats.avg_alpha_pct >= 0 ? '+' : ''}${stats.avg_alpha_pct.toFixed(1)}pp · ${stats.n_priced_buys} priced buy${stats.n_priced_buys === 1 ? '' : 's'} · ${stats.confidence} confidence`}</small>
+        </> : <b>No priced track record yet</b>}
+      </span>
+    </details>
+  )
+}
+
 function FlagChips({ flags }) {
   if (!flags?.length) return <span className="mono text-faint">–</span>
   return <div className="congress-flag-row">
@@ -159,18 +199,22 @@ function TopTickersPanel({ tickers }) {
 export default function PoliticalTrading() {
   const { data, loading, error, reload } = useData('screens/congress-trades.json')
   const refresh = useScreenRefresh('congress', reload)
-  const [filters, setFilters] = useState({ chamber: 'all', flag: 'all', sort: 'disclosed' })
+  const [filters, setFilters] = useState({ chamber: 'all', flag: 'all', signal: 'all', sort: 'disclosed' })
   const rows = data?.results || []
   const summary = data?.summary
+  const lookupPerformance = useMemo(() => performanceLookup(data), [data])
 
   const filtered = useMemo(() => {
     let next = rows.filter((row) => filters.chamber === 'all' || row.chamber === filters.chamber)
     if (filters.flag !== 'all') next = next.filter((row) => (row.flags || []).includes(filters.flag))
+    if (filters.signal !== 'all') next = next.filter((row) => signalTier(row.signal_strength).id === filters.signal)
     const sorted = [...next]
     if (filters.sort === 'amount') {
       sorted.sort((left, right) => (right.amount_upper || 0) - (left.amount_upper || 0))
     } else if (filters.sort === 'performance') {
       sorted.sort((left, right) => (right.return_since_purchase_pct ?? -Infinity) - (left.return_since_purchase_pct ?? -Infinity))
+    } else if (filters.sort === 'signal') {
+      sorted.sort((left, right) => (right.signal_strength ?? -Infinity) - (left.signal_strength ?? -Infinity))
     } else {
       sorted.sort((left, right) => (right.disclosure_date || '').localeCompare(left.disclosure_date || ''))
     }
@@ -282,11 +326,18 @@ export default function PoliticalTrading() {
             {Object.entries(FLAG_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
+        <label>Signal
+          <select value={filters.signal} onChange={update('signal')}>
+            <option value="all">All</option>
+            {SIGNAL_TIERS.map((tier) => <option key={tier.id} value={tier.id}>{tier.label}</option>)}
+          </select>
+        </label>
         <label>Sort by
           <select value={filters.sort} onChange={update('sort')}>
             <option value="disclosed">Most recently disclosed</option>
             <option value="amount">Largest reported amount</option>
             <option value="performance">Best performance since purchase</option>
+            <option value="signal">Highest weighted signal</option>
           </select>
         </label>
       </div></ResponsiveControlPanel>
@@ -303,6 +354,8 @@ export default function PoliticalTrading() {
                 <summary><b className="mono">{row.symbol || '\u2013'}</b></summary>
                 <span><b>{row.asset_description || 'Issuer unavailable'}</b><small>{row.representative || 'Representative unavailable'} \u00b7 {filerRole(row)}</small></span>
               </details>) },
+            { key: 'signal_strength', label: 'Signal', numeric: true,
+              cell: (row) => <SignalBadge strength={row.signal_strength} stats={lookupPerformance(row.representative)} /> },
             { key: 'transaction_type', label: 'Type', cell: (row) => row.transaction_type || '\u2013' },
             { key: 'amount', label: 'Size', numeric: true, cell: (row) => <span className="mono">{row.amount || '\u2013'}</span> },
             { key: 'transaction_date', label: 'Traded', cell: (row) => <span className="mono">{row.transaction_date || '\u2013'}</span> },
