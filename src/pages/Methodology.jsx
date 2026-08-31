@@ -197,6 +197,50 @@ export default function Methodology() {
       ))}
     </div>
 
+    <div className="sec-label sec-label--section">Sector context</div>
+    <section className="card card-pad">
+      <p className="body-copy body-copy--gap">
+        Three separate mechanisms adjust for sector, each answering a different question. None of
+        them change what a name has to earn – they change what counts as cheap, safe, or normal
+        while it earns it.
+      </p>
+      <ul className="method-list">
+        <li>
+          <b>Sector-specific valuation bands.</b> Forward P/E and the sales multiples (EV/Sales,
+          P/S) are scored against thresholds set per sector rather than one universal cutoff – a
+          “cheap” forward P/E means a different number for a utility than for a software company.
+          The Altman Z-score uses the variant fitted for the filer’s sector and is suppressed
+          outright for financials, where the ratio has no meaning. Price-to-tangible-book is
+          scored only where book value is economically meaningful, and leaves the coverage
+          denominator elsewhere rather than count as missing evidence.
+        </li>
+        <li>
+          <b>Sector-relative valuation modifier.</b> Separately from the bands above, each name’s
+          full valuation score is ranked against peers – grouped by business profile (bank,
+          insurer, REIT, utility, commodity producer) where one applies, by sector otherwise – and
+          placed in a cheapest, middle, or most expensive third. A group needs at least 30 members
+          before a claim publishes; below that the modifier scores zero rather than let a handful
+          of names decide a percentile. This is what turns “cheap for the sector” into a scored,
+          capped input rather than a label.
+        </li>
+        <li>
+          <b>Macro regime, weighted by sector sensitivity.</b> Rate, inflation, labor, and
+          yield-curve conditions move different sectors differently – real estate is weighted
+          toward rates, financials toward the yield curve – so the same macro backdrop produces a
+          different modifier depending on what the company does.
+        </li>
+      </ul>
+      <p className="body-copy">
+        What doesn’t vary by sector: the weights in the fundamental framework above. Sector-specific
+        weighting was tested and rejected – none of eleven sectors beat the uniform weights on the
+        available data, which is evidence the uniform weights are adequate here, not evidence that
+        sector economics are identical. A more thorough version of sector-relative scoring – ranking
+        every fundamental metric within sector, not just the three above – runs as an unpublished
+        challenger while it earns the same out-of-sample validation every change requires (see
+        Validating a change to any of this, above).
+      </p>
+    </section>
+
     <div className="sec-label sec-label--section">Modifiers</div>
     <section className="card card-pad">
       <p className="body-copy body-copy--gap">
