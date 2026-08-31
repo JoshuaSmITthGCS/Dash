@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-31T21:54:21.967010+00:00",
+  "generated_at": "2026-08-31T23:42:57.945610+00:00",
   "comparison": "old_double_confidence_penalty_vs_new_single_shrinkage_challenger",
-  "comparable_universe_count": 223,
+  "comparable_universe_count": 224,
   "path_definitions": {
     "old_double_penalty": "Band-normalized fundamentals are coverage-multiplied, then the final evidence blend is confidence-multiplied again.",
     "new_single_shrinkage": "The challenger starts from raw category evidence and applies one confidence pull toward the configured neutral target before bounded modifiers."
@@ -9,44 +9,44 @@
   "correlations": {
     "log_market_cap": {
       "old_double_penalty": {
-        "count": 218,
-        "pearson": 0.053639,
-        "spearman": -0.002473
+        "count": 222,
+        "pearson": 0.170445,
+        "spearman": 0.124418
       },
       "new_single_shrinkage": {
-        "count": 218,
-        "pearson": 0.023412,
-        "spearman": -0.046203
+        "count": 222,
+        "pearson": 0.160488,
+        "spearman": 0.10533
       }
     },
     "data_coverage": {
       "old_double_penalty": {
-        "count": 223,
-        "pearson": 0.143386,
-        "spearman": 0.139791
+        "count": 224,
+        "pearson": 0.139331,
+        "spearman": 0.116976
       },
       "new_single_shrinkage": {
-        "count": 223,
-        "pearson": 0.26783,
-        "spearman": 0.375683
+        "count": 224,
+        "pearson": 0.252397,
+        "spearman": 0.341033
       }
     },
     "analyst_coverage_count": {
       "old_double_penalty": {
-        "count": 221,
-        "pearson": 0.006963,
-        "spearman": -0.027446
+        "count": 220,
+        "pearson": -0.001782,
+        "spearman": -0.009657
       },
       "new_single_shrinkage": {
-        "count": 221,
-        "pearson": 0.030239,
-        "spearman": 0.020881
+        "count": 220,
+        "pearson": 0.044347,
+        "spearman": 0.062483
       }
     }
   },
   "market_cap_correlation_absolute_drop": {
     "pearson": true,
-    "spearman": false,
-    "passed": false
+    "spearman": true,
+    "passed": true
   }
 }

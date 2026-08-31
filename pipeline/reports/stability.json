@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 93,
+  "refreshes_observed": 94,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -17558,6 +17558,87 @@
           ],
           "score_delta": 5.0,
           "confidence_delta": -0.03
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-31T21:54:21.967010+00:00",
+      "current_refresh": "advisor-2026-08-31T23:42:57.945610+00:00",
+      "shared_tickers": 895,
+      "rank_turnover": {
+        "top_40": 0.05,
+        "top_100": 0.05
+      },
+      "tickers_with_availability_driven_change": 7,
+      "tickers_with_availability_driven_change_pct": 0.008,
+      "mean_abs_score_delta": 0.21,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "RLI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -10.7,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "CMC",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 3.7,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -3.2,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "UEC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 2.2,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "SNX",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -1.0,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -0.9,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "WDC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -0.7,
+          "confidence_delta": 0.01
         }
       ]
     }
