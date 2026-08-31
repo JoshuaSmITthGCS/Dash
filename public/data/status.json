@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-29T02:31:29.402912+00:00",
+  "generated_at": "2026-08-31T19:38:23.758544+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,13 +29,14 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-08-29T02:29:04.826604+00:00",
+      "checked_at": "2026-08-31T19:34:08.444448+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
-        "universe": 925,
-        "scored": 226,
+        "universe": 944,
+        "scored": 895,
         "ranked": 40,
         "failed": [
+          "ABB",
           "ANSS",
           "BK",
           "BLD",
@@ -81,6 +82,7 @@
           "TPX",
           "VSCO",
           "WBA",
+          "WBS",
           "X",
           "ZI"
         ]
@@ -88,23 +90,23 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-08-29T02:30:44.993149+00:00",
+      "checked_at": "2026-08-31T19:37:03.749613+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
         "received": 125,
         "rule_6c11_disclosures": 0,
         "cache": {
-          "hits": 252,
-          "misses": 126,
+          "hits": 126,
+          "misses": 252,
           "stale_hits": 0,
-          "hit_rate": 0.667
+          "hit_rate": 0.333
         }
       }
     },
     "etf_comparisons": {
       "status": "healthy",
-      "checked_at": "2026-08-29T02:31:29.402889+00:00",
+      "checked_at": "2026-08-31T19:38:23.758526+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -251,8 +253,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "c8f52ac713f9f955274153c8904c7f8c87ee91c0",
+    "git_commit_sha": "9329ee0ecf80f48dadcd0f3b431104059a29e909",
     "config_hash": "a0b747109820f48effbd8dabf5a30f2760e191e1e63f004cdc13c18247360c63",
-    "generated_at": "2026-08-29T02:31:29.402912+00:00"
+    "generated_at": "2026-08-31T19:38:23.758544+00:00"
   }
 }

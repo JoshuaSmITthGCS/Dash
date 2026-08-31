@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 91,
+  "refreshes_observed": 92,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -17413,6 +17413,125 @@
           ],
           "score_delta": -0.6,
           "confidence_delta": 0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-08-29T02:28:38.634730+00:00",
+      "current_refresh": "advisor-2026-08-31T19:33:43.198088+00:00",
+      "shared_tickers": 877,
+      "rank_turnover": {
+        "top_40": 0.275,
+        "top_100": 0.275
+      },
+      "tickers_with_availability_driven_change": 20,
+      "tickers_with_availability_driven_change_pct": 0.023,
+      "mean_abs_score_delta": 0.98,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "RLI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 12.2,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "LBRDK",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "ev_to_ebitda",
+            "free_cash_flow_yield",
+            "sales_multiple"
+          ],
+          "score_delta": 10.5,
+          "confidence_delta": -0.09
+        },
+        {
+          "ticker": "UEC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -5.4,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "CMC",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -3.9,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "WEN",
+          "metrics_with_value_change": [
+            "ev_to_ebitda"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -3.4,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 3.1,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "DCI",
+          "metrics_with_value_change": [
+            "price_to_book"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 2.3,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "PVH",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -1.8,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "ITT",
+          "metrics_with_value_change": [
+            "altman_z",
+            "sales_multiple"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 1.6,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "DDS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.2,
+          "confidence_delta": -0.03
         }
       ]
     }
