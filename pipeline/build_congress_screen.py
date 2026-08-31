@@ -782,25 +782,32 @@ def run():
     for row in results:
         row.update(performance.get(_trade_key(row), {}))
 
-    # Politician performance scoring, and only politician performance scoring, is scoped to
-    # the published window (same rows notable_signals/top_ticker_aggregates already read) -
-    # not the full accumulated store. Pricing itself (compute_price_performance above) is
-    # already window-scoped for cost reasons, so a politician's track record can only ever
-    # be as deep as the priced buys within PUBLISH_WINDOW_DAYS. That understates a prolific
-    # trader's true history early on; it widens automatically as more weekly runs accumulate
-    # priced buys within the window, and it costs zero additional network requests (SPY's
-    # series is already committed, no new fetch either) - see politician_performance.py's
-    # own docstring for the shrinkage that keeps a short window from producing overconfident
-    # scores. Display-only, same as signals/top_tickers: never an advisor_engine input.
+    # Politician performance leaderboard: built from the FULL accumulated store, not just
+    # the published window, via a persistent price cache - see politician_performance.py's
+    # own docstring for why ("backfill, not a live re-price": in-window trades stay fresh
+    # every run same as above, everything else is priced once, in bounded per-run batches,
+    # and then frozen). Display-only, same as signals/top_tickers above: never an
+    # advisor_engine input, and none of this changes the research score.
+    price_cache = politician_performance.load_price_cache()
+    politician_performance.merge_price_performance(results, performance, price_cache)
+    backfill_candidates = politician_performance.select_backfill_candidates(stored, price_cache)
+    backfill_priced = (compute_price_performance(backfill_candidates, fmp_client, yf=yf)
+                       if backfill_candidates and (fmp_client or yf) else {})
+    politician_performance.merge_price_performance(backfill_candidates, backfill_priced, price_cache)
+    politician_performance.save_price_cache(price_cache)
+    LOG.info(f"Congress trades: priced {len(backfill_priced)} backfilled trade(s) across "
+             f"{len({row['symbol'] for row in backfill_candidates})} symbol(s) this run")
+
+    full_history = politician_performance.full_priced_equity_buys(stored, price_cache)
     political_performance = politician_performance.compute_performance_scores(
-        results, benchmark=politician_performance.load_spy_benchmark())
+        full_history, benchmark=politician_performance.load_spy_benchmark())
     for row in results:
         row.update(politician_performance.annotate_row(
             row, political_performance, as_of=generated_at.date()))
 
     status, reason_code = publication_status(results, stored, failures)
     payload = {
-        "schema_version": "1.3.0", "model_version": "congress-trades-v1.4.0",
+        "schema_version": "1.4.0", "model_version": "congress-trades-v1.5.0",
         "generated_at": generated_at.isoformat(), "status": status,
         **({"reason_code": reason_code} if reason_code else {}),
         "publish_window_days": PUBLISH_WINDOW_DAYS, "history_days": history_days,
@@ -816,6 +823,7 @@ def run():
         "politician_performance": {
             "population": political_performance["population"],
             "config": political_performance["config"],
+            "price_backfill": politician_performance.backfill_coverage(stored, price_cache),
             "leaderboard": politician_performance.leaderboard(political_performance),
         },
         "results": results,

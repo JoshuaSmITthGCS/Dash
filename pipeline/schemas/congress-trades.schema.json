@@ -117,9 +117,19 @@
     },
     "politician_performance": {
       "type": "object",
-      "description": "politician_performance.py's in-window, market-relative leaderboard - shrunk alpha-vs-SPY and win rate per filer, display-only, never an advisor_engine input.",
-      "required": ["population", "config", "leaderboard"],
+      "description": "politician_performance.py's market-relative leaderboard - shrunk alpha-vs-SPY and win rate per filer, built from the full accumulated disclosure store via a persistent, incrementally-backfilled price cache (see price_backfill for coverage), not just the published window. Display-only, never an advisor_engine input.",
+      "required": ["population", "config", "price_backfill", "leaderboard"],
       "properties": {
+        "price_backfill": {
+          "type": "object",
+          "description": "politician_performance.backfill_coverage() - how much of the full accumulated equity-buy history is priced yet, since backfill fills in gradually across runs.",
+          "required": ["equity_buys_total", "equity_buys_priced", "coverage_pct"],
+          "properties": {
+            "equity_buys_total": {"type": "integer", "minimum": 0},
+            "equity_buys_priced": {"type": "integer", "minimum": 0},
+            "coverage_pct": {"type": "number", "minimum": 0, "maximum": 100}
+          }
+        },
         "population": {
           "type": "object",
           "required": ["n_priced_buys", "avg_alpha_pct", "win_rate", "performance_score"],

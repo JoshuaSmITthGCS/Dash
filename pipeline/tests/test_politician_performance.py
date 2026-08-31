@@ -15,12 +15,25 @@ BENCHMARK = {"dates": ["2026-01-01", "2026-06-01"], "closes": [400.0, 440.0]}
 
 def priced_buy(representative, return_pct, *, transaction_date="2026-01-01",
               price_as_of="2026-06-01", amount_lower=50_000, disclosure_date=None,
-              transaction_type="Purchase"):
+              transaction_type="Purchase", symbol="ACME", chamber="senate",
+              asset_type="Stock", amount="$15,001 - $50,000"):
     return {
         "representative": representative, "transaction_type": transaction_type,
         "transaction_date": transaction_date, "price_as_of": price_as_of,
         "disclosure_date": disclosure_date or transaction_date,
         "return_since_purchase_pct": return_pct, "amount_lower": amount_lower,
+        "symbol": symbol, "chamber": chamber, "asset_type": asset_type, "amount": amount,
+    }
+
+
+def unpriced_buy(representative, symbol, *, transaction_date="2026-01-01",
+                 chamber="senate", asset_type="Stock", amount="$15,001 - $50,000"):
+    """An equity buy with no return_since_purchase_pct/price_as_of yet - a backfill
+    candidate, not something raw_stats_by_politician can score."""
+    return {
+        "representative": representative, "transaction_type": "Purchase",
+        "transaction_date": transaction_date, "disclosure_date": transaction_date,
+        "symbol": symbol, "chamber": chamber, "asset_type": asset_type, "amount": amount,
     }
 
 
@@ -131,3 +144,90 @@ class TestLeaderboard:
         board = module.leaderboard(performance)
         assert [row["politician"] for row in board] == ["A", "B"]
         assert board[0]["rank"] == 1 and board[1]["rank"] == 2
+
+
+class TestSelectBackfillCandidates:
+    def test_never_priced_symbols_are_offered_and_already_cached_trades_are_not(self):
+        cached_row = unpriced_buy("Rep A", "CACHED")
+        uncached_row = unpriced_buy("Rep A", "NEW")
+        key = module._cache_key(("senate", "Rep A", "CACHED", "2026-01-01", "Purchase", "$15,001 - $50,000"))
+        cache = {key: {"return_since_purchase_pct": 5.0}}
+        candidates = module.select_backfill_candidates([cached_row, uncached_row], cache)
+        symbols = {row["symbol"] for row in candidates}
+        assert symbols == {"NEW"}
+
+    def test_only_equity_purchases_are_candidates(self):
+        rows = [unpriced_buy("Rep A", "SOLD", transaction_date="2026-01-01"),
+                {**unpriced_buy("Rep A", "OPT"), "asset_type": "Stock Option"},
+                {**unpriced_buy("Rep A", "SALE"), "transaction_type": "Sale"}]
+        candidates = module.select_backfill_candidates(rows, {})
+        assert {row["symbol"] for row in candidates} == {"SOLD"}
+
+    def test_symbols_with_more_distinct_politicians_are_prioritized(self):
+        rows = ([unpriced_buy("Rep A", "POPULAR"), unpriced_buy("Rep B", "POPULAR"),
+                 unpriced_buy("Rep C", "POPULAR")]
+                + [unpriced_buy("Rep A", "LONELY")])
+        candidates = module.select_backfill_candidates(rows, {}, max_symbols=1)
+        assert {row["symbol"] for row in candidates} == {"POPULAR"}
+
+    def test_respects_the_max_symbols_budget(self):
+        rows = [unpriced_buy("Rep A", f"SYM{i}") for i in range(10)]
+        candidates = module.select_backfill_candidates(rows, {}, max_symbols=3)
+        assert len({row["symbol"] for row in candidates}) == 3
+
+
+class TestMergeAndFullHistory:
+    def test_priced_trades_are_written_into_the_cache(self):
+        row = priced_buy("Rep A", 20.0, symbol="AAPL")
+        key = module._cache_key(("senate", "Rep A", "AAPL", "2026-01-01", "Purchase", "$15,001 - $50,000"))
+        priced = {("senate", "Rep A", "AAPL", "2026-01-01", "Purchase", "$15,001 - $50,000"):
+                  {"return_since_purchase_pct": 20.0, "price_as_of": "2026-06-01"}}
+        cache = module.merge_price_performance([row], priced, {})
+        assert key in cache
+        assert cache[key]["return_since_purchase_pct"] == 20.0
+
+    def test_full_priced_equity_buys_annotates_only_cached_rows(self):
+        cached = unpriced_buy("Rep A", "CACHED")
+        uncached = unpriced_buy("Rep A", "UNCACHED")
+        key = module._cache_key(("senate", "Rep A", "CACHED", "2026-01-01", "Purchase", "$15,001 - $50,000"))
+        cache = {key: {"return_since_purchase_pct": 12.0, "price_as_of": "2026-06-01"}}
+        annotated = module.full_priced_equity_buys([cached, uncached], cache)
+        assert len(annotated) == 1
+        assert annotated[0]["symbol"] == "CACHED"
+        assert annotated[0]["return_since_purchase_pct"] == 12.0
+
+    def test_full_history_feeds_compute_performance_scores_beyond_a_narrow_window(self):
+        # Simulates what a window-only view would miss: a politician whose only priced buy
+        # is old (out of any short publish window) still shows up once the cache carries it.
+        old_row = priced_buy("Old Timer", 25.0, transaction_date="2020-01-01",
+                             price_as_of="2020-06-01", symbol="OLD")
+        cache = module.merge_price_performance(
+            [old_row], {("senate", "Old Timer", "OLD", "2020-01-01", "Purchase", "$15,001 - $50,000"):
+                        {"return_since_purchase_pct": 25.0, "price_as_of": "2020-06-01"}}, {})
+        full_history = module.full_priced_equity_buys([old_row], cache)
+        benchmark = {"dates": ["2020-01-01", "2020-06-01"], "closes": [300.0, 315.0]}  # flat +5% SPY
+        performance = module.compute_performance_scores(full_history, benchmark=benchmark)
+        assert "Old Timer" in performance["politicians"]
+        assert performance["politicians"]["Old Timer"]["n_priced_buys"] == 1
+
+
+class TestBackfillCoverage:
+    def test_reports_total_priced_and_coverage_percent(self):
+        cached = unpriced_buy("Rep A", "CACHED")
+        uncached = unpriced_buy("Rep A", "UNCACHED")
+        key = module._cache_key(("senate", "Rep A", "CACHED", "2026-01-01", "Purchase", "$15,001 - $50,000"))
+        cache = {key: {"return_since_purchase_pct": 1.0}}
+        coverage = module.backfill_coverage([cached, uncached], cache)
+        assert coverage == {"equity_buys_total": 2, "equity_buys_priced": 1, "coverage_pct": 50.0}
+
+    def test_an_empty_history_reports_zero_coverage_not_a_division_error(self):
+        assert module.backfill_coverage([], {})["coverage_pct"] == 0.0
+
+
+class TestPriceCacheRoundTrip:
+    def test_save_then_load_round_trips_through_the_store(self, tmp_path, monkeypatch):
+        import common
+        monkeypatch.setattr(common, "STORE_DIR", str(tmp_path))
+        assert module.load_price_cache() == {}
+        module.save_price_cache({"a|b|c|d|e|f": {"return_since_purchase_pct": 7.0}})
+        assert module.load_price_cache() == {"a|b|c|d|e|f": {"return_since_purchase_pct": 7.0}}

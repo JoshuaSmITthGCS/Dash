@@ -26,6 +26,29 @@ crash; a politician with hundreds of trades is barely pulled at all.
 
 Only *buys* enter this scoring - a sale has no "did this pick pay off" question to answer,
 and ``build_congress_screen.compute_price_performance`` never prices anything else.
+
+**Backfill, not a live re-price.** ``build_congress_screen.run`` only ever prices the
+published 120-day window on any given run - repricing every symbol any politician has ever
+bought would mean one HTTP request per distinct historical symbol (~1,000 in this store
+already) on every single weekly run, which is neither what a free-tier API key nor a
+keyless Yahoo fallback can absorb without getting throttled or blocked. So a politician's
+leaderboard entry is built from two kinds of priced trades, persisted in
+``pipeline/data/congress/price_performance_cache.json`` (``load_price_cache``/
+``save_price_cache``, a plain dict keyed by trade identity - not published, this is a
+pipeline-internal cache, not a ``public/data`` artifact):
+
+  * **In-window trades** are priced fresh every run (unchanged from before this cache
+    existed) and their cache entry is overwritten each time - their "since purchase"
+    return legitimately moves week to week while the market keeps trading.
+  * **Everything else** is priced once, by ``select_backfill_candidates`` picking a bounded
+    batch of never-priced symbols each run (``BACKFILL_SYMBOLS_PER_RUN``, highest-breadth
+    symbols first so early runs buy down the most leaderboard coverage), and then frozen -
+    once written, a historical entry is never refreshed. That means an old trade's alpha is
+    "as of whenever it got backfilled," not live - an accepted tradeoff for keeping a
+    weekly run's price-fetch volume small and predictable. At the current store's ~1,000
+    distinct historical symbols and this default budget, full coverage takes on the order
+    of six months of weekly runs; ``backfill_coverage`` reports exactly how far along that
+    is so nobody has to guess.
 """
 
 from __future__ import annotations
@@ -45,6 +68,14 @@ DEFAULTS = {
     "confidence_low_max": 2,    # n <= this -> "low"
     "confidence_medium_max": 9,  # n <= this -> "medium", else "high"
 }
+
+PRICE_CACHE_FILE = "congress/price_performance_cache.json"
+# One HTTP request per distinct symbol, so this bounds a single run's new price-history
+# fetches for the backfill alone (in-window pricing is separate and unchanged). 40 keeps a
+# weekly run's backfill volume well inside FMP's 250-request/day free tier - which this
+# pipeline's other jobs also draw from - and inside what a keyless Yahoo fallback tolerates
+# without getting itself throttled.
+BACKFILL_SYMBOLS_PER_RUN = 40
 
 
 def _parse_date(value):
@@ -239,6 +270,103 @@ def load_spy_benchmark():
     would not be."""
     from backtest_monthly import committed_benchmark
     return committed_benchmark("SPY")
+
+
+def _cache_key(trade_key):
+    return "|".join("" if part is None else str(part) for part in trade_key)
+
+
+def load_price_cache():
+    """The persistent trade-identity -> price-performance cache, or an empty one on a
+    fresh checkout that has never run the congress screen."""
+    from common import load_store_json
+    return load_store_json(PRICE_CACHE_FILE) or {}
+
+
+def save_price_cache(cache):
+    from common import save_json
+    save_json(PRICE_CACHE_FILE, cache, to_store=True)
+
+
+def merge_price_performance(rows, priced, cache):
+    """Write every trade in ``rows`` that ``priced`` has an entry for into ``cache``,
+    in place, and return it.
+
+    Deliberately unconditional: called once for this run's freshly-priced in-window trades
+    (where overwriting is exactly the point - see this module's own docstring) and once for
+    a backfill batch (where every key is new by construction, since
+    ``select_backfill_candidates`` only ever offers never-cached trades).
+    """
+    from build_congress_screen import _trade_key
+    for row in rows:
+        entry = priced.get(_trade_key(row))
+        if entry:
+            cache[_cache_key(_trade_key(row))] = entry
+    return cache
+
+
+def select_backfill_candidates(stored_rows, cache, *, max_symbols=BACKFILL_SYMBOLS_PER_RUN):
+    """Up to ``max_symbols`` worth of never-priced historical equity buys for this run's
+    backfill pass - every row for each chosen symbol, so ``compute_price_performance`` can
+    price all of it from the one request per symbol it already makes.
+
+    Symbols are ranked by how many distinct politicians disclosed a buy in them (more
+    politicians' leaderboard entries improve per symbol priced), then by trade count, then
+    alphabetically for determinism - not by ticker or disclosure recency, so a bounded
+    per-run budget buys down the most leaderboard coverage first.
+    """
+    from build_congress_screen import is_equity_purchase, _trade_key
+
+    by_symbol = {}
+    for row in stored_rows:
+        symbol = row.get("symbol")
+        if not symbol or not is_equity_purchase(row):
+            continue
+        if _cache_key(_trade_key(row)) in cache:
+            continue
+        bucket = by_symbol.setdefault(symbol, {"politicians": set(), "rows": []})
+        bucket["politicians"].add(row.get("representative"))
+        bucket["rows"].append(row)
+
+    ordered = sorted(by_symbol.items(),
+                     key=lambda item: (-len(item[1]["politicians"]), -len(item[1]["rows"]), item[0]))
+    candidates = []
+    for _symbol, bucket in ordered[:max_symbols]:
+        candidates.extend(bucket["rows"])
+    return candidates
+
+
+def full_priced_equity_buys(stored_rows, cache):
+    """Every historical equity buy the cache has a price for, annotated with it - the
+    leaderboard's actual input, spanning the full accumulated store rather than the
+    published window."""
+    from build_congress_screen import is_equity_purchase, _trade_key
+    annotated = []
+    for row in stored_rows:
+        if not is_equity_purchase(row):
+            continue
+        entry = cache.get(_cache_key(_trade_key(row)))
+        if entry:
+            annotated.append({**row, **entry})
+    return annotated
+
+
+def backfill_coverage(stored_rows, cache):
+    """How much of the full accumulated equity-buy history is priced yet - published so
+    early leaderboard scores are legible as partial coverage, not treated as final."""
+    from build_congress_screen import is_equity_purchase, _trade_key
+    total = priced = 0
+    for row in stored_rows:
+        if not is_equity_purchase(row):
+            continue
+        total += 1
+        if _cache_key(_trade_key(row)) in cache:
+            priced += 1
+    return {
+        "equity_buys_total": total,
+        "equity_buys_priced": priced,
+        "coverage_pct": round(100 * priced / total, 1) if total else 0.0,
+    }
 
 
 def leaderboard(performance, *, top_n=None):
