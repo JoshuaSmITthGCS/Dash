@@ -137,6 +137,43 @@ describe('PoliticalTrading page', () => {
     const rows = screen.getAllByRole('row').filter((row) => /WIN|LAG/.test(row.textContent))
     expect(rows[0]).toHaveTextContent('WIN')
   })
+  it('renders the politician leaderboard panel, ranked, with backfill coverage', () => {
+    useData.mockReturnValue({
+      data: {
+        results: [trade()],
+        politician_performance: {
+          price_backfill: { equity_buys_total: 1812, equity_buys_priced: 308, coverage_pct: 17.0 },
+          leaderboard: [
+            { politician: 'Winner', rank: 1, performance_score: 0.9, win_rate: 0.83,
+              avg_alpha_pct: 8.4, n_priced_buys: 12, confidence: 'high' },
+            { politician: 'Runner Up', rank: 2, performance_score: 0.5, win_rate: 0.6,
+              avg_alpha_pct: 2.1, n_priced_buys: 4, confidence: 'medium' },
+          ],
+        },
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
+
+    expect(screen.getByText('Most profitable politicians')).toBeVisible()
+    expect(screen.getByText('Winner')).toBeVisible()
+    expect(screen.getByText('Runner Up')).toBeVisible()
+    expect(screen.getByText('83%')).toBeVisible()
+    expect(screen.getByText(/308 of 1,812 disclosed equity buys priced so far \(17%\)/)).toBeVisible()
+    const rows = screen.getAllByRole('row').filter((row) => /Winner|Runner Up/.test(row.textContent))
+    expect(rows[0]).toHaveTextContent('Winner')
+    expect(rows[1]).toHaveTextContent('Runner Up')
+  })
+
+  it('omits the leaderboard panel entirely when nothing has been priced yet', () => {
+    useData.mockReturnValue({ data: { results: [trade()] }, loading: false, error: null })
+
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
+
+    expect(screen.queryByText('Most profitable politicians')).not.toBeInTheDocument()
+  })
+
   it('shows a weighted signal badge and its underlying performance stats on expand', () => {
     useData.mockReturnValue({
       data: {
