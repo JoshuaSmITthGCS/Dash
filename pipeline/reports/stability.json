@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 95,
+  "refreshes_observed": 96,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -17713,6 +17713,41 @@
           ],
           "score_delta": 0.7,
           "confidence_delta": -0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-01T16:41:28.251492+00:00",
+      "current_refresh": "advisor-2026-09-01T20:06:18.999304+00:00",
+      "shared_tickers": 895,
+      "rank_turnover": {
+        "top_40": 0.175,
+        "top_100": 0.175
+      },
+      "tickers_with_availability_driven_change": 2,
+      "tickers_with_availability_driven_change_pct": 0.002,
+      "mean_abs_score_delta": 0.35,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 5.0,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "UEC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 4.5,
+          "confidence_delta": 0.01
         }
       ]
     }
