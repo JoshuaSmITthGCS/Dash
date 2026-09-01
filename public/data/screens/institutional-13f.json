@@ -1,7 +1,7 @@
 {
   "schema_version": "1.3.0",
   "model_version": "institutional-13f-v1.3.0",
-  "generated_at": "2026-08-17T22:43:31.129284+00:00",
+  "generated_at": "2026-09-01T17:13:55.951403+00:00",
   "status": "success",
   "degraded_reason": null,
   "manager_coverage": [
@@ -41,32 +41,34 @@
     {
       "manager": "JHG",
       "name": "Janus Henderson",
-      "filer_ciks": [],
-      "periods": [],
-      "holdings_parsed": 0,
-      "notes": [
-        "ticker JHG did not resolve to a CIK",
-        "rejected CIK 0001274173 (None): name does not match",
-        "rejected CIK 0000812295 (None): name does not match"
-      ]
+      "filer_ciks": [
+        "0001274173",
+        "0000812295"
+      ],
+      "periods": [
+        "2026-03-31",
+        "2025-12-31"
+      ],
+      "holdings_parsed": 8683,
+      "notes": []
     },
     {
       "manager": "VRTS",
       "name": "Virtus Investment Partners",
-      "filer_ciks": [],
-      "periods": [],
-      "holdings_parsed": 0,
-      "notes": [
-        "rejected CIK 0001587281 (None): name does not match",
-        "rejected CIK 0001591068 (None): name does not match",
-        "rejected CIK 0001319111 (None): name does not match",
-        "rejected CIK 0001913482 (None): name does not match",
-        "rejected CIK 0002079921 (None): name does not match",
-        "rejected CIK 0000019481 (None): name does not match",
-        "rejected CIK 0001005020 (None): name does not match",
-        "rejected CIK 0002045870 (None): name does not match",
-        "CIK 0000883237 ('VIRTUS INVESTMENT PARTNERS, INC.') files no 13F-HR"
-      ]
+      "filer_ciks": [
+        "0001587281",
+        "0001591068",
+        "0001319111",
+        "0001913482",
+        "0002079921",
+        "0000019481"
+      ],
+      "periods": [
+        "2026-06-30",
+        "2026-03-31"
+      ],
+      "holdings_parsed": 2500,
+      "notes": []
     },
     {
       "manager": "APAM",
@@ -87,7 +89,8 @@
       "manager": "CNS",
       "name": "Cohen & Steers",
       "filer_ciks": [
-        "0001284812"
+        "0001284812",
+        "0000845563"
       ],
       "periods": [
         "2026-06-30",
@@ -121,12 +124,12 @@
     }
   ],
   "manager_universe": "publicly traded, style=active only - see pipeline/config/institutional_managers.json",
-  "managers_reviewed": 4,
+  "managers_reviewed": 6,
   "managers_configured": 9,
   "filings_unreadable": 0,
-  "amendments_seen": 0,
-  "cusips_seen": 3535,
-  "cusips_mapped": 305,
+  "amendments_seen": 1,
+  "cusips_seen": 4024,
+  "cusips_mapped": 412,
   "cusips_pending": 0,
   "openfigi_tier": "anonymous",
   "openfigi_errors": [],
@@ -134,8 +137,8 @@
   "results": [],
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "19f4dcc56ed11ff04a338374ed3a0705a5ff705a",
-    "config_hash": "8286225fc16158cb123e9a4eb820463c48aff17736005fc9a0655b05a0060ddf",
-    "generated_at": "2026-08-17T22:43:31.129284+00:00"
+    "git_commit_sha": "52662bb5872ebb8da8c1999e29c95df8050e9288",
+    "config_hash": "a0b747109820f48effbd8dabf5a30f2760e191e1e63f004cdc13c18247360c63",
+    "generated_at": "2026-09-01T17:13:55.951403+00:00"
   }
 }
