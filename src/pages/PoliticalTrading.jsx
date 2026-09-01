@@ -103,6 +103,51 @@ function SignalBadge({ strength, stats }) {
   )
 }
 
+// politician_performance.py's full leaderboard: the shrunk, market-relative performance
+// ranking that signal_strength above already weights every trade by - shown here as its
+// own panel so "who actually beats the market" is visible directly, not just folded into a
+// per-trade multiplier. price_backfill reports how much of the accumulated disclosure
+// history has been priced yet, since coverage fills in gradually across runs rather than
+// completing immediately (see politician_performance.py's own docstring for why).
+function LeaderboardPanel({ performance }) {
+  const board = performance?.leaderboard
+  if (!board?.length) return null
+  const backfill = performance.price_backfill
+  return (
+    <div className="card political-signals" aria-label="Most profitable politicians">
+      <div className="political-signals-head">
+        <h2 className="political-signals-title">Most profitable politicians</h2>
+        <span className="political-signals-note">
+          {`Ranked by shrunk win rate and alpha vs. S&P over each filer's priced disclosed buys, most trades needed to earn the top weight – not a score, not advice.`}
+          {backfill && ` ${backfill.equity_buys_priced.toLocaleString('en-US')} of ${backfill.equity_buys_total.toLocaleString('en-US')} disclosed equity buys priced so far (${backfill.coverage_pct}%) – this list grows as more history gets priced.`}
+        </span>
+      </div>
+      <DataTable
+        rows={board}
+        getKey={(row) => row.politician}
+        columns={[
+          { key: 'rank', label: '#', cell: (row) => <span className="mono">{row.rank}</span> },
+          { key: 'politician', label: 'Politician', cell: (row) => <b>{row.politician}</b> },
+          { key: 'performance_score', label: 'Weight', numeric: true, cell: (row) => {
+            const tier = signalTier(row.performance_score)
+            return <span className={`tier ${tier.tone}`}>{tier.label}</span>
+          } },
+          { key: 'win_rate', label: 'Win rate', numeric: true,
+            cell: (row) => <span className="mono">{`${Math.round(row.win_rate * 100)}%`}</span> },
+          { key: 'avg_alpha_pct', label: 'Avg alpha vs S&P', numeric: true, cell: (row) => <Move pct={row.avg_alpha_pct} /> },
+          { key: 'n_priced_buys', label: 'Priced buys', numeric: true, cell: (row) => <span className="mono">{row.n_priced_buys}</span> },
+          { key: 'confidence', label: 'Confidence', cell: (row) => <span className="mono">{row.confidence}</span> },
+        ]}
+        mobile={{
+          titleColumn: 'politician',
+          title: (row) => row.politician,
+          subtitle: (row) => `${Math.round(row.win_rate * 100)}% win rate · ${row.n_priced_buys} priced buy(s)`,
+        }}
+      />
+    </div>
+  )
+}
+
 function FlagChips({ flags }) {
   if (!flags?.length) return <span className="mono text-faint">–</span>
   return <div className="congress-flag-row">
@@ -274,6 +319,7 @@ export default function PoliticalTrading() {
         </div>
       )}
 
+      <LeaderboardPanel performance={data?.politician_performance} />
       <SignalsPanel signals={data?.signals} />
       <TopTickersPanel tickers={data?.top_tickers} />
 
