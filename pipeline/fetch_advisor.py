@@ -16,6 +16,7 @@ from data_coverage import data_coverage_components, run_source_reliability
 from data_health import publication_gate, statement_health
 from price_archive import archive_health
 from edgar_enrichment import merge_edgar_fallback
+from edgar_entities import normalize_ticker
 from edgar_sue import sue_for
 from providers import YahooAdapter
 from common import CONFIG_DIR, LOG, load_json, save_json, update_pipeline_status
@@ -1261,7 +1262,10 @@ def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None,
     Financial statements are deliberately left out here. They cost several requests per
     company, so they are fetched later for shortlisted names only.
     """
-    ticker_obj = yf.Ticker(symbol) if yf else None
+    # Yahoo, like SEC EDGAR, writes share-class suffixes with a hyphen where this repo's own
+    # universe config uses a dot (MOG.A here, MOG-A at Yahoo) - reuse edgar_entities'
+    # normalization rather than requesting the dotted form and getting nothing back.
+    ticker_obj = yf.Ticker(normalize_ticker(symbol)) if yf else None
     fallback = yahoo_snapshot(symbol, yf, ticker_obj)
     history = yahoo_history(symbol, yf, ticker_obj=ticker_obj)
     overview = daily = news_payload = insiders = {}

@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from fetch_advisor import (EXTENDED_METRIC_FIELDS, _evidence_summary, _screen_row, _sentiment_summary,
                            build_portfolio_coverage,
                            carry_forward_missing_sessions, carry_forward_rows,
-                           collect_insider_signals, compact_news,
+                           collect, collect_insider_signals, compact_news,
                            curate_candidate_news, enrich, enrichment_expansion,
                            enrichment_expansion_financial_real_estate, enrichment_rotation,
                            latest_unique_news,
@@ -1211,3 +1211,65 @@ class PointInTimeExpectationTests(unittest.TestCase):
         self.assertEqual(archived["analyst_consensus_target"], 130.0)
         self.assertEqual(archived["revision_breadth_30d"], 0.75)
         self.assertEqual(archived["net_upgrades_90d"], 4)
+
+
+class _FakeDottedTickerObj:
+    """A share class Yahoo only serves under a hyphenated symbol (MOG-A, not MOG.A)."""
+
+    def history(self, period=None, auto_adjust=False):
+        n = 30
+        idx = pd.date_range("2026-01-01", periods=n, freq="D")
+        return pd.DataFrame({
+            "Close": [100.0 + i for i in range(n)], "Volume": [1_000_000] * n,
+            "High": [101.0 + i for i in range(n)], "Low": [99.0 + i for i in range(n)],
+        }, index=idx)
+
+    @property
+    def info(self):
+        return {"shortName": "Mogas Class A", "currentPrice": 129.0, "sector": "Industrials",
+                "marketCap": 500_000_000}
+
+    def get_news(self, count=20, tab="news"):
+        return []
+
+
+class _FakeYahooModule:
+    """Records every symbol handed to ``Ticker`` -- the whole point of this fixture."""
+
+    def __init__(self):
+        self.requested_symbols = []
+
+    def Ticker(self, symbol):
+        self.requested_symbols.append(symbol)
+        return _FakeDottedTickerObj()
+
+
+class CollectTickerNormalizationTests(unittest.TestCase):
+    """Regression coverage: dotted share-class symbols (MOG.A) were requested from Yahoo
+    verbatim, which Yahoo does not recognize (it wants MOG-A), so every such symbol failed
+    collect()'s snapshot/history check and was reported as a research failure -- the same
+    class of provider-spelling mismatch edgar_entities.normalize_ticker already exists to
+    fix for SEC EDGAR lookups."""
+
+    def test_yahoo_ticker_is_requested_with_the_hyphenated_share_class_symbol(self):
+        yf = _FakeYahooModule()
+
+        collect("MOG.A", client=None, yf=yf, alpha_symbols=set(), delay=0)
+
+        self.assertIn("MOG-A", yf.requested_symbols)
+        self.assertNotIn("MOG.A", yf.requested_symbols)
+
+    def test_the_published_record_keeps_the_dotted_canonical_symbol(self):
+        yf = _FakeYahooModule()
+
+        result = collect("MOG.A", client=None, yf=yf, alpha_symbols=set(), delay=0)
+
+        self.assertEqual(result["symbol"], "MOG.A")
+        self.assertEqual(result["snapshot"]["ticker"], "MOG.A")
+
+    def test_a_plain_symbol_without_a_dot_is_requested_unchanged(self):
+        yf = _FakeYahooModule()
+
+        collect("AAPL", client=None, yf=yf, alpha_symbols=set(), delay=0)
+
+        self.assertIn("AAPL", yf.requested_symbols)
