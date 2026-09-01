@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-01T20:10:50.852403+00:00",
+  "generated_at": "2026-09-01T22:18:08.768016+00:00",
   "groups": [
     {
       "id": "signal",
@@ -83,7 +83,7 @@
   ],
   "live_sample": {
     "days": 24,
-    "refreshes": 98,
+    "refreshes": 99,
     "first_date": "2026-08-05",
     "last_date": "2026-09-01"
   },
@@ -1401,11 +1401,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 53,
+      "observations": 54,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-09-01T20:06:18.999304+00:00",
+        "as_of": "2026-09-01T22:11:46.502927+00:00",
         "strategy": "production_shadow_equal_weight_top20",
         "benchmark": "SPY",
         "active_sector_weights": {
@@ -2397,6 +2397,24 @@
             },
             "strategy_classified_weight": 1.0,
             "benchmark_classified_weight": 1.0
+          },
+          {
+            "as_of": "2026-09-01T22:11:46.502927+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0338,
+              "communication_services": -0.0991,
+              "consumer_cyclical": -0.0957,
+              "consumer_defensive": -0.0461,
+              "energy": 0.0664,
+              "financial_services": 0.4276,
+              "healthcare": 0.009,
+              "industrials": -0.0816,
+              "real_estate": -0.0188,
+              "technology": -0.174,
+              "utilities": -0.0215
+            },
+            "strategy_classified_weight": 1.0,
+            "benchmark_classified_weight": 1.0
           }
         ]
       },
@@ -2417,11 +2435,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 53,
+      "observations": 54,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-09-01T20:06:18.999304+00:00",
+        "as_of": "2026-09-01T22:11:46.502927+00:00",
         "strategy_classified_weight": 1.0,
         "benchmark_classified_weight": 1.0
       },
@@ -2442,14 +2460,14 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 53,
+      "observations": 54,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
         "start": "2026-08-14",
         "end": "2026-09-01",
-        "snapshots": 53,
-        "as_of": "2026-09-01T20:06:18.999304+00:00",
+        "snapshots": 54,
+        "as_of": "2026-09-01T22:11:46.502927+00:00",
         "benchmark_return_pct": -1.86,
         "total_allocation_effect_pct": 1.448,
         "sectors": {
@@ -5623,7 +5641,7 @@
         "status": "ready",
         "value": 1,
         "date": "2026-09-01",
-        "refresh_id": "advisor-2026-09-01T20:06:18.999304+00:00",
+        "refresh_id": "advisor-2026-09-01T22:11:46.502927+00:00",
         "rows": 896,
         "missing_prices": 1,
         "missing_price_tickers": [
@@ -5638,7 +5656,7 @@
         "universe_churn": {
           "added": [],
           "removed": [],
-          "observed_at": "2026-09-01T20:06:17.525104+00:00"
+          "observed_at": "2026-09-01T22:11:44.356045+00:00"
         },
         "corporate_action_monitoring": {
           "status": "not_available",
@@ -5694,8 +5712,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "9d0e43c3946519dbea8722605c433f247c6a56cc",
+    "git_commit_sha": "2ded1aecd0da1f156c1ccfe22b67fa708552983c",
     "config_hash": "a0b747109820f48effbd8dabf5a30f2760e191e1e63f004cdc13c18247360c63",
-    "generated_at": "2026-09-01T20:10:50.852403+00:00"
+    "generated_at": "2026-09-01T22:18:08.768016+00:00"
   }
 }
