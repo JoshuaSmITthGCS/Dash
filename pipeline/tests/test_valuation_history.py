@@ -125,6 +125,45 @@ def test_enterprise_value_adds_debt_and_removes_cash():
     assert series["ev_to_ebit"]["current"] == 10030 / 80
 
 
+def test_unreconciled_adr_produces_no_multiples_rather_than_a_wrong_market_cap():
+    """Round-12 valuation audit: TSM's balance sheet reports its full ordinary-share count,
+    not the ADS-equivalent count its USD ADR price implies (1 ADS = 5 ordinary shares). With
+    no verified ratio in adr_registry, this must refuse to reconstruct market_cap = close *
+    ordinary_shares (which would overstate it roughly 5x) rather than publish a wrong value.
+    """
+    entry = cache_entry(dates=["2025-11-14"], closes=[10.0])
+
+    series = module.multiple_series(entry, ticker="TSM")
+
+    assert series == {}
+
+
+def test_unregistered_ticker_is_unaffected_by_the_adr_guard():
+    entry = cache_entry(dates=["2025-11-14"], closes=[10.0])
+
+    series = module.multiple_series(entry, ticker="AAPL")
+
+    assert series == module.multiple_series(entry)
+
+
+def test_verified_adr_ratio_converts_ordinary_shares_before_pricing(monkeypatch):
+    import adr_registry
+
+    monkeypatch.setattr(adr_registry, "_REGISTRY", {
+        "FAKE": {"is_adr": True, "adr_ratio": 5, "verified": True}})
+    entry = cache_entry(dates=["2025-11-14"], closes=[10.0], shares=5000.0)
+
+    series = module.multiple_series(entry, ticker="FAKE")
+    unconverted = module.multiple_series(entry)
+
+    # 5000 ordinary shares / 5-to-1 ratio = 1000 ADS-equivalent shares: market cap 10,000
+    # against TTM net income of 40 is a P/E of 250x, one fifth of the unconverted 1250x you'd
+    # get by (wrongly) pricing all 5000 ordinary shares at the ADR price.
+    assert series["price_to_earnings"]["current"] == 250.0
+    assert unconverted["price_to_earnings"]["current"] == 1250.0
+    assert unconverted["price_to_earnings"]["current"] == series["price_to_earnings"]["current"] * 5
+
+
 def test_applicable_metrics_gate_on_both_depth_and_statement_changes():
     available = {"price_to_earnings": {"sessions": 200, "fundamental_steps": 2},
                  "ev_to_ebit": {"sessions": 200, "fundamental_steps": 1},

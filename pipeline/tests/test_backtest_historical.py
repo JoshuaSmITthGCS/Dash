@@ -251,5 +251,41 @@ class BuildSnapshotEdgarWiringTests(unittest.TestCase):
         self.assertAlmostEqual(snap["earnings_growth"], 0.0)
 
 
+class AdrShareCountGuardTests(unittest.TestCase):
+    """Round-12 valuation audit: a balance-sheet share count is an ADR's ordinary-share
+    count, not the ADS-equivalent count its USD price implies. build_snapshot must not
+    silently multiply the two together for a known, unreconciled ADR.
+    """
+
+    def _ticker_data_with_balance_shares(self, symbol, ordinary_shares):
+        ticker_data = quarterly_ticker_data(symbol=symbol, quarters=4)
+        ticker_data["balance"]["rows"]["Ordinary Shares Number"] = [ordinary_shares] * 4
+        return ticker_data
+
+    def test_known_unreconciled_adr_leaves_market_cap_unresolved(self):
+        ticker_data = self._ticker_data_with_balance_shares("TSM", 5_000_000_000.0)
+        snap, _, _ = bh.build_snapshot(ticker_data, date(2026, 8, 15), report_lag_days=45,
+                                       allow_current_shares=False)
+        self.assertIsNone(snap["market_cap"])
+
+    def test_ordinary_us_ticker_is_unaffected(self):
+        ticker_data = self._ticker_data_with_balance_shares("AAA", 100.0)
+        snap, _, _ = bh.build_snapshot(ticker_data, date(2026, 8, 15), report_lag_days=45,
+                                       allow_current_shares=False)
+        self.assertAlmostEqual(snap["market_cap"], snap["price"] * 100.0)
+
+    def test_verified_ratio_converts_rather_than_blocking(self):
+        import adr_registry
+        original = adr_registry._REGISTRY
+        adr_registry._REGISTRY = {"FAKE": {"is_adr": True, "adr_ratio": 5, "verified": True}}
+        try:
+            ticker_data = self._ticker_data_with_balance_shares("FAKE", 500.0)
+            snap, _, _ = bh.build_snapshot(ticker_data, date(2026, 8, 15), report_lag_days=45,
+                                           allow_current_shares=False)
+        finally:
+            adr_registry._REGISTRY = original
+        self.assertAlmostEqual(snap["market_cap"], snap["price"] * 100.0)  # 500 / 5 = 100
+
+
 if __name__ == "__main__":
     unittest.main()

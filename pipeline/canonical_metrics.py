@@ -449,8 +449,14 @@ def yahoo_observations(info, fetched_at=None):
         "price_to_sales": ("priceToSalesTrailing12Months", "multiple", True, False),
         "return_on_equity": ("returnOnEquity", "decimal", True, False),
         "profit_margin": ("profitMargins", "decimal", True, False),
-        "trailing_revenue_growth": ("revenueGrowth", "decimal", True, False),
-        "quarterly_eps_growth": ("earningsGrowth", "decimal", True, False),
+        # Yahoo's revenueGrowth/earningsGrowth are quarter-over-quarter year-on-year growth --
+        # the most recent reported quarter versus the same quarter a year earlier -- not a
+        # trailing-twelve-month figure. fetch_advisor.py's Alpha Vantage mapping for the
+        # identical underlying concept (QuarterlyRevenueGrowthYOY/QuarterlyEarningsGrowthYOY)
+        # already marks this is_ttm=False with a "quarterly_not_ttm" flag; this mapping used to
+        # claim is_ttm=True for the same concept purely because of which provider served it.
+        "trailing_revenue_growth": ("revenueGrowth", "decimal", False, False),
+        "quarterly_eps_growth": ("earningsGrowth", "decimal", False, False),
     }
     result = {}
     for metric_id, (source_field, unit, is_ttm, is_forward) in specs.items():
@@ -460,6 +466,8 @@ def yahoo_observations(info, fetched_at=None):
         flags = [] if metric_id in ("price", "market_cap") else ["provider_period_not_supplied"]
         if metric_id == "provider_peg":
             flags.append("unknown_growth_definition_and_horizon")
+        if metric_id in ("trailing_revenue_growth", "quarterly_eps_growth"):
+            flags.append("quarterly_not_ttm")
         if metric_id == "quarterly_eps_growth":
             flags.append("not_forward_growth")
         result.setdefault(metric_id, []).append(Observation(

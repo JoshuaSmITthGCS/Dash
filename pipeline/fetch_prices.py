@@ -17,6 +17,7 @@ from datetime import datetime, timezone, timedelta
 from common import (DATA_DIR, LOG, data_mode, load_json, load_store_json, save_json,
                     normalize_name, update_pipeline_status)
 from canonical_metrics import yahoo_observations
+from plausibility import screen as screen_plausibility
 
 TRACK_RECORD_CACHE = os.path.join(DATA_DIR, "politicians.json")
 TRACK_REFRESH_DAYS = 7
@@ -92,6 +93,13 @@ def fetch_snapshot(ticker, yf, etf_ids, ticker_obj=None):
         "sector": safe(info, "sector") or ("ETF" if is_etf else None),
         "industry": safe(info, "industry"),
         "market_cap": market_cap,
+        # Same quote payload as market_cap/price, not a statement-derived balance-sheet share
+        # count -- Yahoo's own vendor-reported share count is internally consistent with its
+        # own marketCap/currentPrice, so plausibility.implied_share_count_violations can catch
+        # a genuine stale-cache/split mismatch without also flagging an ADR whose ordinary-
+        # share balance-sheet count legitimately differs from its ADS-equivalent share count
+        # (see pipeline/adr_registry.py; that mismatch is a different, non-Yahoo-internal bug).
+        "shares_outstanding": safe(info, "sharesOutstanding"),
         "dividend_yield": safe(info, "dividendYield"),
         "is_etf": is_etf,
         # ----- valuation metrics -----
@@ -135,12 +143,26 @@ def build_prices():
     LOG.info(f"Fetching prices + valuation for {len(tickers)} tickers")
 
     prices = {}
+    implausible_dropped = 0
     for i, t in enumerate(tickers, 1):
         snap = fetch_snapshot(t, yf, etf_ids)
         if snap:
+            # This path (unlike fetch_advisor.py's collect()/enrich()) had no plausibility
+            # screening at all, so an implausible provider value (e.g. a decimal/percentage
+            # dividend-yield mix-up, or a market cap that doesn't reconcile with price times
+            # shares) flowed straight into signals.json's valuation_score unguarded.
+            snap, violations = screen_plausibility(snap)
+            if violations:
+                implausible_dropped += len(violations)
+                LOG.warn(f"{t}: dropped {len(violations)} implausible field(s): "
+                         + ", ".join(f"{item['field']}={item['value']!r} ({item['rule']})"
+                                     for item in violations))
             prices[t] = snap
         if i % 25 == 0:
             LOG.info(f"  ...{i}/{len(tickers)}")
+    if implausible_dropped:
+        LOG.info(f"Plausibility screen dropped {implausible_dropped} implausible field(s) "
+                 f"across {len(prices)} tickers")
 
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),

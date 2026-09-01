@@ -67,6 +67,32 @@ CASHFLOW_ROWS = {
 
 _ANNUAL_DAYS = (330, 400)
 
+# Concepts whose XBRL unit is a share count rather than a monetary amount. Every other
+# concept in INCOME_ROWS/BALANCE_ROWS/CASHFLOW_ROWS (plus "short_term_debt", fetched directly
+# by concept name in _statements) is a dollar figure and must be tagged "USD".
+_SHARE_COUNT_CONCEPTS = {"shares_diluted", "shares_basic"}
+
+
+def _unit_acceptable(concept, unit):
+    """Reject a fact whose XBRL unit doesn't match what this concept must be measured in.
+
+    A 20-F filer (or a domestic filer's foreign-segment footnote) can tag a company-facts
+    concept in its own reporting currency -- EUR, GBP, TWD, JPY, CAD, ... -- rather than USD.
+    This pipeline has no currency-conversion layer (see docs/AUDIT and the round-12 valuation
+    audit), so a non-USD monetary fact must be treated as unavailable rather than silently
+    merged into `derive_extended`'s USD-denominated `enterprise_value = market_cap(USD) +
+    debt - cash` and every multiple built on it (ev_to_ebitda, ev_to_sales, ev_to_fcf,
+    ev_to_ebit). Confirmed live example: BIRK's (Birkenstock Holding plc) entire EDGAR
+    company-facts history is tagged EUR, not USD -- without this filter, any BIRK metric
+    Yahoo left None would have been backfilled here with a raw EUR figure sitting alongside a
+    USD market cap. "Unit missing/unrecognized" fails closed the same as a wrong unit: this
+    module cannot verify a value it has no unit for, and the whole point of a plausibility
+    boundary is not to guess in its own favor.
+    """
+    if concept in _SHARE_COUNT_CONCEPTS:
+        return unit == "shares"
+    return unit == "USD"
+
 
 @lru_cache(maxsize=1)
 def _ticker_to_cik():
@@ -81,7 +107,7 @@ def _ticker_to_cik():
 
 @lru_cache(maxsize=128)
 def _shard_rows(shard):
-    """Light per-shard cache: {cik: [(concept, period_end, filed, period_days, value)]}."""
+    """Light per-shard cache: {cik: [(concept, period_end, filed, period_days, value, unit)]}."""
     from datetime import date
 
     def days_between(start, end):
@@ -97,15 +123,17 @@ def _shard_rows(shard):
         by_cik.setdefault(row.get("cik"), []).append((
             row.get("concept"), row.get("period_end"), row.get("filed"),
             days_between(row.get("period_start"), row.get("period_end")),
-            row.get("value")))
+            row.get("value"), row.get("unit")))
     return by_cik
 
 
 def _annual_facts_as_of(cik, as_of):
     """{(concept, period_end): value} using only filings visible on the as-of date."""
     best = {}
-    for concept, period_end, filed, days, value in _shard_rows(shard_for(cik)).get(cik, []):
+    for concept, period_end, filed, days, value, unit in _shard_rows(shard_for(cik)).get(cik, []):
         if not filed or filed > as_of or concept is None or period_end is None:
+            continue
+        if not _unit_acceptable(concept, unit):
             continue
         is_balance = concept in BALANCE_ROWS
         if not is_balance and not (isinstance(days, (int, float))
@@ -168,8 +196,10 @@ _YTD_KINDS = {90: (75, 105), 180: (165, 195), 270: (255, 285)}
 def _all_facts_as_of(cik, as_of):
     """[(concept, period_end, period_days, value)] visible on as_of, latest filing wins."""
     best = {}
-    for concept, period_end, filed, days, value in _shard_rows(shard_for(cik)).get(cik, []):
+    for concept, period_end, filed, days, value, unit in _shard_rows(shard_for(cik)).get(cik, []):
         if not filed or filed > as_of or concept is None or period_end is None:
+            continue
+        if not _unit_acceptable(concept, unit):
             continue
         key = (concept, period_end, days if concept in _FLOW_CONCEPTS else None)
         prior = best.get(key)

@@ -68,6 +68,42 @@ class ScorerTests(unittest.TestCase):
         bank_score, _ = scorer.valuation_score({"is_etf": False, "sector": "Financial Services", "forward_pe": 30})
         self.assertGreater(tech_score, bank_score)
 
+    def test_negative_ev_multiple_is_excluded_not_scored_worst(self):
+        """Round-12 valuation audit: a negative EV/EBITDA usually means net cash exceeds
+        market cap while EBITDA is still positive -- a net-cash, deep-value situation, not
+        distress. multiple_score used to score it as the single worst tier (5.0), which beat
+        a genuinely overpriced 30x multiple (15.0). exclude_nonpositive=True must exclude it
+        (None) instead, so the category reweights around the missing input, matching the
+        policy CrossSectionalNormalizer already applies to VALUATION_MULTIPLES.
+        """
+        bands = scorer.SETTINGS["fundamentals"]["ev_to_ebitda"]
+        self.assertIsNone(scorer.multiple_score(-2.5, bands, exclude_nonpositive=True))
+        self.assertEqual(scorer.multiple_score(-2.5, bands), 5.0)  # legacy behavior preserved
+        overpriced = scorer.multiple_score(30.0, bands, exclude_nonpositive=True)
+        self.assertIsNotNone(overpriced)
+        self.assertGreater(overpriced, 5.0)  # confirms the old ordering was inverted
+
+    def test_negative_price_to_book_is_excluded_not_scored_worst(self):
+        """Negative book equity is routinely buyback-driven (a shareholder-friendly balance
+        sheet), not distress. band_score used to score it 15.0 regardless of cause.
+        """
+        bands = scorer.SETTINGS["fundamentals"]["price_to_book"]
+        self.assertIsNone(scorer.band_score(-5.0, bands, exclude_nonpositive=True))
+        self.assertEqual(scorer.band_score(-5.0, bands), 15.0)  # legacy behavior preserved
+
+    def test_champion_valuation_score_excludes_negative_ev_to_ebitda(self):
+        """End-to-end: the published bands-mode composite must not let a net-cash company's
+        negative EV/EBITDA drag its valuation category down as if it were the worst multiple
+        in the universe -- it should score as if that one input were simply missing.
+        """
+        with_negative = {**STRONG_TECH, "ev_to_ebitda": -2.5}
+        without = {**STRONG_TECH, "ev_to_ebitda": None}
+        score_negative, parts_negative = scorer.valuation_score(with_negative)
+        score_missing, parts_missing = scorer.valuation_score(without)
+        self.assertIsNone(parts_negative["ev_to_ebitda"])
+        self.assertEqual(parts_negative["categories"]["valuation"], parts_missing["categories"]["valuation"])
+        self.assertEqual(score_negative, score_missing)
+
     def test_strong_fundamentals_score_across_all_categories(self):
         score, parts = scorer.valuation_score(STRONG_TECH)
         self.assertGreaterEqual(score, 95)

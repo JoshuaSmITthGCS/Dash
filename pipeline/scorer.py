@@ -88,12 +88,27 @@ def score_policy(ticker, ticker_sector, flagged_sectors, flagged_tickers, w):
 
 # ---------------- fundamental factor ----------------
 
-def band_score(value, bands, lower_is_better=True):
-    """Map a metric to 0-100 across ordered bands. Returns None if value missing."""
+def band_score(value, bands, lower_is_better=True, *, exclude_nonpositive=False):
+    """Map a metric to 0-100 across ordered bands. Returns None if value missing.
+
+    ``exclude_nonpositive`` treats a negative value as "not a valid observation of this
+    ratio" (returns None, so the metric drops out and its category reweights) rather than
+    as the worst possible score. Set it for a metric -- P/B, P/Tangible-Book, PEG -- whose
+    denominator can turn negative for reasons unrelated to distress: negative book equity is
+    routinely a buyback-driven, shareholder-friendly balance sheet (AutoZone/Domino's-style),
+    not a distressed one, and scoring the sign as "bad" is a metric-definition error, not a
+    business judgement. This mirrors the policy CrossSectionalNormalizer._eligible/.score
+    already applies to every VALUATION_MULTIPLES metric in the (currently unpromoted)
+    cross-sectional challenger; without this flag the champion "bands" path disagreed with
+    its own shadow challenger on exactly this question. See multiple_score for the identical
+    fix on the EV-based multiples (ev_to_ebitda, ev_to_ebit, ev_to_fcf, ev_to_sales/P/S,
+    forward P/E) and test_negative_book_multiple_is_not_a_valid_observation in
+    test_canonical_v2.py, which already established this as the intended definition.
+    """
     if value is None:
         return None
     if value < 0:
-        return 15.0  # negative earnings / odd data -> penalize, don't zero out
+        return None if exclude_nonpositive else 15.0  # negative earnings / odd data -> penalize, don't zero out
     keys = list(bands.keys())
     tiers = [100, 75, 50, 25]
     for i, k in enumerate(keys):
@@ -139,12 +154,24 @@ def range_score(value, bands):
     return 25.0
 
 
-def multiple_score(value, bands):
-    """Score a positive valuation multiple while flagging unusually low P/E as possible value-trap risk."""
+def multiple_score(value, bands, *, exclude_nonpositive=False):
+    """Score a positive valuation multiple while flagging unusually low P/E as possible value-trap risk.
+
+    A non-positive enterprise-value multiple (EV/EBITDA, EV/EBIT, EV/FCF, EV/Sales) almost
+    always means net cash exceeds market cap while the earnings/cash denominator is still
+    positive -- a deep-value, net-cash situation, not distress. (The denominator side is
+    already guarded upstream, in fundamentals_extended.derive_enterprise_multiples: a
+    negative EBITDA/EBIT/FCF/revenue denominator returns None before this function ever sees
+    it.) Scoring that as the worst possible tier, as this function did unconditionally, is a
+    metric-definition error the codebase had already fixed once for net_debt_to_ebitda (see
+    lower_is_better_score) but reintroduced here. Pass ``exclude_nonpositive=True`` to treat
+    it as "not a valid observation" instead, matching CrossSectionalNormalizer's
+    VALUATION_MULTIPLES policy.
+    """
     if value is None:
         return None
     if value <= 0:
-        return 5.0
+        return None if exclude_nonpositive else 5.0
     if bands.get("suspicious_below") and value < bands["suspicious_below"]:
         return 60.0
     if value <= bands["cheap_max"]:
@@ -221,9 +248,9 @@ def sales_multiple_score(snap, cfg):
     enterprise = snap.get("ev_to_sales")
     if enterprise is not None:
         bands = cfg["ev_to_sales_by_sector"].get(sector, cfg["ev_to_sales_by_sector"]["default"])
-        return multiple_score(enterprise, bands), "ev_to_sales"
+        return multiple_score(enterprise, bands, exclude_nonpositive=True), "ev_to_sales"
     bands = cfg["price_to_sales_by_sector"].get(sector, cfg["price_to_sales_by_sector"]["default"])
-    return multiple_score(snap.get("price_to_sales"), bands), "price_to_sales"
+    return multiple_score(snap.get("price_to_sales"), bands, exclude_nonpositive=True), "price_to_sales"
 
 
 # Every metric the fundamentals model can score, in the order the category weights declare
@@ -583,15 +610,16 @@ def _band_valuation_score(snap, *, apply_confidence_multiplier=True):
         # PEG survives as a minor growth-adjusted sanity check only. It ignores the time
         # value of money, risk, and cost of capital, and its support as a return predictor
         # is thin, so it no longer carries the largest weight in the bucket.
-        "peg": band_score(snap.get("peg"), cfg["peg"]),
-        "forward_pe": multiple_score(snap.get("forward_pe"), pe_bands),
+        "peg": band_score(snap.get("peg"), cfg["peg"], exclude_nonpositive=True),
+        "forward_pe": multiple_score(snap.get("forward_pe"), pe_bands, exclude_nonpositive=True),
         "sales_multiple": sales_score,
         # Goodwill makes reported book value meaningless for banks; tangible book replaces it there.
-        "price_to_book": band_score(snap.get("price_to_book"), cfg["price_to_book"]),
-        "price_to_tangible_book": band_score(snap.get("price_to_tangible_book"), cfg["price_to_tangible_book"]),
-        "ev_to_ebitda": multiple_score(snap.get("ev_to_ebitda"), cfg["ev_to_ebitda"]),
-        "ev_to_ebit": multiple_score(snap.get("ev_to_ebit"), cfg["ev_to_ebit"]),
-        "ev_to_fcf": multiple_score(snap.get("ev_to_fcf"), cfg["ev_to_fcf"]),
+        "price_to_book": band_score(snap.get("price_to_book"), cfg["price_to_book"], exclude_nonpositive=True),
+        "price_to_tangible_book": band_score(snap.get("price_to_tangible_book"), cfg["price_to_tangible_book"],
+                                             exclude_nonpositive=True),
+        "ev_to_ebitda": multiple_score(snap.get("ev_to_ebitda"), cfg["ev_to_ebitda"], exclude_nonpositive=True),
+        "ev_to_ebit": multiple_score(snap.get("ev_to_ebit"), cfg["ev_to_ebit"], exclude_nonpositive=True),
+        "ev_to_fcf": multiple_score(snap.get("ev_to_fcf"), cfg["ev_to_fcf"], exclude_nonpositive=True),
         "return_on_equity": higher_is_better_score(snap.get("return_on_equity"), cfg["return_on_equity"]),
         # ROIC is the one ROE should have been: leverage cannot inflate it.
         "return_on_invested_capital": higher_is_better_score(snap.get("return_on_invested_capital"),

@@ -95,7 +95,7 @@ def build_rows(universe, observations, entry_for=backtest_entry):
         margin = row.get("profit_margin")
         profile = profile_for({**row, "profit_margin": observed.get("profit_margin")
                                if margin is None else margin})
-        series = multiple_series(entry) if entry else {}
+        series = multiple_series(entry, ticker=ticker) if entry else {}
         applicable = applicable_metrics(profile, series)
         own_history, per_metric = robust_value_score(
             {name: series[name] for name in applicable}, applicable) if applicable else (None, {})

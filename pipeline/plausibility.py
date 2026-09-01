@@ -92,6 +92,17 @@ def field_violations(snapshot):
           "the forward P/E metric excludes negative forward earnings; a negative value is a "
           "provider artefact, not a valuation")
 
+    # Yahoo's dividendYield field has a documented history of switching between a decimal
+    # fraction (0.031) and an already-multiplied percentage number (3.1) depending on which
+    # underlying endpoint served the quote. rank_picks.py hard-codes the decimal convention
+    # (`dy > 0.03`), so a percentage-shaped value would silently satisfy every yield threshold
+    # in that comparison rather than erroring. No real, sustained dividend yield reaches 50%.
+    check("dividend_yield", lambda value: value > 0.5, "dividend_yield_likely_percentage_not_decimal",
+          "a dividend yield above 50% is virtually always a percentage number (e.g. 3.1) that "
+          "was never converted to a decimal fraction (0.031), not a real sustained yield")
+    check("dividend_yield", lambda value: value < 0, "negative_dividend_yield",
+          "a dividend yield cannot be negative")
+
     # --- unit errors -----------------------------------------------------------------
     # A US-listed company with a market capitalisation under $100k is a units error
     # (thousands or millions reported as units), not a nano-cap.

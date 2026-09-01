@@ -1,0 +1,15 @@
+{
+  "_purpose": "Registry of foreign-domiciled/ADR tickers in the universe whose exchange-listed share count is NOT the ordinary-share count carried on the underlying issuer's own balance sheet (Yahoo's 'Ordinary Shares Number'/'Share Issued' row, or a 20-F filer's own reported share count). Any code path that reconstructs market_cap = price * shares_outstanding from a statement-derived share count (pipeline/valuation_history.py, pipeline/backtest_historical.py) MUST consult this registry first via pipeline/adr_registry.py.",
+  "_schema": "Each ticker entry: is_adr (bool, this is a foreign-domiciled name whose statement share count is not directly usable), adr_ratio (ordinary shares per one ADS/ADR, or null if not verified), verified (bool -- true only once adr_ratio has been checked against a primary source), ordinary_currency (the currency the underlying issuer's financial statements are filed in, or null if not verified), source (citation for adr_ratio/ordinary_currency, or null).",
+  "_verification_note": "adr_ratio and ordinary_currency are left null/verified=false for every entry below. This registry was built from a code audit (round-12 valuation audit, research/audit/round12/) run in a sandboxed environment with no live network access to Yahoo Finance, SEC EDGAR, or a depositary bank's ADR ratio disclosure page -- the exact sources a ratio would need to be checked against before it is safe to multiply into a published market cap. Publishing an unverified ratio with false confidence would be exactly the failure mode this audit exists to find, one level up. pipeline/adr_registry.py treats verified=false as 'ratio unknown': it blocks the price*shares reconstruction for these tickers rather than guessing, which is a strictly safer default than either using the wrong ratio or leaving the mismatch undetected as before this change. Populate adr_ratio/ordinary_currency/source and flip verified=true only after checking the issuer's 20-F 'Description of American Depositary Shares' item (or the depositary bank's own ratio disclosure) from an environment with real network access.",
+  "tickers": {
+    "TSM": {"is_adr": true, "adr_ratio": null, "verified": false, "ordinary_currency": null, "source": null,
+            "note": "Taiwan Semiconductor Manufacturing Co. -- Taiwan-domiciled, NYSE-listed ADR."},
+    "ASML": {"is_adr": true, "adr_ratio": null, "verified": false, "ordinary_currency": null, "source": null,
+             "note": "ASML Holding N.V. -- Netherlands-domiciled, NASDAQ-listed ADR."},
+    "NVO": {"is_adr": true, "adr_ratio": null, "verified": false, "ordinary_currency": null, "source": null,
+            "note": "Novo Nordisk A/S -- Denmark-domiciled, NYSE-listed ADR."},
+    "ABB": {"is_adr": true, "adr_ratio": null, "verified": false, "ordinary_currency": null, "source": null,
+            "note": "ABB Ltd -- Switzerland-domiciled, NYSE-listed ADR."}
+  }
+}

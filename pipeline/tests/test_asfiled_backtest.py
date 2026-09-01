@@ -16,8 +16,8 @@ def _fake_shard(rows_by_cik):
 
 def test_unfiled_fact_is_invisible(monkeypatch):
     rows = {"0000000001": [
-        ("revenue", "2020-12-31", "2021-02-15", 365, 100.0),
-        ("revenue", "2021-12-31", "2022-02-15", 365, 120.0),
+        ("revenue", "2020-12-31", "2021-02-15", 365, 100.0, "USD"),
+        ("revenue", "2021-12-31", "2022-02-15", 365, 120.0, "USD"),
     ]}
     monkeypatch.setattr(edgar_enrichment, "_shard_rows", _fake_shard(rows))
     facts = _annual_facts_as_of("0000000001", "2021-06-30")
@@ -28,8 +28,8 @@ def test_unfiled_fact_is_invisible(monkeypatch):
 
 def test_amendment_visible_only_from_its_own_filing_date(monkeypatch):
     rows = {"0000000001": [
-        ("revenue", "2020-12-31", "2021-02-15", 365, 100.0),
-        ("revenue", "2020-12-31", "2021-09-01", 365, 90.0),  # 10-K/A restates downward
+        ("revenue", "2020-12-31", "2021-02-15", 365, 100.0, "USD"),
+        ("revenue", "2020-12-31", "2021-09-01", 365, 90.0, "USD"),  # 10-K/A restates downward
     ]}
     monkeypatch.setattr(edgar_enrichment, "_shard_rows", _fake_shard(rows))
     before_amendment = _annual_facts_as_of("0000000001", "2021-06-30")
@@ -40,8 +40,8 @@ def test_amendment_visible_only_from_its_own_filing_date(monkeypatch):
 
 def test_quarterly_flow_facts_excluded_from_annual_series(monkeypatch):
     rows = {"0000000001": [
-        ("revenue", "2021-03-31", "2021-05-01", 90, 30.0),
-        ("revenue", "2021-12-31", "2022-02-15", 365, 120.0),
+        ("revenue", "2021-03-31", "2021-05-01", 90, 30.0, "USD"),
+        ("revenue", "2021-12-31", "2022-02-15", 365, 120.0, "USD"),
     ]}
     monkeypatch.setattr(edgar_enrichment, "_shard_rows", _fake_shard(rows))
     facts = _annual_facts_as_of("0000000001", "2022-06-30")
@@ -51,7 +51,7 @@ def test_quarterly_flow_facts_excluded_from_annual_series(monkeypatch):
 
 def test_balance_facts_visible_regardless_of_period_days(monkeypatch):
     rows = {"0000000001": [
-        ("assets", "2021-12-31", "2022-02-15", None, 500.0),
+        ("assets", "2021-12-31", "2022-02-15", None, 500.0, "USD"),
     ]}
     monkeypatch.setattr(edgar_enrichment, "_shard_rows", _fake_shard(rows))
     facts = _annual_facts_as_of("0000000001", "2022-06-30")
@@ -89,12 +89,12 @@ def test_tag_union_preserves_legacy_history():
 def test_ttm_uses_only_visible_quarters(monkeypatch):
     """TTM = FY + YTD_current - YTD_prior, and a 10-Q filed after as_of never enters."""
     rows = {"0000000001": [
-        ("revenue", "2021-12-31", "2022-02-15", 365, 100.0),   # FY2021, filed Feb 2022
-        ("revenue", "2022-06-30", "2022-08-01", 181, 30.0),    # H1-2022 YTD, filed Aug
-        ("revenue", "2021-06-30", "2021-08-01", 181, 25.0),    # H1-2021 YTD
-        ("revenue", "2022-09-30", "2022-11-01", 273, 50.0),    # 9M-2022, filed Nov (late)
-        ("assets", "2022-06-30", "2022-08-01", None, 900.0),
-        ("assets", "2021-12-31", "2022-02-15", None, 800.0),
+        ("revenue", "2021-12-31", "2022-02-15", 365, 100.0, "USD"),   # FY2021, filed Feb 2022
+        ("revenue", "2022-06-30", "2022-08-01", 181, 30.0, "USD"),    # H1-2022 YTD, filed Aug
+        ("revenue", "2021-06-30", "2021-08-01", 181, 25.0, "USD"),    # H1-2021 YTD
+        ("revenue", "2022-09-30", "2022-11-01", 273, 50.0, "USD"),    # 9M-2022, filed Nov (late)
+        ("assets", "2022-06-30", "2022-08-01", None, 900.0, "USD"),
+        ("assets", "2021-12-31", "2022-02-15", None, 800.0, "USD"),
     ]}
     monkeypatch.setattr(edgar_enrichment, "_shard_rows", _fake_shard(rows))
     ttm, balance = edgar_enrichment._ttm_facts_as_of("0000000001", "2022-09-15")
@@ -109,7 +109,7 @@ def test_ttm_uses_only_visible_quarters(monkeypatch):
 
 def test_ttm_without_any_quarters_reproduces_annual(monkeypatch):
     rows = {"0000000001": [
-        ("revenue", "2021-12-31", "2022-02-15", 365, 100.0),
+        ("revenue", "2021-12-31", "2022-02-15", 365, 100.0, "USD"),
     ]}
     monkeypatch.setattr(edgar_enrichment, "_shard_rows", _fake_shard(rows))
     ttm, _ = edgar_enrichment._ttm_facts_as_of("0000000001", "2022-06-30")

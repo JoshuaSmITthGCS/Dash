@@ -24,6 +24,8 @@ from __future__ import annotations
 import math
 from datetime import date, timedelta
 
+from adr_registry import ads_equivalent_shares, is_unreconciled_adr
+
 # A large accelerated filer files its 10-Q within 40 days of quarter end and its 10-K within
 # 60. 45 days is the deliberately conservative middle: a few days of pessimism costs a little
 # history, while optimism here would price days against statements nobody could read yet.
@@ -219,7 +221,7 @@ def point_in_time_fundamentals(entry, reporting_lag_days=REPORTING_LAG_DAYS):
     return output
 
 
-def _multiples(close, trailing, balance):
+def _multiples(close, trailing, balance, ticker=None):
     """Every multiple computable for one day, skipping the ones a denominator makes nonsense.
 
     A negative or zero denominator is dropped rather than published: a company earning nothing
@@ -230,6 +232,19 @@ def _multiples(close, trailing, balance):
     cash = balance.get("cash") or 0
     if not shares or shares <= 0:
         return {}
+    # `shares` here is the balance sheet's own-share-count row (Yahoo's "Ordinary Shares
+    # Number"/"Share Issued"), which for a foreign-domiciled ADR is the issuer's total
+    # ordinary-share count, not the ADS-equivalent count its USD `close` price implies (round-
+    # 12 valuation audit: TSM trades 1 ADS per 5 ordinary shares, so multiplying the ADR price
+    # by the raw ordinary-share count overstates market cap, and every multiple derived from
+    # it, by roughly that ratio). is_unreconciled_adr blocks the reconstruction outright for a
+    # known ADR with no verified ratio; a verified ratio would convert `shares` first.
+    if is_unreconciled_adr(ticker):
+        return {}
+    if ticker is not None:
+        shares = ads_equivalent_shares(ticker, shares)
+        if not shares or shares <= 0:
+            return {}
     market_cap = close * shares
     enterprise_value = market_cap + debt - cash
     pairs = {
@@ -252,7 +267,7 @@ def _multiples(close, trailing, balance):
     return output
 
 
-def multiple_series(entry, reporting_lag_days=REPORTING_LAG_DAYS, as_of=None):
+def multiple_series(entry, reporting_lag_days=REPORTING_LAG_DAYS, as_of=None, ticker=None):
     """Daily own-history multiples for one ticker: {metric: {history, current, sessions, start}}.
 
     `history` is every value in the window including today's, which is what a percentile of
@@ -278,7 +293,7 @@ def multiple_series(entry, reporting_lag_days=REPORTING_LAG_DAYS, as_of=None):
             active, index = fundamentals[index], index + 1
         if active is None or close is None or close <= 0:
             continue
-        for name, value in _multiples(close, active["trailing"], active["balance"]).items():
+        for name, value in _multiples(close, active["trailing"], active["balance"], ticker).items():
             series.setdefault(name, {"history": [], "days": [], "periods": set()})
             series[name]["history"].append(value)
             series[name]["days"].append(day)

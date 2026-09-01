@@ -70,6 +70,21 @@ class YahooObservationsTests(unittest.TestCase):
         self.assertEqual(observations["return_on_equity"][0]["value"], 0.2)
         self.assertEqual(observations["profit_margin"][0]["value"], 0.15)
 
+    def test_yahoo_revenue_and_eps_growth_are_labeled_quarterly_not_ttm(self):
+        """Round-12 valuation audit: Yahoo's revenueGrowth/earningsGrowth are quarter-over-
+        quarter year-on-year figures, not trailing-twelve-month growth. This mapping used to
+        claim is_ttm=True for both -- inconsistent with the honest is_ttm=False +
+        quarterly_not_ttm flag fetch_advisor.py's Alpha Vantage mapping already applies to the
+        identical underlying concept (QuarterlyRevenueGrowthYOY/QuarterlyEarningsGrowthYOY).
+        """
+        observations = yahoo_observations({"revenueGrowth": 0.12, "earningsGrowth": 0.08})
+        revenue_obs = observations["trailing_revenue_growth"][0]
+        eps_obs = observations["quarterly_eps_growth"][0]
+        self.assertFalse(revenue_obs["is_ttm"])
+        self.assertIn("quarterly_not_ttm", revenue_obs["quality_flags"])
+        self.assertFalse(eps_obs["is_ttm"])
+        self.assertIn("quarterly_not_ttm", eps_obs["quality_flags"])
+
 
 class ProfileTests(unittest.TestCase):
     def test_all_regression_profiles_route_deterministically(self):

@@ -70,6 +70,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 from common import LOG, load_json  # noqa: E402
+from adr_registry import ads_equivalent_shares, is_unreconciled_adr  # noqa: E402
 from advisor_engine import build_research  # noqa: E402
 from canonical_metrics import classify_profile  # noqa: E402
 from edgar_enrichment import edgar_ttm_statements  # noqa: E402
@@ -402,6 +403,18 @@ def build_snapshot(ticker_data, as_of, report_lag_days, allow_current_shares=Tru
     shares = ticker_data["current_shares_outstanding"] if allow_current_shares else None
     balance_shares = at(line(balance_now, "shares_outstanding"))
     if balance_shares:
+        # `balance_shares` is the balance sheet's own ordinary-share count (Yahoo's "Ordinary
+        # Shares Number"/"Share Issued"), which for a foreign-domiciled ADR is not the
+        # ADS-equivalent count `price` (an ADR's USD quote) implies -- see adr_registry.py.
+        # Multiplying them straight through overstated TSM-style names by roughly the ADR
+        # ratio (round-12 valuation audit). A known ADR with no verified ratio leaves shares
+        # unresolved here rather than silently reusing the mismatched ordinary-share count.
+        ticker = ticker_data.get("symbol")
+        if is_unreconciled_adr(ticker):
+            balance_shares = None
+        else:
+            balance_shares = ads_equivalent_shares(ticker, balance_shares)
+    if balance_shares:
         shares = balance_shares
     elif not shares:
         # Neither a live share count (blocked by allow_current_shares for point-in-time
@@ -411,7 +424,14 @@ def build_snapshot(ticker_data, as_of, report_lag_days, allow_current_shares=Tru
         # average shares from the income statement is not the same figure, but it's a
         # standard, disclosed practical stand-in for market cap here, and strictly better
         # than leaving every market-cap-dependent valuation ratio at None for this stretch.
-        shares = at(line(income_ttm, "diluted_shares"))
+        # It carries the identical ADR ordinary-vs-ADS-share risk as balance_shares above.
+        diluted_shares = at(line(income_ttm, "diluted_shares"))
+        ticker = ticker_data.get("symbol")
+        if diluted_shares and is_unreconciled_adr(ticker):
+            diluted_shares = None
+        elif diluted_shares:
+            diluted_shares = ads_equivalent_shares(ticker, diluted_shares)
+        shares = diluted_shares
     market_cap = price * shares if shares else None
 
     revenue_now = at(line(income_ttm, "revenue"), 0)
