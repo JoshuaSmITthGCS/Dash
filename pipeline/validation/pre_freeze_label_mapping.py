@@ -66,6 +66,8 @@ POST_FREEZE_LABELS = {
 NON_LABEL_KEYS = {
     "total_enumerated", "dsr_trial_count_used", "note",
     "pre_freeze_label_registry_mapping_addendum_2026-09-01",
+    "test_count_reconciliation_addendum_2026-09-01",
+    "rank_buffer_variant_identity_addendum_2026-09-01",
 }
 
 # The research/audit directory each label's own name points at. Declared by hand from the
