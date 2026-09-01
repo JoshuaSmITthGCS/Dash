@@ -364,10 +364,13 @@ export default function Dashboard() {
   const liveStrategyAnnualReturnPct = currentHoldingsPeriod
     ? annualizeReturnPct(currentHoldingsPeriod.returnPct, currentHoldingsPeriod.startDate, currentHoldingsPeriod.endDate)
     : null
-  const annualReturnTargetPct = normalizeAnnualReturnTarget(
-    liveStrategyAnnualReturnPct ?? finances.settings.planningAnnualReturnTargetPct,
-    projectionSource,
-  )
+  // The manual planning slider (Finances page) is intentionally bounded to a sane assumption
+  // range -- but once there's enough live holdings history to compute an actual annualized
+  // return, that's a measured fact, not an assumption, and clamping it to the slider's range
+  // would mislabel it (e.g. showing "+40% annually" while the real trailing return is 58%).
+  const annualReturnTargetPct = liveStrategyAnnualReturnPct != null
+    ? liveStrategyAnnualReturnPct
+    : normalizeAnnualReturnTarget(finances.settings.planningAnnualReturnTargetPct, projectionSource)
   const planningReturns = projectionSource.available
     ? applyAllocationAssumption(
       projectionSource.returns,
