@@ -97,5 +97,5 @@ def test_shadow_strategy_contract_declares_both_comparison_modes():
         "legacy_production_model", "v2_structural_model", "structural_timeliness_model",
         "momentum_sleeve", "quality_value_sleeve", "swing_only",
         "political_institutional_only", "combined_model", "SPY_benchmark",
-        "equal_weight_eligible_universe", "manual_external_rankings",
+        "equal_weight_eligible_universe", "manual_external_rankings", "theme_opportunity",
     }

@@ -37,6 +37,8 @@
                                      "visibility_gate": "congressional disclosure_date and 13F filing date only; transaction_date and quarter end are never read",
                                      "note": "reward-only political points (congress_signal) summed with lag-decayed 13F breadth (institutional_ownership); a period with no visible disclosure holds cash rather than ranking zeros"},
     "combined_model": {"signal": "documented_combined_model", "weighting_method": "sleeve_risk_budget"},
+    "theme_opportunity": {"signal": "theme_screen_opportunity_score", "source_screen": "theme_screen",
+                          "note": "themes.opportunity_score (theme_exposure_score x fundamental_score x valuation cheapness) for each ticker's strongest eligible theme; restricted to the subset of the universe the theme screen scores. Price momentum contributes zero to theme_exposure_score by the theme screen's own guardrail (max_price_momentum_contribution = 0). Research candidate, activated 2026-09-01 -- see pipeline/shadow_portfolios.py STRATEGY_ACTIVATION_DATES."},
     "SPY_benchmark": {"universe": "SPY", "signal": "none", "number_of_holdings": 1, "weighting_method": "100_percent_SPY", "turnover_cap": 1.0, "maximum_position": 1.0, "maximum_sector": 1.0},
     "equal_weight_eligible_universe": {"signal": "none", "number_of_holdings": "all_eligible", "weighting_method": "equal_weight", "maximum_position": "inverse_eligible_count"},
     "manual_external_rankings": {"signal": "imported_rank", "input_contract": "date,ticker,rank,value_grade,growth_grade,momentum_grade", "access_policy": "user_supplied_only_no_scraping"}

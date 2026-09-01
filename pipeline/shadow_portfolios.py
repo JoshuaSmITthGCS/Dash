@@ -61,6 +61,7 @@ ACTIVATION_DATE = "2026-08-02"
 # strategy was never actually live to earn.
 STRATEGY_ACTIVATION_DATES = {
     "reweighted_composite_a": "2026-08-21",
+    "theme_opportunity": "2026-09-01",
 }
 # Round 11 Priority 2 -- a concurrent shadow-portfolio registry, capped. Every strategy in
 # STRATEGY_ACTIVATION_DATES is a research candidate on its own prospective clock, subject to
@@ -120,6 +121,7 @@ STRATEGIES = OrderedDict([
     ("political_institutional", "Political + institutional trades only"),
     ("combined", "Combined model"),
     ("reweighted_composite_a", "Reweighted composite A (Round 7 proposal)"),
+    ("theme_opportunity", "Theme-tilted opportunity (theme exposure proposal)"),
     ("SPY", "SPY benchmark"),
     ("eligible_universe_equal_weight", "Equal-weight eligible universe"),
     ("external", "User-imported external rankings"),
@@ -236,6 +238,44 @@ def _reweighted_composite_rows(advisor, price_by_ticker, weights=REWEIGHTED_A_WE
     return _equal_weight_rows(scored, price_by_ticker, signal_field="score", limit=limit)
 
 
+# Research candidate: does folding the theme screen's exposure read into the ranking
+# signal improve on the champion, restricted to the subset of the universe the theme
+# screen actually scores? ``themes.build_theme_screen`` publishes its own
+# ``opportunity_score`` per (ticker, theme) pair -- exposure x fundamental quality x
+# valuation cheapness, guardrailed to carry zero price momentum by construction (see
+# themes.py's module docstring and its published "principle" string). This shadow never
+# feeds that score back into the champion or challenger composite; it only ranks a
+# separate, prospective-only portfolio so the idea earns its case the same way
+# reweighted_composite_a does, on the shadow_store return history rather than an in-sample
+# read. Registered under STRATEGY_ACTIVATION_DATES: a research candidate, not a permanent
+# sleeve, subject to the same eventual PROMOTE/KEEP_AS_CHALLENGER/ABANDON decision.
+def _theme_opportunity_rows(advisor, price_by_ticker, limit=20):
+    """Rank tickers the theme screen scored eligible by their best opportunity_score.
+
+    A ticker can carry exposure to more than one active theme; this takes the strongest
+    (highest opportunity_score) eligible entry per ticker rather than averaging across
+    themes, so a name central to one real trend is not diluted by a marginal, low-confidence
+    reading on an unrelated one. Tickers the theme screen never scored -- most of the
+    universe, since coverage depends on scope/keyword/segment matches -- are simply absent
+    from this shadow, exactly like ``swing_only`` is restricted to what the swing screen
+    itself ranks.
+    """
+    by_ticker = (advisor.get("theme_screen") or {}).get("by_ticker") or {}
+    scored = []
+    for ticker, entries in by_ticker.items():
+        ticker = str(ticker or "").upper()
+        if not ticker:
+            continue
+        eligible = [entry for entry in entries or []
+                    if entry.get("eligible") and _finite(entry.get("opportunity_score"))]
+        if not eligible:
+            continue
+        best = max(eligible, key=lambda entry: entry["opportunity_score"])
+        scored.append({"ticker": ticker, "score": float(best["opportunity_score"])})
+    scored.sort(key=lambda row: row["score"], reverse=True)
+    return _equal_weight_rows(scored, price_by_ticker, signal_field="score", limit=limit)
+
+
 def _political_institutional_rows(screens, price_by_ticker, as_of=None, limit=20):
     """The follow-the-disclosed-trades selection, from today's two disclosure screens.
 
@@ -293,6 +333,7 @@ def selections_from_payload(advisor, benchmark, screens=None, as_of=None):
         "swing": screen_rows("swing", "composite_z"),
         "political_institutional": _political_institutional_rows(screens, price_by_ticker, as_of),
         "reweighted_composite_a": _reweighted_composite_rows(advisor, price_by_ticker),
+        "theme_opportunity": _theme_opportunity_rows(advisor, price_by_ticker),
         "eligible_universe_equal_weight": _equal_weight_rows(
             eligible, price_by_ticker, limit=None,
         ),

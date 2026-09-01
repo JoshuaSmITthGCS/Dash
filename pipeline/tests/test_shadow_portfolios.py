@@ -267,6 +267,7 @@ def test_the_report_covers_every_declared_strategy_including_the_new_ones():
     assert "Swing signals only" in labels
     assert "Political + institutional trades only" in labels
     assert "Reweighted composite A (Round 7 proposal)" in labels
+    assert "Theme-tilted opportunity (theme exposure proposal)" in labels
 
 
 def test_reweighted_composite_ranks_by_published_legs_not_the_champion_score():
@@ -346,13 +347,61 @@ def test_the_live_registry_is_within_its_own_cap():
 def test_research_candidates_excludes_permanent_sleeves_and_baselines():
     candidates = research_candidate_strategies()
     assert "reweighted_composite_a" in candidates
+    assert "theme_opportunity" in candidates
     for permanent in ("production", "SPY", "momentum", "eligible_universe_equal_weight"):
         assert permanent not in candidates
 
 
+def test_theme_opportunity_ranks_by_strongest_eligible_theme_and_skips_unscored_tickers():
+    # AAA carries two theme reads; its ineligible, higher-number one must lose to its
+    # eligible 70. BBB is a single eligible 90 and should rank first. CCC was never scored
+    # by the theme screen at all and must not appear.
+    advisor = {
+        "generated_at": "2026-09-01T12:00:00Z",
+        "research": [
+            {"ticker": "AAA", "score": 50, "price": 100},
+            {"ticker": "BBB", "score": 10, "price": 100},
+            {"ticker": "CCC", "score": 99, "price": 100},
+        ],
+        "screen_universe": [],
+        "theme_screen": {
+            "by_ticker": {
+                "AAA": [
+                    {"theme_id": "ai", "opportunity_score": 95.0, "eligible": False},
+                    {"theme_id": "grid", "opportunity_score": 70.0, "eligible": True},
+                ],
+                "BBB": [
+                    {"theme_id": "ai", "opportunity_score": 90.0, "eligible": True},
+                ],
+            },
+        },
+    }
+    benchmark = {"histories": {"SPY": {"dates": ["2026-09-01"], "closes": [500]}}}
+    selected = selections_from_payload(advisor, benchmark, {})
+    rows = selected["theme_opportunity"]
+    assert [row["ticker"] for row in rows] == ["BBB", "AAA"]
+    assert rows[0]["signal"] == 90.0
+    assert rows[1]["signal"] == 70.0
+
+
+def test_theme_opportunity_collects_nothing_before_its_registration_date(tmp_path):
+    advisor, benchmark = fixture_payload(day="2026-08-31")
+    advisor["theme_screen"] = {"by_ticker": {
+        "AAA": [{"theme_id": "ai", "opportunity_score": 80.0, "eligible": True}],
+    }}
+    result = append_payload(advisor, benchmark, {}, store_root=str(tmp_path))
+    assert "production" in result["appended"]
+    assert "theme_opportunity" not in result["appended"]
+
+    later_advisor, later_benchmark = fixture_payload(day="2026-09-01", spy=501)
+    later_advisor["theme_screen"] = advisor["theme_screen"]
+    later = append_payload(later_advisor, later_benchmark, {}, store_root=str(tmp_path))
+    assert "theme_opportunity" in later["appended"]
+
+
 def test_a_sixth_concurrent_candidate_is_refused():
     over_cap = {**STRATEGY_ACTIVATION_DATES,
-               "b": "2026-08-01", "c": "2026-08-02", "d": "2026-08-03", "e": "2026-08-04"}
+               "c": "2026-08-02", "d": "2026-08-03", "e": "2026-08-04"}
     assert len(over_cap) == 5  # exactly at the cap: must still pass
     assert_candidate_capacity(over_cap)
 
