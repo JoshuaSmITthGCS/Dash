@@ -137,6 +137,78 @@ describe('PoliticalTrading page', () => {
     const rows = screen.getAllByRole('row').filter((row) => /WIN|LAG/.test(row.textContent))
     expect(rows[0]).toHaveTextContent('WIN')
   })
+  it('shows a weighted signal badge and its underlying performance stats on expand', () => {
+    useData.mockReturnValue({
+      data: {
+        results: [trade({ representative: 'Jane Doe', signal_strength: 0.92, performance_score: 0.9 })],
+        politician_performance: {
+          leaderboard: [{
+            politician: 'Jane Doe', n_priced_buys: 12, avg_alpha_pct: 8.4,
+            win_rate: 0.83, performance_score: 0.9, confidence: 'high', rank: 1,
+          }],
+        },
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
+
+    const badge = screen.getAllByText('Strong').find((element) => element.closest('summary'))
+    expect(badge).toBeVisible()
+    fireEvent.click(badge.closest('summary'))
+    expect(screen.getByText('83% beat S&P')).toBeVisible()
+    expect(screen.getByText(/avg alpha \+8.4pp.*12 priced buys.*high confidence/)).toBeVisible()
+  })
+
+  it('labels a filer with no priced buys yet as having no track record, not a false zero', () => {
+    useData.mockReturnValue({
+      data: { results: [trade({ representative: 'New Filer', signal_strength: 0.1 })] },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
+    const badge = screen.getAllByText('Weak').find((element) => element.closest('summary'))
+    fireEvent.click(badge.closest('summary'))
+
+    expect(screen.getByText('No priced track record yet')).toBeVisible()
+  })
+
+  it('sorts by weighted signal strength', () => {
+    useData.mockReturnValue({
+      data: {
+        results: [
+          trade({ representative: 'Weak Filer', symbol: 'LOW', signal_strength: 0.1 }),
+          trade({ representative: 'Strong Filer', symbol: 'HIGH', signal_strength: 0.95 }),
+        ],
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
+    fireEvent.change(screen.getByLabelText('Sort by'), { target: { value: 'signal' } })
+
+    const rows = screen.getAllByRole('row').filter((row) => /HIGH|LOW/.test(row.textContent))
+    expect(rows[0]).toHaveTextContent('HIGH')
+  })
+
+  it('filters by signal tier', () => {
+    useData.mockReturnValue({
+      data: {
+        results: [
+          trade({ representative: 'Weak Filer', symbol: 'LOW', signal_strength: 0.1 }),
+          trade({ representative: 'Strong Filer', symbol: 'HIGH', signal_strength: 0.95 }),
+        ],
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
+    fireEvent.change(screen.getByLabelText('Signal'), { target: { value: 'strong' } })
+
+    expect(screen.queryByText('LOW')).not.toBeInTheDocument()
+    expect(screen.getAllByText('HIGH').length).toBeGreaterThan(0)
+  })
+
   it('says the feed failed rather than implying a quiet week', () => {
     useData.mockReturnValue({
       data: {

@@ -45,6 +45,7 @@ import os
 import re
 from datetime import date, datetime, timedelta, timezone
 
+import politician_performance
 from common import LOG, STORE_DIR, load_json, save_json
 from congress_trades import (CongressTradesClient, CongressTradesError, SenateEfdClient,
                              StockWatcherClient)
@@ -781,9 +782,32 @@ def run():
     for row in results:
         row.update(performance.get(_trade_key(row), {}))
 
+    # Politician performance leaderboard: built from the FULL accumulated store, not just
+    # the published window, via a persistent price cache - see politician_performance.py's
+    # own docstring for why ("backfill, not a live re-price": in-window trades stay fresh
+    # every run same as above, everything else is priced once, in bounded per-run batches,
+    # and then frozen). Display-only, same as signals/top_tickers above: never an
+    # advisor_engine input, and none of this changes the research score.
+    price_cache = politician_performance.load_price_cache()
+    politician_performance.merge_price_performance(results, performance, price_cache)
+    backfill_candidates = politician_performance.select_backfill_candidates(stored, price_cache)
+    backfill_priced = (compute_price_performance(backfill_candidates, fmp_client, yf=yf)
+                       if backfill_candidates and (fmp_client or yf) else {})
+    politician_performance.merge_price_performance(backfill_candidates, backfill_priced, price_cache)
+    politician_performance.save_price_cache(price_cache)
+    LOG.info(f"Congress trades: priced {len(backfill_priced)} backfilled trade(s) across "
+             f"{len({row['symbol'] for row in backfill_candidates})} symbol(s) this run")
+
+    full_history = politician_performance.full_priced_equity_buys(stored, price_cache)
+    political_performance = politician_performance.compute_performance_scores(
+        full_history, benchmark=politician_performance.load_spy_benchmark())
+    for row in results:
+        row.update(politician_performance.annotate_row(
+            row, political_performance, as_of=generated_at.date()))
+
     status, reason_code = publication_status(results, stored, failures)
     payload = {
-        "schema_version": "1.2.0", "model_version": "congress-trades-v1.3.0",
+        "schema_version": "1.4.0", "model_version": "congress-trades-v1.5.0",
         "generated_at": generated_at.isoformat(), "status": status,
         **({"reason_code": reason_code} if reason_code else {}),
         "publish_window_days": PUBLISH_WINDOW_DAYS, "history_days": history_days,
@@ -796,6 +820,12 @@ def run():
         "summary": summary_stats(results),
         "signals": notable_signals(results, as_of=generated_at.date()),
         "top_tickers": top_ticker_aggregates(results, as_of=generated_at.date()),
+        "politician_performance": {
+            "population": political_performance["population"],
+            "config": political_performance["config"],
+            "price_backfill": politician_performance.backfill_coverage(stored, price_cache),
+            "leaderboard": politician_performance.leaderboard(political_performance),
+        },
         "results": results,
     }
     save_json("screens/congress-trades.json", payload)
