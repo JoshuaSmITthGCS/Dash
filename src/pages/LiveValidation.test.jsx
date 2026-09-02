@@ -197,12 +197,32 @@ describe('LiveValidation', () => {
             composite: {}, metrics: { momentum_12_1: { weight: 0.4, own_eligible_periods: 0, own_rank_ic: null } } },
         }, loading: false, error: null }
       }
+      if (name.includes('quality_metrics')) {
+        return { data: {
+          snapshot_dates_recorded: 0,
+          composite: { status: 'accumulating', eligible_periods: 0, minimum_icir_periods: 24, mean_rank_ic: null, icir: null, hit_rate: null },
+          attribution: { eligible_periods: 0, minimum_icir_periods: 24, status: 'accumulating',
+            composite: {}, metrics: { profitability: { weight: 0.35, own_eligible_periods: 0, own_rank_ic: null } } },
+        }, loading: false, error: null }
+      }
+      if (name.includes('earnings_timeliness_metrics')) {
+        return { data: {
+          snapshot_dates_recorded: 0,
+          composite: { status: 'accumulating', eligible_periods: 0, minimum_icir_periods: 24, mean_rank_ic: null, icir: null, hit_rate: null },
+          attribution: { eligible_periods: 0, minimum_icir_periods: 24, status: 'accumulating',
+            composite: {}, metrics: { revision_agreement: { weight: 0.12, own_eligible_periods: 0, own_rank_ic: null } } },
+        }, loading: false, error: null }
+      }
       return { data: { summary: { passed: 0, failed: 0 }, results: [] }, loading: false, error: null }
     })
 
     render(<MemoryRouter><LiveValidation /></MemoryRouter>)
     expect(screen.getByText('Pre-breakout screen validation')).toBeInTheDocument()
     expect(screen.getByText('Momentum screen validation')).toBeInTheDocument()
+    expect(screen.getByText('Quality composite validation')).toBeInTheDocument()
+    expect(screen.getByText('Earnings-timeliness screen validation')).toBeInTheDocument()
+    expect(screen.getByText('Profitability')).toBeInTheDocument()
+    expect(screen.getByText('Revision Agreement')).toBeInTheDocument()
     // Attribution table rows, only rendered once the report is eligible.
     expect(screen.getByText('Earnings Acceleration')).toBeInTheDocument()
     expect(screen.getByText('Volatility Contraction')).toBeInTheDocument()

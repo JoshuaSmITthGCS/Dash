@@ -313,6 +313,8 @@ export default function LiveValidation() {
   const { data: optionsIcData, error: optionsIcError } = useData('validation/options_metrics.json')
   const { data: preBreakoutData, error: preBreakoutError } = useData('validation/pre_breakout_metrics.json')
   const { data: momentumData, error: momentumError } = useData('validation/momentum_metrics.json')
+  const { data: qualityData, error: qualityError } = useData('validation/quality_metrics.json')
+  const { data: earningsTimelinessData, error: earningsTimelinessError } = useData('validation/earnings_timeliness_metrics.json')
   if (loading || icLoading || signalLoading) return <><ScreenNavigation /><Loading /></>
   const overview = rankIcOverview(signalMetrics, signalError)
   return <><ScreenNavigation />
@@ -340,6 +342,14 @@ export default function LiveValidation() {
       title="Momentum screen validation" script="pipeline/validation/momentum_ic.py"
       snapshotLabel={`${momentumData?.snapshot_dates_recorded || 0} snapshots`}
       description="Rank IC of the momentum composite against a 1-month forward return, plus every one of its 5 factors' own predictive power and marginal impact on the composite." />
+    <CompositeAttributionValidation data={qualityData} error={qualityError} eyebrow="Prospective evidence"
+      title="Quality composite validation" script="pipeline/validation/quality_ic.py"
+      snapshotLabel={`${qualityData?.snapshot_dates_recorded || 0} snapshots`}
+      description="Rank IC of the quality-at-valuation-lows screen's quality composite (business quality only, never cheapness) against a 3-month forward return, plus every one of its 4 categories' own predictive power and marginal impact on the composite." />
+    <CompositeAttributionValidation data={earningsTimelinessData} error={earningsTimelinessError} eyebrow="Prospective evidence"
+      title="Earnings-timeliness screen validation" script="pipeline/validation/earnings_timeliness_ic.py"
+      snapshotLabel={`${earningsTimelinessData?.snapshot_dates_recorded || 0} snapshots`}
+      description="Rank IC of the earnings-timeliness composite against a 1-month forward return, plus every one of its 15 factors' own predictive power and marginal impact on the composite." />
     <OptionsIcValidation data={optionsIcData} error={optionsIcError} />
     {error ? <div className="card etf-state" role="alert"><strong>Validation artifact unavailable</strong><span>Run pipeline/live_v2_validation.py. {error.message}</span></div>
       : <><div className="shadow-evidence"><span><b>{data?.summary?.passed || 0}</b> passed</span><span><b>{data?.summary?.failed || 0}</b> failed</span><span>Cutoff {data?.data_cutoff || '–'}</span></div>

@@ -53,6 +53,7 @@ from bias_report import write_bias_report
 from signal_report import write_signal_report
 from explainability import attach_explainability, attribution_errors, build_score_history
 import growth_pit_store
+import quality_pit_store
 from sec_edgar import SecEdgarClient
 from theme_signals import EdgarThemeSignals, recent_10k_filings
 from theme_graph import build_connectivity
@@ -2282,6 +2283,14 @@ def run():
         growth_pit_store.append_snapshot(research)
     except Exception as exc:  # noqa: BLE001
         LOG.warn(f"growth_pit_store snapshot failed ({type(exc).__name__}): {exc}")
+    # Point-in-time capture of the Quality-value screen's quality composite inputs
+    # (fundamental_categories, already published on every row above) - starts recording
+    # today, never reconstructs history. See quality_pit_store.py and
+    # validation/quality_ic.py.
+    try:
+        quality_pit_store.append_snapshot(research)
+    except Exception as exc:  # noqa: BLE001
+        LOG.warn(f"quality_pit_store snapshot failed ({type(exc).__name__}): {exc}")
     # When a retired symbol was actually filtered out of this run's inputs, its departure
     # shows up in the universe store's added/removed diff - carry the documented reason
     # alongside it so `universe_churn` explains the removal instead of just recording it.
