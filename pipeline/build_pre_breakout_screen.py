@@ -26,6 +26,7 @@ from edgar_sue import announcement_age_trading_days, sue_for
 from fundamentals_extended import derive_margins, derive_roa_delta
 from peer_groups import peer_group
 from pit_store import history as pit_history
+import pre_breakout_pit_store
 from pre_breakout_signals import (DEFAULT_CONFIG, PRE_BREAKOUT_EVIDENCE, PRE_BREAKOUT_SUBFACTORS,
                                   PRE_BREAKOUT_WEIGHTS, STAGE_THRESHOLDS, SUBWEIGHTS_BY_LEG,
                                   leg_coverage, legs_resolved_distribution, pre_breakout_scores,
@@ -299,6 +300,13 @@ def run():
     results = [to_result(rank + 1, row) for rank, row in enumerate(publishable(scored))]
     result = payload(results, scored, generated_at, config)
     save_json(OUTPUT, result)
+    # Point-in-time capture of the composite and its subfactors, for future rank-IC and
+    # per-metric attribution validation - starts recording today, never reconstructs
+    # history. See pre_breakout_pit_store.py and validation/pre_breakout_ic.py.
+    try:
+        pre_breakout_pit_store.append_snapshot(results)
+    except Exception as exc:  # noqa: BLE001
+        LOG.warn(f"pre_breakout_pit_store snapshot failed ({type(exc).__name__}): {exc}")
     LOG.info(f"Pre-breakout screen: scored {len(scored)} tickers "
              f"({result['eligible_count']} eligible), published {len(results)}")
     return result

@@ -1,0 +1,129 @@
+{
+  "generated_at": "2026-09-02T18:39:22.513272+00:00",
+  "data_integrity": "prospective_point_in_time",
+  "reconstructed_history": {
+    "included": false,
+    "label": "no history exists before pre_breakout_pit_store began recording - this module never reconstructs a composite or subfactor score for a date it did not observe"
+  },
+  "snapshot_dates_recorded": 0,
+  "horizon_days": 91,
+  "composite": {
+    "eligible_periods": 0,
+    "minimum_icir_periods": 24,
+    "status": "accumulating",
+    "mean_rank_ic": null,
+    "icir": null,
+    "t_stat": null,
+    "hit_rate": null,
+    "clears_multiple_testing_bar": false
+  },
+  "attribution": {
+    "eligible_periods": 0,
+    "minimum_icir_periods": 24,
+    "status": "accumulating",
+    "composite": {
+      "mean_rank_ic": null,
+      "icir": null,
+      "t_stat": null,
+      "hit_rate": null,
+      "clears_multiple_testing_bar": false
+    },
+    "metrics": {
+      "earnings_acceleration": {
+        "weight": 0.09999999999999999,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "revenue_acceleration": {
+        "weight": 0.06666666666666667,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "roa_delta": {
+        "weight": 0.06666666666666667,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "margin_turn": {
+        "weight": 0.049999999999999996,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "standardized_unexpected_earnings": {
+        "weight": 0.049999999999999996,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "momentum_12_1": {
+        "weight": 0.13333333333333333,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "path_smoothness": {
+        "weight": 0.08333333333333333,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "industry_relative_momentum": {
+        "weight": 0.08333333333333333,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "volatility_contraction": {
+        "weight": 0.03333333333333333,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "insider_cluster_score": {
+        "weight": 0.19999999999999998,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "short_interest_change": {
+        "weight": 0.13333333333333333,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      }
+    }
+  },
+  "model_version": "3.2.0",
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "926c970f31c31bba88e53f2bf6c7e1e42eca1bf8",
+    "config_hash": "62faf25cafeb27bca43a647d0c65149a07d1e46b1e4415aef1772f98b5252413",
+    "generated_at": "2026-09-02T18:39:22.513272+00:00"
+  }
+}

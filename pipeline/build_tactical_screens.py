@@ -34,6 +34,7 @@ import os
 from datetime import datetime, timezone
 
 from common import LOG, STORE_DIR, load_json, save_json
+import earnings_timeliness_pit_store
 from estimate_snapshots import estimate_revision_diagnostics, snapshots_at_or_before
 from peer_groups import peer_group
 from research_screens_v2 import (TACTICAL_WEIGHTS, industry_relative_returns, momentum_factors,
@@ -117,6 +118,7 @@ def build_rows(universe, as_of, entry_for=backtest_entry, estimates_root=None, o
             "peer_group": group_id, "peer_group_label": group_label,
             "structural_score": row.get("score"),
             "structural_data_coverage": ((row.get("score_variants") or {}).get("champion") or {}).get("data_coverage"),
+            "price": row.get("price") or (closes[-1] if closes else None),
             "market_cap": row.get("market_cap") or observed.get("market_cap"),
             "median_dollar_volume_60d": median_dollar_volume(closes, entry.get("volumes") or []),
             "realized_volatility": volatility,
@@ -218,6 +220,7 @@ def _base_result(rank, row, classification):
         "classification": classification,
         "structural_score": row.get("structural_score"),
         "tactical_score": row.get("tactical_score"),
+        "price": row.get("price"),
         # Coverage is the share of the model's weight the row's factors actually filled. It is
         # published as confidence because that is exactly what it is: how much of the score is
         # measurement rather than absence.
@@ -321,6 +324,14 @@ def run():
     timeliness, matrix = timeliness_payload(rows, generated_at), matrix_payload(rows, generated_at)
     save_json("screens/earnings-timeliness.json", timeliness)
     save_json("screens/structural-tactical.json", matrix)
+    # Point-in-time capture of the tactical composite and its factor ranks, for future
+    # rank-IC and per-metric attribution validation - starts recording today, never
+    # reconstructs history. See earnings_timeliness_pit_store.py and
+    # validation/earnings_timeliness_ic.py.
+    try:
+        earnings_timeliness_pit_store.append_snapshot(timeliness["results"])
+    except Exception as exc:  # noqa: BLE001
+        LOG.warn(f"earnings_timeliness_pit_store snapshot failed ({type(exc).__name__}): {exc}")
     LOG.info(f"Earnings-timeliness screen: scored {timeliness['universe_scored']}, published "
              f"{len(timeliness['results'])}; matrix screen: scored {matrix['universe_scored']} "
              f"with both axes {matrix['quadrants']}, published {len(matrix['results'])}")

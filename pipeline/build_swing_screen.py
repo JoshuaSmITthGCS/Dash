@@ -20,6 +20,7 @@ from edgar_sue import ANNOUNCEMENT_ANCHOR_NOTE, announcement_age_trading_days, s
 from market_regime import regime_gate as compute_market_regime_gate
 from peer_groups import peer_group
 from price_archive import load_series as archive_series_for
+import swing_pit_store
 from screen_inputs import (backtest_entry, latest_observations, median_dollar_volume,
                            universe_rows, with_current_price)
 from swing_signals import (BASELINE_VARIANT, CONTEXT_NOTE, CONTEXT_SIGNAL_EVIDENCE,
@@ -388,6 +389,13 @@ def run():
     market_regime_gate = compute_market_regime_gate(universe, macro_regime)
     result = payload(results, scored, generated_at, tiers, market_regime_gate)
     save_json(OUTPUT, result)
+    # Point-in-time capture of the composite and its leg z-scores, for future per-metric
+    # attribution validation - starts recording today, never reconstructs history. See
+    # swing_pit_store.py and validation/swing_attribution_ic.py.
+    try:
+        swing_pit_store.append_snapshot(results)
+    except Exception as exc:  # noqa: BLE001
+        LOG.warn(f"swing_pit_store snapshot failed ({type(exc).__name__}): {exc}")
     LOG.info(f"Swing screen: scored {len(scored)} tickers "
              f"({result['eligible_count']} eligible, {result['suppressed_count']} suppressed on "
              f"short interest), published {len(results)}")

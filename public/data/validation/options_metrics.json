@@ -1,0 +1,196 @@
+{
+  "generated_at": "2026-09-02T19:36:57.084554+00:00",
+  "data_integrity": "prospective_point_in_time",
+  "reconstructed_history": {
+    "included": false,
+    "label": "no history exists before options_pit_store began recording - this module never reconstructs a recommendation or a settle price for a date it did not observe"
+  },
+  "snapshot_dates_recorded": 0,
+  "positions_recorded": 0,
+  "positions_resolved": 0,
+  "metrics": {
+    "short_term_trades_score": {
+      "requires_live_sample": true,
+      "eligible_periods": 0,
+      "minimum_icir_periods": 24,
+      "status": "accumulating",
+      "mean_rank_ic": null,
+      "icir": null,
+      "t_stat": null,
+      "hit_rate": null,
+      "clears_multiple_testing_bar": false,
+      "periods": []
+    }
+  },
+  "attribution_by_mechanism": {
+    "buy": {
+      "eligible_periods": 0,
+      "minimum_icir_periods": 24,
+      "status": "accumulating",
+      "composite": {
+        "mean_rank_ic": null,
+        "icir": null,
+        "t_stat": null,
+        "hit_rate": null,
+        "clears_multiple_testing_bar": false
+      },
+      "metrics": {
+        "iv_value": {
+          "weight": 0.25,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        },
+        "liquidity": {
+          "weight": 0.35,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        },
+        "trend_strength": {
+          "weight": 0.25,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        },
+        "news_sentiment": {
+          "weight": 0.08,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        },
+        "research_confidence": {
+          "weight": 0.07,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        }
+      }
+    },
+    "sell_call": {
+      "eligible_periods": 0,
+      "minimum_icir_periods": 24,
+      "status": "accumulating",
+      "composite": {
+        "mean_rank_ic": null,
+        "icir": null,
+        "t_stat": null,
+        "hit_rate": null,
+        "clears_multiple_testing_bar": false
+      },
+      "metrics": {
+        "expected_value_pct": {
+          "weight": 0.38,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        },
+        "liquidity": {
+          "weight": 0.25,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        },
+        "cushion": {
+          "weight": 0.21,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        },
+        "news_sentiment": {
+          "weight": 0.06,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        },
+        "research_confidence": {
+          "weight": 0.1,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        }
+      }
+    },
+    "sell_put": {
+      "eligible_periods": 0,
+      "minimum_icir_periods": 24,
+      "status": "accumulating",
+      "composite": {
+        "mean_rank_ic": null,
+        "icir": null,
+        "t_stat": null,
+        "hit_rate": null,
+        "clears_multiple_testing_bar": false
+      },
+      "metrics": {
+        "expected_value_pct": {
+          "weight": 0.33,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        },
+        "probability_otm": {
+          "weight": 0.25,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        },
+        "liquidity": {
+          "weight": 0.25,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        },
+        "news_sentiment": {
+          "weight": 0.07,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        },
+        "research_confidence": {
+          "weight": 0.1,
+          "own_eligible_periods": 0,
+          "own_rank_ic": null,
+          "own_icir": null,
+          "delta_ic": null,
+          "hurts_composite": false
+        }
+      }
+    }
+  },
+  "model_version": "3.2.0",
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "ff7be23ad7f6b14d28f3b07ed2e6fb22c69d36c6",
+    "config_hash": "62faf25cafeb27bca43a647d0c65149a07d1e46b1e4415aef1772f98b5252413",
+    "generated_at": "2026-09-02T19:36:57.084554+00:00"
+  }
+}

@@ -409,6 +409,26 @@ jobs:
           python pipeline/experiment_registry.py
           python pipeline/signal_metrics.py
           python pipeline/build_research_evidence.py
+      - name: Rebuild prospective screen validation (theme, swing, growth, options, pre-breakout, momentum, quality, earnings-timeliness)
+        if: steps.refresh_window.outputs.should_run == 'true'
+        # Pure CPU-bound reads over each screen's own point-in-time store (theme_pit_store,
+        # shadow_store/swing, growth_pit_store, options_pit_store, swing_pit_store,
+        # pre_breakout_pit_store, momentum_pit_store, quality_pit_store,
+        # earnings_timeliness_pit_store) - no network calls, so this runs every refresh rather
+        # than being gated like live_v2_validation.py below. Must follow
+        # build_options_strategies.py, build_swing_screen.py, build_pre_breakout_screen.py and
+        # build_tactical_screens.py above (this run's point-in-time rows) and
+        # fetch_advisor.py's own theme_pit_store/growth_pit_store/quality_pit_store writes,
+        # which already happened earlier in this job.
+        run: |
+          python pipeline/validation/theme_ic.py
+          python pipeline/validation/swing_ic.py
+          python pipeline/validation/growth_ic.py
+          python pipeline/validation/options_ic.py
+          python pipeline/validation/pre_breakout_ic.py
+          python pipeline/validation/momentum_ic.py
+          python pipeline/validation/quality_ic.py
+          python pipeline/validation/earnings_timeliness_ic.py
       - name: Refresh the controlled Live v2 representative validation
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.universe_mode == 'full' && steps.refresh_window.outputs.is_rescore != 'true'
         # The script always writes explicit per-ticker failures before returning nonzero.

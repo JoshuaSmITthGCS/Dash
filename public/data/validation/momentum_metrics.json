@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-09-02T18:39:22.560967+00:00",
+  "data_integrity": "prospective_point_in_time",
+  "reconstructed_history": {
+    "included": false,
+    "label": "no history exists before momentum_pit_store began recording - this module never reconstructs a composite or factor score for a date it did not observe"
+  },
+  "snapshot_dates_recorded": 0,
+  "horizon_days": 30,
+  "composite": {
+    "eligible_periods": 0,
+    "minimum_icir_periods": 24,
+    "status": "accumulating",
+    "mean_rank_ic": null,
+    "icir": null,
+    "t_stat": null,
+    "hit_rate": null,
+    "clears_multiple_testing_bar": false
+  },
+  "attribution": {
+    "eligible_periods": 0,
+    "minimum_icir_periods": 24,
+    "status": "accumulating",
+    "composite": {
+      "mean_rank_ic": null,
+      "icir": null,
+      "t_stat": null,
+      "hit_rate": null,
+      "clears_multiple_testing_bar": false
+    },
+    "metrics": {
+      "momentum_12_1": {
+        "weight": 0.4,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "momentum_12_7": {
+        "weight": 0.2,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "momentum_6_1": {
+        "weight": 0.15,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "high_52w_proximity": {
+        "weight": 0.15,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "industry_relative_momentum": {
+        "weight": 0.1,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      }
+    }
+  },
+  "model_version": "3.2.0",
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "926c970f31c31bba88e53f2bf6c7e1e42eca1bf8",
+    "config_hash": "62faf25cafeb27bca43a647d0c65149a07d1e46b1e4415aef1772f98b5252413",
+    "generated_at": "2026-09-02T18:39:22.560967+00:00"
+  }
+}

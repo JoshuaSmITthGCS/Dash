@@ -66,11 +66,15 @@ def test_run_publishes_scored_results(monkeypatch):
     saved = {}
     monkeypatch.setattr(module, "load_json", lambda name: loaded.get(name))
     monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+    recorded = {}
+    monkeypatch.setattr(module.momentum_pit_store, "append_snapshot",
+                        lambda results, **kwargs: recorded.__setitem__("results", results))
 
     result = module.run()
 
     assert result["status"] == "success"
     assert saved["screens/momentum.json"] == result
+    assert recorded["results"] == result["results"]
     assert len(result["results"]) == 6
     ranks = [row["rank"] for row in result["results"]]
     assert ranks == sorted(ranks)

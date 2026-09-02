@@ -52,6 +52,8 @@ from normalization_audit import write_normalization_audit
 from bias_report import write_bias_report
 from signal_report import write_signal_report
 from explainability import attach_explainability, attribution_errors, build_score_history
+import growth_pit_store
+import quality_pit_store
 from sec_edgar import SecEdgarClient
 from theme_signals import EdgarThemeSignals, recent_10k_filings
 from theme_graph import build_connectivity
@@ -2274,6 +2276,21 @@ def run():
     # claimed as published per-row but were not, on either the row or the PIT store).
     config_hash = sha256_of_file(os.path.join(CONFIG_DIR, "settings.json"))
     pit_summary = pit_store.append_snapshot(research, source="advisor_refresh", config_hash=config_hash)
+    # Point-in-time capture of the Fast Growth screens' raw inputs, for future rank-IC
+    # validation - starts recording today, never reconstructs history. See
+    # growth_pit_store.py and validation/growth_ic.py.
+    try:
+        growth_pit_store.append_snapshot(research)
+    except Exception as exc:  # noqa: BLE001
+        LOG.warn(f"growth_pit_store snapshot failed ({type(exc).__name__}): {exc}")
+    # Point-in-time capture of the Quality-value screen's quality composite inputs
+    # (fundamental_categories, already published on every row above) - starts recording
+    # today, never reconstructs history. See quality_pit_store.py and
+    # validation/quality_ic.py.
+    try:
+        quality_pit_store.append_snapshot(research)
+    except Exception as exc:  # noqa: BLE001
+        LOG.warn(f"quality_pit_store snapshot failed ({type(exc).__name__}): {exc}")
     # When a retired symbol was actually filtered out of this run's inputs, its departure
     # shows up in the universe store's added/removed diff - carry the documented reason
     # alongside it so `universe_churn` explains the removal instead of just recording it.
