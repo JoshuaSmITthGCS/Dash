@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 97,
+  "refreshes_observed": 98,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -17775,6 +17775,129 @@
           ],
           "score_delta": 0.5,
           "confidence_delta": 0.04
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-01T22:11:46.502927+00:00",
+      "current_refresh": "advisor-2026-09-02T16:14:24.689899+00:00",
+      "shared_tickers": 895,
+      "rank_turnover": {
+        "top_40": 0.225,
+        "top_100": 0.225
+      },
+      "tickers_with_availability_driven_change": 23,
+      "tickers_with_availability_driven_change_pct": 0.026,
+      "mean_abs_score_delta": 1.08,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "RLI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -10.7,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -4.9,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "RYAN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "capex_to_depreciation",
+            "cash_conversion",
+            "current_ratio",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "free_cash_flow_yield",
+            "net_debt_to_ebitda",
+            "piotroski_f",
+            "price_to_book",
+            "return_on_invested_capital",
+            "revenue_growth",
+            "sales_multiple"
+          ],
+          "score_delta": 3.8,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -3.4,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "CMC",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -2.9,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "ZTS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 2.4,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "AZO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -2.2,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "DCI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -1.6,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "W",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 1.6,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "PVH",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.4,
+          "confidence_delta": 0.02
         }
       ]
     }
