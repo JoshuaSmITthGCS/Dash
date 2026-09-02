@@ -259,6 +259,25 @@ are informational fields (PIT-logged from this change), not part of the scored c
 the same reason ROTCE and FFO are not yet: a brand-new signal has no prospective IC history to
 validate against.
 
+## Value creation: ROIC vs. WACC
+
+`pipeline/reverse_dcf.py::derive_value_creation` compares two figures the pipeline already
+computes for other purposes — `return_on_invested_capital` (`pipeline/fundamentals_extended.py`,
+already scored inside the `profitability` sub-sleeve) and the same CAPM-based WACC the
+market-implied-growth read above uses — and reports `row.value_creation_spread = ROIC - WACC`
+alongside `row.wacc_assumed`. A positive spread means the company earns more on its invested
+capital than that capital costs — economic value creation, not just a high ROIC number in
+isolation; a negative spread means growth is being funded at a loss even when ROIC itself looks
+fine, because it is being read next to a business's own cost of capital rather than in a vacuum.
+
+It is computed independently of `market_implied_growth`, not layered on top of it: WACC does not
+need enterprise value or free cash flow, so gating the spread on the market-implied-growth read
+resolving would silently drop it for young growth companies and cyclicals in a trough — precisely
+the names where knowing whether they clear their cost of capital is most informative. It carries
+the same "labeled, not measured" assumptions as the reverse-DCF read above (`settings.json`'s
+`reverse_dcf` block), and is informational only for the same reason: a brand-new signal has no
+prospective IC history to validate against yet.
+
 ## Momentum-free "priced in" read: multiple-expansion decomposition
 
 `pipeline/return_attribution.py` adds the other half of the source research's "priced in"

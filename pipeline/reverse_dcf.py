@@ -68,6 +68,33 @@ def market_implied_growth(*, enterprise_value, free_cash_flow, wacc):
     return round(growth, 4)
 
 
+def derive_value_creation(*, roic, beta, market_cap, total_debt, tax_rate=0.21, assumptions):
+    """ROIC minus WACC: whether the company earns more than its capital costs (the ROIC-vs-WACC
+    "value creation" read -- Brian Feroldi's framing of it is what prompted adding this).
+
+    Computed independently of ``derive_market_implied_growth`` so it survives whenever ROIC and
+    a market cap are on file, not only when free cash flow and enterprise value are *also* both
+    positive -- WACC does not need either of those, and gating it on them would silently drop
+    the spread for exactly the low/negative-FCF names (young growth companies, cyclicals in a
+    trough) where knowing whether they still clear their cost of capital is most informative.
+
+    ``assumptions`` is the same ``settings.json`` ``reverse_dcf`` block ``derive_market_implied_
+    growth`` uses -- risk_free_rate, equity_risk_premium, default_cost_of_debt -- so it carries
+    the same "labeled, not measured" caveat: get an assumption wrong and every company's spread
+    shifts by roughly the same amount, which is why this reads as a comparable cross-sectional
+    screen, not a precise per-company cost of capital.
+    """
+    cost_of_equity = estimate_cost_of_equity(
+        beta, assumptions.get("risk_free_rate"), assumptions.get("equity_risk_premium"))
+    wacc = estimate_wacc(
+        market_cap=market_cap, total_debt=total_debt, cost_of_equity=cost_of_equity,
+        cost_of_debt=assumptions.get("default_cost_of_debt"), tax_rate=tax_rate)
+    if wacc is None:
+        return {"wacc_assumed": None, "value_creation_spread": None}
+    spread = None if roic is None else round(roic - wacc, 4)
+    return {"wacc_assumed": round(wacc, 4), "value_creation_spread": spread}
+
+
 def derive_market_implied_growth(*, beta, market_cap, total_debt, enterprise_value,
                                   free_cash_flow, tax_rate=0.21, assumptions):
     """One company's market-implied growth reading, or None when an input is missing.

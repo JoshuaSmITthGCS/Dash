@@ -91,5 +91,39 @@ class DeriveMarketImpliedGrowthTests(unittest.TestCase):
             free_cash_flow=None, tax_rate=0.21, assumptions=ASSUMPTIONS))
 
 
+class DeriveValueCreationTests(unittest.TestCase):
+    def test_roic_above_wacc_is_a_positive_spread(self):
+        # beta 1.0 (fallback) -> cost of equity 0.04 + 0.045 = 0.085; debt-free -> wacc = 0.085.
+        result = rd.derive_value_creation(
+            roic=0.15, beta=None, market_cap=4000, total_debt=0, assumptions=ASSUMPTIONS)
+        self.assertAlmostEqual(result["wacc_assumed"], 0.085, places=6)
+        self.assertAlmostEqual(result["value_creation_spread"], 0.15 - 0.085, places=6)
+
+    def test_roic_below_wacc_is_a_negative_spread(self):
+        result = rd.derive_value_creation(
+            roic=0.03, beta=1.5, market_cap=4000, total_debt=0, assumptions=ASSUMPTIONS)
+        self.assertLess(result["value_creation_spread"], 0)
+
+    def test_resolves_without_enterprise_value_or_free_cash_flow(self):
+        # Unlike derive_market_implied_growth, the spread needs no EV/FCF -- it must still
+        # resolve for a company with no free cash flow at all (e.g. a pre-profit grower).
+        result = rd.derive_value_creation(
+            roic=0.10, beta=1.2, market_cap=4000, total_debt=500, assumptions=ASSUMPTIONS)
+        self.assertIsNotNone(result["wacc_assumed"])
+        self.assertIsNotNone(result["value_creation_spread"])
+
+    def test_missing_roic_still_reports_wacc(self):
+        result = rd.derive_value_creation(
+            roic=None, beta=1.0, market_cap=4000, total_debt=0, assumptions=ASSUMPTIONS)
+        self.assertIsNotNone(result["wacc_assumed"])
+        self.assertIsNone(result["value_creation_spread"])
+
+    def test_nonpositive_market_cap_leaves_both_fields_none(self):
+        result = rd.derive_value_creation(
+            roic=0.15, beta=1.0, market_cap=0, total_debt=0, assumptions=ASSUMPTIONS)
+        self.assertIsNone(result["wacc_assumed"])
+        self.assertIsNone(result["value_creation_spread"])
+
+
 if __name__ == "__main__":
     unittest.main()

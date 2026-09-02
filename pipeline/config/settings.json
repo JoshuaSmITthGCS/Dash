@@ -35,7 +35,7 @@
     "equity_risk_premium": 0.045,
     "default_cost_of_debt": 0.055,
     "implausible_growth_ceiling": 0.15,
-    "_comment": "Declared assumptions for pipeline/reverse_dcf.py's single-stage market-implied-growth read (Mauboussin & Rappaport reverse DCF), not fitted or fetched figures -- same 'labeled, not measured' honesty pipeline/costs.py applies to its spread proxy. risk_free_rate/equity_risk_premium feed a CAPM cost of equity; default_cost_of_debt is a flat pre-tax assumption since actual borrowing cost is not fetched per company; implausible_growth_ceiling flags a solved growth rate no perpetuity should sustain rather than asserting a specific fair value. This is informational only -- not part of the scored composite -- pending its own ic_harness.py read."
+    "_comment": "Declared assumptions for pipeline/reverse_dcf.py's single-stage market-implied-growth read (Mauboussin & Rappaport reverse DCF) and its ROIC-vs-WACC value-creation spread, not fitted or fetched figures -- same 'labeled, not measured' honesty pipeline/costs.py applies to its spread proxy. risk_free_rate/equity_risk_premium feed a CAPM cost of equity; default_cost_of_debt is a flat pre-tax assumption since actual borrowing cost is not fetched per company; implausible_growth_ceiling flags a solved growth rate no perpetuity should sustain rather than asserting a specific fair value. Both reads are informational only -- not part of the scored composite -- pending their own ic_harness.py read; value_creation_spread (row.value_creation_spread = return_on_invested_capital - row.wacc_assumed) is derived whenever ROIC and market cap are on file, independent of whether the market-implied-growth read itself resolves."
   },
   "challengers": {
     "cross_sectional_normalization": {

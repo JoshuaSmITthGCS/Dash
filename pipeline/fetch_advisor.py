@@ -24,7 +24,7 @@ from fetch_prices import fetch_snapshot
 from fundamentals_extended import (derive_extended, earnings_surprise_rows, extended_inputs,
                                    extended_observations)
 from insider_signal import summarize as summarize_insiders
-from reverse_dcf import derive_market_implied_growth
+from reverse_dcf import derive_market_implied_growth, derive_value_creation
 from filing_extraction import collect_operating_kpi_signals, filing_extraction_group
 import return_attribution
 from concentration_risk import summarize as summarize_concentration
@@ -792,6 +792,12 @@ def yahoo_extended(symbol, ticker_obj, snapshot, history, diagnostics=None):
             result["market_implied_growth"] = priced_in["market_implied_growth"]
             result["market_implied_growth_wacc"] = priced_in["wacc_assumed"]
             result["market_implied_growth_exceeds_ceiling"] = priced_in["exceeds_plausible_ceiling"]
+        value_creation = derive_value_creation(
+            roic=result.get("return_on_invested_capital"), beta=result.get("beta"),
+            market_cap=snapshot.get("market_cap"), total_debt=result.get("total_debt"),
+            assumptions=REVERSE_DCF_ASSUMPTIONS)
+        result["wacc_assumed"] = value_creation["wacc_assumed"]
+        result["value_creation_spread"] = value_creation["value_creation_spread"]
     if os.getenv("ENABLE_OPTIONS_VOLATILITY", "").lower() in {"1", "true", "yes"}:
         result.update(yahoo_options_volatility(ticker_obj, snapshot.get("price"), history["closes"]))
     return merge_edgar_fallback(symbol, result, snapshot, as_of=as_of_today,
