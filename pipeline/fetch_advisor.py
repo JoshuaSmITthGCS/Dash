@@ -24,7 +24,7 @@ from fetch_prices import fetch_snapshot
 from fundamentals_extended import (derive_extended, earnings_surprise_rows, extended_inputs,
                                    extended_observations)
 from insider_signal import summarize as summarize_insiders
-from reverse_dcf import derive_market_implied_growth, derive_value_creation
+from reverse_dcf import derive_market_implied_growth, derive_value_creation, growth_expectations_gap
 from filing_extraction import collect_operating_kpi_signals, filing_extraction_group
 import return_attribution
 from concentration_risk import summarize as summarize_concentration
@@ -792,6 +792,9 @@ def yahoo_extended(symbol, ticker_obj, snapshot, history, diagnostics=None):
             result["market_implied_growth"] = priced_in["market_implied_growth"]
             result["market_implied_growth_wacc"] = priced_in["wacc_assumed"]
             result["market_implied_growth_exceeds_ceiling"] = priced_in["exceeds_plausible_ceiling"]
+            result["growth_expectations_gap"] = growth_expectations_gap(
+                market_implied_growth=priced_in["market_implied_growth"],
+                realized_growth=result.get("fcf_growth_3y"))
         value_creation = derive_value_creation(
             roic=result.get("return_on_invested_capital"), beta=result.get("beta"),
             market_cap=snapshot.get("market_cap"), total_debt=result.get("total_debt"),

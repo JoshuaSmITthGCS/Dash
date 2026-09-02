@@ -125,5 +125,19 @@ class DeriveValueCreationTests(unittest.TestCase):
         self.assertIsNone(result["value_creation_spread"])
 
 
+class GrowthExpectationsGapTests(unittest.TestCase):
+    def test_priced_in_growth_above_trailing_delivery_is_a_positive_gap(self):
+        gap = rd.growth_expectations_gap(market_implied_growth=0.08, realized_growth=0.03)
+        self.assertAlmostEqual(gap, 0.05, places=6)
+
+    def test_priced_in_growth_below_trailing_delivery_is_a_negative_gap(self):
+        gap = rd.growth_expectations_gap(market_implied_growth=0.02, realized_growth=0.06)
+        self.assertAlmostEqual(gap, -0.04, places=6)
+
+    def test_missing_either_side_is_undefined(self):
+        self.assertIsNone(rd.growth_expectations_gap(market_implied_growth=None, realized_growth=0.03))
+        self.assertIsNone(rd.growth_expectations_gap(market_implied_growth=0.03, realized_growth=None))
+
+
 if __name__ == "__main__":
     unittest.main()

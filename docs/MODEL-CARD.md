@@ -278,6 +278,16 @@ the same "labeled, not measured" assumptions as the reverse-DCF read above (`set
 `reverse_dcf` block), and is informational only for the same reason: a brand-new signal has no
 prospective IC history to validate against yet.
 
+`pipeline/reverse_dcf.py::growth_expectations_gap` pairs `market_implied_growth` with a figure it
+was never compared against before: `fcf_growth_3y`, the trailing free-cash-flow CAGR
+`fundamentals_extended.py` already computes — the same quantity the perpetuity above solves a
+forward rate for, so the two sides of the gap are the same measure at two points in time rather
+than different metrics dressed up as one comparison. `row.growth_expectations_gap = market_implied
+_growth - fcf_growth_3y`: a positive gap prices in faster growth than trailing delivery, a
+negative gap prices in less than the company has already shown it can do. It only resolves when
+`market_implied_growth` itself does, and is informational only, same as everything else in this
+section.
+
 ## Momentum-free "priced in" read: multiple-expansion decomposition
 
 `pipeline/return_attribution.py` adds the other half of the source research's "priced in"

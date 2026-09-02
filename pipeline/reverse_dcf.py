@@ -117,3 +117,23 @@ def derive_market_implied_growth(*, beta, market_cap, total_debt, enterprise_val
         "wacc_assumed": round(wacc, 4) if wacc is not None else None,
         "exceeds_plausible_ceiling": growth > ceiling,
     }
+
+
+def growth_expectations_gap(*, market_implied_growth, realized_growth):
+    """Priced-in growth minus the free-cash-flow growth the company has actually delivered.
+
+    Mauboussin & Rappaport's expectations-investing question has two halves: not just "what
+    growth is priced in" (``market_implied_growth`` above) but "is that more or less than what
+    this company has actually been doing lately". Compared against ``fcf_growth_3y`` -- the
+    trailing FCF CAGR, the same quantity the perpetuity above solves a forward rate for -- so
+    the two sides of the gap are the same measure at two points in time, not different metrics
+    dressed up as one comparison.
+
+    A positive gap prices in faster growth than trailing delivery; a negative gap prices in
+    less than the company has already shown it can do. Neither direction is a signal on its
+    own -- trailing growth is not a promise of future growth either -- it is a comparable read
+    of how far current expectations sit from recent history.
+    """
+    if market_implied_growth is None or realized_growth is None:
+        return None
+    return round(market_implied_growth - realized_growth, 4)
