@@ -91,4 +91,39 @@ describe('LiveValidation', () => {
     render(<MemoryRouter><LiveValidation /></MemoryRouter>)
     expect(screen.getByRole('img', { name: /Champion versus Challenger, 2 groups/ })).toBeInTheDocument()
   })
+
+  it('surfaces ETF watchlist and thematic-screen validation alongside the core research score', () => {
+    useData.mockImplementation((name) => {
+      if (name.includes('ic_validation')) {
+        return { data: { snapshot_refreshes: 1, variants: { champion: { '1M': accumulating } } }, loading: false, error: null }
+      }
+      if (name.includes('signal_metrics')) return { data: signalMetrics, loading: false, error: null }
+      if (name.includes('live_etf_validation')) {
+        return { data: {
+          summary: { passed: 1, failed: 0 },
+          results: [{
+            ticker: 'VXUS', case: 'international_equity', status: 'pass',
+            benchmark: { ticker: 'IXUS', quality_label: 'Investable proxy', confidence: 0.78 },
+            one_year: { metrics: { fund_return: 27.13, benchmark_return: 27.27, excess_return: -0.14, beta: 0.99, correlation: 0.999, up_capture: 99.2, down_capture: 99.2 } },
+            checks: { proxy_label_honest: true, capture_sample_gate: true },
+          }],
+        }, loading: false, error: null }
+      }
+      if (name.includes('theme_metrics')) {
+        return { data: {
+          snapshot_dates_recorded: 0,
+          metrics: {
+            theme_exposure_score: { status: 'accumulating', eligible_periods: 0, minimum_icir_periods: 24, mean_rank_ic: null, icir: null, hit_rate: null },
+          },
+        }, loading: false, error: null }
+      }
+      return { data: { summary: { passed: 0, failed: 0 }, results: [] }, loading: false, error: null }
+    })
+
+    render(<MemoryRouter><LiveValidation /></MemoryRouter>)
+    expect(screen.getByText('ETF watchlist benchmark validation')).toBeInTheDocument()
+    expect(screen.getByText('VXUS')).toBeInTheDocument()
+    expect(screen.getByText('Thematic screen validation')).toBeInTheDocument()
+    expect(screen.getByText('Theme Exposure Score')).toBeInTheDocument()
+  })
 })

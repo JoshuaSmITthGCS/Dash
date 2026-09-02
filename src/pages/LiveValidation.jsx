@@ -165,11 +165,71 @@ function ICValidation({ data, error }) {
   </section>
 }
 
+function EtfValidationCard({ row }) {
+  const metrics = row.one_year?.metrics || {}
+  const checks = Object.entries(row.checks || {})
+  const percent = (value, digits = 1) => value == null ? '–' : `${Number(value).toFixed(digits)}%`
+  return <article className="card validation-card">
+    <header className="validation-card-head">
+      <div><span className="eyebrow">{title(row.case)}</span><h2>{row.ticker}</h2></div>
+      <Status value={row.status} />
+    </header>
+    {row.status !== 'pass' && row.reason_code ? <div role="alert"><b>{row.reason_code}</b><p>{row.message}</p></div> : <>
+      <div className="shadow-layers">
+        <div className="shadow-layer"><span>Benchmark</span><strong>{row.benchmark?.ticker || '–'}</strong><small>{row.benchmark?.quality_label || 'Unlabeled'} · {pct(row.benchmark?.confidence)} confidence</small></div>
+        <div className="shadow-layer"><span>Fund return (1Y)</span><strong>{percent(metrics.fund_return)}</strong><small>Benchmark {percent(metrics.benchmark_return)}</small></div>
+        <div className="shadow-layer"><span>Excess return</span><strong>{percent(metrics.excess_return, 2)}</strong><small>Beta {metrics.beta != null ? Number(metrics.beta).toFixed(2) : '–'} · Corr {metrics.correlation != null ? Number(metrics.correlation).toFixed(3) : '–'}</small></div>
+        <div className="shadow-layer"><span>Capture</span><strong>{percent(metrics.up_capture, 0)} up</strong><small>{percent(metrics.down_capture, 0)} down</small></div>
+      </div>
+      <dl className="analysis-quality-grid">
+        {checks.map(([key, passed]) => <div key={key}><dt>{title(key)}</dt><dd className={passed ? 'validation-pass' : 'validation-fail'}>{passed ? 'Pass' : 'Fail'}</dd></div>)}
+      </dl>
+    </>}
+  </article>
+}
+
+function EtfValidation({ data, error }) {
+  if (error) return <section className="card etf-state" role="alert"><strong>ETF validation unavailable</strong><span>Run pipeline/live_etf_validation.py. {error.message}</span></section>
+  return <section className="ic-validation-section">
+    <header className="section-heading"><div><span className="eyebrow">Cross-asset spot check</span><h2>ETF watchlist benchmark validation</h2>
+      <p>Checks benchmark-proxy honesty, adjusted-total-return basis, and capture-ratio sample gating for a representative slice of the ETF watchlist spanning equity, bond, commodity, leveraged, and currency-hedged funds.</p></div></header>
+    <div className="shadow-evidence"><span><b>{data?.summary?.passed || 0}</b> passed</span><span><b>{data?.summary?.failed || 0}</b> failed</span></div>
+    <div className="validation-grid">{(data?.results || []).map((row) => <EtfValidationCard key={row.ticker} row={row} />)}</div>
+  </section>
+}
+
+function ThemeMetricCard({ id, metric }) {
+  return <article className="card ic-variant-card">
+    <header><div><span className="eyebrow">Theme component</span><h3>{title(id)}</h3></div>
+      <Status value={metric.status} /></header>
+    <dl className="analysis-quality-grid">
+      <div><dt>Periods</dt><dd>{metric.eligible_periods || 0} of {metric.minimum_icir_periods || 24}</dd></div>
+      <div><dt>Mean rank IC</dt><dd>{icValue(metric.mean_rank_ic)}</dd></div>
+      <div><dt>ICIR</dt><dd>{metric.status === 'eligible' ? icValue(metric.icir) : 'Not available'}</dd></div>
+      <div><dt>Hit rate</dt><dd>{pct(metric.hit_rate)}</dd></div>
+    </dl>
+  </article>
+}
+
+function ThemeValidation({ data, error }) {
+  if (error) return <section className="card etf-state" role="alert"><strong>Theme validation unavailable</strong><span>Run pipeline/validation/theme_ic.py. {error.message}</span></section>
+  const metrics = data?.metrics || {}
+  const minimumPeriods = Object.values(metrics)[0]?.minimum_icir_periods || 24
+  return <section className="ic-validation-section">
+    <header className="section-heading"><div><span className="eyebrow">Prospective evidence</span><h2>Thematic screen validation</h2>
+      <p>Rank IC for the theme exposure, connectivity, and structural-rank components behind the thematic and factor screens. ICIR stays hidden until {minimumPeriods} monthly periods exist.</p></div>
+      <span className="chip">{data?.snapshot_dates_recorded || 0} snapshots</span></header>
+    <div className="ic-variant-grid">{Object.entries(metrics).map(([id, metric]) => <ThemeMetricCard key={id} id={id} metric={metric} />)}</div>
+  </section>
+}
+
 export default function LiveValidation() {
   const { data, loading, error } = useData('validation/live_v2_validation.json')
   const { data: icData, loading: icLoading, error: icError } = useData('validation/ic_validation.json')
   const { data: evidence, error: evidenceError } = useData('validation/research_evidence.json')
   const { data: signalMetrics, loading: signalLoading, error: signalError } = useData('validation/signal_metrics.json')
+  const { data: etfData, error: etfError } = useData('validation/live_etf_validation.json')
+  const { data: themeData, error: themeError } = useData('validation/theme_metrics.json')
   if (loading || icLoading || signalLoading) return <><ScreenNavigation /><Loading /></>
   const overview = rankIcOverview(signalMetrics, signalError)
   return <><ScreenNavigation />
@@ -179,6 +239,8 @@ export default function LiveValidation() {
     <SignalMetricsPanel report={signalMetrics} error={signalError} />
     <ResearchEvidence data={evidence} error={evidenceError} />
     <ICValidation data={icData} error={icError} />
+    <EtfValidation data={etfData} error={etfError} />
+    <ThemeValidation data={themeData} error={themeError} />
     {error ? <div className="card etf-state" role="alert"><strong>Validation artifact unavailable</strong><span>Run pipeline/live_v2_validation.py. {error.message}</span></div>
       : <><div className="shadow-evidence"><span><b>{data?.summary?.passed || 0}</b> passed</span><span><b>{data?.summary?.failed || 0}</b> failed</span><span>Cutoff {data?.data_cutoff || '–'}</span></div>
         <div className="validation-grid">{(data?.results || []).map((row) => <TickerValidation key={row.ticker} row={row} />)}</div></>}
