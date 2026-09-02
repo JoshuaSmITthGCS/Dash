@@ -198,9 +198,9 @@ function EtfValidation({ data, error }) {
   </section>
 }
 
-function ThemeMetricCard({ id, metric }) {
+function RankIcMetricCard({ id, metric, eyebrow = 'Component' }) {
   return <article className="card ic-variant-card">
-    <header><div><span className="eyebrow">Theme component</span><h3>{title(id)}</h3></div>
+    <header><div><span className="eyebrow">{eyebrow}</span><h3>{title(id)}</h3></div>
       <Status value={metric.status} /></header>
     <dl className="analysis-quality-grid">
       <div><dt>Periods</dt><dd>{metric.eligible_periods || 0} of {metric.minimum_icir_periods || 24}</dd></div>
@@ -211,15 +211,33 @@ function ThemeMetricCard({ id, metric }) {
   </article>
 }
 
-function ThemeValidation({ data, error }) {
-  if (error) return <section className="card etf-state" role="alert"><strong>Theme validation unavailable</strong><span>Run pipeline/validation/theme_ic.py. {error.message}</span></section>
+// Shared by the theme, swing, and growth sections below: all three read a
+// `{ snapshot_dates_recorded, metrics: { id: { status, eligible_periods, ... } } }`
+// artifact shaped identically to theme_metrics.json (see pipeline/validation/theme_ic.py) -
+// swing_ic.py and growth_ic.py were built to match that shape rather than invent their own,
+// so one renderer covers all three instead of three near-identical ones.
+function RankIcValidationSection({ data, error, eyebrow, title: heading, description, script, cardEyebrow }) {
+  if (error) return <section className="card etf-state" role="alert"><strong>{heading} unavailable</strong><span>Run {script}. {error.message}</span></section>
   const metrics = data?.metrics || {}
   const minimumPeriods = Object.values(metrics)[0]?.minimum_icir_periods || 24
   return <section className="ic-validation-section">
-    <header className="section-heading"><div><span className="eyebrow">Prospective evidence</span><h2>Thematic screen validation</h2>
-      <p>Rank IC for the theme exposure, connectivity, and structural-rank components behind the thematic and factor screens. ICIR stays hidden until {minimumPeriods} monthly periods exist.</p></div>
+    <header className="section-heading"><div><span className="eyebrow">{eyebrow}</span><h2>{heading}</h2>
+      <p>{description} ICIR stays hidden until {minimumPeriods} monthly periods exist.</p></div>
       <span className="chip">{data?.snapshot_dates_recorded || 0} snapshots</span></header>
-    <div className="ic-variant-grid">{Object.entries(metrics).map(([id, metric]) => <ThemeMetricCard key={id} id={id} metric={metric} />)}</div>
+    <div className="ic-variant-grid">{Object.entries(metrics).map(([id, metric]) => <RankIcMetricCard key={id} id={id} metric={metric} eyebrow={cardEyebrow} />)}</div>
+  </section>
+}
+
+const OPTIONS_GRADED_METRIC = 'short_term_trades_score'
+
+function OptionsIcValidation({ data, error }) {
+  if (error) return <section className="card etf-state" role="alert"><strong>Options screen validation unavailable</strong><span>Run pipeline/validation/options_ic.py. {error.message}</span></section>
+  const metric = data?.metrics?.[OPTIONS_GRADED_METRIC]
+  return <section className="ic-validation-section">
+    <header className="section-heading"><div><span className="eyebrow">Prospective evidence</span><h2>Options screen validation</h2>
+      <p>Rank IC of the Short-term-trades screen's selection score against each recommended position's realized payoff (premium collected, assignment or expiration outcome), graded once that position's own 1-to-14-day expiration has actually passed - not a simulated chain. ICIR stays hidden until {metric?.minimum_icir_periods || 24} monthly periods exist.</p></div>
+      <span className="chip">{data?.positions_resolved || 0} of {data?.positions_recorded || 0} positions resolved</span></header>
+    {metric && <div className="ic-variant-grid"><RankIcMetricCard id={OPTIONS_GRADED_METRIC} metric={metric} eyebrow="Options screen" /></div>}
   </section>
 }
 
@@ -230,6 +248,9 @@ export default function LiveValidation() {
   const { data: signalMetrics, loading: signalLoading, error: signalError } = useData('validation/signal_metrics.json')
   const { data: etfData, error: etfError } = useData('validation/live_etf_validation.json')
   const { data: themeData, error: themeError } = useData('validation/theme_metrics.json')
+  const { data: swingData, error: swingError } = useData('validation/swing_metrics.json')
+  const { data: growthData, error: growthError } = useData('validation/growth_metrics.json')
+  const { data: optionsIcData, error: optionsIcError } = useData('validation/options_metrics.json')
   if (loading || icLoading || signalLoading) return <><ScreenNavigation /><Loading /></>
   const overview = rankIcOverview(signalMetrics, signalError)
   return <><ScreenNavigation />
@@ -240,7 +261,16 @@ export default function LiveValidation() {
     <ResearchEvidence data={evidence} error={evidenceError} />
     <ICValidation data={icData} error={icError} />
     <EtfValidation data={etfData} error={etfError} />
-    <ThemeValidation data={themeData} error={themeError} />
+    <RankIcValidationSection data={themeData} error={themeError} eyebrow="Prospective evidence" cardEyebrow="Theme component"
+      title="Thematic screen validation" script="pipeline/validation/theme_ic.py"
+      description="Rank IC for the theme exposure, connectivity, and structural-rank components behind the thematic and factor screens." />
+    <RankIcValidationSection data={swingData} error={swingError} eyebrow="Prospective evidence" cardEyebrow="Swing screen"
+      title="Swing screen validation" script="pipeline/validation/swing_ic.py"
+      description="Rank IC of the swing screen's composite_z signal against a forward return at a 14-day horizon (the mid 'M' tier), read from shadow_store/swing's own daily basket rather than a separate recorder." />
+    <RankIcValidationSection data={growthData} error={growthError} eyebrow="Prospective evidence" cardEyebrow="Growth screen"
+      title="Fast growth screen validation" script="pipeline/validation/growth_ic.py"
+      description="Rank IC of the breakout-in-progress and emerging-growth screens' selection scores against forward return (1-month and 3-month horizons respectively) - the first live measurement either screen has ever had." />
+    <OptionsIcValidation data={optionsIcData} error={optionsIcError} />
     {error ? <div className="card etf-state" role="alert"><strong>Validation artifact unavailable</strong><span>Run pipeline/live_v2_validation.py. {error.message}</span></div>
       : <><div className="shadow-evidence"><span><b>{data?.summary?.passed || 0}</b> passed</span><span><b>{data?.summary?.failed || 0}</b> failed</span><span>Cutoff {data?.data_cutoff || '–'}</span></div>
         <div className="validation-grid">{(data?.results || []).map((row) => <TickerValidation key={row.ticker} row={row} />)}</div></>}

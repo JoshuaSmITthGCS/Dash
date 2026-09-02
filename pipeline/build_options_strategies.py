@@ -36,6 +36,7 @@ import build_options_screen as buy_screen
 from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, walk_periods
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
+import options_pit_store
 from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expected_value_pct, expiration_spans_earnings,
                             liquidity_factor, next_earnings_date, probability_above, realized_volatility_20d,
                             research_universe_factors, select_by_target_delta, select_contract,
@@ -417,6 +418,14 @@ def run(as_of=None):
     if not short_term_results:
         short_term_payload["reason_code"] = "NO_QUALIFYING_CONTRACTS"
     save_json("screens/short-term-trades.json", short_term_payload)
+
+    # Point-in-time capture of what was actually recommended, for future realized-payoff
+    # validation - starts recording today, never reconstructs history. See
+    # options_pit_store.py and validation/options_ic.py.
+    try:
+        options_pit_store.append_snapshot(short_term_results)
+    except Exception as exc:  # noqa: BLE001
+        LOG.warn(f"options_pit_store snapshot failed ({type(exc).__name__}): {exc}")
 
     LOG.info(f"Options strategies (one chain fetch/ticker): buy {len(buy_results)}, "
              f"sell_call {len(sell_call_results)}, sell_put {len(sell_put_results)}, "

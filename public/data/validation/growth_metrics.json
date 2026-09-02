@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-09-02T04:46:16.383345+00:00",
+  "generated_at": "2026-09-02T04:46:16.285135+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
-    "label": "no history exists before theme_pit_store began recording - this module never reconstructs a theme score for a date it did not observe"
+    "label": "no history exists before growth_pit_store began recording - this module never reconstructs a growth score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 2,
-  "primary_horizon": "3M",
+  "snapshot_dates_recorded": 0,
   "metrics": {
-    "theme_exposure_score": {
+    "breakout_in_progress": {
       "requires_live_sample": true,
+      "horizon_days": 30,
       "eligible_periods": 0,
       "minimum_icir_periods": 24,
       "status": "accumulating",
@@ -20,20 +20,9 @@
       "clears_multiple_testing_bar": false,
       "periods": []
     },
-    "connectivity_score": {
+    "emerging_growth": {
       "requires_live_sample": true,
-      "eligible_periods": 0,
-      "minimum_icir_periods": 24,
-      "status": "accumulating",
-      "mean_rank_ic": null,
-      "icir": null,
-      "t_stat": null,
-      "hit_rate": null,
-      "clears_multiple_testing_bar": false,
-      "periods": []
-    },
-    "structural_rank_composite": {
-      "requires_live_sample": true,
+      "horizon_days": 91,
       "eligible_periods": 0,
       "minimum_icir_periods": 24,
       "status": "accumulating",
@@ -50,6 +39,6 @@
     "semantic_version": "3.2.0",
     "git_commit_sha": "603297d24600403b5ec0c31105d18955a01d4829",
     "config_hash": "62faf25cafeb27bca43a647d0c65149a07d1e46b1e4415aef1772f98b5252413",
-    "generated_at": "2026-09-02T04:46:16.383345+00:00"
+    "generated_at": "2026-09-02T04:46:16.285135+00:00"
   }
 }

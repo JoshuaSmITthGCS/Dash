@@ -232,6 +232,9 @@ def test_run_publishes_all_four_files_from_one_fetch_per_ticker(monkeypatch):
     saved = {}
     monkeypatch.setattr(module, "load_json", lambda name: loaded.get(name))
     monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+    recorded = {}
+    monkeypatch.setattr(module.options_pit_store, "append_snapshot",
+                        lambda results, **kwargs: recorded.__setitem__("results", results))
 
     result = module.run(as_of=TODAY)
 
@@ -246,6 +249,7 @@ def test_run_publishes_all_four_files_from_one_fetch_per_ticker(monkeypatch):
     assert short_term_ranks == sorted(short_term_ranks)
     for row in saved["screens/short-term-trades.json"]["results"]:
         assert row["strategy"] in {"buy_call", "buy_put", "sell_call", "sell_put"}
+    assert recorded["results"] == saved["screens/short-term-trades.json"]["results"]
 
 
 def test_run_skips_when_flag_not_set(monkeypatch):

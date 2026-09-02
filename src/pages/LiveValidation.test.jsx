@@ -126,4 +126,45 @@ describe('LiveValidation', () => {
     expect(screen.getByText('Thematic screen validation')).toBeInTheDocument()
     expect(screen.getByText('Theme Exposure Score')).toBeInTheDocument()
   })
+
+  it('surfaces swing, growth, and options screen validation, each honing in as periods accumulate', () => {
+    useData.mockImplementation((name) => {
+      if (name.includes('ic_validation')) {
+        return { data: { snapshot_refreshes: 1, variants: { champion: { '1M': accumulating } } }, loading: false, error: null }
+      }
+      if (name.includes('signal_metrics')) return { data: signalMetrics, loading: false, error: null }
+      if (name.includes('swing_metrics')) {
+        return { data: {
+          snapshot_dates_recorded: 11, horizon_days: 14,
+          metrics: { composite_z: { status: 'accumulating', eligible_periods: 2, minimum_icir_periods: 24, mean_rank_ic: null, icir: null, hit_rate: null } },
+        }, loading: false, error: null }
+      }
+      if (name.includes('growth_metrics')) {
+        return { data: {
+          snapshot_dates_recorded: 0,
+          metrics: {
+            breakout_in_progress: { status: 'accumulating', eligible_periods: 0, minimum_icir_periods: 24, mean_rank_ic: null, icir: null, hit_rate: null },
+            emerging_growth: { status: 'accumulating', eligible_periods: 0, minimum_icir_periods: 24, mean_rank_ic: null, icir: null, hit_rate: null },
+          },
+        }, loading: false, error: null }
+      }
+      if (name.includes('options_metrics')) {
+        return { data: {
+          positions_recorded: 4, positions_resolved: 0,
+          metrics: { short_term_trades_score: { status: 'accumulating', eligible_periods: 0, minimum_icir_periods: 24, mean_rank_ic: null, icir: null, hit_rate: null } },
+        }, loading: false, error: null }
+      }
+      return { data: { summary: { passed: 0, failed: 0 }, results: [] }, loading: false, error: null }
+    })
+
+    render(<MemoryRouter><LiveValidation /></MemoryRouter>)
+    expect(screen.getByText('Swing screen validation')).toBeInTheDocument()
+    expect(screen.getByText('Composite Z')).toBeInTheDocument()
+    expect(screen.getByText('Fast growth screen validation')).toBeInTheDocument()
+    expect(screen.getByText('Breakout In Progress')).toBeInTheDocument()
+    expect(screen.getByText('Emerging Growth')).toBeInTheDocument()
+    expect(screen.getByText('Options screen validation')).toBeInTheDocument()
+    expect(screen.getByText('0 of 4 positions resolved')).toBeInTheDocument()
+    expect(screen.getByText('Short Term Trades Score')).toBeInTheDocument()
+  })
 })

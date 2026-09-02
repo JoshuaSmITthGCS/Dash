@@ -101,6 +101,11 @@
       "12M": 252
     },
     "primary_horizon": "3M",
+    "swing_horizon_days": 14,
+    "_swing_horizon_days_comment": "Representative of swing_tiers.py's mid 'M' tier (6-15 sessions); shadow_store/swing pools every tier into one equal-weight basket with no tier field of its own, so swing_ic.py grades at this one blended horizon rather than three.",
+    "growth_breakout_horizon_days_key": "1M",
+    "growth_emerging_horizon_days_key": "3M",
+    "_growth_horizon_comment": "growth_ic.py reuses horizons_days['1M'] for rankBreakoutInProgress (a move already underway - a short follow-through question) and horizons_days['3M'] for rankEmergingGrowth (measurables that 'sometimes precede' a move - a longer setup-to-payoff question), rather than adding two more calendar-day constants that would just restate horizons_days's existing values.",
     "sector_residual_minimum_peers": 3,
     "periods_per_year": 12,
     "minimum_icir_periods": 24,
