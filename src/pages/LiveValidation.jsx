@@ -6,6 +6,7 @@ import { ScreenNavigation } from './ResearchScreen'
 import InfoTag from '../components/InfoTag.jsx'
 import AutoOverviewLine from '../components/AutoOverviewLine.jsx'
 import PairedBarChart from '../components/PairedBarChart.jsx'
+import DataTable from '../components/DataTable.jsx'
 
 const HORIZON_ORDER = ['1M', '3M', '6M', '12M']
 
@@ -198,6 +199,43 @@ function EtfValidation({ data, error }) {
   </section>
 }
 
+// Renders any pipeline/validation/composite_attribution.py report: does each weighted metric
+// predict on its own (own rank IC, ignoring the blend), and does the composite actually need
+// it (delta IC - the composite's rank IC minus its rank IC with that metric's weight removed
+// and the rest reweighted; negative means the composite predicts *better* without it). Shared
+// by every composite screen below rather than duplicated per screen, since
+// composite_attribution.build_attribution_report publishes the same shape for all of them.
+const ATTRIBUTION_COLUMNS = [
+  { key: 'name', label: 'Metric', rowHeader: true, cell: (row) => title(row.id) },
+  { key: 'weight', label: 'Weight', numeric: true, cell: (row) => row.weight == null ? '–' : `${Math.round(row.weight * 100)}%` },
+  { key: 'own_rank_ic', label: 'Own rank IC', numeric: true, cell: (row) => icValue(row.own_rank_ic) },
+  { key: 'delta_ic', label: 'Delta IC', numeric: true, cell: (row) => icValue(row.delta_ic) },
+  {
+    key: 'verdict', label: 'Verdict', sortable: false,
+    cell: (row) => row.delta_ic == null ? '–'
+      : row.hurts_composite
+        ? <span className="validation-fail">Hurts composite</span>
+        : <span className="validation-pass">Earns its weight</span>,
+  },
+]
+
+function AttributionTable({ attribution }) {
+  const rows = Object.entries(attribution?.metrics || {}).map(([id, metric]) => ({ id, ...metric }))
+  if (!rows.length) return null
+  return <div className="attribution-block">
+    <div className="ic-chart-head"><b>Per-metric attribution
+      <InfoTag label="Per-metric attribution">
+        <strong>Does each weighted input earn its place?</strong>
+        <p>Own rank IC is the metric's own predictive power, standalone - ignoring the blend
+          entirely. Delta IC is the full composite's rank IC minus its rank IC with that
+          metric's weight removed and the rest reweighted over what remains; negative means
+          the composite predicts better once that metric is gone.</p>
+      </InfoTag>
+    </b><span>{attribution.status === 'eligible' ? `${attribution.eligible_periods} periods` : 'Accumulating'}</span></div>
+    <DataTable columns={ATTRIBUTION_COLUMNS} rows={rows} getKey={(row) => row.id} defaultSort={{ key: 'weight', dir: 'desc' }} className="attribution-table" />
+  </div>
+}
+
 function RankIcMetricCard({ id, metric, eyebrow = 'Component' }) {
   return <article className="card ic-variant-card">
     <header><div><span className="eyebrow">{eyebrow}</span><h3>{title(id)}</h3></div>
@@ -208,6 +246,7 @@ function RankIcMetricCard({ id, metric, eyebrow = 'Component' }) {
       <div><dt>ICIR</dt><dd>{metric.status === 'eligible' ? icValue(metric.icir) : 'Not available'}</dd></div>
       <div><dt>Hit rate</dt><dd>{pct(metric.hit_rate)}</dd></div>
     </dl>
+    {metric.attribution && <AttributionTable attribution={metric.attribution} />}
   </article>
 }
 
@@ -215,8 +254,10 @@ function RankIcMetricCard({ id, metric, eyebrow = 'Component' }) {
 // `{ snapshot_dates_recorded, metrics: { id: { status, eligible_periods, ... } } }`
 // artifact shaped identically to theme_metrics.json (see pipeline/validation/theme_ic.py) -
 // swing_ic.py and growth_ic.py were built to match that shape rather than invent their own,
-// so one renderer covers all three instead of three near-identical ones.
-function RankIcValidationSection({ data, error, eyebrow, title: heading, description, script, cardEyebrow }) {
+// so one renderer covers all three instead of three near-identical ones. `attribution` is an
+// optional top-level composite_attribution report (swing has one; theme does not, since it
+// has no sub-metric weights of its own to attribute).
+function RankIcValidationSection({ data, error, eyebrow, title: heading, description, script, cardEyebrow, attribution }) {
   if (error) return <section className="card etf-state" role="alert"><strong>{heading} unavailable</strong><span>Run {script}. {error.message}</span></section>
   const metrics = data?.metrics || {}
   const minimumPeriods = Object.values(metrics)[0]?.minimum_icir_periods || 24
@@ -225,6 +266,25 @@ function RankIcValidationSection({ data, error, eyebrow, title: heading, descrip
       <p>{description} ICIR stays hidden until {minimumPeriods} monthly periods exist.</p></div>
       <span className="chip">{data?.snapshot_dates_recorded || 0} snapshots</span></header>
     <div className="ic-variant-grid">{Object.entries(metrics).map(([id, metric]) => <RankIcMetricCard key={id} id={id} metric={metric} eyebrow={cardEyebrow} />)}</div>
+    {attribution && <AttributionTable attribution={attribution} />}
+  </section>
+}
+
+// Pre-breakout and Momentum publish one composite (not several named ones like theme/growth),
+// paired with its own composite_attribution report - a `{ composite: {...}, attribution: {...} }`
+// shape distinct enough from RankIcValidationSection's `metrics` dict to warrant its own
+// renderer rather than forcing a single-entry metrics dict through that one.
+function CompositeAttributionValidation({ data, error, eyebrow, title: heading, description, script, snapshotLabel }) {
+  if (error) return <section className="card etf-state" role="alert"><strong>{heading} unavailable</strong><span>Run {script}. {error.message}</span></section>
+  const composite = data?.composite || {}
+  return <section className="ic-validation-section">
+    <header className="section-heading"><div><span className="eyebrow">{eyebrow}</span><h2>{heading}</h2>
+      <p>{description} ICIR stays hidden until {composite.minimum_icir_periods || 24} monthly periods exist.</p></div>
+      <span className="chip">{snapshotLabel}</span></header>
+    <div className="ic-variant-grid">
+      <RankIcMetricCard id="composite_score" metric={composite} eyebrow="Rank IC" />
+    </div>
+    <AttributionTable attribution={data?.attribution} />
   </section>
 }
 
@@ -251,6 +311,8 @@ export default function LiveValidation() {
   const { data: swingData, error: swingError } = useData('validation/swing_metrics.json')
   const { data: growthData, error: growthError } = useData('validation/growth_metrics.json')
   const { data: optionsIcData, error: optionsIcError } = useData('validation/options_metrics.json')
+  const { data: preBreakoutData, error: preBreakoutError } = useData('validation/pre_breakout_metrics.json')
+  const { data: momentumData, error: momentumError } = useData('validation/momentum_metrics.json')
   if (loading || icLoading || signalLoading) return <><ScreenNavigation /><Loading /></>
   const overview = rankIcOverview(signalMetrics, signalError)
   return <><ScreenNavigation />
@@ -265,11 +327,19 @@ export default function LiveValidation() {
       title="Thematic screen validation" script="pipeline/validation/theme_ic.py"
       description="Rank IC for the theme exposure, connectivity, and structural-rank components behind the thematic and factor screens." />
     <RankIcValidationSection data={swingData} error={swingError} eyebrow="Prospective evidence" cardEyebrow="Swing screen"
-      title="Swing screen validation" script="pipeline/validation/swing_ic.py"
-      description="Rank IC of the swing screen's composite_z signal against a forward return at a 14-day horizon (the mid 'M' tier), read from shadow_store/swing's own daily basket rather than a separate recorder." />
+      title="Swing screen validation" script="pipeline/validation/swing_ic.py" attribution={swingData?.attribution}
+      description="Rank IC of the swing screen's composite_z signal against a forward return at a 14-day horizon (the mid 'M' tier), read from shadow_store/swing's own daily basket rather than a separate recorder. Below, every one of its 5 legs' own predictive power and marginal impact on the composite." />
     <RankIcValidationSection data={growthData} error={growthError} eyebrow="Prospective evidence" cardEyebrow="Growth screen"
       title="Fast growth screen validation" script="pipeline/validation/growth_ic.py"
-      description="Rank IC of the breakout-in-progress and emerging-growth screens' selection scores against forward return (1-month and 3-month horizons respectively) - the first live measurement either screen has ever had." />
+      description="Rank IC of the breakout-in-progress and emerging-growth screens' selection scores against forward return (1-month and 3-month horizons respectively), plus every weighted component's own predictive power and marginal impact on its composite - the first live measurement either screen has ever had." />
+    <CompositeAttributionValidation data={preBreakoutData} error={preBreakoutError} eyebrow="Prospective evidence"
+      title="Pre-breakout screen validation" script="pipeline/validation/pre_breakout_ic.py"
+      snapshotLabel={`${preBreakoutData?.snapshot_dates_recorded || 0} snapshots`}
+      description="Rank IC of the pre-breakout composite against a 3-month forward return, plus every one of its 11 standardized subfactors' own predictive power and marginal impact on the composite - across the 3 named legs (fundamental inflection, momentum/relative strength, flow sentiment)." />
+    <CompositeAttributionValidation data={momentumData} error={momentumError} eyebrow="Prospective evidence"
+      title="Momentum screen validation" script="pipeline/validation/momentum_ic.py"
+      snapshotLabel={`${momentumData?.snapshot_dates_recorded || 0} snapshots`}
+      description="Rank IC of the momentum composite against a 1-month forward return, plus every one of its 5 factors' own predictive power and marginal impact on the composite." />
     <OptionsIcValidation data={optionsIcData} error={optionsIcError} />
     {error ? <div className="card etf-state" role="alert"><strong>Validation artifact unavailable</strong><span>Run pipeline/live_v2_validation.py. {error.message}</span></div>
       : <><div className="shadow-evidence"><span><b>{data?.summary?.passed || 0}</b> passed</span><span><b>{data?.summary?.failed || 0}</b> failed</span><span>Cutoff {data?.data_cutoff || '–'}</span></div>

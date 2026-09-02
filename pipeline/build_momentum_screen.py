@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
+import momentum_pit_store
 from peer_groups import peer_group
 from research_screens_v2 import industry_relative_returns, momentum_factors, momentum_scores
 
@@ -82,6 +83,15 @@ def to_result(rank, row):
         "data_coverage": row.get("data_coverage"),
         "current_membership": bool(row.get("current_membership")),
         "reason_codes": row.get("reason_codes", []),
+        "price": row.get("price"),
+        # The composite itself and its per-factor breakdown, computed by momentum_scores()
+        # but never previously published - needed for validation/momentum_ic.py's per-metric
+        # attribution (composite_attribution.py) and, incidentally, now visible to a reader
+        # of the screen itself rather than only living in memory for one run.
+        "score": row.get("score"),
+        "factors": row.get("factors"),
+        "standardized_factors": row.get("standardized_factors"),
+        "contribution_by_factor": row.get("contribution_by_factor"),
     }
 
 
@@ -125,6 +135,13 @@ def run():
         ),
     }
     save_json("screens/momentum.json", result)
+    # Point-in-time capture of the composite and its factors, for future rank-IC and
+    # per-metric attribution validation - starts recording today, never reconstructs
+    # history. See momentum_pit_store.py and validation/momentum_ic.py.
+    try:
+        momentum_pit_store.append_snapshot(results)
+    except Exception as exc:  # noqa: BLE001
+        LOG.warn(f"momentum_pit_store snapshot failed ({type(exc).__name__}): {exc}")
     LOG.info(f"Momentum screen: scored {len(results)} tickers "
              f"({sum(1 for row in results if row['eligibility'])} eligible)")
     return result

@@ -1,26 +1,21 @@
 {
-  "generated_at": "2026-09-02T18:39:22.608082+00:00",
+  "generated_at": "2026-09-02T18:39:22.560967+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
-    "label": "no history exists before shadow_store/swing or swing_pit_store began recording - this module never reconstructs a swing signal or leg score for a date it did not observe"
+    "label": "no history exists before momentum_pit_store began recording - this module never reconstructs a composite or factor score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 11,
-  "attribution_snapshot_dates_recorded": 0,
-  "horizon_days": 14,
-  "metrics": {
-    "composite_z": {
-      "requires_live_sample": true,
-      "eligible_periods": 2,
-      "minimum_icir_periods": 24,
-      "status": "accumulating",
-      "mean_rank_ic": null,
-      "icir": null,
-      "t_stat": null,
-      "hit_rate": null,
-      "clears_multiple_testing_bar": false,
-      "periods": []
-    }
+  "snapshot_dates_recorded": 0,
+  "horizon_days": 30,
+  "composite": {
+    "eligible_periods": 0,
+    "minimum_icir_periods": 24,
+    "status": "accumulating",
+    "mean_rank_ic": null,
+    "icir": null,
+    "t_stat": null,
+    "hit_rate": null,
+    "clears_multiple_testing_bar": false
   },
   "attribution": {
     "eligible_periods": 0,
@@ -34,24 +29,24 @@
       "clears_multiple_testing_bar": false
     },
     "metrics": {
-      "pead_drift": {
-        "weight": 0.3,
+      "momentum_12_1": {
+        "weight": 0.4,
         "own_eligible_periods": 0,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
         "hurts_composite": false
       },
-      "analyst_revision": {
-        "weight": 0.25,
-        "own_eligible_periods": 0,
-        "own_rank_ic": null,
-        "own_icir": null,
-        "delta_ic": null,
-        "hurts_composite": false
-      },
-      "high_volume_premium": {
+      "momentum_12_7": {
         "weight": 0.2,
+        "own_eligible_periods": 0,
+        "own_rank_ic": null,
+        "own_icir": null,
+        "delta_ic": null,
+        "hurts_composite": false
+      },
+      "momentum_6_1": {
+        "weight": 0.15,
         "own_eligible_periods": 0,
         "own_rank_ic": null,
         "own_icir": null,
@@ -66,7 +61,7 @@
         "delta_ic": null,
         "hurts_composite": false
       },
-      "short_term_reversal": {
+      "industry_relative_momentum": {
         "weight": 0.1,
         "own_eligible_periods": 0,
         "own_rank_ic": null,
@@ -81,6 +76,6 @@
     "semantic_version": "3.2.0",
     "git_commit_sha": "926c970f31c31bba88e53f2bf6c7e1e42eca1bf8",
     "config_hash": "62faf25cafeb27bca43a647d0c65149a07d1e46b1e4415aef1772f98b5252413",
-    "generated_at": "2026-09-02T18:39:22.608082+00:00"
+    "generated_at": "2026-09-02T18:39:22.560967+00:00"
   }
 }

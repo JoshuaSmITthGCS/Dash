@@ -1,5 +1,5 @@
-"""Rank-IC validation for the Fast Growth screens (breakout-in-progress, emerging growth), once
-enough point-in-time history exists.
+"""Rank-IC and per-metric attribution validation for the Fast Growth screens
+(breakout-in-progress, emerging growth), once enough point-in-time history exists.
 
 Reads ``growth_pit_store.py``'s dated snapshots and recomputes each screen's ``rankScore``
 exactly as ``src/lib/researchScreens.js``'s ``rankBreakoutInProgress``/``rankEmergingGrowth``
@@ -8,6 +8,15 @@ duplicates frontend scoring logic, and it exists only because there is nowhere s
 score is otherwise computed. If either JS function's math changes, this module's mirror of it
 needs the matching update or the two will silently grade different things; each formula below
 is commented with the exact JS lines it mirrors.
+
+Grades, once enough periods accumulate:
+
+  * each screen's composite rank IC against forward return (the same "hone in over time"
+    pattern ``theme_ic.py``/``swing_ic.py`` use), and
+  * every one of the composite's weighted components (burst/accelScore/trend/volume for
+    breakout; growthScore/marginScore/strengthScore/contractionScore for emerging) - the exact
+    terms each composite blends, not the raw inputs upstream of them - via
+    ``composite_attribution.py``'s ``per_leg_ic``/``drop_one_leg_delta_ic``.
 
 Same discipline as ``theme_ic.py``: a period only counts once both ends of it were actually
 recorded, forward return comes from the price recorded in each snapshot, and nothing here
@@ -30,6 +39,7 @@ if PIPELINE_DIR not in sys.path:
     sys.path.insert(0, PIPELINE_DIR)
 
 from common import LOG, load_json, save_json  # noqa: E402
+from composite_attribution import build_attribution_report, periods_from_snapshots  # noqa: E402
 from evaluation import ic_summary, rank_ic  # noqa: E402
 import growth_pit_store  # noqa: E402
 
@@ -40,6 +50,9 @@ PERIODS_PER_YEAR = CONFIG.get("periods_per_year", 12)
 HORIZONS_DAYS = CONFIG.get("horizons_days", {})
 PUBLIC_NAME = "validation/growth_metrics.json"
 
+BREAKOUT_WEIGHTS = {"burst": 0.4, "accel_score": 0.3, "trend": 0.2, "volume": 0.1}
+EMERGING_WEIGHTS = {"growth_score": 0.35, "margin_score": 0.2, "strength_score": 0.2, "contraction_score": 0.15}
+
 
 def _clamp(value, lo=0.0, hi=100.0):
     return min(hi, max(lo, value))
@@ -49,12 +62,11 @@ def _finite(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
-def breakout_score(row):
-    """Mirrors ``rankBreakoutInProgress`` (researchScreens.js): burst/accelScore/trend/volume,
-    weighted 0.4/0.3/0.2/0.1. Returns ``None`` when the row does not clear the screen's own
-    gates that day (weekReturn > 2, monthReturn > 0, acceleration > 0) - a name outside the
-    gate contributes no observation for breakout that day, the same "no score, no period"
-    semantics ``theme_ic.py`` uses.
+def breakout_components(row):
+    """The 4 terms ``rankBreakoutInProgress`` (researchScreens.js) blends 0.4/0.3/0.2/0.1,
+    or ``None`` when the row does not clear the screen's own gates that day (weekReturn > 2,
+    monthReturn > 0, acceleration > 0) - a name outside the gate contributes no observation
+    for breakout that day, the same "no score, no period" semantics ``theme_ic.py`` uses.
     """
     week_return, month_return = row.get("return_5d"), row.get("return_20d")
     if not _finite(week_return) or not _finite(month_return) or week_return <= 2 or month_return <= 0:
@@ -64,20 +76,28 @@ def breakout_score(row):
     if acceleration <= 0:
         return None
     volume_ratio = row.get("volume_ratio_60d")
-    burst = _clamp(50 + week_return * 3)
-    accel_score = _clamp(50 + acceleration * 2)
-    trend = _clamp(50 + month_return * 1.2)
-    volume = _clamp(50 + (volume_ratio - 1) * 40) if _finite(volume_ratio) else 50
-    return burst * 0.4 + accel_score * 0.3 + trend * 0.2 + volume * 0.1
+    return {
+        "burst": _clamp(50 + week_return * 3),
+        "accel_score": _clamp(50 + acceleration * 2),
+        "trend": _clamp(50 + month_return * 1.2),
+        "volume": _clamp(50 + (volume_ratio - 1) * 40) if _finite(volume_ratio) else 50,
+    }
 
 
-def emerging_score(row):
-    """Mirrors ``rankEmergingGrowth`` (researchScreens.js): growthScore/marginScore/
-    strengthScore/contractionScore, weighted 0.35/0.2/0.2/0.15 (renormalized over the weights
-    actually present, matching the JS's own ``totalWeight`` division). The estimate-revision
-    bonus is omitted - ``growth_pit_store.py`` does not record it, and the JS treats it as
-    optional (never required, never penalized when absent) so omitting it here changes nothing
-    about eligibility, only drops one always-optional input from the weighted mean.
+def breakout_score(row):
+    components = breakout_components(row)
+    if components is None:
+        return None
+    return sum(components[name] * weight for name, weight in BREAKOUT_WEIGHTS.items())
+
+
+def emerging_components(row):
+    """The 4 terms ``rankEmergingGrowth`` (researchScreens.js) blends 0.35/0.2/0.2/0.15
+    (renormalized over the weights actually present), or ``None`` when the row does not clear
+    the screen's own gates that day. The estimate-revision bonus is omitted -
+    ``growth_pit_store.py`` does not record it, and the JS treats it as optional (never
+    required, never penalized when absent) so omitting it here changes nothing about
+    eligibility, only drops one always-optional term from the weighted mean.
     """
     week_return = row.get("return_5d")
     revenue_growth = row.get("revenue_growth")
@@ -95,19 +115,27 @@ def emerging_score(row):
                               else None)
     margin_trend = row.get("operating_margin_trend")
 
-    growth_score = _clamp(50 + revenue_growth * 150)
-    margin_score = _clamp(50 + margin_trend * 300) if _finite(margin_trend) else 50
-    strength_score = _clamp(50 + relative_strength * 4)
-    contraction_score = 50 if volatility_contracting is None else (70 if volatility_contracting else 40)
+    return {
+        "growth_score": _clamp(50 + revenue_growth * 150),
+        "margin_score": _clamp(50 + margin_trend * 300) if _finite(margin_trend) else 50,
+        "strength_score": _clamp(50 + relative_strength * 4),
+        "contraction_score": 50 if volatility_contracting is None else (70 if volatility_contracting else 40),
+    }
 
-    weighted = [(growth_score, 0.35), (margin_score, 0.2), (strength_score, 0.2), (contraction_score, 0.15)]
-    total_weight = sum(weight for _, weight in weighted)
-    return sum(value * weight for value, weight in weighted) / total_weight
+
+def emerging_score(row):
+    components = emerging_components(row)
+    if components is None:
+        return None
+    total_weight = sum(EMERGING_WEIGHTS.values())
+    return sum(components[name] * weight for name, weight in EMERGING_WEIGHTS.items()) / total_weight
 
 
 GRADED_SCREENS = {
-    "breakout_in_progress": {"score_fn": breakout_score, "horizon_key": "1M"},
-    "emerging_growth": {"score_fn": emerging_score, "horizon_key": "3M"},
+    "breakout_in_progress": {"score_fn": breakout_score, "components_fn": breakout_components,
+                             "weights": BREAKOUT_WEIGHTS, "horizon_key": "1M"},
+    "emerging_growth": {"score_fn": emerging_score, "components_fn": emerging_components,
+                        "weights": EMERGING_WEIGHTS, "horizon_key": "3M"},
 }
 
 
@@ -139,6 +167,26 @@ def _periods(snapshots, score_fn, horizon_days):
     return periods
 
 
+def _component_snapshots(snapshots, components_fn):
+    """Every snapshot's rows, with a gated component dict added where the row clears the
+    screen's own gates that day - the shape ``composite_attribution.periods_from_snapshots``
+    expects, built from a pure function of what ``growth_pit_store.py`` already recorded
+    rather than a second recorder. Price/ticker are kept even when a row doesn't clear the
+    gate (``components_fn`` returns ``None``): that ticker then simply contributes no
+    ``leg_scores`` entry when this snapshot is a *start*, exactly the "no score, no period"
+    exclusion the ungated case wants - but the row must still be resolvable as an *end*
+    snapshot's price for an earlier period, which dropping it entirely would break.
+    """
+    transformed = []
+    for snapshot in snapshots:
+        rows = []
+        for row in snapshot["rows"]:
+            components = components_fn(row) or {}
+            rows.append({"ticker": row.get("ticker"), "price": row.get("price"), **components})
+        transformed.append({"date": snapshot["date"], "rows": rows})
+    return transformed
+
+
 def _dated_snapshots(store_dir=None):
     dates = growth_pit_store.snapshot_dates(store_dir)
     return [{"date": date, "rows": growth_pit_store.load_snapshot(date, store_dir)} for date in dates]
@@ -152,6 +200,12 @@ def build_report(store_dir=None):
         periods = _periods(snapshots, spec["score_fn"], horizon_days)
         summary = ic_summary([period["rank_ic"] for period in periods], PERIODS_PER_YEAR)
         eligible = summary["periods"] >= MINIMUM_PERIODS
+
+        component_periods = periods_from_snapshots(
+            _component_snapshots(snapshots, spec["components_fn"]), list(spec["weights"]), horizon_days)
+        attribution = build_attribution_report(component_periods, dict(spec["weights"]),
+                                               minimum_periods=MINIMUM_PERIODS, periods_per_year=PERIODS_PER_YEAR)
+
         metrics[name] = {
             "requires_live_sample": True,
             "horizon_days": horizon_days,
@@ -164,6 +218,7 @@ def build_report(store_dir=None):
             "hit_rate": summary["hit_rate"] if eligible else None,
             "clears_multiple_testing_bar": summary["clears_multiple_testing_bar"] if eligible else False,
             "periods": periods if eligible else [],
+            "attribution": attribution,
         }
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),

@@ -419,11 +419,18 @@ def _score_row(row, index, standardized, config):
         score, contributions, resolved, coverage, renorm = _leg_score(
             index, standardized, subfactors, SUBWEIGHTS_BY_LEG[leg])
         sub_scores[leg] = score
+        # Standardized (sign-adjusted) per-subfactor z, published alongside contributions so
+        # validation/pre_breakout_ic.py can grade each subfactor's own predictive power and
+        # marginal impact on the composite (composite_attribution.py) - contributions alone
+        # are each subfactor's *share of the leg's score*, not the underlying value itself.
+        subfactor_z = {name: round(standardized[name][index], 4) for name, _negate in subfactors
+                       if standardized.get(name) is not None and standardized[name][index] is not None}
         leg_detail[leg] = {
             "z": None if score is None else round(score, 4),
             "weight": PRE_BREAKOUT_WEIGHTS[leg],
             "applied": score is not None,
             "subfactor_contributions": contributions,
+            "subfactor_z": subfactor_z,
             "subfactors_resolved": resolved,
             "subfactors_declared": len(subfactors),
             "coverage": round(coverage, 3),

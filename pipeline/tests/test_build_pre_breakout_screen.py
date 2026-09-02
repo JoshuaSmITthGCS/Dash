@@ -169,10 +169,14 @@ def test_run_publishes_ranked_rows_with_their_evidence(monkeypatch):
     monkeypatch.setattr(module, "archive_series_for", lambda ticker: None)
     monkeypatch.setattr(module, "load_json", lambda name: None)
     monkeypatch.setattr(module, "save_json", lambda name, payload: saved.update({name: payload}))
+    recorded = {}
+    monkeypatch.setattr(module.pre_breakout_pit_store, "append_snapshot",
+                        lambda results, **kwargs: recorded.__setitem__("results", results))
 
     result = module.run()
 
     assert saved["screens/pre-breakout.json"] is result
+    assert recorded["results"] == result["results"]
     assert result["status"] == "success"
     assert result["scored_count"] == 8
     assert [row["rank"] for row in result["results"]] == list(range(1, len(result["results"]) + 1))

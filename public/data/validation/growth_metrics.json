@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-02T04:46:16.285135+00:00",
+  "generated_at": "2026-09-02T18:39:22.652761+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
@@ -18,7 +18,53 @@
       "t_stat": null,
       "hit_rate": null,
       "clears_multiple_testing_bar": false,
-      "periods": []
+      "periods": [],
+      "attribution": {
+        "eligible_periods": 0,
+        "minimum_icir_periods": 24,
+        "status": "accumulating",
+        "composite": {
+          "mean_rank_ic": null,
+          "icir": null,
+          "t_stat": null,
+          "hit_rate": null,
+          "clears_multiple_testing_bar": false
+        },
+        "metrics": {
+          "burst": {
+            "weight": 0.4,
+            "own_eligible_periods": 0,
+            "own_rank_ic": null,
+            "own_icir": null,
+            "delta_ic": null,
+            "hurts_composite": false
+          },
+          "accel_score": {
+            "weight": 0.3,
+            "own_eligible_periods": 0,
+            "own_rank_ic": null,
+            "own_icir": null,
+            "delta_ic": null,
+            "hurts_composite": false
+          },
+          "trend": {
+            "weight": 0.2,
+            "own_eligible_periods": 0,
+            "own_rank_ic": null,
+            "own_icir": null,
+            "delta_ic": null,
+            "hurts_composite": false
+          },
+          "volume": {
+            "weight": 0.1,
+            "own_eligible_periods": 0,
+            "own_rank_ic": null,
+            "own_icir": null,
+            "delta_ic": null,
+            "hurts_composite": false
+          }
+        }
+      }
     },
     "emerging_growth": {
       "requires_live_sample": true,
@@ -31,14 +77,60 @@
       "t_stat": null,
       "hit_rate": null,
       "clears_multiple_testing_bar": false,
-      "periods": []
+      "periods": [],
+      "attribution": {
+        "eligible_periods": 0,
+        "minimum_icir_periods": 24,
+        "status": "accumulating",
+        "composite": {
+          "mean_rank_ic": null,
+          "icir": null,
+          "t_stat": null,
+          "hit_rate": null,
+          "clears_multiple_testing_bar": false
+        },
+        "metrics": {
+          "growth_score": {
+            "weight": 0.35,
+            "own_eligible_periods": 0,
+            "own_rank_ic": null,
+            "own_icir": null,
+            "delta_ic": null,
+            "hurts_composite": false
+          },
+          "margin_score": {
+            "weight": 0.2,
+            "own_eligible_periods": 0,
+            "own_rank_ic": null,
+            "own_icir": null,
+            "delta_ic": null,
+            "hurts_composite": false
+          },
+          "strength_score": {
+            "weight": 0.2,
+            "own_eligible_periods": 0,
+            "own_rank_ic": null,
+            "own_icir": null,
+            "delta_ic": null,
+            "hurts_composite": false
+          },
+          "contraction_score": {
+            "weight": 0.15,
+            "own_eligible_periods": 0,
+            "own_rank_ic": null,
+            "own_icir": null,
+            "delta_ic": null,
+            "hurts_composite": false
+          }
+        }
+      }
     }
   },
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "603297d24600403b5ec0c31105d18955a01d4829",
+    "git_commit_sha": "926c970f31c31bba88e53f2bf6c7e1e42eca1bf8",
     "config_hash": "62faf25cafeb27bca43a647d0c65149a07d1e46b1e4415aef1772f98b5252413",
-    "generated_at": "2026-09-02T04:46:16.285135+00:00"
+    "generated_at": "2026-09-02T18:39:22.652761+00:00"
   }
 }

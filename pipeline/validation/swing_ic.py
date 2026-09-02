@@ -16,6 +16,14 @@ tier field of its own, so this grades at one blended horizon
 (``settings.json``'s ``validation.swing_horizon_days``, representative of the mid "M" tier)
 rather than three separate ones.
 
+Also grades every one of the composite's 5 legs (pead_drift, analyst_revision,
+high_volume_premium, high_52w_proximity, short_term_reversal) - its own standalone rank IC and
+its marginal (drop-one) impact on the composite - via ``composite_attribution.py``, the same
+machinery ``pre_breakout_ic.py``/``momentum_ic.py`` use. This half reads a dedicated store,
+``swing_pit_store.py`` (leg z-scores, which the equal-weight shadow basket above was never
+meant to carry - see that module's own docstring for why it isn't the same recorder), so its
+own period count can differ slightly from the composite's.
+
     python pipeline/validation/swing_ic.py
 """
 
@@ -30,7 +38,10 @@ if PIPELINE_DIR not in sys.path:
     sys.path.insert(0, PIPELINE_DIR)
 
 from common import LOG, load_json, save_json  # noqa: E402
+from composite_attribution import build_attribution_report, periods_from_snapshots  # noqa: E402
 from evaluation import ic_summary, rank_ic  # noqa: E402
+import swing_pit_store  # noqa: E402
+from swing_signals import SWING_WEIGHTS  # noqa: E402
 
 SETTINGS = load_json("settings.json", from_config=True) or {}
 CONFIG = SETTINGS.get("validation", {})
@@ -41,6 +52,11 @@ PUBLIC_NAME = "validation/swing_metrics.json"
 GRADED_METRIC = "composite_z"
 
 STORE_DIR = os.path.join(PIPELINE_DIR, "shadow_store", "swing")
+
+
+def _attribution_snapshots(store_dir=None):
+    dates = swing_pit_store.snapshot_dates(store_dir)
+    return [{"date": date, "rows": swing_pit_store.load_snapshot(date, store_dir)} for date in dates]
 
 
 def _dated_snapshots(store_dir=None):
@@ -98,7 +114,7 @@ def _periods(snapshots, horizon_days=HORIZON_DAYS):
     return periods
 
 
-def build_report(store_dir=None):
+def build_report(store_dir=None, attribution_store_dir=None):
     snapshots = _dated_snapshots(store_dir)
     periods = _periods(snapshots)
     summary = ic_summary([period["rank_ic"] for period in periods], PERIODS_PER_YEAR)
@@ -115,18 +131,26 @@ def build_report(store_dir=None):
         "clears_multiple_testing_bar": summary["clears_multiple_testing_bar"] if eligible else False,
         "periods": periods if eligible else [],
     }
+
+    attribution_snapshots = _attribution_snapshots(attribution_store_dir)
+    attribution_periods = periods_from_snapshots(attribution_snapshots, list(SWING_WEIGHTS), HORIZON_DAYS)
+    attribution = build_attribution_report(attribution_periods, dict(SWING_WEIGHTS),
+                                           minimum_periods=MINIMUM_PERIODS, periods_per_year=PERIODS_PER_YEAR)
+
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "data_integrity": "prospective_point_in_time",
         "reconstructed_history": {
             "included": False,
-            "label": "no history exists before shadow_store/swing began recording (2026-08-02) "
-                     "- this module never reconstructs a swing signal for a date it did not "
-                     "observe",
+            "label": "no history exists before shadow_store/swing or swing_pit_store began "
+                     "recording - this module never reconstructs a swing signal or leg score "
+                     "for a date it did not observe",
         },
         "snapshot_dates_recorded": len(snapshots),
+        "attribution_snapshot_dates_recorded": len(attribution_snapshots),
         "horizon_days": HORIZON_DAYS,
         "metrics": {GRADED_METRIC: metric},
+        "attribution": attribution,
     }
 
 

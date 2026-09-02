@@ -82,6 +82,34 @@ class GrowthIcReportTests(unittest.TestCase):
             self.assertEqual(breakout["eligible_periods"], 1)
             self.assertEqual(breakout["status"], "accumulating")
             self.assertIsNone(breakout["mean_rank_ic"])
+            attribution = breakout["attribution"]
+            self.assertEqual(attribution["eligible_periods"], 1)
+            self.assertEqual(attribution["status"], "accumulating")
+            self.assertEqual(set(attribution["metrics"]), set(gic.BREAKOUT_WEIGHTS))
+            self.assertEqual(attribution["metrics"]["burst"]["weight"], gic.BREAKOUT_WEIGHTS["burst"])
+
+
+class ComponentFunctionTests(unittest.TestCase):
+    def test_breakout_components_sum_to_the_same_score_breakout_score_returns(self):
+        row = {"return_5d": 5.0, "return_20d": 15.0, "volume_ratio_60d": 1.2}
+        components = gic.breakout_components(row)
+        self.assertEqual(set(components), set(gic.BREAKOUT_WEIGHTS))
+        recombined = sum(components[name] * weight for name, weight in gic.BREAKOUT_WEIGHTS.items())
+        self.assertAlmostEqual(recombined, gic.breakout_score(row), places=9)
+
+    def test_emerging_components_sum_to_the_same_score_emerging_score_returns(self):
+        row = {"return_5d": 1.0, "revenue_growth": 0.2, "relative_strength_20d": 2.0,
+              "operating_margin_trend": 0.01, "recent_vol_10d": 0.01, "longer_vol_60d": 0.02}
+        components = gic.emerging_components(row)
+        self.assertEqual(set(components), set(gic.EMERGING_WEIGHTS))
+        total_weight = sum(gic.EMERGING_WEIGHTS.values())
+        recombined = sum(components[name] * weight for name, weight in gic.EMERGING_WEIGHTS.items()) / total_weight
+        self.assertAlmostEqual(recombined, gic.emerging_score(row), places=9)
+
+    def test_a_gated_out_row_yields_no_components_and_no_score(self):
+        row = {"return_5d": 1.0, "return_20d": 15.0}  # fails breakout's weekReturn > 2 gate
+        self.assertIsNone(gic.breakout_components(row))
+        self.assertIsNone(gic.breakout_score(row))
 
 
 if __name__ == "__main__":

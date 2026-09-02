@@ -167,4 +167,49 @@ describe('LiveValidation', () => {
     expect(screen.getByText('0 of 4 positions resolved')).toBeInTheDocument()
     expect(screen.getByText('Short Term Trades Score')).toBeInTheDocument()
   })
+
+  it('surfaces pre-breakout and momentum screen validation, with per-metric attribution once eligible', () => {
+    const eligibleAttribution = {
+      eligible_periods: 24, minimum_icir_periods: 24, status: 'eligible',
+      composite: { mean_rank_ic: 0.04, icir: 0.5, t_stat: 3.1, hit_rate: 0.55, clears_multiple_testing_bar: true },
+      metrics: {
+        earnings_acceleration: { weight: 0.15, own_eligible_periods: 24, own_rank_ic: 0.06, own_icir: 0.6, delta_ic: 0.01, hurts_composite: false },
+        volatility_contraction: { weight: 0.02, own_eligible_periods: 24, own_rank_ic: -0.01, own_icir: -0.1, delta_ic: -0.02, hurts_composite: true },
+      },
+    }
+    useData.mockImplementation((name) => {
+      if (name.includes('ic_validation')) {
+        return { data: { snapshot_refreshes: 1, variants: { champion: { '1M': accumulating } } }, loading: false, error: null }
+      }
+      if (name.includes('signal_metrics')) return { data: signalMetrics, loading: false, error: null }
+      if (name.includes('pre_breakout_metrics')) {
+        return { data: {
+          snapshot_dates_recorded: 30, horizon_days: 91,
+          composite: { status: 'eligible', eligible_periods: 24, minimum_icir_periods: 24, mean_rank_ic: 0.045, icir: 0.6, hit_rate: 0.56, clears_multiple_testing_bar: true },
+          attribution: eligibleAttribution,
+        }, loading: false, error: null }
+      }
+      if (name.includes('momentum_metrics')) {
+        return { data: {
+          snapshot_dates_recorded: 0,
+          composite: { status: 'accumulating', eligible_periods: 0, minimum_icir_periods: 24, mean_rank_ic: null, icir: null, hit_rate: null },
+          attribution: { eligible_periods: 0, minimum_icir_periods: 24, status: 'accumulating',
+            composite: {}, metrics: { momentum_12_1: { weight: 0.4, own_eligible_periods: 0, own_rank_ic: null } } },
+        }, loading: false, error: null }
+      }
+      return { data: { summary: { passed: 0, failed: 0 }, results: [] }, loading: false, error: null }
+    })
+
+    render(<MemoryRouter><LiveValidation /></MemoryRouter>)
+    expect(screen.getByText('Pre-breakout screen validation')).toBeInTheDocument()
+    expect(screen.getByText('Momentum screen validation')).toBeInTheDocument()
+    // Attribution table rows, only rendered once the report is eligible.
+    expect(screen.getByText('Earnings Acceleration')).toBeInTheDocument()
+    expect(screen.getByText('Volatility Contraction')).toBeInTheDocument()
+    expect(screen.getByText('Hurts composite')).toBeInTheDocument()
+    expect(screen.getByText('Earns its weight')).toBeInTheDocument()
+    // Momentum's attribution is still accumulating, so its metric rows render but the
+    // composite section itself is what's gated - the momentum metric key still shows.
+    expect(screen.getByText('Momentum 12 1')).toBeInTheDocument()
+  })
 })
