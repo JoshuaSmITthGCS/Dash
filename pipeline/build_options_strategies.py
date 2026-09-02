@@ -350,6 +350,13 @@ def to_result_short_term(rank, strategy, row):
         "expiration": row.get("expiration"), "days_to_expiration": row.get("days_to_expiration"),
         "capital_required": capital_required,
         "legs": [leg], "metrics": metrics, "reason_codes": row.get("reason_codes", []),
+        # score_group()'s standardized (winsorized, z-scored) inputs to `score`, previously
+        # computed but never published - needed for validation/options_ic.py's per-mechanism
+        # attribution (composite_attribution.py), keyed by each mechanism's own field names
+        # (build_options_screen.WEIGHTS/build_covered_call_screen.WEIGHTS/
+        # build_cash_secured_put_screen.WEIGHTS all differ, so this rides along per-row
+        # rather than being declared once at the top of the file).
+        "standardized_factors": row.get("standardized_factors"),
     }
 
 

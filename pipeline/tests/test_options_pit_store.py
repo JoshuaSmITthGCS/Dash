@@ -13,6 +13,7 @@ CANDIDATE = {
     "ticker": "AAPL", "strategy": "buy_call", "score": 72.0, "price": 200.0,
     "expiration": "2026-01-15", "days_to_expiration": 10,
     "legs": [{"action": "buy", "option_type": "call", "strike": 205.0, "mid": 3.5}],
+    "standardized_factors": {"iv_value": 0.4, "liquidity": 1.1, "trend_strength": -0.2},
 }
 
 
@@ -25,6 +26,11 @@ class BuildRowsTests(unittest.TestCase):
         self.assertEqual(row["strike"], 205.0)
         self.assertEqual(row["premium"], 3.5)
         self.assertEqual(row["expiration"], "2026-01-15")
+        self.assertEqual(row["factors"], {"iv_value": 0.4, "liquidity": 1.1, "trend_strength": -0.2})
+
+    def test_a_candidate_missing_standardized_factors_records_an_empty_dict_not_a_dropped_row(self):
+        rows = ops.build_rows([{**CANDIDATE, "standardized_factors": None}])
+        self.assertEqual(rows[0]["factors"], {})
 
     def test_a_candidate_missing_legs_is_excluded(self):
         self.assertEqual(ops.build_rows([{**CANDIDATE, "legs": []}]), [])

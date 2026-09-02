@@ -15,10 +15,28 @@ exactly (buy: intrinsic value at expiry minus entry cost; sell_call: capped stoc
 premium income; sell_put: premium income minus assignment downside), run on the position that
 was actually recommended and what actually happened afterward, rather than a synthetic chain.
 
-Rank IC is computed once per calendar month of expiration (not a start/end snapshot pair, since
-each row resolves on its own 1-14-day schedule rather than a shared horizon): every position
-expiring in that month is one cross-sectional read of "did the screen's score predict which of
-that month's picks paid off."
+Rank IC is computed once per calendar *week* of expiration (not a start/end snapshot pair,
+since each row resolves on its own 1-14-day schedule rather than a shared horizon): every
+position expiring in that week is one cross-sectional read of "did the screen's score predict
+which of that week's picks paid off."
+
+Deliberately weekly, not monthly: a position here resolves in 1-14 days, not one-to-several
+months like every other screen this pipeline validates, so treating it like them - one period
+per calendar month, the same ``minimum_icir_periods`` bar as a monthly-cadence composite - would
+sit on 24 *months* of history for a signal that actually produces a fresh, independent
+cross-sectional read roughly every week. The eligibility bar itself
+(``minimum_icir_periods`` independent periods before ICIR means anything) doesn't change; only
+the period length does, matched to how often this screen's picks actually resolve rather than
+an arbitrary calendar unit inherited from screens with a much slower clock.
+
+Per-mechanism attribution: the composite (`score`) isn't one weighted blend - Short-term-trades
+picks, per ticker, whichever of three mechanisms (buy a call/put, sell a covered call, sell a
+cash-secured put) ranks best in its own cross-section, and each mechanism has its own weighted
+selection factors (``build_options_screen.WEIGHTS``/``build_covered_call_screen.WEIGHTS``/
+``build_cash_secured_put_screen.WEIGHTS``). Mixing rows from different mechanisms into one
+``composite_attribution.py`` read would blend factors that were never weighted against each
+other, so this grades the three mechanisms separately - one attribution report per mechanism,
+each keyed by its own factor names.
 
     python pipeline/validation/options_ic.py
 """
@@ -31,7 +49,11 @@ PIPELINE_DIR = os.path.dirname(os.path.dirname(__file__))
 if PIPELINE_DIR not in sys.path:
     sys.path.insert(0, PIPELINE_DIR)
 
+from build_cash_secured_put_screen import WEIGHTS as SELL_PUT_WEIGHTS  # noqa: E402
+from build_covered_call_screen import WEIGHTS as SELL_CALL_WEIGHTS  # noqa: E402
+from build_options_screen import WEIGHTS as BUY_WEIGHTS  # noqa: E402
 from common import LOG, load_json, save_json  # noqa: E402
+from composite_attribution import build_attribution_report  # noqa: E402
 from evaluation import ic_summary, rank_ic  # noqa: E402
 from options_common import CONTRACT_FEE  # noqa: E402
 import options_pit_store  # noqa: E402
@@ -40,9 +62,16 @@ import pit_store  # noqa: E402
 SETTINGS = load_json("settings.json", from_config=True) or {}
 CONFIG = SETTINGS.get("validation", {})
 MINIMUM_PERIODS = CONFIG.get("minimum_icir_periods", 24)
-PERIODS_PER_YEAR = 12
+PERIODS_PER_YEAR = 52  # weekly periods - see module docstring for why this differs from the
+                      # monthly-cadence 12 every other screen's validation module uses.
 PUBLIC_NAME = "validation/options_metrics.json"
 GRADED_METRIC = "short_term_trades_score"
+
+# Which recorded ``strategy`` tags belong to each mechanism, and that mechanism's own weights.
+# buy_call and buy_put share one mechanism (build_options_screen.py scores and ranks them
+# together, in one cross-section, regardless of which side of the trade trend picked).
+MECHANISM_STRATEGIES = {"buy": ("buy_call", "buy_put"), "sell_call": ("sell_call",), "sell_put": ("sell_put",)}
+MECHANISM_WEIGHTS = {"buy": BUY_WEIGHTS, "sell_call": SELL_CALL_WEIGHTS, "sell_put": SELL_PUT_WEIGHTS}
 
 
 def _settle_price(ticker, expiration, price_history):
@@ -104,20 +133,57 @@ def _resolved_rows(as_of=None, store_dir=None):
     return resolved
 
 
+def _expiration_week(expiration):
+    """ISO (year, week) of an expiration date, as a sortable ``"YYYY-Www"`` label."""
+    year, week, _weekday = datetime.strptime(expiration, "%Y-%m-%d").isocalendar()
+    return f"{year}-W{week:02d}"
+
+
 def _periods(resolved_rows):
-    """One IC observation per calendar month of expiration."""
-    by_month = {}
+    """One IC observation per ISO week of expiration - see the module docstring for why a
+    week, not a calendar month.
+    """
+    by_week = {}
     for row in resolved_rows:
-        month = row["expiration"][:7]
-        by_month.setdefault(month, []).append(row)
+        by_week.setdefault(_expiration_week(row["expiration"]), []).append(row)
     periods = []
-    for month, rows in sorted(by_month.items()):
+    for week, rows in sorted(by_week.items()):
         scores = [row["score"] for row in rows]
         returns = [row["realized_return"] for row in rows]
         ic = rank_ic(scores, returns)
         if ic is not None:
-            periods.append({"expiration_month": month, "sample_size": len(rows), "rank_ic": ic})
+            periods.append({"expiration_week": week, "sample_size": len(rows), "rank_ic": ic})
     return periods
+
+
+def _mechanism_periods(resolved_rows, strategies):
+    """One ``{leg_scores, forward_returns}`` period per ISO week, pooling only rows whose
+    strategy tag belongs to this mechanism - the shape ``composite_attribution.py``'s
+    ``build_attribution_report`` expects, built directly from resolved rows rather than
+    (start, end) snapshot pairs (options resolves on its own schedule; there is no shared
+    horizon to pair against).
+    """
+    by_week = {}
+    for row in resolved_rows:
+        if row.get("strategy") not in strategies:
+            continue
+        by_week.setdefault(_expiration_week(row["expiration"]), []).append(row)
+    periods = []
+    for week, rows in sorted(by_week.items()):
+        leg_scores = {row["ticker"]: row["factors"] for row in rows if row.get("factors")}
+        forward_returns = {row["ticker"]: row["realized_return"] for row in rows if row.get("factors")}
+        if leg_scores:
+            periods.append({"expiration_week": week, "leg_scores": leg_scores, "forward_returns": forward_returns})
+    return periods
+
+
+def _attribution_by_mechanism(resolved_rows):
+    return {
+        mechanism: build_attribution_report(
+            _mechanism_periods(resolved_rows, strategies), dict(MECHANISM_WEIGHTS[mechanism]),
+            minimum_periods=MINIMUM_PERIODS, periods_per_year=PERIODS_PER_YEAR)
+        for mechanism, strategies in MECHANISM_STRATEGIES.items()
+    }
 
 
 def build_report(as_of=None, store_dir=None):
@@ -152,6 +218,7 @@ def build_report(as_of=None, store_dir=None):
                                   for date in recorded_dates),
         "positions_resolved": len(resolved),
         "metrics": {GRADED_METRIC: metric},
+        "attribution_by_mechanism": _attribution_by_mechanism(resolved),
     }
 
 
@@ -164,7 +231,7 @@ def write_report(report=None):
 def main(argv=None):
     report = write_report()
     LOG.info(f"options_ic: {report['positions_recorded']} position(s) recorded, "
-             f"{report['positions_resolved']} resolved; {MINIMUM_PERIODS} eligible months "
+             f"{report['positions_resolved']} resolved; {MINIMUM_PERIODS} eligible weeks "
              "required before the screen's score is reported as meaningful")
     print(f"options_ic: {report['positions_resolved']} of {report['positions_recorded']} "
          f"recorded positions resolved, status={report['metrics'][GRADED_METRIC]['status']}")

@@ -289,15 +289,25 @@ function CompositeAttributionValidation({ data, error, eyebrow, title: heading, 
 }
 
 const OPTIONS_GRADED_METRIC = 'short_term_trades_score'
+const OPTIONS_MECHANISM_LABELS = {
+  buy: 'Buy calls/puts',
+  sell_call: 'Covered call',
+  sell_put: 'Cash-secured put',
+}
 
 function OptionsIcValidation({ data, error }) {
   if (error) return <section className="card etf-state" role="alert"><strong>Options screen validation unavailable</strong><span>Run pipeline/validation/options_ic.py. {error.message}</span></section>
   const metric = data?.metrics?.[OPTIONS_GRADED_METRIC]
+  const byMechanism = data?.attribution_by_mechanism || {}
   return <section className="ic-validation-section">
     <header className="section-heading"><div><span className="eyebrow">Prospective evidence</span><h2>Options screen validation</h2>
-      <p>Rank IC of the Short-term-trades screen's selection score against each recommended position's realized payoff (premium collected, assignment or expiration outcome), graded once that position's own 1-to-14-day expiration has actually passed - not a simulated chain. ICIR stays hidden until {metric?.minimum_icir_periods || 24} monthly periods exist.</p></div>
+      <p>Rank IC of the Short-term-trades screen's selection score against each recommended position's realized payoff (premium collected, assignment or expiration outcome), graded once that position's own 1-to-14-day expiration has actually passed - not a simulated chain, and against a weekly rather than monthly period so a screen whose picks resolve in 1-14 days can hone in on real evidence in months, not years. ICIR stays hidden until {metric?.minimum_icir_periods || 24} weekly periods exist.</p></div>
       <span className="chip">{data?.positions_resolved || 0} of {data?.positions_recorded || 0} positions resolved</span></header>
     {metric && <div className="ic-variant-grid"><RankIcMetricCard id={OPTIONS_GRADED_METRIC} metric={metric} eyebrow="Options screen" /></div>}
+    {Object.entries(OPTIONS_MECHANISM_LABELS).map(([mechanism, label]) => byMechanism[mechanism] && <article key={mechanism} className="card">
+      <header><span className="eyebrow">Mechanism</span><h3>{label}</h3></header>
+      <AttributionTable attribution={byMechanism[mechanism]} />
+    </article>)}
   </section>
 }
 

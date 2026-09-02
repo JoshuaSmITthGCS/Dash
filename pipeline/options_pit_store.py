@@ -2,10 +2,10 @@
 future realized-payoff validation.
 
 Every recommended position already carries everything ``validation/options_ic.py`` needs to
-grade it later (ticker, strategy, entry stock price, strike, premium, and its own expiration
-date) - this just writes that down before it can drift, exactly as
-``screens/short-term-trades.json`` published it, so a later grading run reads what was actually
-recommended rather than recomputing it from scratch.
+grade it later (ticker, strategy, entry stock price, strike, premium, its own expiration date,
+and the mechanism's standardized selection factors) - this just writes that down before it can
+drift, exactly as ``screens/short-term-trades.json`` published it, so a later grading run reads
+what was actually recommended rather than recomputing it from scratch.
 
 Same discipline as every other point-in-time store here: append-only, one file per UTC date,
 never reconstructed retroactively - a recommendation missing any of those fields simply
@@ -46,6 +46,11 @@ def build_rows(short_term_results, *, recorded_at=None):
             "premium": premium,
             "expiration": expiration,
             "days_to_expiration": candidate.get("days_to_expiration"),
+            # Kept nested, not flattened onto the row: each mechanism (buy/sell_call/
+            # sell_put) has its own field names and weights (see options_ic.py's
+            # STRATEGY_WEIGHTS), so a factor like "liquidity" from one mechanism must never
+            # be blended with another's in a mechanism-mixed attribution read.
+            "factors": candidate.get("standardized_factors") or {},
         })
     return rows
 

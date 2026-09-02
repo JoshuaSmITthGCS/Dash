@@ -152,6 +152,14 @@ describe('LiveValidation', () => {
         return { data: {
           positions_recorded: 4, positions_resolved: 0,
           metrics: { short_term_trades_score: { status: 'accumulating', eligible_periods: 0, minimum_icir_periods: 24, mean_rank_ic: null, icir: null, hit_rate: null } },
+          attribution_by_mechanism: {
+            buy: { eligible_periods: 0, minimum_icir_periods: 24, status: 'accumulating', composite: {},
+                  metrics: { iv_value: { weight: 0.25, own_eligible_periods: 0, own_rank_ic: null } } },
+            sell_call: { eligible_periods: 0, minimum_icir_periods: 24, status: 'accumulating', composite: {},
+                        metrics: { expected_value_pct: { weight: 0.38, own_eligible_periods: 0, own_rank_ic: null } } },
+            sell_put: { eligible_periods: 0, minimum_icir_periods: 24, status: 'accumulating', composite: {},
+                       metrics: { probability_otm: { weight: 0.25, own_eligible_periods: 0, own_rank_ic: null } } },
+          },
         }, loading: false, error: null }
       }
       return { data: { summary: { passed: 0, failed: 0 }, results: [] }, loading: false, error: null }
@@ -166,6 +174,12 @@ describe('LiveValidation', () => {
     expect(screen.getByText('Options screen validation')).toBeInTheDocument()
     expect(screen.getByText('0 of 4 positions resolved')).toBeInTheDocument()
     expect(screen.getByText('Short Term Trades Score')).toBeInTheDocument()
+    // Per-mechanism attribution: buy/sell_call/sell_put each get their own weighted table.
+    expect(screen.getByText('Buy calls/puts')).toBeInTheDocument()
+    expect(screen.getByText('Covered call')).toBeInTheDocument()
+    expect(screen.getByText('Cash-secured put')).toBeInTheDocument()
+    expect(screen.getByText('Iv Value')).toBeInTheDocument()
+    expect(screen.getByText('Probability Otm')).toBeInTheDocument()
   })
 
   it('surfaces pre-breakout and momentum screen validation, with per-metric attribution once eligible', () => {

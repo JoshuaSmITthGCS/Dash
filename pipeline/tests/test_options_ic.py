@@ -84,7 +84,7 @@ class BuildReportTests(unittest.TestCase):
             self.assertEqual(report["positions_recorded"], 0)
             self.assertEqual(report["positions_resolved"], 0)
 
-    def test_five_resolved_positions_in_one_month_form_one_period_below_the_minimum(self):
+    def test_five_resolved_positions_in_one_week_form_one_period_below_the_minimum(self):
         with tempfile.TemporaryDirectory() as tmp:
             candidates = [{"ticker": t, "strategy": "sell_put", "score": score, "price": 95.0,
                           "expiration": "2026-01-10", "days_to_expiration": 9,
@@ -104,6 +104,64 @@ class BuildReportTests(unittest.TestCase):
             self.assertEqual(metric["eligible_periods"], 1)
             self.assertEqual(metric["status"], "accumulating")
             self.assertIsNone(metric["mean_rank_ic"])
+
+    def test_positions_expiring_in_different_weeks_of_the_same_month_form_separate_periods(self):
+        # The whole point of grading by week rather than month: two batches three weeks apart,
+        # still well within a single calendar month, must not be collapsed into one period -
+        # that collapse is exactly what made the old monthly cadence too slow to "hone in" on
+        # a screen whose picks actually resolve every 1-14 days.
+        with tempfile.TemporaryDirectory() as tmp:
+            def batch(expiration):
+                return [{"ticker": t, "strategy": "sell_put", "score": score, "price": 95.0,
+                        "expiration": expiration, "days_to_expiration": 9,
+                        "legs": [{"strike": 100.0, "mid": 2.0}]}
+                       for t, score in zip("ABCDE", (10, 20, 30, 40, 50))]
+            ops.append_snapshot(batch("2026-01-05"), recorded_at=datetime(2026, 1, 1, tzinfo=timezone.utc), store_dir=tmp)
+            ops.append_snapshot(batch("2026-01-26"), recorded_at=datetime(2026, 1, 20, tzinfo=timezone.utc), store_dir=tmp)
+
+            settle_prices = {"A": 80.0, "B": 90.0, "C": 100.0, "D": 105.0, "E": 110.0}
+            with patch.object(oic.pit_store, "history",
+                              side_effect=lambda ticker, field: [
+                                  {"observed_at": "2026-02-01T00:00:00+00:00", "value": settle_prices[ticker]}]):
+                report = oic.build_report(as_of=datetime(2026, 2, 15, tzinfo=timezone.utc), store_dir=tmp)
+
+            self.assertEqual(report["positions_resolved"], 10)
+            self.assertEqual(report["metrics"][oic.GRADED_METRIC]["eligible_periods"], 2)
+
+    def test_periods_per_year_is_weekly_not_monthly(self):
+        self.assertEqual(oic.PERIODS_PER_YEAR, 52)
+
+    def test_attribution_by_mechanism_covers_all_three_mechanisms_with_their_own_weights(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            report = oic.build_report(store_dir=tmp)
+            attribution = report["attribution_by_mechanism"]
+            self.assertEqual(set(attribution), {"buy", "sell_call", "sell_put"})
+            self.assertEqual(set(attribution["buy"]["metrics"]), set(oic.BUY_WEIGHTS))
+            self.assertEqual(set(attribution["sell_call"]["metrics"]), set(oic.SELL_CALL_WEIGHTS))
+            self.assertEqual(set(attribution["sell_put"]["metrics"]), set(oic.SELL_PUT_WEIGHTS))
+
+
+class MechanismPeriodsTests(unittest.TestCase):
+    def test_a_buy_call_and_a_buy_put_pool_into_one_buy_mechanism_period(self):
+        rows = [
+            {"ticker": "A", "strategy": "buy_call", "expiration": "2026-01-05",
+             "factors": {"iv_value": 0.5}, "realized_return": 0.1},
+            {"ticker": "B", "strategy": "buy_put", "expiration": "2026-01-05",
+             "factors": {"iv_value": -0.3}, "realized_return": -0.05},
+        ]
+        periods = oic._mechanism_periods(rows, oic.MECHANISM_STRATEGIES["buy"])
+        self.assertEqual(len(periods), 1)
+        self.assertEqual(set(periods[0]["leg_scores"]), {"A", "B"})
+
+    def test_a_sell_put_row_is_excluded_from_the_buy_mechanism(self):
+        rows = [{"ticker": "A", "strategy": "sell_put", "expiration": "2026-01-05",
+                "factors": {"expected_value_pct": 0.5}, "realized_return": 0.1}]
+        self.assertEqual(oic._mechanism_periods(rows, oic.MECHANISM_STRATEGIES["buy"]), [])
+
+    def test_a_row_with_no_recorded_factors_contributes_nothing(self):
+        rows = [{"ticker": "A", "strategy": "buy_call", "expiration": "2026-01-05",
+                "factors": {}, "realized_return": 0.1}]
+        self.assertEqual(oic._mechanism_periods(rows, oic.MECHANISM_STRATEGIES["buy"]), [])
 
 
 if __name__ == "__main__":
