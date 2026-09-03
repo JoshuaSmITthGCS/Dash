@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from technical_indicators import (bollinger_percent_b, moving_average_slope,
                                   on_balance_volume_slope, relative_strength_index,
-                                  technical_extended_score)
+                                  support_resistance_levels, technical_extended_score)
 
 
 def rising_closes(n=100, start=100, step=0.5):
@@ -15,6 +15,21 @@ def rising_closes(n=100, start=100, step=0.5):
 
 def flat_closes(n=100, value=100):
     return [value] * n
+
+
+def zigzag(anchors):
+    """Linearly interpolate a price path through ``(index, price)`` anchors.
+
+    A convenient way to build a synthetic series with known swing highs/lows at known
+    prices, for testing pivot detection without depending on real market data.
+    """
+    closes = []
+    for (start_index, start_price), (end_index, end_price) in zip(anchors, anchors[1:]):
+        span = end_index - start_index
+        for step in range(span):
+            closes.append(start_price + (end_price - start_price) * step / span)
+    closes.append(anchors[-1][1])
+    return closes
 
 
 class MovingAverageSlopeTests(unittest.TestCase):
@@ -102,6 +117,44 @@ class TechnicalExtendedScoreTests(unittest.TestCase):
 
         self.assertIsNone(score)
         self.assertEqual(detail["coverage"], 0.0)
+
+
+class SupportResistanceLevelsTests(unittest.TestCase):
+    def test_insufficient_history_returns_none(self):
+        self.assertIsNone(support_resistance_levels(rising_closes(15)))
+
+    def test_a_pure_uptrend_has_no_levels_because_nothing_has_reversed(self):
+        # Nothing in a strictly monotonic series is a local extreme with room on both sides,
+        # so there is nothing to call a support or a resistance level yet.
+        self.assertIsNone(support_resistance_levels(rising_closes(80)))
+
+    def test_finds_a_repeated_resistance_and_support(self):
+        anchors = [(0, 100), (10, 110), (20, 95), (30, 110), (40, 95), (50, 105)]
+        closes = zigzag(anchors)
+
+        result = support_resistance_levels(closes, pivot_window=3)
+
+        self.assertIsNotNone(result)
+        self.assertAlmostEqual(result["nearest_resistance"], 110, delta=1)
+        self.assertGreaterEqual(result["resistance_touch_count"], 2)
+        self.assertGreater(result["resistance_distance_pct"], 0)
+        self.assertAlmostEqual(result["nearest_support"], 95, delta=1)
+        self.assertGreaterEqual(result["support_touch_count"], 2)
+        self.assertGreater(result["support_distance_pct"], 0)
+
+    def test_a_stock_making_new_lows_has_no_support_below_only_resistance_above(self):
+        anchors = [(0, 100), (10, 60), (20, 100), (30, 60), (40, 40)]
+        closes = zigzag(anchors)
+
+        result = support_resistance_levels(closes, pivot_window=3)
+
+        self.assertIsNotNone(result)
+        self.assertIsNone(result["nearest_support"])
+        self.assertIsNone(result["support_distance_pct"])
+        self.assertIsNotNone(result["nearest_resistance"])
+
+    def test_no_history_at_all_returns_none(self):
+        self.assertIsNone(support_resistance_levels([]))
 
 
 if __name__ == "__main__":

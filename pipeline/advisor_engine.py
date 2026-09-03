@@ -25,7 +25,7 @@ from scorer import SETTINGS, valuation_score
 from news_intelligence import weighted_sentiment
 from recommendation_policy_v2 import build_recommendation_v2
 from scoring_v2 import build_v2_analysis
-from technical_indicators import technical_extended_score
+from technical_indicators import support_resistance_levels, technical_extended_score
 
 # Fundamentals deliberately dominate. News sentiment was cut from 10% because its alpha
 # decays in days: Tetlock (2007) finds media pessimism predicts downward price pressure
@@ -76,6 +76,15 @@ TECHNICAL_WEIGHTS = _weights((SETTINGS.get("market_behavior") or {}).get("weight
 DEFAULT_RELATIVE_ACCELERATION = {"leg_days": 63, "skip_days": 5, "scoring_span": 1.0}
 RELATIVE_ACCELERATION = _weights((SETTINGS.get("market_behavior") or {}).get("relative_acceleration"),
                                  DEFAULT_RELATIVE_ACCELERATION)
+
+# Support/resistance context, same "measured and published, never scored" treatment as
+# relative_acceleration above -- absent from TECHNICAL_WEIGHTS and never fed into
+# technical_extended. See technical_indicators.support_resistance_levels' docstring for why:
+# the evidence for generic support/resistance in single-name US equities does not clear this
+# pipeline's own bar for a scored factor.
+DEFAULT_SUPPORT_RESISTANCE = {"lookback_sessions": 126, "pivot_window": 5, "cluster_tolerance_pct": 1.5}
+SUPPORT_RESISTANCE = _weights((SETTINGS.get("market_behavior") or {}).get("support_resistance"),
+                              DEFAULT_SUPPORT_RESISTANCE)
 NEWS_INTELLIGENCE = SETTINGS["news_intelligence"]
 SENTIMENT_WINDOW_DAYS = int(NEWS_INTELLIGENCE["window_days"])
 FUNDAMENTAL_METRIC_NAMES = {
@@ -199,6 +208,11 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
     volume_score = None if confirmation is None else clamp(35 + (confirmation - 1) * 55)
     beta_score = low_beta_score(beta)
     technical_extended, technical_extended_detail = technical_extended_score(closes, volumes)
+    support_resistance = support_resistance_levels(
+        closes, lookback=int(SUPPORT_RESISTANCE["lookback_sessions"]),
+        pivot_window=int(SUPPORT_RESISTANCE["pivot_window"]),
+        cluster_tolerance_pct=SUPPORT_RESISTANCE["cluster_tolerance_pct"],
+    )
 
     parts = {
         name: None if value is None else round(value, 1)
@@ -234,6 +248,10 @@ def technical_factors(closes, benchmark_closes=None, volumes=None, extended=None
         "volume_ratio_60d": confirmation, "pct_from_52w_high": from_high,
         "pct_above_52w_low": above_low, "beta": beta,
         "technical_extended_detail": technical_extended_detail,
+        # Entry/stop-placement context, not a return signal -- see
+        # technical_indicators.support_resistance_levels' docstring. Measured, published, and
+        # unweighted, same treatment as relative_acceleration above.
+        "support_resistance": support_resistance,
         **{name: value for name, value in parts.items() if value is not None},
         "coverage": variant["coverage"],
         "short_horizon_treatment": treatment,

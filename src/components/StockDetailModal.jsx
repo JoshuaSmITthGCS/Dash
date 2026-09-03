@@ -540,7 +540,33 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
                   : 'Needs two quarters of history against the index'}
                 color={moveColor(technical.relative_acceleration)}
               />
+              <Kpi
+                label="Nearest support"
+                value={technical.support_resistance?.nearest_support != null
+                  ? `$${technical.support_resistance.nearest_support.toFixed(2)}`
+                  : '–'}
+                note={technical.support_resistance?.support_distance_pct != null
+                  ? `${technical.support_resistance.support_distance_pct.toFixed(1)}% below current price, tested ${technical.support_resistance.support_touch_count}x`
+                  : 'No repeated floor in the trailing window'}
+              />
+              <Kpi
+                label="Nearest resistance"
+                value={technical.support_resistance?.nearest_resistance != null
+                  ? `$${technical.support_resistance.nearest_resistance.toFixed(2)}`
+                  : '–'}
+                note={technical.support_resistance?.resistance_distance_pct != null
+                  ? `${technical.support_resistance.resistance_distance_pct.toFixed(1)}% above current price, tested ${technical.support_resistance.resistance_touch_count}x`
+                  : 'No repeated ceiling in the trailing window'}
+              />
             </div>
+            {technical.support_resistance && (
+              <p className="evidence-footnote">
+                Support/resistance is computed from repeated swing highs/lows in the price
+                history - context for entry and stop placement, not a return prediction. The
+                research literature does not support generic level-based signals for individual
+                stocks the way it does for the metrics above.
+              </p>
+            )}
             </>}
           </div>
         )}

@@ -93,6 +93,36 @@ class AdvisorEngineTests(unittest.TestCase):
         _short_score, short = technical_factors(closes[:120], closes[:120], None)
         self.assertIsNone(short["relative_acceleration"])
 
+    def test_support_resistance_is_published_on_the_technical_block(self):
+        # A round trip up, down, up again, and back down leaves a repeated peak (resistance)
+        # and trough (support) for the pivot detector to find over 300 sessions of history.
+        up = [100 + index for index in range(60)]
+        down = [160 - index for index in range(60)]
+        up_again = [100 + index for index in range(60)]
+        down_again = [160 - index * 0.5 for index in range(60)]
+        flat = [130.0] * 60
+        closes = up + down + up_again + down_again + flat
+        volumes = [1_000_000.0] * len(closes)
+
+        _score, detail = technical_factors(closes, closes, volumes)
+
+        self.assertIn("support_resistance", detail)
+        self.assertIsNotNone(detail["support_resistance"])
+        self.assertIn("nearest_support", detail["support_resistance"])
+        self.assertIn("nearest_resistance", detail["support_resistance"])
+
+    def test_support_resistance_carries_no_ranking_weight(self):
+        """Measured and published, not scored - the evidence for generic support/resistance
+        in single-name US equities does not clear this pipeline's bar for a scored factor
+        (see technical_indicators.support_resistance_levels' docstring)."""
+        self.assertNotIn("support_resistance", TECHNICAL_WEIGHTS)
+        parts = {"momentum_12_1": 60.0, "risk_adjusted": 55.0, "support_resistance": 1.0}
+        with_it, _ = technical_score_from_parts(parts, "neutral")
+        without_it, _ = technical_score_from_parts(
+            {key: value for key, value in parts.items() if key != "support_resistance"},
+            "neutral")
+        self.assertEqual(with_it, without_it)
+
     def test_max_drawdown_and_volume_confirmation_are_scored(self):
         rising = [100 + index for index in range(300)]
         broken = [100 + index for index in range(150)] + [250 - index * 1.2 for index in range(150)]

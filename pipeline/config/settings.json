@@ -1413,6 +1413,12 @@
       "leg_days": 63,
       "skip_days": 5,
       "scoring_span": 1.0
+    },
+    "support_resistance": {
+      "_comment": "Computed swing-pivot support/resistance context (pipeline/technical_indicators.py support_resistance_levels), published for entry/stop-placement framing only -- NEVER scored (no entry in weights above, and not fed into technical_extended). A 2026 literature review for this repository found no peer-reviewed evidence that generic support/resistance levels predict single-name US equity returns after data-snooping correction: Marshall, Cahan & Cahan (Journal of Empirical Finance 2008) tested 7,846 rules, including a support-and-resistance family, on US equities and found none profitable after adjustment; the rigorous FX result (Osler 2000/2003) rests on a dealer order-book mechanism this market doesn't have. The one theory-backed variant of this idea, 52-week-high proximity (George & Hwang 2004), is scored separately in swing_signals.py instead of here. lookback_sessions bounds how far back pivots are detected; pivot_window is how many sessions on each side must be lower/higher for a session to count as a swing high/low; cluster_tolerance_pct is how close two pivot prices must be, as a percent, to count as the same level.",
+      "lookback_sessions": 126,
+      "pivot_window": 5,
+      "cluster_tolerance_pct": 1.5
     }
   },
   "evidence_events": {
