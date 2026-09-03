@@ -245,9 +245,10 @@ Rappaport reverse-DCF: instead of forecasting a fair value and comparing it to p
 the single-stage perpetuity `EV = FCF*(1+g)/(WACC-g)` for the growth rate `g` the current
 enterprise value already assumes, using a CAPM cost of equity (beta already computed by
 `fundamentals_extended.py`) blended with an after-tax cost of debt into WACC. Every rate that
-isn't computed per company — risk-free rate, equity risk premium, cost of debt — is a declared
-assumption in `settings.json`'s `reverse_dcf` block, the same "labeled, not measured" honesty
-`pipeline/costs.py` applies to its spread proxy: get the assumption wrong and every company's
+isn't computed per company — risk-free rate, equity risk premium, the credit-spread bands cost
+of debt is read from — is a declared assumption in `settings.json`'s `reverse_dcf` block, the
+same "labeled, not measured" honesty `pipeline/costs.py` applies to its spread proxy: get the
+assumption wrong and every company's
 implied growth shifts by roughly the same amount, so this is a comparable cross-sectional read,
 not a precise per-company forecast. It is a single-stage approximation, not the full multi-stage
 model with an explicit forecast horizon and competitive-advantage-period estimate the source
@@ -287,6 +288,46 @@ _growth - fcf_growth_3y`: a positive gap prices in faster growth than trailing d
 negative gap prices in less than the company has already shown it can do. It only resolves when
 `market_implied_growth` itself does, and is informational only, same as everything else in this
 section.
+
+### Risk-adjusted cost of debt
+
+Cost of debt used to be a single flat `default_cost_of_debt` assumption applied to every company
+regardless of how risky its balance sheet actually was. As of 2026-09-03,
+`pipeline/reverse_dcf.py::estimate_cost_of_debt` instead reads `interest_coverage` — already
+computed by `fundamentals_extended.py` for every filer with an income statement — against
+`settings.json`'s `cost_of_debt_credit_spread_bands`, a declared table of interest-coverage
+thresholds to credit spreads over the risk-free rate, and returns `risk_free_rate + spread` for
+the first band the company's coverage clears. Interest coverage rather than Altman Z-score or
+leverage is the input because it is the literal input Damodaran's synthetic-rating default-spread
+approach uses, and — unlike Altman Z — it is computed for financials too. The flat
+`default_cost_of_debt` is kept, not removed, as the fallback whenever a company's interest
+coverage is not on file; it approximates the same middle band the bands themselves solve to
+(`0.04 + 0.015 = 0.055`).
+
+This is a real methodology change, not a bug fix — every reading published before 2026-09-03 used
+the flat assumption, so `market_implied_growth`, `wacc_assumed`, `value_creation_spread`, and
+`growth_expectations_gap` all shift for every company with the coverage to now carry a
+company-specific rather than flat cost of debt. The same "do not compare across the boundary
+without saying so" discipline this file applies to the `extended_limit` enrichment-cutoff change
+applies here too.
+
+## Marginal returns: incremental ROIC
+
+`pipeline/fundamentals_extended.py::derive_incremental_roic` is the other half of the ROIC-vs-WACC
+value-creation read above: not the *level* of return on invested capital, but the *marginal*
+return on the next dollar of it — `(NOPAT this period - NOPAT prior period) / (invested capital
+this period - invested capital prior period)`, each period's NOPAT using that period's own
+effective tax rate rather than one rate applied across both. A static ROIC level reads identically
+for a company redeploying capital into its best opportunities and one bolting on low-return growth
+just to keep the headline number up; this is the read Bruce Greenwald's "returns on incremental
+capital" argument asks for instead of the level alone, using no inputs beyond the two-period
+income statement and balance sheet `derive_roic` already reads.
+
+`row.incremental_roic` is withheld, not published as a noisy ratio, whenever the invested-capital
+change is too small relative to the prior period's own base to carry information — the same
+treatment `derive_margins` already gives incremental margin against a too-small revenue
+denominator, and for the same reason. Informational only, same as every other new field here:
+no prospective IC history to validate against yet.
 
 ## Momentum-free "priced in" read: multiple-expansion decomposition
 

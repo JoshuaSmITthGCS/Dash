@@ -13,6 +13,17 @@ ASSUMPTIONS = {
     "implausible_growth_ceiling": 0.15,
 }
 
+CREDIT_SPREAD_BANDS = [
+    {"min_interest_coverage": 8.5, "spread": 0.006},
+    {"min_interest_coverage": 5.5, "spread": 0.01},
+    {"min_interest_coverage": 3.0, "spread": 0.015},
+    {"min_interest_coverage": 2.0, "spread": 0.026},
+    {"min_interest_coverage": 1.0, "spread": 0.05},
+    {"min_interest_coverage": None, "spread": 0.085},
+]
+
+ASSUMPTIONS_WITH_BANDS = {**ASSUMPTIONS, "cost_of_debt_credit_spread_bands": CREDIT_SPREAD_BANDS}
+
 
 class CostOfEquityTests(unittest.TestCase):
     def test_capm_with_a_declared_beta(self):
@@ -40,6 +51,37 @@ class WaccTests(unittest.TestCase):
     def test_nonpositive_market_cap_is_undefined(self):
         self.assertIsNone(rd.estimate_wacc(market_cap=0, total_debt=100, cost_of_equity=0.09,
                                            cost_of_debt=0.05, tax_rate=0.21))
+
+
+class CostOfDebtTests(unittest.TestCase):
+    def test_high_coverage_clears_the_top_band(self):
+        cost = rd.estimate_cost_of_debt(interest_coverage=10.0, risk_free_rate=0.04,
+                                        credit_spread_bands=CREDIT_SPREAD_BANDS,
+                                        default_cost_of_debt=0.055)
+        self.assertAlmostEqual(cost, 0.04 + 0.006, places=6)
+
+    def test_middling_coverage_lands_in_the_middle_band(self):
+        cost = rd.estimate_cost_of_debt(interest_coverage=2.5, risk_free_rate=0.04,
+                                        credit_spread_bands=CREDIT_SPREAD_BANDS,
+                                        default_cost_of_debt=0.055)
+        self.assertAlmostEqual(cost, 0.04 + 0.026, places=6)
+
+    def test_negative_coverage_falls_into_the_catch_all_band(self):
+        cost = rd.estimate_cost_of_debt(interest_coverage=-2.0, risk_free_rate=0.04,
+                                        credit_spread_bands=CREDIT_SPREAD_BANDS,
+                                        default_cost_of_debt=0.055)
+        self.assertAlmostEqual(cost, 0.04 + 0.085, places=6)
+
+    def test_missing_interest_coverage_falls_back_to_the_flat_default(self):
+        cost = rd.estimate_cost_of_debt(interest_coverage=None, risk_free_rate=0.04,
+                                        credit_spread_bands=CREDIT_SPREAD_BANDS,
+                                        default_cost_of_debt=0.055)
+        self.assertEqual(cost, 0.055)
+
+    def test_missing_bands_falls_back_to_the_flat_default(self):
+        cost = rd.estimate_cost_of_debt(interest_coverage=10.0, risk_free_rate=0.04,
+                                        credit_spread_bands=None, default_cost_of_debt=0.055)
+        self.assertEqual(cost, 0.055)
 
 
 class MarketImpliedGrowthTests(unittest.TestCase):
@@ -123,6 +165,27 @@ class DeriveValueCreationTests(unittest.TestCase):
             roic=0.15, beta=1.0, market_cap=0, total_debt=0, assumptions=ASSUMPTIONS)
         self.assertIsNone(result["wacc_assumed"])
         self.assertIsNone(result["value_creation_spread"])
+
+    def test_a_distressed_companys_debt_costs_more_than_a_pristine_ones_at_equal_leverage(self):
+        # Same beta, market cap, and debt load; only interest coverage differs. The
+        # credit-spread bands should make the low-coverage company's WACC (and so its spread)
+        # worse purely from a costlier assumed cost of debt, not from anything else changing.
+        strong = rd.derive_value_creation(
+            roic=0.10, beta=1.0, market_cap=4000, total_debt=1000, interest_coverage=10.0,
+            assumptions=ASSUMPTIONS_WITH_BANDS)
+        weak = rd.derive_value_creation(
+            roic=0.10, beta=1.0, market_cap=4000, total_debt=1000, interest_coverage=-2.0,
+            assumptions=ASSUMPTIONS_WITH_BANDS)
+        self.assertLess(strong["wacc_assumed"], weak["wacc_assumed"])
+        self.assertGreater(strong["value_creation_spread"], weak["value_creation_spread"])
+
+    def test_without_interest_coverage_falls_back_to_the_flat_assumption_even_with_bands_declared(self):
+        with_bands = rd.derive_value_creation(
+            roic=0.10, beta=1.0, market_cap=4000, total_debt=1000,
+            assumptions=ASSUMPTIONS_WITH_BANDS)
+        without_bands = rd.derive_value_creation(
+            roic=0.10, beta=1.0, market_cap=4000, total_debt=1000, assumptions=ASSUMPTIONS)
+        self.assertAlmostEqual(with_bands["wacc_assumed"], without_bands["wacc_assumed"], places=6)
 
 
 class GrowthExpectationsGapTests(unittest.TestCase):

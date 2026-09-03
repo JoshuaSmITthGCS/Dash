@@ -164,8 +164,8 @@ def cagr(newest, oldest, years):
 
 # ---------------- profitability and quality ----------------
 
-def effective_tax_rate(income):
-    rate = ratio(at(line(income, "tax_provision")), at(line(income, "pretax_income")))
+def effective_tax_rate(income, index=0):
+    rate = ratio(at(line(income, "tax_provision"), index), at(line(income, "pretax_income"), index))
     if rate is None or not 0.0 <= rate <= 0.6:
         return 0.21  # statutory federal fallback keeps NOPAT comparable across filers
     return rate
@@ -188,6 +188,51 @@ def derive_roic(income, balance):
 
     base = average(invested(0), invested(1)) or invested(0)
     return rounded(ratio(nopat, base))
+
+
+# A denominator this small next to the prior period's own base turns any numerator into an
+# extreme, meaningless ratio -- the same problem MINIMUM_INCREMENTAL_REVENUE_FRACTION guards
+# against below for incremental margin, applied here to the capital-change denominator instead.
+MINIMUM_INCREMENTAL_INVESTED_CAPITAL_FRACTION = 0.02
+
+
+def derive_incremental_roic(income, balance):
+    """Marginal return on the next dollar of invested capital: (NOPAT now - NOPAT prior) /
+    (invested capital now - invested capital prior).
+
+    A static ROIC level reads identically for a company redeploying capital into its best
+    opportunities and one bolting on low-return growth to keep the headline number up; this is
+    the marginal read Bruce Greenwald's "returns on incremental capital" argument asks for
+    instead of the level alone. Each period gets its own effective tax rate rather than
+    reusing one across both, since a swing in that rate would otherwise be misread as a swing
+    in operating performance.
+
+    Withheld, not published as a noisy ratio, whenever the invested-capital change is too
+    small relative to the prior period's own base to carry information.
+    """
+    ebit = line(income, "ebit")
+    ebit_now, ebit_prior = at(ebit), at(ebit, 1)
+    if ebit_now is None or ebit_prior is None:
+        return None
+    nopat_now = ebit_now * (1 - effective_tax_rate(income, 0))
+    nopat_prior = ebit_prior * (1 - effective_tax_rate(income, 1))
+
+    debt, equity, cash = line(balance, "total_debt"), line(balance, "equity"), line(balance, "cash")
+
+    def invested(index):
+        total_equity = at(equity, index)
+        if total_equity is None:
+            return None
+        capital = (at(debt, index) or 0) + total_equity - (at(cash, index) or 0)
+        return capital if capital > 0 else None
+
+    invested_now, invested_prior = invested(0), invested(1)
+    if invested_now is None or invested_prior is None:
+        return None
+    delta_capital = invested_now - invested_prior
+    if abs(delta_capital) / abs(invested_prior) < MINIMUM_INCREMENTAL_INVESTED_CAPITAL_FRACTION:
+        return None
+    return rounded((nopat_now - nopat_prior) / delta_capital)
 
 
 def derive_cash_conversion(income, cashflow):
@@ -735,6 +780,7 @@ def derive_extended(*, annual, quarterly=None, info=None, market_cap=None, price
 
     metrics = {
         "return_on_invested_capital": derive_roic(income, balance),
+        "incremental_roic": derive_incremental_roic(income, balance),
         "gross_profits_to_assets": derive_gross_profits_to_assets(income, balance),
         "cash_conversion": derive_cash_conversion(income, cashflow),
         "fcf_growth_3y": derive_fcf_growth(cashflow),

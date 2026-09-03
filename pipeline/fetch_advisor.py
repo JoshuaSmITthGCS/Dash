@@ -787,7 +787,8 @@ def yahoo_extended(symbol, ticker_obj, snapshot, history, diagnostics=None):
         priced_in = derive_market_implied_growth(
             beta=result.get("beta"), market_cap=snapshot.get("market_cap"),
             total_debt=result.get("total_debt"), enterprise_value=result.get("enterprise_value"),
-            free_cash_flow=result.get("free_cash_flow"), assumptions=REVERSE_DCF_ASSUMPTIONS)
+            free_cash_flow=result.get("free_cash_flow"),
+            interest_coverage=result.get("interest_coverage"), assumptions=REVERSE_DCF_ASSUMPTIONS)
         if priced_in:
             result["market_implied_growth"] = priced_in["market_implied_growth"]
             result["market_implied_growth_wacc"] = priced_in["wacc_assumed"]
@@ -798,7 +799,7 @@ def yahoo_extended(symbol, ticker_obj, snapshot, history, diagnostics=None):
         value_creation = derive_value_creation(
             roic=result.get("return_on_invested_capital"), beta=result.get("beta"),
             market_cap=snapshot.get("market_cap"), total_debt=result.get("total_debt"),
-            assumptions=REVERSE_DCF_ASSUMPTIONS)
+            interest_coverage=result.get("interest_coverage"), assumptions=REVERSE_DCF_ASSUMPTIONS)
         result["wacc_assumed"] = value_creation["wacc_assumed"]
         result["value_creation_spread"] = value_creation["value_creation_spread"]
     if os.getenv("ENABLE_OPTIONS_VOLATILITY", "").lower() in {"1", "true", "yes"}:

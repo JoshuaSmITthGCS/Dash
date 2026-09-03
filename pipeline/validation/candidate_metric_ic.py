@@ -35,7 +35,8 @@ from validation.ic_harness import _ic_summary  # noqa: E402
 # The metrics this pipeline has computed as real (not name-only) informational fields this
 # session, and so the natural first candidate list for this harness once history exists.
 DEFAULT_CANDIDATES = ("return_on_tangible_common_equity", "price_to_ffo", "gross_margin_trend",
-                     "market_implied_growth", "value_creation_spread", "growth_expectations_gap")
+                     "market_implied_growth", "value_creation_spread", "growth_expectations_gap",
+                     "incremental_roic")
 
 
 def _series_by_ticker(rows, field):

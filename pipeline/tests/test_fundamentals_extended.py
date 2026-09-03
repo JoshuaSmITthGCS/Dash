@@ -78,6 +78,24 @@ class ProfitabilityTests(unittest.TestCase):
         # Equity shrank and debt grew by the same amount: ROE would soar, ROIC should barely move.
         self.assertAlmostEqual(fx.derive_roic(INCOME, levered), fx.derive_roic(INCOME, BALANCE), places=1)
 
+    def test_incremental_roic_uses_the_change_in_nopat_over_the_change_in_capital(self):
+        # NOPAT now 250*(1-50/230)=195.652, prior 200*(1-40/180)=155.556 -> delta 40.097
+        # invested capital now 500+1100-300=1300, prior 520+920-250=1190 -> delta 110
+        self.assertAlmostEqual(fx.derive_incremental_roic(INCOME, BALANCE), 0.3645, places=3)
+
+    def test_incremental_roic_withheld_when_the_capital_change_is_too_small_to_read(self):
+        flat = dict(BALANCE)
+        flat["rows"] = {**BALANCE["rows"], "Total Debt": [500.0, 500.0, 560.0, 600.0],
+                        "Stockholders Equity": [1100.0, 1099.0, 800.0, 680.0],
+                        "Cash And Cash Equivalents": [300.0, 300.0, 220.0, 200.0]}
+        # invested capital now 1300, prior 1299 -> a 0.08% change carries no information.
+        self.assertIsNone(fx.derive_incremental_roic(INCOME, flat))
+
+    def test_incremental_roic_needs_ebit_in_both_periods(self):
+        short = {"periods": ["2025-12-31"], "rows": {"EBIT": [250.0], "Pretax Income": [230.0],
+                                                       "Tax Provision": [50.0]}}
+        self.assertIsNone(fx.derive_incremental_roic(short, BALANCE))
+
     def test_cash_conversion_and_fcf_growth(self):
         self.assertAlmostEqual(fx.derive_cash_conversion(INCOME, CASHFLOW), 200 / 180, places=3)
         self.assertAlmostEqual(fx.derive_fcf_growth(CASHFLOW), (200 / 120) ** (1 / 3) - 1, places=4)
