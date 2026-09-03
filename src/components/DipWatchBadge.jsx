@@ -41,6 +41,13 @@ export default function DipWatchBadge({ stock }) {
       <p className="dip-watch-note">
         A reasonable pair of broker alerts: drops below ${watch.floor.toFixed(2)}, rises above ${watch.max.toFixed(2)}.
       </p>
+      {watch.support && (
+        <p className={watch.support.isNear ? 'dip-watch-note dip-watch-note--confirming' : 'dip-watch-note'}>
+          {watch.support.isNear
+            ? `Independent check: also sitting within ${watch.support.distancePct.toFixed(1)}% of a $${watch.support.price.toFixed(2)} support level the price has tested ${watch.support.touchCount}x before.`
+            : `Nearest computed support is $${watch.support.price.toFixed(2)} (${watch.support.distancePct.toFixed(1)}% below current price, tested ${watch.support.touchCount}x) - not close enough yet to confirm the floor above.`}
+        </p>
+      )}
     </div>
   )
 }

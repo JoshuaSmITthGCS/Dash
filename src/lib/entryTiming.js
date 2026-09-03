@@ -39,13 +39,21 @@ export function entryTiming(stock) {
 
   const dip = dipWatch(stock)
   if (dip) {
+    // A cheap, buy-worthy stock and a stock sitting at a level where it has previously
+    // reversed are two different kinds of evidence - saying both when both are true is the
+    // difference between "it's a good company at a low price" and "it's a good company at a
+    // low price AND near where it has bounced before."
+    const confirmation = dip.support?.isNear
+      ? ` It's also within ${dip.support.distancePct.toFixed(1)}% of a $${dip.support.price.toFixed(2)} support level the price has tested ${dip.support.touchCount}x before.`
+      : ''
     return {
       verdict: 'set_low_alert',
       label: 'Set Low Alert',
       alertPrice: dip.floor,
       recoveryPrice: dip.max,
       status: dip.status,
-      reason: `Down from its highs and not confirmed to have bottomed - a below-$${dip.floor.toFixed(2)} alert catches it if the decline continues.`,
+      supportConfirmed: Boolean(dip.support?.isNear),
+      reason: `Down from its highs and not confirmed to have bottomed - a below-$${dip.floor.toFixed(2)} alert catches it if the decline continues.${confirmation}`,
     }
   }
   if (!allowsConviction(stock.data_coverage)) {
