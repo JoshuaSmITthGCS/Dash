@@ -47,6 +47,34 @@ def estimate_wacc(*, market_cap, total_debt, cost_of_equity, cost_of_debt, tax_r
     return equity_weight * cost_of_equity + debt_weight * after_tax_cost_of_debt
 
 
+def estimate_cost_of_debt(*, interest_coverage, risk_free_rate, credit_spread_bands, default_cost_of_debt):
+    """Interest-coverage-implied cost of debt (Damodaran's synthetic-rating default-spread
+    approach: risk-free rate plus a credit spread banded by interest coverage), falling back
+    to the flat ``default_cost_of_debt`` assumption whenever interest coverage or a risk-free
+    rate is not on file.
+
+    Interest coverage, rather than Altman Z-score or leverage, is the input here because it is
+    the literal input Damodaran's own default-spread table uses, and this pipeline already
+    computes it (``derive_interest_coverage``) for every filer with an income statement --
+    unlike Altman Z, which financials are deliberately excluded from.
+
+    ``credit_spread_bands`` is settings.json's ordered list of ``{"min_interest_coverage",
+    "spread"}`` entries, highest coverage first; the first band whose minimum the company's
+    coverage clears applies. The lowest band's ``min_interest_coverage`` is ``null`` so it
+    always matches, catching every coverage ratio below every declared threshold -- including
+    negative coverage. Like every other rate in this module, the bands are a declared,
+    unfitted assumption: a reasonable approximation of published credit-spread tables, not a
+    number measured from this pipeline's own data.
+    """
+    if interest_coverage is None or risk_free_rate is None or not credit_spread_bands:
+        return default_cost_of_debt
+    for band in credit_spread_bands:
+        minimum = band.get("min_interest_coverage")
+        if minimum is None or interest_coverage >= minimum:
+            return risk_free_rate + band["spread"]
+    return default_cost_of_debt
+
+
 def market_implied_growth(*, enterprise_value, free_cash_flow, wacc):
     """Solve EV = FCF*(1+g)/(WACC-g) for g: the perpetual growth rate priced into EV today.
 
@@ -68,18 +96,56 @@ def market_implied_growth(*, enterprise_value, free_cash_flow, wacc):
     return round(growth, 4)
 
 
-def derive_market_implied_growth(*, beta, market_cap, total_debt, enterprise_value,
-                                  free_cash_flow, tax_rate=0.21, assumptions):
-    """One company's market-implied growth reading, or None when an input is missing.
+def derive_value_creation(*, roic, beta, market_cap, total_debt, interest_coverage=None,
+                          tax_rate=0.21, assumptions):
+    """ROIC minus WACC: whether the company earns more than its capital costs (the ROIC-vs-WACC
+    "value creation" read -- Brian Feroldi's framing of it is what prompted adding this).
 
-    ``assumptions`` is ``settings.json``'s ``reverse_dcf`` block: risk_free_rate,
-    equity_risk_premium, and default_cost_of_debt.
+    Computed independently of ``derive_market_implied_growth`` so it survives whenever ROIC and
+    a market cap are on file, not only when free cash flow and enterprise value are *also* both
+    positive -- WACC does not need either of those, and gating it on them would silently drop
+    the spread for exactly the low/negative-FCF names (young growth companies, cyclicals in a
+    trough) where knowing whether they still clear their cost of capital is most informative.
+
+    ``assumptions`` is the same ``settings.json`` ``reverse_dcf`` block ``derive_market_implied_
+    growth`` uses -- risk_free_rate, equity_risk_premium, default_cost_of_debt,
+    cost_of_debt_credit_spread_bands -- so it carries the same "labeled, not measured" caveat:
+    get an assumption wrong and every company's spread shifts by roughly the same amount, which
+    is why this reads as a comparable cross-sectional screen, not a precise per-company cost of
+    capital.
     """
     cost_of_equity = estimate_cost_of_equity(
         beta, assumptions.get("risk_free_rate"), assumptions.get("equity_risk_premium"))
+    cost_of_debt = estimate_cost_of_debt(
+        interest_coverage=interest_coverage, risk_free_rate=assumptions.get("risk_free_rate"),
+        credit_spread_bands=assumptions.get("cost_of_debt_credit_spread_bands"),
+        default_cost_of_debt=assumptions.get("default_cost_of_debt"))
     wacc = estimate_wacc(
         market_cap=market_cap, total_debt=total_debt, cost_of_equity=cost_of_equity,
-        cost_of_debt=assumptions.get("default_cost_of_debt"), tax_rate=tax_rate)
+        cost_of_debt=cost_of_debt, tax_rate=tax_rate)
+    if wacc is None:
+        return {"wacc_assumed": None, "value_creation_spread": None}
+    spread = None if roic is None else round(roic - wacc, 4)
+    return {"wacc_assumed": round(wacc, 4), "value_creation_spread": spread}
+
+
+def derive_market_implied_growth(*, beta, market_cap, total_debt, enterprise_value,
+                                  free_cash_flow, interest_coverage=None, tax_rate=0.21,
+                                  assumptions):
+    """One company's market-implied growth reading, or None when an input is missing.
+
+    ``assumptions`` is ``settings.json``'s ``reverse_dcf`` block: risk_free_rate,
+    equity_risk_premium, default_cost_of_debt, and cost_of_debt_credit_spread_bands.
+    """
+    cost_of_equity = estimate_cost_of_equity(
+        beta, assumptions.get("risk_free_rate"), assumptions.get("equity_risk_premium"))
+    cost_of_debt = estimate_cost_of_debt(
+        interest_coverage=interest_coverage, risk_free_rate=assumptions.get("risk_free_rate"),
+        credit_spread_bands=assumptions.get("cost_of_debt_credit_spread_bands"),
+        default_cost_of_debt=assumptions.get("default_cost_of_debt"))
+    wacc = estimate_wacc(
+        market_cap=market_cap, total_debt=total_debt, cost_of_equity=cost_of_equity,
+        cost_of_debt=cost_of_debt, tax_rate=tax_rate)
     growth = market_implied_growth(
         enterprise_value=enterprise_value, free_cash_flow=free_cash_flow, wacc=wacc)
     if growth is None:
@@ -90,3 +156,23 @@ def derive_market_implied_growth(*, beta, market_cap, total_debt, enterprise_val
         "wacc_assumed": round(wacc, 4) if wacc is not None else None,
         "exceeds_plausible_ceiling": growth > ceiling,
     }
+
+
+def growth_expectations_gap(*, market_implied_growth, realized_growth):
+    """Priced-in growth minus the free-cash-flow growth the company has actually delivered.
+
+    Mauboussin & Rappaport's expectations-investing question has two halves: not just "what
+    growth is priced in" (``market_implied_growth`` above) but "is that more or less than what
+    this company has actually been doing lately". Compared against ``fcf_growth_3y`` -- the
+    trailing FCF CAGR, the same quantity the perpetuity above solves a forward rate for -- so
+    the two sides of the gap are the same measure at two points in time, not different metrics
+    dressed up as one comparison.
+
+    A positive gap prices in faster growth than trailing delivery; a negative gap prices in
+    less than the company has already shown it can do. Neither direction is a signal on its
+    own -- trailing growth is not a promise of future growth either -- it is a comparable read
+    of how far current expectations sit from recent history.
+    """
+    if market_implied_growth is None or realized_growth is None:
+        return None
+    return round(market_implied_growth - realized_growth, 4)
