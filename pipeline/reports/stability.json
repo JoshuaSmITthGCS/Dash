@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 100,
+  "refreshes_observed": 101,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -18025,6 +18025,124 @@
           ],
           "score_delta": 2.2,
           "confidence_delta": -0.04
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-02T22:32:24.890473+00:00",
+      "current_refresh": "advisor-2026-09-03T16:05:16.423189+00:00",
+      "shared_tickers": 895,
+      "rank_turnover": {
+        "top_40": 0.125,
+        "top_100": 0.125
+      },
+      "tickers_with_availability_driven_change": 27,
+      "tickers_with_availability_driven_change_pct": 0.03,
+      "mean_abs_score_delta": 0.86,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "ASML",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf"
+          ],
+          "score_delta": -9.3,
+          "confidence_delta": 0.11
+        },
+        {
+          "ticker": "RLI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 9.3,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "COHR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "ev_to_fcf",
+            "fcf_growth_3y"
+          ],
+          "score_delta": 7.4,
+          "confidence_delta": -0.05
+        },
+        {
+          "ticker": "WEN",
+          "metrics_with_value_change": [
+            "forward_pe",
+            "peg"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 6.2,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -3.6,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "CRDO",
+          "metrics_with_value_change": [
+            "sales_multiple"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 3.1,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "MSGS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "cash_conversion",
+            "ev_to_ebit",
+            "ev_to_ebitda"
+          ],
+          "score_delta": 2.8,
+          "confidence_delta": 0.09
+        },
+        {
+          "ticker": "COTY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "ev_to_ebit"
+          ],
+          "score_delta": -2.5,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "FN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "ev_to_fcf"
+          ],
+          "score_delta": 2.4,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "AEP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "ev_to_fcf",
+            "fcf_growth_3y"
+          ],
+          "score_delta": -1.9,
+          "confidence_delta": 0.05
         }
       ]
     }
