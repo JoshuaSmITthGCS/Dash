@@ -78,6 +78,45 @@ describe('dipWatch', () => {
   })
 })
 
+describe('dipWatch support cross-check', () => {
+  it('is null when the pipeline has not published a support_resistance reading', () => {
+    expect(dipWatch(stock(81)).support).toBeNull()
+  })
+
+  it('confirms when price sits within the confirmation band of the computed support level', () => {
+    const example = stock(81, {
+      technical_detail: {
+        pct_from_52w_high: (81 / WEEK_HIGH - 1) * 100,
+        pct_above_52w_low: (81 / WEEK_LOW - 1) * 100,
+        max_drawdown_252d: MAX_DRAWDOWN_252D,
+        return_60d: -12,
+        support_resistance: {
+          nearest_support: 79, support_distance_pct: 2.5, support_touch_count: 3,
+        },
+      },
+    })
+    const result = dipWatch(example)
+    expect(result.support).toEqual({
+      price: 79, distancePct: 2.5, touchCount: 3, isNear: true,
+    })
+  })
+
+  it('does not confirm when the computed support level is too far below to count', () => {
+    const example = stock(81, {
+      technical_detail: {
+        pct_from_52w_high: (81 / WEEK_HIGH - 1) * 100,
+        pct_above_52w_low: (81 / WEEK_LOW - 1) * 100,
+        max_drawdown_252d: MAX_DRAWDOWN_252D,
+        return_60d: -12,
+        support_resistance: {
+          nearest_support: 60, support_distance_pct: 35, support_touch_count: 1,
+        },
+      },
+    })
+    expect(dipWatch(example).support.isNear).toBe(false)
+  })
+})
+
 describe('dipWatch near-term blending', () => {
   // A fixed "today" so the 60-day window is deterministic regardless of when the suite
   // runs - the code anchors to the data's own latest date, not the real clock.

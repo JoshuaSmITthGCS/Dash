@@ -12,6 +12,13 @@
 // Deliberately narrow: this only activates for stances the platform already treats as
 // buy-worthy, and only while the stock is actually declining - it is not a general-purpose
 // price target.
+//
+// The floor/max above is one model (this file's own blend). `support` below is a second,
+// independently-derived read - pipeline/technical_indicators.py's clustered swing-pivot
+// levels (see technical_detail.support_resistance) - surfaced alongside it as a cross-check,
+// not a replacement: two different methods landing near the same price is more convincing
+// than either alone, and it is reported as informational context either way. See that
+// module's docstring for why it is not itself a validated return signal.
 
 export const ELIGIBLE_STANCES = new Set(['ATTRACTIVE', 'PROMISING'])
 const DOWN_FROM_HIGH_THRESHOLD = -8 // % off the 52-week high before this is "currently going down"
@@ -20,6 +27,7 @@ const NEAR_FLOOR_BAND = 0.05 // within 5% of the floor counts as "at the bottom"
 const RECENT_WINDOW_DAYS = 60
 const RECENT_WEIGHT = 0.6 // how much the near-term read counts against the long-term one
 const BREAKOUT_BUFFER = 0.02 // require clearing the recent high by a bit, not just touching it
+const SUPPORT_CONFIRMATION_BAND_PCT = 5 // within 5% of a computed support level counts as confirming the floor
 
 function round2(value) {
   return value == null ? null : Math.round(value * 100) / 100
@@ -36,6 +44,21 @@ export function weekRange(stock) {
   return {
     weekHigh: price / (1 + pct_from_52w_high / 100),
     weekLow: price / (1 + pct_above_52w_low / 100),
+  }
+}
+
+// The nearest independently-computed support level (pipeline swing pivots), and whether
+// price sits close enough to it to count as corroborating this file's own floor estimate.
+// Returns null when the pipeline hasn't published one for this row - an absent cross-check
+// is not evidence against the floor, just a row with less to say about it.
+function supportCheck(technical) {
+  const support = technical?.support_resistance
+  if (!support || support.nearest_support == null || support.support_distance_pct == null) return null
+  return {
+    price: support.nearest_support,
+    distancePct: support.support_distance_pct,
+    touchCount: support.support_touch_count,
+    isNear: support.support_distance_pct <= SUPPORT_CONFIRMATION_BAND_PCT,
   }
 }
 
@@ -91,5 +114,6 @@ export function dipWatch(stock) {
     status,
     distanceToFloorPct: round2(((price - floor) / floor) * 100),
     distanceToMaxPct: round2(((max - price) / price) * 100),
+    support: supportCheck(technical),
   }
 }

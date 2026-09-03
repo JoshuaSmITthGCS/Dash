@@ -136,6 +136,7 @@
 .dip-watch-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2-5); margin-bottom: var(--sp-2-5); }.dip-watch-head strong { font: var(--fw-bold) var(--fs-xs) var(--font-mono); text-transform: uppercase; letter-spacing: .04em; }.dip-watch-head span { color: var(--text-faint); font-size: var(--fs-2xs); }
 .dip-watch-levels { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-2-5); }.dip-watch-levels > div { padding: var(--sp-2) var(--sp-2-5); border-radius: var(--control-radius); background: var(--bg-elev); }.dip-watch-levels span { display: block; color: var(--text-faint); font-size: var(--fs-2xs); text-transform: uppercase; }.dip-watch-levels b { display: block; margin-top: var(--sp-0-5); font: var(--fw-bold) var(--fs-base) var(--font-mono); color: var(--text); }
 .dip-watch-note { margin: var(--sp-2-5) 0 0; color: var(--text-faint); font-size: var(--fs-2xs); }
+.dip-watch-note--confirming { color: var(--pos); font-weight: var(--fw-bold); }
 .buying-the-dip-chart { margin: var(--section-gap) 0; padding: var(--card-padding); }
 .dip-chart-note { margin: calc(-1 * var(--sp-1)) 0 var(--sp-4); max-width: 720px; color: var(--text-faint); font-size: var(--fs-2xs); line-height: 1.5; }
 .dip-chart-rows { display: grid; gap: var(--sp-4); }

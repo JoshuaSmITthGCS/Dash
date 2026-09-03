@@ -49,6 +49,32 @@ describe('entryTiming', () => {
     expect(result.recoveryPrice).toBe(watch.max)
   })
 
+  it('calls out a computed support level confirming the dip floor, when one is near', () => {
+    const example = stock(81, {
+      technical_detail: {
+        pct_from_52w_high: (81 / WEEK_HIGH - 1) * 100,
+        pct_above_52w_low: (81 / WEEK_LOW - 1) * 100,
+        max_drawdown_252d: MAX_DRAWDOWN_252D,
+        return_60d: -12,
+        support_resistance: {
+          nearest_support: 79, support_distance_pct: 2.5, support_touch_count: 3,
+        },
+      },
+    })
+
+    const result = entryTiming(example)
+
+    expect(result.supportConfirmed).toBe(true)
+    expect(result.reason).toMatch(/tested 3x before/)
+  })
+
+  it('says nothing extra when no computed support level is near', () => {
+    const result = entryTiming(stock(81))
+
+    expect(result.supportConfirmed).toBe(false)
+    expect(result.reason).not.toMatch(/support level/)
+  })
+
   it('is null for an ETF', () => {
     expect(entryTiming(stock(81, { is_etf: true }))).toBeNull()
   })
