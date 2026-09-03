@@ -50,7 +50,7 @@ function AddPositionForm({ formData, setFormData, onSubmit }) {
 }
 
 function SellSheet({ position, forms }) {
-  const { sellForm, setSellForm, sellSaving, cancelSell, saveSell } = forms
+  const { sellForm, setSellForm, sellSaving, syncMessage, cancelSell, saveSell } = forms
   return (
     <MobileSheet open title={`Sell ${position.ticker}`} onClose={cancelSell} className="holding-edit-sheet">
       <div className="holding-edit-form">
@@ -60,6 +60,7 @@ function SellSheet({ position, forms }) {
         </label>
         <label><span>Sale price/share</span>
           <input className="inline-edit-input" type="number" step="0.01" min="0" value={sellForm.price}
+            placeholder={position.currentPrice == null ? 'Live price unavailable — enter manually' : undefined}
             onChange={(e) => setSellForm({ ...sellForm, price: e.target.value })} />
         </label>
         <label><span>Sale date</span>
@@ -67,6 +68,7 @@ function SellSheet({ position, forms }) {
             onChange={(e) => setSellForm({ ...sellForm, saleDate: e.target.value })} />
         </label>
       </div>
+      {syncMessage && <p className="sell-sheet-error" role="alert">{syncMessage}</p>}
       <div className="holding-edit-sheet-actions">
         <button className="secondary-button" onClick={cancelSell} disabled={sellSaving}>Cancel</button>
         <button className="primary-button" onClick={() => saveSell(position)} disabled={sellSaving}>{sellSaving ? 'Selling…' : 'Confirm sale'}</button>
@@ -80,7 +82,7 @@ function SellSheet({ position, forms }) {
 // Publication 550's default absent specific identification. The existing per-row Sell above
 // already covers specific identification of one lot and is untouched by this.
 function LotSellSheet({ ticker, forms }) {
-  const { lotSellForm, setLotSellForm, lotSellSaving, lotSellPlan, cancelLotSell, saveLotSell } = forms
+  const { lotSellForm, setLotSellForm, lotSellSaving, lotSellPlan, syncMessage, cancelLotSell, saveLotSell } = forms
   return (
     <MobileSheet open title={`Sell ${ticker} across lots`} onClose={cancelLotSell} className="holding-edit-sheet">
       <div className="holding-edit-form">
@@ -111,6 +113,7 @@ function LotSellSheet({ ticker, forms }) {
       {lotSellPlan && !lotSellPlan.available && lotSellForm.shares && (
         <p className="lot-sell-error">{lotSellPlan.reason}</p>
       )}
+      {syncMessage && <p className="sell-sheet-error" role="alert">{syncMessage}</p>}
       <div className="holding-edit-sheet-actions">
         <button className="secondary-button" onClick={cancelLotSell} disabled={lotSellSaving}>Cancel</button>
         <button className="primary-button" onClick={saveLotSell} disabled={lotSellSaving || !lotSellPlan?.available}>

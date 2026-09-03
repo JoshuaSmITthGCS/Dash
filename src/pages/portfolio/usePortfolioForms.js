@@ -127,6 +127,7 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
   const startSell = (pos) => {
     setSellingId(pos.id)
     setSellForm({ shares: String(pos.shares ?? ''), price: pos.currentPrice != null ? String(pos.currentPrice) : '', saleDate: today() })
+    setSyncMessage('')
   }
 
   const cancelSell = () => {
@@ -171,6 +172,7 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
   const startLotSell = (ticker) => {
     setLotSellTicker(ticker)
     setLotSellForm({ shares: '', price: '', saleDate: today() })
+    setSyncMessage('')
   }
 
   const cancelLotSell = () => {
