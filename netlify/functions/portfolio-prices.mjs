@@ -42,20 +42,21 @@ function finiteNumber(value) {
 }
 
 // Yahoo's chart endpoint currently returns the extended-session candles even when its
-// convenient postMarket* meta fields are null. Recover the latest real post-market trade
-// from those candles so a successful refresh does not silently look like "no after-hours".
-function latestPostMarketPrice(chart) {
+// convenient postMarket*/preMarket* meta fields are null. Recover the latest real
+// extended-session trade from those candles so a successful refresh does not silently look
+// like "no after-hours" (or "no pre-market").
+function latestExtendedSessionPrice(chart, sessionKey) {
   const timestamps = chart?.timestamp
   const closes = chart?.indicators?.quote?.[0]?.close
-  const post = chart?.meta?.currentTradingPeriod?.post
-  const postStart = finiteNumber(post?.start)
-  const postEnd = finiteNumber(post?.end)
-  if (!Array.isArray(timestamps) || !Array.isArray(closes) || postStart == null) return null
+  const session = chart?.meta?.currentTradingPeriod?.[sessionKey]
+  const sessionStart = finiteNumber(session?.start)
+  const sessionEnd = finiteNumber(session?.end)
+  if (!Array.isArray(timestamps) || !Array.isArray(closes) || sessionStart == null) return null
 
   for (let index = Math.min(timestamps.length, closes.length) - 1; index >= 0; index -= 1) {
     const timestamp = finiteNumber(timestamps[index])
     const close = finiteNumber(closes[index])
-    if (timestamp != null && close != null && timestamp >= postStart && (postEnd == null || timestamp <= postEnd)) {
+    if (timestamp != null && close != null && timestamp >= sessionStart && (sessionEnd == null || timestamp <= sessionEnd)) {
       return { price: close, time: timestamp }
     }
   }
@@ -83,13 +84,22 @@ export async function fetchPortfolioQuotes(symbols, fetchImpl = fetch) {
       const price = finiteNumber(meta?.regularMarketPrice)
       if (price == null) throw new Error('quote provider returned no price')
       const previousClose = finiteNumber(meta?.chartPreviousClose ?? meta?.previousClose)
-      const candlePostMarket = latestPostMarketPrice(chart)
+      const candlePostMarket = latestExtendedSessionPrice(chart, 'post')
       const postMarketPrice = finiteNumber(meta?.postMarketPrice) ?? candlePostMarket?.price ?? null
       const postMarketChange = finiteNumber(meta?.postMarketChange)
         ?? (postMarketPrice == null ? null : postMarketPrice - price)
       const postMarketChangePercent = finiteNumber(meta?.postMarketChangePercent)
         ?? (postMarketChange == null || !price ? null : (postMarketChange / price) * 100)
       const postMarketTime = finiteNumber(meta?.postMarketTime) ?? candlePostMarket?.time ?? null
+      // Before the bell, regularMarketPrice is still yesterday's close, so pre-market moves
+      // are measured against previousClose rather than `price` (post-market's baseline).
+      const candlePreMarket = latestExtendedSessionPrice(chart, 'pre')
+      const preMarketPrice = finiteNumber(meta?.preMarketPrice) ?? candlePreMarket?.price ?? null
+      const preMarketChange = finiteNumber(meta?.preMarketChange)
+        ?? (preMarketPrice == null || previousClose == null ? null : preMarketPrice - previousClose)
+      const preMarketChangePercent = finiteNumber(meta?.preMarketChangePercent)
+        ?? (preMarketChange == null || !previousClose ? null : (preMarketChange / previousClose) * 100)
+      const preMarketTime = finiteNumber(meta?.preMarketTime) ?? candlePreMarket?.time ?? null
       return {
         ok: true,
         symbol,
@@ -107,6 +117,10 @@ export async function fetchPortfolioQuotes(symbols, fetchImpl = fetch) {
           postMarketChange,
           postMarketChangePercent,
           postMarketTime: postMarketTime == null ? null : new Date(postMarketTime * 1000).toISOString(),
+          preMarketPrice,
+          preMarketChange,
+          preMarketChangePercent,
+          preMarketTime: preMarketTime == null ? null : new Date(preMarketTime * 1000).toISOString(),
         },
       }
     } catch (error) {

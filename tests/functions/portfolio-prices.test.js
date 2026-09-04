@@ -71,6 +71,60 @@ describe('fetchPortfolioQuotes', () => {
     expect(result.quotes.VTI.postMarketChangePercent).toBeNull()
   })
 
+  it('passes through pre-market fields when present, measured against the prior close', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ chart: { result: [{ meta: {
+        regularMarketPrice: 224.1,
+        chartPreviousClose: 224.1,
+        preMarketPrice: 226.4,
+        preMarketChange: 2.3,
+        preMarketChangePercent: 1.026,
+      } }] } }),
+    }))
+
+    const result = await fetchPortfolioQuotes(['AAPL'], fetchMock)
+
+    expect(result.quotes.AAPL).toMatchObject({
+      preMarketPrice: 226.4,
+      preMarketChange: 2.3,
+      preMarketChangePercent: 1.026,
+    })
+  })
+
+  it('recovers a pre-market print from the candle tape when the meta fields are null', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ chart: { result: [{
+        timestamp: [100, 200, 300],
+        indicators: { quote: [{ close: [220, 221, 222] }] },
+        meta: {
+          regularMarketPrice: 220,
+          chartPreviousClose: 220,
+          currentTradingPeriod: { pre: { start: 150, end: 350 } },
+        },
+      }] } }),
+    }))
+
+    const result = await fetchPortfolioQuotes(['AAPL'], fetchMock)
+
+    expect(result.quotes.AAPL.preMarketPrice).toBe(222)
+    expect(result.quotes.AAPL.preMarketChange).toBeCloseTo(2, 6)
+  })
+
+  it('leaves pre-market fields null outside the pre-market session', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ chart: { result: [{ meta: { regularMarketPrice: 50 } }] } }),
+    }))
+
+    const result = await fetchPortfolioQuotes(['VTI'], fetchMock)
+
+    expect(result.quotes.VTI.preMarketPrice).toBeNull()
+    expect(result.quotes.VTI.preMarketChange).toBeNull()
+    expect(result.quotes.VTI.preMarketChangePercent).toBeNull()
+  })
+
   it('uses Yahoo dash notation without changing the portfolio ticker', async () => {
     const fetchMock = vi.fn(async () => ({
       ok: true,

@@ -65,6 +65,9 @@ function SellSheet({ position, forms }) {
           {position.priceInfo?.postMarketPrice != null && (
             <p className="sell-sheet-note">After-hours price — confirm it matches your fill before selling.</p>
           )}
+          {position.priceInfo?.postMarketPrice == null && position.priceInfo?.preMarketPrice != null && (
+            <p className="sell-sheet-note">Pre-market price — confirm it matches your fill before selling.</p>
+          )}
         </label>
         <label><span>Sale date</span>
           <input className="inline-edit-input" type="date" value={sellForm.saleDate}

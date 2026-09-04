@@ -125,6 +125,16 @@ describe('usePortfolioForms sell price auto-fill', () => {
     act(() => { result.current.startSell(position) })
     expect(result.current.sellForm.price).toBe('25')
   })
+
+  it('prefers the pre-market print over the prior close before the regular session opens', () => {
+    const position = {
+      id: 'lulu', ticker: 'LULU', shares: 4, costBasis: 300, currentPrice: 250,
+      priceInfo: { price: 250, preMarketPrice: 252, preMarketTime: '2026-09-04T09:15:00.000Z' },
+    }
+    const { result } = setup({ positions: [position] })
+    act(() => { result.current.startSell(position) })
+    expect(result.current.sellForm.price).toBe('252')
+  })
 })
 
 describe('FIFO cross-lot sell (B3)', () => {
