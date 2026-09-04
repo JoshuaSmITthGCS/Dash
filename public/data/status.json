@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-03T22:08:25.202311+00:00",
+  "generated_at": "2026-09-04T16:41:04.411715+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,11 +29,11 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-09-03T22:06:15.575644+00:00",
+      "checked_at": "2026-09-04T16:34:48.799010+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 944,
-        "scored": 238,
+        "scored": 895,
         "ranked": 40,
         "failed": [
           "ABB",
@@ -90,23 +90,23 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-09-03T22:07:50.705493+00:00",
+      "checked_at": "2026-09-04T16:39:48.977605+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
         "received": 125,
         "rule_6c11_disclosures": 0,
         "cache": {
-          "hits": 252,
-          "misses": 126,
+          "hits": 126,
+          "misses": 252,
           "stale_hits": 0,
-          "hit_rate": 0.667
+          "hit_rate": 0.333
         }
       }
     },
     "etf_comparisons": {
       "status": "healthy",
-      "checked_at": "2026-09-03T22:08:25.202290+00:00",
+      "checked_at": "2026-09-04T16:41:04.411690+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -253,8 +253,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "25a91c43635aadd6f86fb043d81ee54dc733534d",
+    "git_commit_sha": "680989d71dc8dc28e3c9ef1bbb1bd1c51be0426d",
     "config_hash": "25d2d1684035bb35da4d7d84b3214da8bbd4212f5398325c2e9caf43de93a922",
-    "generated_at": "2026-09-03T22:08:25.202311+00:00"
+    "generated_at": "2026-09-04T16:41:04.411715+00:00"
   }
 }

@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 103,
+  "refreshes_observed": 104,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -18229,6 +18229,132 @@
             "price_to_tangible_book"
           ],
           "score_delta": 4.2,
+          "confidence_delta": 0.04
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-03T22:05:49.174254+00:00",
+      "current_refresh": "advisor-2026-09-04T16:34:17.770666+00:00",
+      "shared_tickers": 895,
+      "rank_turnover": {
+        "top_40": 0.175,
+        "top_100": 0.175
+      },
+      "tickers_with_availability_driven_change": 12,
+      "tickers_with_availability_driven_change_pct": 0.013,
+      "mean_abs_score_delta": 0.93,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "RLI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 12.5,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "CMC",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -4.2,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 3.2,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "AZO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 2.2,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "NEM",
+          "metrics_with_value_change": [
+            "ev_to_fcf"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 2.0,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "CPB",
+          "metrics_with_value_change": [
+            "ev_to_ebit"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 1.8,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "SNX",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.1,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "MOG.A",
+          "metrics_with_value_change": [
+            "sales_multiple"
+          ],
+          "metrics_with_availability_change": [
+            "debt_to_equity",
+            "earnings_growth",
+            "forward_pe",
+            "free_cash_flow_yield",
+            "price_to_book",
+            "price_to_tangible_book",
+            "profit_margin",
+            "return_on_equity",
+            "revenue_growth"
+          ],
+          "score_delta": -1.0,
+          "confidence_delta": -0.18
+        },
+        {
+          "ticker": "WDC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 0.6,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "TTC",
+          "metrics_with_value_change": [
+            "altman_z",
+            "earnings_growth"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 0.5,
           "confidence_delta": 0.04
         }
       ]

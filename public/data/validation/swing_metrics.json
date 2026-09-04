@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-09-03T22:11:03.927470+00:00",
+  "generated_at": "2026-09-04T16:44:16.960525+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before shadow_store/swing or swing_pit_store began recording - this module never reconstructs a swing signal or leg score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 13,
-  "attribution_snapshot_dates_recorded": 2,
+  "snapshot_dates_recorded": 14,
+  "attribution_snapshot_dates_recorded": 3,
   "horizon_days": 14,
   "metrics": {
     "composite_z": {
       "requires_live_sample": true,
-      "eligible_periods": 4,
+      "eligible_periods": 5,
       "minimum_icir_periods": 24,
       "status": "accumulating",
       "mean_rank_ic": null,
@@ -79,8 +79,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "25a91c43635aadd6f86fb043d81ee54dc733534d",
+    "git_commit_sha": "680989d71dc8dc28e3c9ef1bbb1bd1c51be0426d",
     "config_hash": "25d2d1684035bb35da4d7d84b3214da8bbd4212f5398325c2e9caf43de93a922",
-    "generated_at": "2026-09-03T22:11:03.927470+00:00"
+    "generated_at": "2026-09-04T16:44:16.960525+00:00"
   }
 }
