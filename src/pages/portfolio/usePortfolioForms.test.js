@@ -108,6 +108,25 @@ describe('usePortfolioForms rebalance capture (B2/turnover)', () => {
   })
 })
 
+describe('usePortfolioForms sell price auto-fill', () => {
+  it('prefers the after-hours print over the stale regular-session price', () => {
+    const position = {
+      id: 'lulu', ticker: 'LULU', shares: 4, costBasis: 300, currentPrice: 250,
+      priceInfo: { price: 250, postMarketPrice: 245, postMarketTime: '2026-09-04T20:15:00.000Z' },
+    }
+    const { result } = setup({ positions: [position] })
+    act(() => { result.current.startSell(position) })
+    expect(result.current.sellForm.price).toBe('245')
+  })
+
+  it('falls back to the regular price when there is no after-hours print', () => {
+    const position = { id: 'aaa', ticker: 'AAA', shares: 4, costBasis: 20, currentPrice: 25, priceInfo: { price: 25 } }
+    const { result } = setup({ positions: [position] })
+    act(() => { result.current.startSell(position) })
+    expect(result.current.sellForm.price).toBe('25')
+  })
+})
+
 describe('FIFO cross-lot sell (B3)', () => {
   const twoLots = [
     { id: 'lot-a', ticker: 'AAPL', shares: 10, costBasis: 100, purchaseDate: '2026-01-01' },

@@ -4,8 +4,14 @@ import { fetchPortfolioQuotes } from './portfolio-prices.mjs'
 
 const QUOTE_BATCH_SIZE = 50
 const FRESH_QUOTE_MS = 15 * 60 * 1000
+// After-hours snapshots only fire once every 30 minutes (see isHalfHourMark), so a quote has
+// to survive six ticks of this five-minute cron rather than one -- give it more slack than
+// the regular-hours check before calling the tape stale.
+const AFTER_HOURS_FRESH_QUOTE_MS = 40 * 60 * 1000
 const PORTFOLIO_COLLECTION = 'portfolios'
 
+// Still every five minutes -- isHalfHourMark below is what actually limits after-hours writes
+// to :00/:30, so this cron doesn't need its own schedule for that cadence.
 export const config = { schedule: '*/5 * * * *' }
 
 function firebaseApp() {
@@ -36,12 +42,35 @@ export function isRegularMarketWindow(value = new Date()) {
   return minutes >= (9 * 60 + 30) && minutes < 16 * 60
 }
 
+// Yahoo's post-market session (the one `postMarketPrice`/`postMarketTime` are populated from,
+// see portfolio-prices.mjs) runs 4:00pm-8:00pm ET. Pre-market is intentionally out of scope --
+// the user only asked for after-hours coverage.
+export function isAfterHoursWindow(value = new Date()) {
+  const parts = easternParts(value)
+  if (parts.weekday === 'Sat' || parts.weekday === 'Sun') return false
+  const minutes = Number(parts.hour) * 60 + Number(parts.minute)
+  return minutes >= 16 * 60 && minutes < 20 * 60
+}
+
+export function isHalfHourMark(value = new Date()) {
+  return Number(easternParts(value).minute) % 30 === 0
+}
+
 export function hasFreshMarketQuote(quotes, value = new Date()) {
   const now = value.getTime()
   return Object.values(quotes || {}).some((quote) => {
     const marketTime = new Date(quote?.marketTime || '').getTime()
     const age = now - marketTime
     return Number.isFinite(marketTime) && age >= -2 * 60 * 1000 && age <= FRESH_QUOTE_MS
+  })
+}
+
+export function hasFreshAfterHoursQuote(quotes, value = new Date()) {
+  const now = value.getTime()
+  return Object.values(quotes || {}).some((quote) => {
+    const postMarketTime = new Date(quote?.postMarketTime || '').getTime()
+    const age = now - postMarketTime
+    return Number.isFinite(postMarketTime) && age >= -2 * 60 * 1000 && age <= AFTER_HOURS_FRESH_QUOTE_MS
   })
 }
 
@@ -66,18 +95,22 @@ export function groupPortfolioPositions(rows = []) {
 // mid-outage) used to blank the whole snapshot for that user every five minutes. Every other
 // held position still has a real quote most cycles, so this prices what it can and records the
 // gap instead of throwing away a coverage's worth of otherwise-good data.
-export function buildPortfolioSnapshot(positions, quotes, recordedAt) {
+export function buildPortfolioSnapshot(positions, quotes, recordedAt, { session = 'regular' } = {}) {
   if (!positions?.length) return null
+  const afterHours = session === 'after_hours'
   const priced = positions.map((position) => {
     const quote = quotes?.[position.ticker]
-    if (!Number.isFinite(quote?.price)) return null
-    const value = Number(position.shares) * quote.price
+    // A quote missing an actual post-market print (thin coverage, no after-hours activity)
+    // falls back to the regular-session price rather than dropping the position.
+    const price = afterHours ? (quote?.postMarketPrice ?? quote?.price) : quote?.price
+    if (!Number.isFinite(price)) return null
+    const value = Number(position.shares) * price
     return {
       ticker: position.ticker,
       shares: Number(position.shares),
-      price: quote.price,
+      price,
       value,
-      marketTime: quote.marketTime || null,
+      marketTime: (afterHours ? (quote.postMarketTime ?? quote.marketTime) : quote.marketTime) || null,
     }
   })
   const pricedPositions = priced.filter(Boolean)
@@ -91,8 +124,8 @@ export function buildPortfolioSnapshot(positions, quotes, recordedAt) {
     value: investedValue,
     investedValue,
     coveragePct: Math.round((pricedPositions.length / positions.length) * 100),
-    source: 'scheduled_portfolio_price_refresh',
-    samplingIntervalMinutes: 5,
+    source: afterHours ? 'scheduled_portfolio_price_refresh_after_hours' : 'scheduled_portfolio_price_refresh',
+    samplingIntervalMinutes: afterHours ? 30 : 5,
     recordedAt: recordedAt.toISOString(),
     marketDate: marketDate(recordedAt),
     positionCount: pricedPositions.length,
@@ -140,7 +173,11 @@ export async function collectScheduledPortfolioSnapshots({
   quoteFetcher = fetchPortfolioQuotes,
   now = new Date(),
 } = {}) {
-  if (!isRegularMarketWindow(now)) return { status: 'outside_market_hours', recorded: 0 }
+  const regular = isRegularMarketWindow(now)
+  const afterHours = !regular && isAfterHoursWindow(now)
+  if (!regular && !afterHours) return { status: 'outside_market_hours', recorded: 0 }
+  if (afterHours && !isHalfHourMark(now)) return { status: 'after_hours_off_tick', recorded: 0 }
+  const session = regular ? 'regular' : 'after_hours'
 
   const positionsSnapshot = await db.collectionGroup('positions').get()
   const rows = positionsSnapshot.docs.map((item) => {
@@ -154,7 +191,8 @@ export async function collectScheduledPortfolioSnapshots({
   if (!symbols.length) return { status: 'no_positions', recorded: 0 }
 
   const { quotes, failed } = await fetchQuoteUniverse(symbols, quoteFetcher)
-  if (!hasFreshMarketQuote(quotes, now)) {
+  const fresh = session === 'regular' ? hasFreshMarketQuote(quotes, now) : hasFreshAfterHoursQuote(quotes, now)
+  if (!fresh) {
     return { status: 'market_tape_stale', recorded: 0, requested: symbols.length, failed }
   }
 
@@ -164,7 +202,7 @@ export async function collectScheduledPortfolioSnapshots({
   const skipped = []
 
   for (const uid of userIds) {
-    const payload = buildPortfolioSnapshot(portfolios[uid], quotes, now)
+    const payload = buildPortfolioSnapshot(portfolios[uid], quotes, now, { session })
     if (!payload) {
       skipped.push(uid)
       continue

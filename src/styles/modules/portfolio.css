@@ -235,6 +235,7 @@ details { border-top: 1px solid var(--border); padding-top: var(--sp-3); } summa
 .lot-sell-preview li > span:last-child { color: var(--text-faint); }
 .lot-sell-error { margin: var(--sp-3) 0 0; color: var(--neg); font-size: var(--fs-xs); }
 .sell-sheet-error { margin: var(--sp-3) 0 0; color: var(--neg); font-size: var(--fs-xs); }
+.sell-sheet-note { margin: var(--sp-1) 0 0; color: var(--text-faint); font-size: var(--fs-2xs); text-transform: none; letter-spacing: normal; }
 @media (max-width: 680px) {
   .lot-sell-preview li { grid-template-columns: 1fr; gap: var(--sp-0-5); }
 }

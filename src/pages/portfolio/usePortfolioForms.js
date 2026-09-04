@@ -124,9 +124,14 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
     }
   }
 
+  // After the regular session closes, currentPrice still holds the last regular-hours print
+  // (see buildHoldingsModel in portfolioModels.js -- the displayed value deliberately doesn't
+  // jump to a thin after-hours tape). A sale entered right now is happening at the after-hours
+  // price if one exists, so prefer it here even though the rest of the page does not.
   const startSell = (pos) => {
+    const price = pos.priceInfo?.postMarketPrice ?? pos.currentPrice
     setSellingId(pos.id)
-    setSellForm({ shares: String(pos.shares ?? ''), price: pos.currentPrice != null ? String(pos.currentPrice) : '', saleDate: today() })
+    setSellForm({ shares: String(pos.shares ?? ''), price: price != null ? String(price) : '', saleDate: today() })
     setSyncMessage('')
   }
 

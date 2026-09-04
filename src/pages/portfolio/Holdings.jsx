@@ -62,6 +62,9 @@ function SellSheet({ position, forms }) {
           <input className="inline-edit-input" type="number" step="0.01" min="0" value={sellForm.price}
             placeholder={position.currentPrice == null ? 'Live price unavailable — enter manually' : undefined}
             onChange={(e) => setSellForm({ ...sellForm, price: e.target.value })} />
+          {position.priceInfo?.postMarketPrice != null && (
+            <p className="sell-sheet-note">After-hours price — confirm it matches your fill before selling.</p>
+          )}
         </label>
         <label><span>Sale date</span>
           <input className="inline-edit-input" type="date" value={sellForm.saleDate}

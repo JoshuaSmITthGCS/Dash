@@ -25,6 +25,13 @@ export function mergePortfolioQuotes(priceData, quotes = {}) {
       portfolioQuote: true,
       quoteMarketTime: quote.marketTime || null,
       previousClose: quote.previousClose ?? merged[ticker]?.previousClose ?? null,
+      // Carried through so a holding's after-hours print (only ever populated once the
+      // regular session has closed and a post-market trade has printed) is still reachable
+      // from the merged row -- e.g. to price a sale entered before the next regular open.
+      postMarketPrice: quote.postMarketPrice ?? null,
+      postMarketChange: quote.postMarketChange ?? null,
+      postMarketChangePercent: quote.postMarketChangePercent ?? null,
+      postMarketTime: quote.postMarketTime ?? null,
     }
   }
   return merged

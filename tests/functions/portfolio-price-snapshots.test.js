@@ -4,7 +4,10 @@ import {
   collectScheduledPortfolioSnapshots,
   config,
   groupPortfolioPositions,
+  hasFreshAfterHoursQuote,
   hasFreshMarketQuote,
+  isAfterHoursWindow,
+  isHalfHourMark,
   isRegularMarketWindow,
   marketDate,
 } from '../../netlify/functions/portfolio-price-snapshots.mjs'
@@ -130,6 +133,94 @@ describe('scheduled portfolio price snapshots', () => {
     expect(sets[1]).toMatchObject({
       ref: { path: 'portfolios/u1/tracking/state' },
       payload: { lastScheduledSnapshotCoveragePct: 100 },
+    })
+  })
+})
+
+describe('after-hours snapshot cadence', () => {
+  it('recognizes the Yahoo post-market window and gates it to the half-hour tick', () => {
+    expect(isAfterHoursWindow(new Date('2026-08-13T20:30:00.000Z'))).toBe(true) // 4:30pm ET
+    expect(isAfterHoursWindow(new Date('2026-08-14T00:00:00.000Z'))).toBe(false) // 8:00pm ET, session over
+    expect(isAfterHoursWindow(new Date('2026-08-15T20:30:00.000Z'))).toBe(false) // Saturday
+    expect(isHalfHourMark(new Date('2026-08-13T20:30:00.000Z'))).toBe(true)
+    expect(isHalfHourMark(new Date('2026-08-13T20:15:00.000Z'))).toBe(false)
+  })
+
+  it('requires a fresh post-market print, not just any regular-session timestamp', () => {
+    const now = new Date('2026-08-13T20:30:00.000Z')
+    expect(hasFreshAfterHoursQuote({ LULU: { postMarketTime: '2026-08-13T20:25:00.000Z' } }, now)).toBe(true)
+    expect(hasFreshAfterHoursQuote({ LULU: { marketTime: '2026-08-13T15:34:00.000Z' } }, now)).toBe(false)
+  })
+
+  it('prices an after-hours snapshot from the post-market print, not the stale regular close', () => {
+    const snapshot = buildPortfolioSnapshot(
+      [{ ticker: 'LULU', shares: 3 }],
+      { LULU: { price: 250, postMarketPrice: 245, postMarketTime: '2026-08-13T20:29:00.000Z' } },
+      new Date('2026-08-13T20:30:00.000Z'),
+      { session: 'after_hours' },
+    )
+    expect(snapshot).toMatchObject({
+      value: 735,
+      source: 'scheduled_portfolio_price_refresh_after_hours',
+      samplingIntervalMinutes: 30,
+    })
+    expect(snapshot.prices).toEqual([
+      { ticker: 'LULU', shares: 3, price: 245, value: 735, marketTime: '2026-08-13T20:29:00.000Z' },
+    ])
+  })
+
+  it('falls back to the regular price when a held position has no post-market print', () => {
+    const snapshot = buildPortfolioSnapshot(
+      [{ ticker: 'VTI', shares: 2 }],
+      { VTI: { price: 300, marketTime: '2026-08-13T20:00:00.000Z' } },
+      new Date('2026-08-13T20:30:00.000Z'),
+      { session: 'after_hours' },
+    )
+    expect(snapshot.prices).toEqual([
+      { ticker: 'VTI', shares: 2, price: 300, value: 600, marketTime: '2026-08-13T20:00:00.000Z' },
+    ])
+  })
+
+  it('skips writing outside the half-hour tick even during the after-hours window', async () => {
+    const db = { collectionGroup: vi.fn() }
+    const result = await collectScheduledPortfolioSnapshots({ db, now: new Date('2026-08-13T20:15:00.000Z') })
+    expect(result).toEqual({ status: 'after_hours_off_tick', recorded: 0 })
+    expect(db.collectionGroup).not.toHaveBeenCalled()
+  })
+
+  it('collects an after-hours snapshot on the half-hour using the post-market print', async () => {
+    const now = new Date('2026-08-13T20:30:00.000Z')
+    const userRef = { id: 'u1', parent: { id: 'portfolios' } }
+    const sets = []
+    const makeDocument = (path) => ({ path })
+    const root = {
+      collection: (name) => ({ doc: (id) => makeDocument(`portfolios/u1/${name}/${id}`) }),
+    }
+    const db = {
+      collectionGroup: vi.fn(() => ({
+        get: vi.fn(async () => ({
+          docs: [{
+            ref: { parent: { parent: userRef } },
+            data: () => ({ ticker: 'LULU', shares: 3 }),
+          }],
+        })),
+      })),
+      collection: vi.fn(() => ({ doc: () => root })),
+      batch: vi.fn(() => ({
+        set: (ref, payload, options) => sets.push({ ref, payload, options }),
+        commit: vi.fn(async () => undefined),
+      })),
+    }
+    const quoteFetcher = vi.fn(async () => ({
+      quotes: { LULU: { price: 250, postMarketPrice: 245, postMarketTime: '2026-08-13T20:29:00.000Z' } },
+      failed: [],
+    }))
+
+    const result = await collectScheduledPortfolioSnapshots({ db, quoteFetcher, now })
+
+    expect(result).toMatchObject({ status: 'complete', recorded: 1, skipped: 0 })
+    expect(sets[0]).toMatchObject({
+      payload: { value: 735, source: 'scheduled_portfolio_price_refresh_after_hours', samplingIntervalMinutes: 30 },
     })
   })
 })
