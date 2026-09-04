@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "model_version": "inside-information-v1.0.0",
-  "generated_at": "2026-09-01T17:33:00.887577+00:00",
+  "generated_at": "2026-09-04T17:16:37.889171+00:00",
   "status": "success",
   "sources": {
     "congress": {
@@ -13,18 +13,18 @@
       "status": "success"
     }
   },
-  "ranked_count": 28,
-  "notable_count": 22,
+  "ranked_count": 32,
+  "notable_count": 25,
   "disclaimer": "Congressional STOCK Act disclosures and curated active-manager Schedule 13F filings, merged and shown only where the underlying screen already flagged the activity as a cluster (3+ managers moving together, 3+ representatives in a 14-day span, a same-name buy/sell round trip, or a representative's first-ever disclosed trade in a small, unfamiliar company). Not a claim that any of this activity was informed or improper - see the congress-trades and institutional-13f screens for the full, unfiltered disclosures.",
   "results": [
     {
       "ticker": "META",
-      "score": 1.29,
-      "political_points": 1.29,
+      "score": 1.23,
+      "political_points": 1.23,
       "institutional_points": 0.0,
       "members_buying": 2,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
+      "days_since_latest_disclosure": 13,
       "disclosed_purchase_value_lower": 2487016.0,
       "managers_added": 0,
       "managers_dropped": 0,
@@ -38,12 +38,12 @@
     },
     {
       "ticker": "AMZN",
-      "score": 1.29,
-      "political_points": 1.29,
+      "score": 1.23,
+      "political_points": 1.23,
       "institutional_points": 0.0,
       "members_buying": 2,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
+      "days_since_latest_disclosure": 13,
       "disclosed_purchase_value_lower": 2384010.0,
       "managers_added": 0,
       "managers_dropped": 0,
@@ -57,12 +57,12 @@
     },
     {
       "ticker": "AAPL",
-      "score": 1.29,
-      "political_points": 1.29,
+      "score": 1.23,
+      "political_points": 1.23,
       "institutional_points": 0.0,
       "members_buying": 2,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
+      "days_since_latest_disclosure": 13,
       "disclosed_purchase_value_lower": 1399010.0,
       "managers_added": 0,
       "managers_dropped": 0,
@@ -76,12 +76,12 @@
     },
     {
       "ticker": "MSFT",
-      "score": 1.29,
-      "political_points": 1.29,
+      "score": 1.23,
+      "political_points": 1.23,
       "institutional_points": 0.0,
       "members_buying": 2,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
+      "days_since_latest_disclosure": 13,
       "disclosed_purchase_value_lower": 784018.0,
       "managers_added": 0,
       "managers_dropped": 0,
@@ -94,14 +94,14 @@
       ]
     },
     {
-      "ticker": "BAC",
-      "score": 1.29,
-      "political_points": 1.29,
+      "ticker": "CRM",
+      "score": 1.23,
+      "political_points": 1.23,
       "institutional_points": 0.0,
       "members_buying": 2,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 45003.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 168006.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -113,14 +113,14 @@
       ]
     },
     {
-      "ticker": "ACN",
-      "score": 0.86,
-      "political_points": 0.86,
+      "ticker": "BAC",
+      "score": 1.23,
+      "political_points": 1.23,
       "institutional_points": 0.0,
-      "members_buying": 1,
+      "members_buying": 2,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 1004009.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 45003.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -132,14 +132,14 @@
       ]
     },
     {
-      "ticker": "ADBE",
-      "score": 0.86,
-      "political_points": 0.86,
+      "ticker": "ACN",
+      "score": 0.82,
+      "political_points": 0.82,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 518005.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 1004009.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -151,14 +151,14 @@
       ]
     },
     {
-      "ticker": "INTU",
-      "score": 0.86,
-      "political_points": 0.86,
+      "ticker": "ADBE",
+      "score": 0.82,
+      "political_points": 0.82,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 367005.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 518005.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -170,51 +170,52 @@
       ]
     },
     {
-      "ticker": "CMG",
-      "score": 0.86,
-      "political_points": 0.86,
+      "ticker": "AVGO",
+      "score": 0.82,
+      "political_points": 0.82,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 215004.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 420009.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
       "institutional_filed": null,
-      "rank": 10,
-      "congress_flags": [
-        "BUY_SELL_FLIP"
-      ]
-    },
-    {
-      "ticker": "BSX",
-      "score": 0.86,
-      "political_points": 0.86,
-      "institutional_points": 0.0,
-      "members_buying": 1,
-      "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 169007.0,
-      "managers_added": 0,
-      "managers_dropped": 0,
-      "institutional_flag": null,
-      "institutional_filed": null,
-      "rank": 11,
+      "rank": 9,
       "congress_flags": [
         "BUY_SELL_FLIP",
         "CLUSTER_TRADE"
       ]
     },
     {
-      "ticker": "LULU",
-      "score": 0.86,
-      "political_points": 0.86,
+      "ticker": "INTU",
+      "score": 0.82,
+      "political_points": 0.82,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 151003.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 367005.0,
+      "managers_added": 0,
+      "managers_dropped": 0,
+      "institutional_flag": null,
+      "institutional_filed": null,
+      "rank": 10,
+      "congress_flags": [
+        "BUY_SELL_FLIP",
+        "CLUSTER_TRADE"
+      ]
+    },
+    {
+      "ticker": "CMG",
+      "score": 0.82,
+      "political_points": 0.82,
+      "institutional_points": 0.0,
+      "members_buying": 1,
+      "extraordinary_members": 0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 215004.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -225,32 +226,33 @@
       ]
     },
     {
-      "ticker": "PYPL",
-      "score": 0.86,
-      "political_points": 0.86,
+      "ticker": "BSX",
+      "score": 0.82,
+      "political_points": 0.82,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 83006.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 169007.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
       "institutional_filed": null,
       "rank": 13,
       "congress_flags": [
-        "BUY_SELL_FLIP"
+        "BUY_SELL_FLIP",
+        "CLUSTER_TRADE"
       ]
     },
     {
-      "ticker": "BMY",
-      "score": 0.86,
-      "political_points": 0.86,
+      "ticker": "LULU",
+      "score": 0.82,
+      "political_points": 0.82,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 17003.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 151003.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -261,50 +263,68 @@
       ]
     },
     {
+      "ticker": "PYPL",
+      "score": 0.82,
+      "political_points": 0.82,
+      "institutional_points": 0.0,
+      "members_buying": 1,
+      "extraordinary_members": 0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 83006.0,
+      "managers_added": 0,
+      "managers_dropped": 0,
+      "institutional_flag": null,
+      "institutional_filed": null,
+      "rank": 15,
+      "congress_flags": [
+        "BUY_SELL_FLIP"
+      ]
+    },
+    {
+      "ticker": "BMY",
+      "score": 0.82,
+      "political_points": 0.82,
+      "institutional_points": 0.0,
+      "members_buying": 1,
+      "extraordinary_members": 0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 17003.0,
+      "managers_added": 0,
+      "managers_dropped": 0,
+      "institutional_flag": null,
+      "institutional_filed": null,
+      "rank": 16,
+      "congress_flags": [
+        "BUY_SELL_FLIP"
+      ]
+    },
+    {
+      "ticker": "LYB",
+      "score": 0.82,
+      "political_points": 0.82,
+      "institutional_points": 0.0,
+      "members_buying": 1,
+      "extraordinary_members": 0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 17003.0,
+      "managers_added": 0,
+      "managers_dropped": 0,
+      "institutional_flag": null,
+      "institutional_filed": null,
+      "rank": 17,
+      "congress_flags": [
+        "BUY_SELL_FLIP"
+      ]
+    },
+    {
       "ticker": "MU",
-      "score": 0.52,
-      "political_points": 0.52,
+      "score": 0.5,
+      "political_points": 0.5,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 42,
+      "days_since_latest_disclosure": 45,
       "disclosed_purchase_value_lower": 20006.0,
-      "managers_added": 0,
-      "managers_dropped": 0,
-      "institutional_flag": null,
-      "institutional_filed": null,
-      "rank": 18,
-      "congress_flags": [
-        "BUY_SELL_FLIP"
-      ]
-    },
-    {
-      "ticker": "COF",
-      "score": 0.38,
-      "political_points": 0.38,
-      "institutional_points": 0.0,
-      "members_buying": 1,
-      "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
-      "disclosed_purchase_value_lower": 116003.0,
-      "managers_added": 0,
-      "managers_dropped": 0,
-      "institutional_flag": null,
-      "institutional_filed": null,
-      "rank": 20,
-      "congress_flags": [
-        "BUY_SELL_FLIP"
-      ]
-    },
-    {
-      "ticker": "REGN",
-      "score": 0.38,
-      "political_points": 0.38,
-      "institutional_points": 0.0,
-      "members_buying": 1,
-      "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
-      "disclosed_purchase_value_lower": 116003.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -315,32 +335,14 @@
       ]
     },
     {
-      "ticker": "UPS",
-      "score": 0.38,
-      "political_points": 0.38,
+      "ticker": "COF",
+      "score": 0.37,
+      "political_points": 0.37,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
+      "days_since_latest_disclosure": 65,
       "disclosed_purchase_value_lower": 116003.0,
-      "managers_added": 0,
-      "managers_dropped": 0,
-      "institutional_flag": null,
-      "institutional_filed": null,
-      "rank": 22,
-      "congress_flags": [
-        "BUY_SELL_FLIP"
-      ]
-    },
-    {
-      "ticker": "CI",
-      "score": 0.38,
-      "political_points": 0.38,
-      "institutional_points": 0.0,
-      "members_buying": 1,
-      "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
-      "disclosed_purchase_value_lower": 103004.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -351,14 +353,14 @@
       ]
     },
     {
-      "ticker": "DXCM",
-      "score": 0.38,
-      "political_points": 0.38,
+      "ticker": "REGN",
+      "score": 0.37,
+      "political_points": 0.37,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
-      "disclosed_purchase_value_lower": 102003.0,
+      "days_since_latest_disclosure": 65,
+      "disclosed_purchase_value_lower": 116003.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -369,14 +371,32 @@
       ]
     },
     {
-      "ticker": "KEY",
-      "score": 0.38,
-      "political_points": 0.38,
+      "ticker": "UPS",
+      "score": 0.37,
+      "political_points": 0.37,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
-      "disclosed_purchase_value_lower": 17003.0,
+      "days_since_latest_disclosure": 65,
+      "disclosed_purchase_value_lower": 116003.0,
+      "managers_added": 0,
+      "managers_dropped": 0,
+      "institutional_flag": null,
+      "institutional_filed": null,
+      "rank": 25,
+      "congress_flags": [
+        "BUY_SELL_FLIP"
+      ]
+    },
+    {
+      "ticker": "CI",
+      "score": 0.37,
+      "political_points": 0.37,
+      "institutional_points": 0.0,
+      "members_buying": 1,
+      "extraordinary_members": 0,
+      "days_since_latest_disclosure": 65,
+      "disclosed_purchase_value_lower": 103004.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -387,14 +407,14 @@
       ]
     },
     {
-      "ticker": "COP",
-      "score": 0.38,
-      "political_points": 0.38,
+      "ticker": "DXCM",
+      "score": 0.37,
+      "political_points": 0.37,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
-      "disclosed_purchase_value_lower": 16002.0,
+      "days_since_latest_disclosure": 65,
+      "disclosed_purchase_value_lower": 102003.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -405,19 +425,55 @@
       ]
     },
     {
-      "ticker": "EXPE",
-      "score": 0.38,
-      "political_points": 0.38,
+      "ticker": "KEY",
+      "score": 0.37,
+      "political_points": 0.37,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
+      "days_since_latest_disclosure": 65,
+      "disclosed_purchase_value_lower": 17003.0,
+      "managers_added": 0,
+      "managers_dropped": 0,
+      "institutional_flag": null,
+      "institutional_filed": null,
+      "rank": 29,
+      "congress_flags": [
+        "BUY_SELL_FLIP"
+      ]
+    },
+    {
+      "ticker": "COP",
+      "score": 0.37,
+      "political_points": 0.37,
+      "institutional_points": 0.0,
+      "members_buying": 1,
+      "extraordinary_members": 0,
+      "days_since_latest_disclosure": 65,
+      "disclosed_purchase_value_lower": 16002.0,
+      "managers_added": 0,
+      "managers_dropped": 0,
+      "institutional_flag": null,
+      "institutional_filed": null,
+      "rank": 31,
+      "congress_flags": [
+        "BUY_SELL_FLIP"
+      ]
+    },
+    {
+      "ticker": "EXPE",
+      "score": 0.37,
+      "political_points": 0.37,
+      "institutional_points": 0.0,
+      "members_buying": 1,
+      "extraordinary_members": 0,
+      "days_since_latest_disclosure": 65,
       "disclosed_purchase_value_lower": 15001.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
       "institutional_filed": null,
-      "rank": 28,
+      "rank": 32,
       "congress_flags": [
         "BUY_SELL_FLIP"
       ]
@@ -426,12 +482,12 @@
   "by_ticker": {
     "META": {
       "ticker": "META",
-      "score": 1.29,
-      "political_points": 1.29,
+      "score": 1.23,
+      "political_points": 1.23,
       "institutional_points": 0.0,
       "members_buying": 2,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
+      "days_since_latest_disclosure": 13,
       "disclosed_purchase_value_lower": 2487016.0,
       "managers_added": 0,
       "managers_dropped": 0,
@@ -445,12 +501,12 @@
     },
     "AMZN": {
       "ticker": "AMZN",
-      "score": 1.29,
-      "political_points": 1.29,
+      "score": 1.23,
+      "political_points": 1.23,
       "institutional_points": 0.0,
       "members_buying": 2,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
+      "days_since_latest_disclosure": 13,
       "disclosed_purchase_value_lower": 2384010.0,
       "managers_added": 0,
       "managers_dropped": 0,
@@ -464,12 +520,12 @@
     },
     "AAPL": {
       "ticker": "AAPL",
-      "score": 1.29,
-      "political_points": 1.29,
+      "score": 1.23,
+      "political_points": 1.23,
       "institutional_points": 0.0,
       "members_buying": 2,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
+      "days_since_latest_disclosure": 13,
       "disclosed_purchase_value_lower": 1399010.0,
       "managers_added": 0,
       "managers_dropped": 0,
@@ -483,12 +539,12 @@
     },
     "MSFT": {
       "ticker": "MSFT",
-      "score": 1.29,
-      "political_points": 1.29,
+      "score": 1.23,
+      "political_points": 1.23,
       "institutional_points": 0.0,
       "members_buying": 2,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
+      "days_since_latest_disclosure": 13,
       "disclosed_purchase_value_lower": 784018.0,
       "managers_added": 0,
       "managers_dropped": 0,
@@ -500,15 +556,15 @@
         "CLUSTER_TRADE"
       ]
     },
-    "BAC": {
-      "ticker": "BAC",
-      "score": 1.29,
-      "political_points": 1.29,
+    "CRM": {
+      "ticker": "CRM",
+      "score": 1.23,
+      "political_points": 1.23,
       "institutional_points": 0.0,
       "members_buying": 2,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 45003.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 168006.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -519,15 +575,15 @@
         "CLUSTER_TRADE"
       ]
     },
-    "ACN": {
-      "ticker": "ACN",
-      "score": 0.86,
-      "political_points": 0.86,
+    "BAC": {
+      "ticker": "BAC",
+      "score": 1.23,
+      "political_points": 1.23,
       "institutional_points": 0.0,
-      "members_buying": 1,
+      "members_buying": 2,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 1004009.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 45003.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -538,15 +594,15 @@
         "CLUSTER_TRADE"
       ]
     },
-    "ADBE": {
-      "ticker": "ADBE",
-      "score": 0.86,
-      "political_points": 0.86,
+    "ACN": {
+      "ticker": "ACN",
+      "score": 0.82,
+      "political_points": 0.82,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 518005.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 1004009.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -557,15 +613,15 @@
         "CLUSTER_TRADE"
       ]
     },
-    "INTU": {
-      "ticker": "INTU",
-      "score": 0.86,
-      "political_points": 0.86,
+    "ADBE": {
+      "ticker": "ADBE",
+      "score": 0.82,
+      "political_points": 0.82,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 367005.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 518005.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -576,52 +632,53 @@
         "CLUSTER_TRADE"
       ]
     },
-    "CMG": {
-      "ticker": "CMG",
-      "score": 0.86,
-      "political_points": 0.86,
+    "AVGO": {
+      "ticker": "AVGO",
+      "score": 0.82,
+      "political_points": 0.82,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 215004.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 420009.0,
+      "managers_added": 0,
+      "managers_dropped": 0,
+      "institutional_flag": null,
+      "institutional_filed": null,
+      "rank": 9,
+      "congress_flags": [
+        "BUY_SELL_FLIP",
+        "CLUSTER_TRADE"
+      ]
+    },
+    "INTU": {
+      "ticker": "INTU",
+      "score": 0.82,
+      "political_points": 0.82,
+      "institutional_points": 0.0,
+      "members_buying": 1,
+      "extraordinary_members": 0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 367005.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
       "institutional_filed": null,
       "rank": 10,
       "congress_flags": [
-        "BUY_SELL_FLIP"
-      ]
-    },
-    "BSX": {
-      "ticker": "BSX",
-      "score": 0.86,
-      "political_points": 0.86,
-      "institutional_points": 0.0,
-      "members_buying": 1,
-      "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 169007.0,
-      "managers_added": 0,
-      "managers_dropped": 0,
-      "institutional_flag": null,
-      "institutional_filed": null,
-      "rank": 11,
-      "congress_flags": [
         "BUY_SELL_FLIP",
         "CLUSTER_TRADE"
       ]
     },
-    "LULU": {
-      "ticker": "LULU",
-      "score": 0.86,
-      "political_points": 0.86,
+    "CMG": {
+      "ticker": "CMG",
+      "score": 0.82,
+      "political_points": 0.82,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 151003.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 215004.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -631,33 +688,34 @@
         "BUY_SELL_FLIP"
       ]
     },
-    "PYPL": {
-      "ticker": "PYPL",
-      "score": 0.86,
-      "political_points": 0.86,
+    "BSX": {
+      "ticker": "BSX",
+      "score": 0.82,
+      "political_points": 0.82,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 83006.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 169007.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
       "institutional_filed": null,
       "rank": 13,
       "congress_flags": [
-        "BUY_SELL_FLIP"
+        "BUY_SELL_FLIP",
+        "CLUSTER_TRADE"
       ]
     },
-    "BMY": {
-      "ticker": "BMY",
-      "score": 0.86,
-      "political_points": 0.86,
+    "LULU": {
+      "ticker": "LULU",
+      "score": 0.82,
+      "political_points": 0.82,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 10,
-      "disclosed_purchase_value_lower": 17003.0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 151003.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -667,51 +725,69 @@
         "BUY_SELL_FLIP"
       ]
     },
+    "PYPL": {
+      "ticker": "PYPL",
+      "score": 0.82,
+      "political_points": 0.82,
+      "institutional_points": 0.0,
+      "members_buying": 1,
+      "extraordinary_members": 0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 83006.0,
+      "managers_added": 0,
+      "managers_dropped": 0,
+      "institutional_flag": null,
+      "institutional_filed": null,
+      "rank": 15,
+      "congress_flags": [
+        "BUY_SELL_FLIP"
+      ]
+    },
+    "BMY": {
+      "ticker": "BMY",
+      "score": 0.82,
+      "political_points": 0.82,
+      "institutional_points": 0.0,
+      "members_buying": 1,
+      "extraordinary_members": 0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 17003.0,
+      "managers_added": 0,
+      "managers_dropped": 0,
+      "institutional_flag": null,
+      "institutional_filed": null,
+      "rank": 16,
+      "congress_flags": [
+        "BUY_SELL_FLIP"
+      ]
+    },
+    "LYB": {
+      "ticker": "LYB",
+      "score": 0.82,
+      "political_points": 0.82,
+      "institutional_points": 0.0,
+      "members_buying": 1,
+      "extraordinary_members": 0,
+      "days_since_latest_disclosure": 13,
+      "disclosed_purchase_value_lower": 17003.0,
+      "managers_added": 0,
+      "managers_dropped": 0,
+      "institutional_flag": null,
+      "institutional_filed": null,
+      "rank": 17,
+      "congress_flags": [
+        "BUY_SELL_FLIP"
+      ]
+    },
     "MU": {
       "ticker": "MU",
-      "score": 0.52,
-      "political_points": 0.52,
+      "score": 0.5,
+      "political_points": 0.5,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 42,
+      "days_since_latest_disclosure": 45,
       "disclosed_purchase_value_lower": 20006.0,
-      "managers_added": 0,
-      "managers_dropped": 0,
-      "institutional_flag": null,
-      "institutional_filed": null,
-      "rank": 18,
-      "congress_flags": [
-        "BUY_SELL_FLIP"
-      ]
-    },
-    "COF": {
-      "ticker": "COF",
-      "score": 0.38,
-      "political_points": 0.38,
-      "institutional_points": 0.0,
-      "members_buying": 1,
-      "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
-      "disclosed_purchase_value_lower": 116003.0,
-      "managers_added": 0,
-      "managers_dropped": 0,
-      "institutional_flag": null,
-      "institutional_filed": null,
-      "rank": 20,
-      "congress_flags": [
-        "BUY_SELL_FLIP"
-      ]
-    },
-    "REGN": {
-      "ticker": "REGN",
-      "score": 0.38,
-      "political_points": 0.38,
-      "institutional_points": 0.0,
-      "members_buying": 1,
-      "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
-      "disclosed_purchase_value_lower": 116003.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -721,33 +797,15 @@
         "BUY_SELL_FLIP"
       ]
     },
-    "UPS": {
-      "ticker": "UPS",
-      "score": 0.38,
-      "political_points": 0.38,
+    "COF": {
+      "ticker": "COF",
+      "score": 0.37,
+      "political_points": 0.37,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
+      "days_since_latest_disclosure": 65,
       "disclosed_purchase_value_lower": 116003.0,
-      "managers_added": 0,
-      "managers_dropped": 0,
-      "institutional_flag": null,
-      "institutional_filed": null,
-      "rank": 22,
-      "congress_flags": [
-        "BUY_SELL_FLIP"
-      ]
-    },
-    "CI": {
-      "ticker": "CI",
-      "score": 0.38,
-      "political_points": 0.38,
-      "institutional_points": 0.0,
-      "members_buying": 1,
-      "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
-      "disclosed_purchase_value_lower": 103004.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -757,15 +815,15 @@
         "BUY_SELL_FLIP"
       ]
     },
-    "DXCM": {
-      "ticker": "DXCM",
-      "score": 0.38,
-      "political_points": 0.38,
+    "REGN": {
+      "ticker": "REGN",
+      "score": 0.37,
+      "political_points": 0.37,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
-      "disclosed_purchase_value_lower": 102003.0,
+      "days_since_latest_disclosure": 65,
+      "disclosed_purchase_value_lower": 116003.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -775,15 +833,33 @@
         "BUY_SELL_FLIP"
       ]
     },
-    "KEY": {
-      "ticker": "KEY",
-      "score": 0.38,
-      "political_points": 0.38,
+    "UPS": {
+      "ticker": "UPS",
+      "score": 0.37,
+      "political_points": 0.37,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
-      "disclosed_purchase_value_lower": 17003.0,
+      "days_since_latest_disclosure": 65,
+      "disclosed_purchase_value_lower": 116003.0,
+      "managers_added": 0,
+      "managers_dropped": 0,
+      "institutional_flag": null,
+      "institutional_filed": null,
+      "rank": 25,
+      "congress_flags": [
+        "BUY_SELL_FLIP"
+      ]
+    },
+    "CI": {
+      "ticker": "CI",
+      "score": 0.37,
+      "political_points": 0.37,
+      "institutional_points": 0.0,
+      "members_buying": 1,
+      "extraordinary_members": 0,
+      "days_since_latest_disclosure": 65,
+      "disclosed_purchase_value_lower": 103004.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -793,15 +869,15 @@
         "BUY_SELL_FLIP"
       ]
     },
-    "COP": {
-      "ticker": "COP",
-      "score": 0.38,
-      "political_points": 0.38,
+    "DXCM": {
+      "ticker": "DXCM",
+      "score": 0.37,
+      "political_points": 0.37,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
-      "disclosed_purchase_value_lower": 16002.0,
+      "days_since_latest_disclosure": 65,
+      "disclosed_purchase_value_lower": 102003.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
@@ -811,20 +887,56 @@
         "BUY_SELL_FLIP"
       ]
     },
-    "EXPE": {
-      "ticker": "EXPE",
-      "score": 0.38,
-      "political_points": 0.38,
+    "KEY": {
+      "ticker": "KEY",
+      "score": 0.37,
+      "political_points": 0.37,
       "institutional_points": 0.0,
       "members_buying": 1,
       "extraordinary_members": 0,
-      "days_since_latest_disclosure": 62,
+      "days_since_latest_disclosure": 65,
+      "disclosed_purchase_value_lower": 17003.0,
+      "managers_added": 0,
+      "managers_dropped": 0,
+      "institutional_flag": null,
+      "institutional_filed": null,
+      "rank": 29,
+      "congress_flags": [
+        "BUY_SELL_FLIP"
+      ]
+    },
+    "COP": {
+      "ticker": "COP",
+      "score": 0.37,
+      "political_points": 0.37,
+      "institutional_points": 0.0,
+      "members_buying": 1,
+      "extraordinary_members": 0,
+      "days_since_latest_disclosure": 65,
+      "disclosed_purchase_value_lower": 16002.0,
+      "managers_added": 0,
+      "managers_dropped": 0,
+      "institutional_flag": null,
+      "institutional_filed": null,
+      "rank": 31,
+      "congress_flags": [
+        "BUY_SELL_FLIP"
+      ]
+    },
+    "EXPE": {
+      "ticker": "EXPE",
+      "score": 0.37,
+      "political_points": 0.37,
+      "institutional_points": 0.0,
+      "members_buying": 1,
+      "extraordinary_members": 0,
+      "days_since_latest_disclosure": 65,
       "disclosed_purchase_value_lower": 15001.0,
       "managers_added": 0,
       "managers_dropped": 0,
       "institutional_flag": null,
       "institutional_filed": null,
-      "rank": 28,
+      "rank": 32,
       "congress_flags": [
         "BUY_SELL_FLIP"
       ]
@@ -832,8 +944,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "7570117fa4b75b77cbd249a9294092eaa0fd0b0d",
-    "config_hash": "a0b747109820f48effbd8dabf5a30f2760e191e1e63f004cdc13c18247360c63",
-    "generated_at": "2026-09-01T17:33:00.887577+00:00"
+    "git_commit_sha": "e0fe0ebb405bd507fa840f4cc7996454dc2843bf",
+    "config_hash": "25d2d1684035bb35da4d7d84b3214da8bbd4212f5398325c2e9caf43de93a922",
+    "generated_at": "2026-09-04T17:16:37.889171+00:00"
   }
 }
