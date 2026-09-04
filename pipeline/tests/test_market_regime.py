@@ -36,6 +36,40 @@ def test_breadth_skips_a_ticker_with_no_resolvable_average():
 
 
 # ---------------------------------------------------------------------------
+# new_highs_new_lows
+# ---------------------------------------------------------------------------
+
+def test_new_highs_new_lows_counts_names_near_their_own_trailing_high_or_low():
+    near_high = {"closes": [100.0 + index * 0.1 for index in range(252)]}  # steady climb: at its high
+    near_low = {"closes": [200.0 - index * 0.1 for index in range(252)]}  # steady decline: at its low
+    entries = {"A": near_high, "B": near_low}
+
+    result = market_regime.new_highs_new_lows(entries, as_of="2026-08-29")
+
+    assert result["universe_count"] == 2
+    assert result["near_52w_high_pct"] == 50.0
+    assert result["near_52w_low_pct"] == 50.0
+    assert result["threshold_pct"] == market_regime.NEW_HIGH_LOW_THRESHOLD_PCT
+    assert result["as_of"] == "2026-08-29"
+
+
+def test_new_highs_new_lows_excludes_a_name_in_the_middle_of_its_range():
+    midrange = [100.0] * 100 + [150.0] * 26 + [100.0] * 100 + [125.0] * 26  # oscillates, ends mid-range
+    result = market_regime.new_highs_new_lows({"A": {"closes": midrange}})
+    assert result["near_52w_high_pct"] == 0.0
+    assert result["near_52w_low_pct"] == 0.0
+
+
+def test_new_highs_new_lows_is_none_on_an_empty_universe():
+    assert market_regime.new_highs_new_lows({}) is None
+
+
+def test_new_highs_new_lows_skips_a_ticker_with_too_short_a_history():
+    entries = {"THIN": {"closes": [100.0] * 10}}
+    assert market_regime.new_highs_new_lows(entries) is None
+
+
+# ---------------------------------------------------------------------------
 # hurst_regime
 # ---------------------------------------------------------------------------
 
@@ -121,6 +155,7 @@ def test_regime_gate_combines_breadth_hurst_and_vix_without_touching_raw_observa
 
     # The ETF is excluded from the breadth read, same as build_swing_screen's own build_rows.
     assert gate["breadth"]["universe_count"] == 2
+    assert gate["new_highs_new_lows"]["universe_count"] == 2
     assert gate["hurst"] is not None
     assert gate["vix"] == {"score": 40.0, "label": "restrictive", "as_of": "2026-08-28"}
     assert "observations" not in gate["vix"]
@@ -131,6 +166,7 @@ def test_regime_gate_combines_breadth_hurst_and_vix_without_touching_raw_observa
 def test_regime_gate_degrades_gracefully_with_no_universe_or_regime():
     gate = market_regime.regime_gate([], {}, entry_for=lambda ticker: None)
     assert gate["breadth"] is None
+    assert gate["new_highs_new_lows"] is None
     assert gate["hurst"] is None
     assert gate["vix"] is None
 

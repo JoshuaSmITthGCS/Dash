@@ -51,6 +51,23 @@ MARKET_REGIME_EVIDENCE = {
         "caveat": "Classic rescaled-range Hurst is small-sample biased; no Anis-Lloyd/Lo "
                   "(1991) correction is applied here - read the label, not the third decimal.",
     },
+    "new_highs_new_lows": {
+        "label": "Market breadth (% of universe within threshold_pct of its own trailing-252-"
+                 "session high/low)",
+        "horizon": "regime read, not a per-name signal",
+        "direction": "n/a - a market-wide gate, never a per-name score",
+        "citation": "Martin Zweig, Winning on Wall Street (1986); Lowry's Reports "
+                    "new-highs/new-lows breadth tradition",
+        "effect": "A high share of names near their own 52-week high alongside few near a "
+                  "52-week low reads as broad-based strength; the reverse (many near lows, "
+                  "few near highs) reads as broad-based weakness, even while a cap-weighted "
+                  "index still holds up. A distinct breadth flavor from breadth() above: this "
+                  "asks how many names are near a price extreme, not how many sit above a "
+                  "moving average.",
+        "caveat": "An equal-name-count share, not cap-weighted, over each name's own trailing "
+                  "252 sessions rather than a calendar 52-week window, and says nothing about "
+                  "which names.",
+    },
     "vix_regime": {
         "label": "VIX level/trend regime",
         "horizon": "regime read, not a per-name signal",
@@ -133,6 +150,47 @@ def breadth(entries, as_of=None):
     }
 
 
+# How close to its own trailing high/low a name has to be to count as "near" it. 5% mirrors
+# the tolerance src/lib's own 52-week-high proximity displays already use elsewhere in the app.
+NEW_HIGH_LOW_THRESHOLD_PCT = 5.0
+
+
+def new_highs_new_lows(entries, threshold_pct=NEW_HIGH_LOW_THRESHOLD_PCT, as_of=None):
+    """% of ``entries`` within ``threshold_pct`` of its own trailing-252-session high/low.
+
+    A second breadth flavor beside breadth()'s 50/200dma participation read: the Zweig/Lowry
+    breadth tradition also tracks new-highs-versus-new-lows as a separate
+    confirmation/divergence signal, not just moving-average participation. Same non-scored,
+    market-wide regime-context role as breadth() -- see REGIME_GATE_NOTE and
+    MARKET_REGIME_EVIDENCE. Reuses the same per-ticker close series breadth() already receives
+    via _load_entries; no new fetch. None when nothing in ``entries`` resolves a high/low.
+    """
+    near_high = near_low = counted = 0
+    for entry in (entries or {}).values():
+        closes = entry.get("closes") or []
+        if not closes or not _finite(closes[-1]):
+            continue
+        window = [close for close in closes[-252:] if _finite(close) and close > 0]
+        if len(window) < 20:
+            continue
+        price = closes[-1]
+        high, low = max(window), min(window)
+        counted += 1
+        if price >= high * (1 - threshold_pct / 100):
+            near_high += 1
+        if price <= low * (1 + threshold_pct / 100):
+            near_low += 1
+    if not counted:
+        return None
+    return {
+        "near_52w_high_pct": round(100 * near_high / counted, 1),
+        "near_52w_low_pct": round(100 * near_low / counted, 1),
+        "threshold_pct": threshold_pct,
+        "universe_count": counted,
+        "as_of": as_of or datetime.now(timezone.utc).date().isoformat(),
+    }
+
+
 def hurst_regime(daily_returns, window=252):
     """Classic rescaled-range (R/S) Hurst exponent on an equal-weighted daily return series.
 
@@ -194,6 +252,7 @@ def regime_gate(universe, advisor_macro_regime, entry_for=None):
     daily_returns = universe_daily_returns([entry["closes"] for entry in entries.values()])
     return {
         "breadth": breadth(entries),
+        "new_highs_new_lows": new_highs_new_lows(entries),
         "hurst": hurst_regime(daily_returns),
         "vix": vix_regime(advisor_macro_regime),
         "evidence": MARKET_REGIME_EVIDENCE,

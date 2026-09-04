@@ -280,6 +280,60 @@ class CapitalAllocationTests(unittest.TestCase):
         self.assertAlmostEqual(allocation["capex_intensity"], 60 / 1000, places=4)
 
 
+class LiquidityRatioTests(unittest.TestCase):
+    def test_quick_ratio_strips_inventory_out_of_current_assets(self):
+        ratios = fx.derive_liquidity_ratios(BALANCE)
+        self.assertAlmostEqual(ratios["quick_ratio"], (700 - 80) / 350, places=2)
+
+    def test_cash_ratio_is_the_most_conservative_of_the_three(self):
+        ratios = fx.derive_liquidity_ratios(BALANCE)
+        self.assertAlmostEqual(ratios["cash_ratio"], 300 / 350, places=2)
+        # Cash ratio never exceeds the quick ratio: cash is a subset of quick assets.
+        self.assertLessEqual(ratios["cash_ratio"], ratios["quick_ratio"])
+
+    def test_liquidity_ratios_are_none_without_current_liabilities(self):
+        no_liabilities = {"periods": ["2025"], "rows": {"Current Assets": [700.0], "Cash And Cash "
+                                                          "Equivalents": [300.0]}}
+        ratios = fx.derive_liquidity_ratios(no_liabilities)
+        self.assertIsNone(ratios["quick_ratio"])
+        self.assertIsNone(ratios["cash_ratio"])
+
+
+class DupontRoeTests(unittest.TestCase):
+    def test_decomposition_multiplies_back_to_net_income_over_average_equity(self):
+        # margin 180/1000=0.18, turnover 1000/avg(2000,1800)=1000/1900, multiplier
+        # avg(2000,1800)/avg(1100,920)=1900/1010 -> product = 0.18 * 1000/1010.
+        decomposition = fx.derive_dupont_roe(INCOME, BALANCE)
+        self.assertAlmostEqual(decomposition["dupont_net_margin"], 0.18, places=4)
+        self.assertAlmostEqual(decomposition["dupont_asset_turnover"], 1000 / 1900, places=2)
+        self.assertAlmostEqual(decomposition["dupont_equity_multiplier"], 1900 / 1010, places=2)
+        self.assertAlmostEqual(decomposition["dupont_roe"], 0.18 * (1000 / 1010), places=3)
+
+    def test_decomposition_is_none_without_revenue(self):
+        no_revenue = {"periods": ["2025"], "rows": {"Net Income": [180.0]}}
+        decomposition = fx.derive_dupont_roe(no_revenue, BALANCE)
+        self.assertIsNone(decomposition["dupont_net_margin"])
+        self.assertIsNone(decomposition["dupont_roe"])
+
+
+class ShareholderYieldTests(unittest.TestCase):
+    def test_shareholder_yield_combines_dividend_and_buyback_yield(self):
+        allocation = fx.derive_capital_allocation(INCOME, BALANCE, CASHFLOW, market_cap=4000)
+        result = fx.derive_shareholder_yield({"dividendYield": 0.02, "payoutRatio": 0.4}, allocation)
+        self.assertAlmostEqual(result["shareholder_yield"], 0.02 + allocation["net_buyback_yield"], places=4)
+        self.assertAlmostEqual(result["dividend_coverage_ratio"], 2.5, places=2)
+
+    def test_shareholder_yield_is_none_without_a_dividend_yield(self):
+        allocation = fx.derive_capital_allocation(INCOME, BALANCE, CASHFLOW, market_cap=4000)
+        result = fx.derive_shareholder_yield({}, allocation)
+        self.assertIsNone(result["shareholder_yield"])
+        self.assertIsNone(result["dividend_coverage_ratio"])
+
+    def test_dividend_coverage_ratio_is_none_for_a_zero_payout_ratio(self):
+        result = fx.derive_shareholder_yield({"payoutRatio": 0.0}, {})
+        self.assertIsNone(result["dividend_coverage_ratio"])
+
+
 class ValuationTests(unittest.TestCase):
     def test_enterprise_multiples_fall_back_to_the_balance_sheet(self):
         multiples = fx.derive_enterprise_multiples(INCOME, BALANCE, CASHFLOW, {}, market_cap=4000)
@@ -355,6 +409,9 @@ class AssemblyTests(unittest.TestCase):
         self.assertIsNotNone(metrics["return_on_invested_capital"])
         self.assertIsNotNone(metrics["piotroski_f"])
         self.assertIsNotNone(metrics["ev_to_ebitda"])
+        self.assertIsNotNone(metrics["quick_ratio"])
+        self.assertIsNotNone(metrics["cash_ratio"])
+        self.assertIsNotNone(metrics["dupont_roe"])
 
     def test_empty_statements_produce_no_metrics_rather_than_zeros(self):
         empty = {"periods": [], "rows": {}}

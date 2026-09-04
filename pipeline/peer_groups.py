@@ -27,6 +27,7 @@ Two rules follow, and this module enforces both:
 See ``research/audit/CURRENT_MODEL_AUDIT.md`` section 2.
 """
 
+import statistics
 from datetime import date
 
 from canonical_metrics import BUSINESS_PROFILES, classify_profile
@@ -163,6 +164,67 @@ def canonical_percentiles(rows, key="valuation", constructed_at=None, minimum=MI
             result[ticker] = _metadata(group_id, group, value, _tier_for(fractions[position]),
                                        constructed_at, minimum, None, ordered)
     return result
+
+
+def peer_group_multiple_medians(rows, multiple_key="ev_to_ebitda", minimum=MINIMUM_VALID_PEERS):
+    """The peer group's own median raw multiple, published beside (never instead of)
+    canonical_percentiles' structural-valuation tier.
+
+    Deliberately narrower than a per-company percentile against this multiple. This module's
+    own docstring documents why: the THG/SIGI incident, two peers 55% apart on
+    price-to-tangible-book, both scoring 95.7 on the composite this module actually ranks, an
+    alphabetical tiebreak turning that near-tie into a published 7.7-point difference. Ranking
+    individual companies against each other on a raw multiple at finer resolution than "the
+    group's median is N" would reintroduce exactly that failure mode. A single descriptive
+    median, gated by the same ``n >= minimum`` floor canonical_percentiles enforces, gives a
+    reader who wants a concrete number one -- without implying the model ranks individual
+    names by it, and without publishing a percentile this sample cannot support.
+
+    Returns ``{ticker: {"peer_group_median_multiple": value_or_None, "peer_group_multiple_key":
+    multiple_key, "peer_group_multiple_sample_count": n}}`` for every ticker in ``rows``.
+    Tickers whose own group falls below ``minimum`` still appear, with a null median and their
+    group's actual sample count, matching canonical_percentiles' "absent is better than
+    degraded" stance for a below-floor group -- see MINIMUM_VALID_PEERS.
+    """
+    groups = {}
+    for row in rows:
+        group_id, _ = peer_group(row)
+        value = row.get(multiple_key)
+        groups.setdefault(group_id, {"tickers": [], "values": []})
+        groups[group_id]["tickers"].append(row.get("ticker"))
+        if isinstance(value, (int, float)):
+            groups[group_id]["values"].append(value)
+
+    # Same thin-group sector rollup canonical_percentiles applies: a profile-specific peer
+    # group too thin to support a median rolls up into the broader sector bucket rather than
+    # publishing nothing for every member, unless it is one of the deliberate peer-comparison
+    # profiles that must stay silent instead (see LEGACY_PEER_COMPARISON_PROFILES).
+    thin_profile_groups = {group_id for group_id, group in groups.items()
+                           if len(group["values"]) < minimum and not group_id.startswith("sector:")
+                           and group_id not in LEGACY_PEER_COMPARISON_PROFILES}
+    if thin_profile_groups:
+        groups = {}
+        for row in rows:
+            group_id, _ = peer_group(row)
+            if group_id in thin_profile_groups:
+                group_id, _ = _sector_fallback_group(row)
+            value = row.get(multiple_key)
+            groups.setdefault(group_id, {"tickers": [], "values": []})
+            groups[group_id]["tickers"].append(row.get("ticker"))
+            if isinstance(value, (int, float)):
+                groups[group_id]["values"].append(value)
+
+    medians = {}
+    for group in groups.values():
+        sample_count = len(group["values"])
+        median = round(statistics.median(group["values"]), 2) if sample_count >= minimum else None
+        for ticker in group["tickers"]:
+            medians[ticker] = {
+                "peer_group_median_multiple": median,
+                "peer_group_multiple_key": multiple_key,
+                "peer_group_multiple_sample_count": sample_count,
+            }
+    return medians
 
 
 def _metadata(group_id, group, value, tier, constructed_at, minimum, invalid_reason, ordered):

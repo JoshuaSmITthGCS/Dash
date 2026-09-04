@@ -37,7 +37,7 @@ from layer_health import assert_layers_vary
 from plausibility import screen as screen_plausibility
 from market_history import (BASIS, analytics_series_payload, chart_grid,
                             hypothetical_vs_benchmark, sector_percentiles, series_payload)
-from peer_groups import canonical_percentiles
+from peer_groups import canonical_percentiles, peer_group_multiple_medians
 from observability import diagnostics_payload, run_manifest
 from marketaux import (MarketauxClient, MarketauxError, advisor_articles,
                        advisor_articles_for_symbols)
@@ -2088,6 +2088,19 @@ def run():
         "fred": "unavailable" if not fred_regime else ("degraded" if fred_failure else "healthy"),
     })
 
+    # A descriptive peer-group median EV/EBITDA, computed from the fully enriched multiples
+    # now that enrich() has populated context["extended"] for the shortlist -- unlike
+    # peer_diagnostics above (computed earlier from the cheap preliminary snapshot alone,
+    # because it feeds the sector_valuation modifier before enrichment runs), this needs the
+    # deep enterprise multiple derive_enterprise_multiples only produces after statement
+    # enrichment. Display-only: see peer_group_multiple_medians' own docstring for why this
+    # publishes one group median rather than a per-company ranking against it.
+    peer_multiple_medians = peer_group_multiple_medians([
+        {**context["snapshot"], "ticker": context["symbol"],
+         "ev_to_ebitda": (context.get("extended") or {}).get("ev_to_ebitda")}
+        for context in contexts
+    ])
+
     research = []
     polled_at = datetime.now(timezone.utc).isoformat()
     previous_rows = previous_rows_by_ticker(previous_payload)
@@ -2155,6 +2168,7 @@ def run():
         # Every provider value this run refused to score, with the rule that refused it.
         row["data_quality_violations"] = context.get("plausibility_violations") or []
         row["valuation_percentile"] = peer_diagnostics.get(context["symbol"])
+        row["peer_group_valuation_context"] = peer_multiple_medians.get(symbol)
         champion_variant = {
             "variant": "bands_champion",
             "normalization_mode": SETTINGS.get("normalization_mode", "bands"),

@@ -343,6 +343,30 @@ def derive_net_debt_to_ebitda(income, balance, info=None):
     return rounded((debt - (cash or 0)) / ebitda, 2)
 
 
+def derive_liquidity_ratios(balance):
+    """Quick ratio (acid-test) and cash ratio: current_ratio's more conservative companions.
+
+    current_ratio itself is a provider passthrough (info.get("currentRatio"), see
+    canonical_metrics.py) and treats inventory as immediately convertible to cash. The quick
+    ratio strips inventory out; the cash ratio strips receivables too, asking successively
+    harder versions of the same "could this company cover current liabilities right now"
+    question. current_assets, inventory, cash, and current_liabilities are all already
+    fetched here for derive_altman_z's and derive_piotroski's own working-capital terms --
+    this is pure arithmetic on data already on hand, not a new fetch. Display-only: see
+    docs/VALIDATION-METHODOLOGY.md for what an IC-harness read would need to clear before
+    either could carry a scored weight, the same bar current_ratio itself has not cleared.
+    """
+    current_assets = at(line(balance, "current_assets"))
+    current_liabilities = at(line(balance, "current_liabilities"))
+    inventory = at(line(balance, "inventory"))
+    cash = at(line(balance, "cash"))
+    quick_assets = None if current_assets is None else current_assets - (inventory or 0)
+    return {
+        "quick_ratio": rounded(ratio(quick_assets, current_liabilities), 2),
+        "cash_ratio": rounded(ratio(cash, current_liabilities), 2),
+    }
+
+
 def altman_variant_for(sector):
     """Which Z-score model a sector should be scored against, or None to suppress it."""
     if sector in FINANCIAL_SECTORS:
@@ -588,6 +612,38 @@ def derive_capital_allocation(income, balance, cashflow, market_cap=None):
     }
 
 
+def derive_shareholder_yield(info, capital_allocation):
+    """Combined dividend + buyback return to shareholders, and dividend coverage.
+
+    pipeline/config/screen_presets.json's own shareholder_yield preset documents this exact
+    gap: net_buyback_yield (``capital_allocation["net_buyback_yield"]``, from
+    derive_capital_allocation above) is a real, scored quality-sleeve metric, and
+    dividend_yield is published on every row (sourced from info.get("dividendYield") the same
+    way it always has been -- see providers.py's Quote.extras and fetch_advisor.py's
+    {**snapshot, **extended} merge, which this function's own return value never overwrites
+    since it does not publish a `dividend_yield` key of its own), but "no combined
+    shareholder-yield ranking function exists." This is that function, built from the same
+    read rather than a second one, so it can never disagree with the row's own dividend_yield.
+    dividend_coverage_ratio is the reciprocal of payout_ratio (already fetched in
+    derive_market_structure via info.get("payoutRatio")): how many times net income covers the
+    dividend, which reads as unsustainable the moment it drops below 1 without asking the
+    reader to invert an already-published percentage themselves.
+    """
+    dividend_yield = info.get("dividendYield")
+    net_buyback_yield = (capital_allocation or {}).get("net_buyback_yield")
+    shareholder_yield = None
+    if isinstance(dividend_yield, (int, float)) and net_buyback_yield is not None:
+        shareholder_yield = dividend_yield + net_buyback_yield
+    payout_ratio = info.get("payoutRatio")
+    dividend_coverage_ratio = None
+    if isinstance(payout_ratio, (int, float)) and payout_ratio > 0:
+        dividend_coverage_ratio = 1 / payout_ratio
+    return {
+        "shareholder_yield": rounded(shareholder_yield),
+        "dividend_coverage_ratio": rounded(dividend_coverage_ratio, 2),
+    }
+
+
 # ---------------- valuation ----------------
 
 def derive_enterprise_multiples(income, balance, cashflow, info, market_cap):
@@ -657,6 +713,44 @@ def derive_tangible_returns(income, balance):
     base = average(tangible(0), tangible(1)) or tangible(0)
     if base is None or base <= 0:
         return None
+    return rounded(ratio(net_income, base))
+
+
+def derive_dupont_roe(income, balance):
+    """ROE's three multiplicative drivers: net margin x asset turnover x equity multiplier.
+
+    return_on_equity itself is a provider passthrough (info.get("returnOnEquity"), see
+    canonical_metrics.py) and is scored as-is under profitability. This decomposes the same
+    idea into *why* a company's ROE is what it is -- profitability, capital efficiency, or
+    leverage -- reusing exactly the statement fields already fetched elsewhere in this file:
+    derive_altman_z already computes an asset-turnover term (revenue / assets) internally for
+    its own z-score and discards it; derive_tangible_returns already fetches equity. The three
+    factors multiply back to net_income / average_equity, which will not exactly equal the
+    provider's own return_on_equity figure (that may use trailing-twelve-month net income or a
+    different equity base) -- this function does not silently substitute the provider figure
+    into a decomposition it was not computed from, so a reader comparing the two sees the real
+    reconciliation gap rather than a manufactured match.
+    """
+    net_income = at(line(income, "net_income"))
+    revenue = at(line(income, "revenue"))
+    assets = average(at(line(balance, "total_assets")), at(line(balance, "total_assets"), 1))
+    if assets is None:
+        assets = at(line(balance, "total_assets"))
+    equity = average(at(line(balance, "equity")), at(line(balance, "equity"), 1))
+    if equity is None:
+        equity = at(line(balance, "equity"))
+    net_margin = ratio(net_income, revenue)
+    asset_turnover = ratio(revenue, assets)
+    equity_multiplier = ratio(assets, equity)
+    decomposed_roe = None
+    if net_margin is not None and asset_turnover is not None and equity_multiplier is not None:
+        decomposed_roe = net_margin * asset_turnover * equity_multiplier
+    return {
+        "dupont_net_margin": rounded(net_margin),
+        "dupont_asset_turnover": rounded(asset_turnover, 2),
+        "dupont_equity_multiplier": rounded(equity_multiplier, 2),
+        "dupont_roe": rounded(decomposed_roe),
+    }
     return rounded(ratio(net_income, base))
 
 
@@ -798,7 +892,11 @@ def derive_extended(*, annual, quarterly=None, info=None, market_cap=None, price
     }
     metrics.update(derive_margins(income))
     metrics.update(derive_working_capital_trends(income, balance))
-    metrics.update(derive_capital_allocation(income, balance, cashflow, market_cap))
+    metrics.update(derive_liquidity_ratios(balance))
+    metrics.update(derive_dupont_roe(income, balance))
+    capital_allocation = derive_capital_allocation(income, balance, cashflow, market_cap)
+    metrics.update(capital_allocation)
+    metrics.update(derive_shareholder_yield(info, capital_allocation))
     metrics.update(derive_enterprise_multiples(income, balance, cashflow, info, market_cap))
     metrics.update(derive_market_structure(info, price, closes, volumes))
     metrics["piotroski_tests"] = {key: value for key, value in piotroski_tests.items() if value is not None}
