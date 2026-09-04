@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 105,
+  "refreshes_observed": 106,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -18425,6 +18425,66 @@
           ],
           "score_delta": -0.6,
           "confidence_delta": 0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-04T19:24:56.613253+00:00",
+      "current_refresh": "advisor-2026-09-04T21:52:22.161355+00:00",
+      "shared_tickers": 895,
+      "rank_turnover": {
+        "top_40": 0.05,
+        "top_100": 0.05
+      },
+      "tickers_with_availability_driven_change": 5,
+      "tickers_with_availability_driven_change_pct": 0.006,
+      "mean_abs_score_delta": 0.28,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 3.1,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "CRDO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -2.2,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "SNX",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.2,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 0.8,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "WDC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 0.8,
+          "confidence_delta": -0.01
         }
       ]
     }

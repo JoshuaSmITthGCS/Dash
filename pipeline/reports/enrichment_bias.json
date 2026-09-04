@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-04T19:31:20.981010+00:00",
+  "generated_at": "2026-09-04T21:57:09.353333+00:00",
   "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
   "coverage_by_collection": {
     "research": {
@@ -27,7 +27,7 @@
           "total": 40
         },
         "valuation": {
-          "scored": 40,
+          "scored": 39,
           "total": 40
         }
       }
@@ -71,13 +71,13 @@
         "n": 891,
         "mean": 63.69,
         "median": 65.1,
-        "stdev": 11.49
+        "stdev": 11.36
       },
       "non_enriched": {
         "n": 4,
-        "mean": 67.7,
-        "median": 72.65,
-        "stdev": 9.45
+        "mean": 67.75,
+        "median": 72.55,
+        "stdev": 9.5
       }
     },
     "sector_distribution": {
@@ -103,7 +103,7 @@
     },
     "market_cap_comparison": {
       "status": "not_measurable",
-      "rows_with_market_cap": 40,
+      "rows_with_market_cap": 38,
       "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
     },
     "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
