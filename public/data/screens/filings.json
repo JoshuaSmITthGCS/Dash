@@ -1,13 +1,13 @@
 {
   "schema_version": "1.0.0",
   "model_version": "sec-filings-v1.0.0",
-  "generated_at": "2026-09-01T17:20:20.197155+00:00",
+  "generated_at": "2026-09-04T16:51:25.956236+00:00",
   "status": "success",
   "degraded_reason": null,
-  "symbols_reviewed": 109,
-  "symbols_configured": 109,
+  "symbols_reviewed": 124,
+  "symbols_configured": 124,
   "failures": [],
-  "new_filings_logged": 18,
+  "new_filings_logged": 206,
   "disclaimer": "10-K/10-Q dates and late-filing notices (NT 10-K/NT 10-Q), DEF 14A form variant (contested DEFC14A / soliciting-material DEFA14A), and 8-K Item-code materiality, classified from SEC EDGAR form codes alone - never parsed from filing text. Coverage is limited to the currently scored shortlist, not the full universe.",
   "results": [
     {
@@ -415,6 +415,43 @@
       }
     },
     {
+      "ticker": "AMD",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-02-04",
+        "latest_10q_filed": "2026-08-05",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": -0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 2,
+        "latest_item": "1.02",
+        "latest_filed": "2026-05-15",
+        "points": -0.0,
+        "notes": [
+          "8-K Item 1.02 filed 2026-05-15 has decayed out of the scoring window"
+        ],
+        "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
+      }
+    },
+    {
       "ticker": "AMKR",
       "filing_integrity": {
         "score_points": 0.0,
@@ -584,30 +621,6 @@
       }
     },
     {
-      "ticker": "ASML",
-      "filing_integrity": {
-        "score_points": 0.0,
-        "available": false,
-        "latest_10k_filed": null,
-        "latest_10q_filed": null,
-        "points": 0.0,
-        "notes": [],
-        "reason": "no 10-K/10-Q/NT filing activity reviewed"
-      },
-      "proxy_activity": {
-        "score_points": 0.0,
-        "available": false,
-        "reason": "no DEF 14A filings reviewed",
-        "filings_reviewed": 0
-      },
-      "eightk_activity": {
-        "score_points": 0.0,
-        "available": false,
-        "reason": "no 8-K filings reviewed",
-        "filings_reviewed": 0
-      }
-    },
-    {
       "ticker": "ASTS",
       "filing_integrity": {
         "score_points": 0.0,
@@ -631,17 +644,50 @@
         ]
       },
       "eightk_activity": {
-        "score_points": -0.52,
+        "score_points": -0.48,
         "available": true,
         "filings_reviewed": 8,
         "material_items": 1,
         "latest_item": "3.02",
         "latest_filed": "2026-07-20",
-        "points": -0.52,
+        "points": -0.48,
         "notes": [
-          "8-K Item 3.02 filed 2026-07-20 (43 day(s) ago) is a materially negative event"
+          "8-K Item 3.02 filed 2026-07-20 (46 day(s) ago) is a materially negative event"
         ],
         "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
+      }
+    },
+    {
+      "ticker": "AVGO",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2025-12-18",
+        "latest_10q_filed": "2026-06-09",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
       }
     },
     {
@@ -744,12 +790,78 @@
       }
     },
     {
+      "ticker": "BC",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-02-13",
+        "latest_10q_filed": "2026-08-05",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
+      }
+    },
+    {
       "ticker": "BMY",
       "filing_integrity": {
         "score_points": 0.0,
         "available": true,
         "latest_10k_filed": "2026-02-11",
         "latest_10q_filed": "2026-07-30",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
+      }
+    },
+    {
+      "ticker": "BPOP",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-03-02",
+        "latest_10q_filed": "2026-08-07",
         "points": 0.0,
         "notes": [
           "no late-filing notification (NT 10-K/NT 10-Q) on record"
@@ -800,15 +912,15 @@
         ]
       },
       "eightk_activity": {
-        "score_points": -1.04,
+        "score_points": -0.97,
         "available": true,
         "filings_reviewed": 8,
         "material_items": 1,
         "latest_item": "2.05",
         "latest_filed": "2026-07-27",
-        "points": -1.04,
+        "points": -0.97,
         "notes": [
-          "8-K Item 2.05 filed 2026-07-27 (36 day(s) ago) is a materially negative event"
+          "8-K Item 2.05 filed 2026-07-27 (39 day(s) ago) is a materially negative event"
         ],
         "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
       }
@@ -1045,6 +1157,39 @@
       }
     },
     {
+      "ticker": "CNC",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-02-17",
+        "latest_10q_filed": "2026-07-28",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
+      }
+    },
+    {
       "ticker": "COF",
       "filing_integrity": {
         "score_points": 0.0,
@@ -1098,6 +1243,39 @@
         "points": 0.0,
         "notes": [
           "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
+      }
+    },
+    {
+      "ticker": "CRM",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-03-02",
+        "latest_10q_filed": "2026-08-27",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 3,
+        "points": 0.0,
+        "notes": [
+          "3 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
         ]
       },
       "eightk_activity": {
@@ -1200,15 +1378,15 @@
         ]
       },
       "eightk_activity": {
-        "score_points": -0.24,
+        "score_points": -0.23,
         "available": true,
         "filings_reviewed": 8,
-        "material_items": 3,
+        "material_items": 2,
         "latest_item": "3.02",
         "latest_filed": "2026-06-17",
-        "points": -0.24,
+        "points": -0.23,
         "notes": [
-          "8-K Item 3.02 filed 2026-06-17 (76 day(s) ago) is a materially negative event"
+          "8-K Item 3.02 filed 2026-06-17 (79 day(s) ago) is a materially negative event"
         ],
         "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
       }
@@ -1337,6 +1515,39 @@
       }
     },
     {
+      "ticker": "EIX",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-02-18",
+        "latest_10q_filed": "2026-07-30",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 0,
+        "points": 0.0,
+        "notes": [
+          "no contested (DEFC14A) or soliciting-material (DEFA14A) proxy filings"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
+      }
+    },
+    {
       "ticker": "ENS",
       "filing_integrity": {
         "score_points": 0.0,
@@ -1441,39 +1652,6 @@
           "8-K Item 1.02 filed 2026-03-10 has decayed out of the scoring window"
         ],
         "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
-      }
-    },
-    {
-      "ticker": "EXEL",
-      "filing_integrity": {
-        "score_points": 0.0,
-        "available": true,
-        "latest_10k_filed": "2026-02-10",
-        "latest_10q_filed": "2026-08-05",
-        "points": 0.0,
-        "notes": [
-          "no late-filing notification (NT 10-K/NT 10-Q) on record"
-        ]
-      },
-      "proxy_activity": {
-        "score_points": 0.0,
-        "available": true,
-        "filings_reviewed": 3,
-        "contested_filings": 0,
-        "soliciting_material_filings": 2,
-        "points": 0.0,
-        "notes": [
-          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
-        ]
-      },
-      "eightk_activity": {
-        "score_points": 0.0,
-        "available": true,
-        "filings_reviewed": 8,
-        "material_items": 0,
-        "notes": [
-          "no materially negative 8-K item in the reviewed filings"
-        ]
       }
     },
     {
@@ -1617,6 +1795,39 @@
       }
     },
     {
+      "ticker": "FTI",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-02-19",
+        "latest_10q_filed": "2026-07-30",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
+      }
+    },
+    {
       "ticker": "GL",
       "filing_integrity": {
         "score_points": 0.0,
@@ -1716,6 +1927,72 @@
       }
     },
     {
+      "ticker": "HALO",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-02-17",
+        "latest_10q_filed": "2026-08-06",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
+      }
+    },
+    {
+      "ticker": "HELE",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-04-23",
+        "latest_10q_filed": "2026-07-08",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
+      }
+    },
+    {
       "ticker": "HIG",
       "filing_integrity": {
         "score_points": 0.0,
@@ -1755,6 +2032,39 @@
         "available": true,
         "latest_10k_filed": "2026-02-05",
         "latest_10q_filed": "2026-07-30",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
+      }
+    },
+    {
+      "ticker": "INCY",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-02-10",
+        "latest_10q_filed": "2026-07-28",
         "points": 0.0,
         "notes": [
           "no late-filing notification (NT 10-K/NT 10-Q) on record"
@@ -1825,6 +2135,39 @@
         "available": true,
         "latest_10k_filed": "2026-02-19",
         "latest_10q_filed": "2026-07-30",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
+      }
+    },
+    {
+      "ticker": "KEX",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-02-17",
+        "latest_10q_filed": "2026-08-05",
         "points": 0.0,
         "notes": [
           "no late-filing notification (NT 10-K/NT 10-Q) on record"
@@ -2022,7 +2365,7 @@
         "score_points": 0.0,
         "available": true,
         "latest_10k_filed": "2026-03-17",
-        "latest_10q_filed": "2026-06-04",
+        "latest_10q_filed": "2026-09-03",
         "points": 0.0,
         "notes": [
           "no late-filing notification (NT 10-K/NT 10-Q) on record"
@@ -2037,6 +2380,39 @@
         "points": 0.0,
         "notes": [
           "3 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
+      }
+    },
+    {
+      "ticker": "LYB",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-02-20",
+        "latest_10q_filed": "2026-07-31",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
         ]
       },
       "eightk_activity": {
@@ -2073,15 +2449,15 @@
         ]
       },
       "eightk_activity": {
-        "score_points": -0.37,
+        "score_points": -0.34,
         "available": true,
         "filings_reviewed": 8,
         "material_items": 1,
         "latest_item": "1.02",
         "latest_filed": "2026-06-24",
-        "points": -0.37,
+        "points": -0.34,
         "notes": [
-          "8-K Item 1.02 filed 2026-06-24 (69 day(s) ago) is a materially negative event"
+          "8-K Item 1.02 filed 2026-06-24 (72 day(s) ago) is a materially negative event"
         ],
         "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
       }
@@ -2143,15 +2519,15 @@
         ]
       },
       "eightk_activity": {
-        "score_points": -0.52,
+        "score_points": -0.48,
         "available": true,
         "filings_reviewed": 8,
         "material_items": 1,
         "latest_item": "3.02",
         "latest_filed": "2026-07-20",
-        "points": -0.52,
+        "points": -0.48,
         "notes": [
-          "8-K Item 3.02 filed 2026-07-20 (43 day(s) ago) is a materially negative event"
+          "8-K Item 3.02 filed 2026-07-20 (46 day(s) ago) is a materially negative event"
         ],
         "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
       }
@@ -2359,6 +2735,43 @@
       }
     },
     {
+      "ticker": "MUR",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-02-25",
+        "latest_10q_filed": "2026-08-05",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": -0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 1,
+        "latest_item": "2.04",
+        "latest_filed": "2026-01-08",
+        "points": -0.0,
+        "notes": [
+          "8-K Item 2.04 filed 2026-01-08 has decayed out of the scoring window"
+        ],
+        "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
+      }
+    },
+    {
       "ticker": "NBIS",
       "filing_integrity": {
         "score_points": 0.0,
@@ -2439,15 +2852,15 @@
         ]
       },
       "eightk_activity": {
-        "score_points": -1.26,
+        "score_points": -1.17,
         "available": true,
         "filings_reviewed": 8,
         "material_items": 3,
         "latest_item": "2.05",
         "latest_filed": "2026-08-04",
-        "points": -1.26,
+        "points": -1.17,
         "notes": [
-          "8-K Item 2.05 filed 2026-08-04 (28 day(s) ago) is a materially negative event"
+          "8-K Item 2.05 filed 2026-08-04 (31 day(s) ago) is a materially negative event"
         ],
         "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
       }
@@ -2492,6 +2905,39 @@
         "available": true,
         "latest_10k_filed": "2026-02-25",
         "latest_10q_filed": "2026-08-12",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
+      }
+    },
+    {
+      "ticker": "NVST",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-02-12",
+        "latest_10q_filed": "2026-08-05",
         "points": 0.0,
         "notes": [
           "no late-filing notification (NT 10-K/NT 10-Q) on record"
@@ -2645,15 +3091,15 @@
         ]
       },
       "eightk_activity": {
-        "score_points": -0.28,
+        "score_points": -0.27,
         "available": true,
         "filings_reviewed": 8,
         "material_items": 1,
         "latest_item": "3.02",
         "latest_filed": "2026-06-24",
-        "points": -0.28,
+        "points": -0.27,
         "notes": [
-          "8-K Item 3.02 filed 2026-06-24 (69 day(s) ago) is a materially negative event"
+          "8-K Item 3.02 filed 2026-06-24 (72 day(s) ago) is a materially negative event"
         ],
         "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
       }
@@ -2762,12 +3208,12 @@
       }
     },
     {
-      "ticker": "RLI",
+      "ticker": "RNR",
       "filing_integrity": {
         "score_points": 0.0,
         "available": true,
-        "latest_10k_filed": "2026-02-20",
-        "latest_10q_filed": "2026-07-24",
+        "latest_10k_filed": "2026-02-11",
+        "latest_10q_filed": "2026-07-23",
         "points": 0.0,
         "notes": [
           "no late-filing notification (NT 10-K/NT 10-Q) on record"
@@ -2795,12 +3241,12 @@
       }
     },
     {
-      "ticker": "RNR",
+      "ticker": "RVMD",
       "filing_integrity": {
         "score_points": 0.0,
         "available": true,
-        "latest_10k_filed": "2026-02-11",
-        "latest_10q_filed": "2026-07-23",
+        "latest_10k_filed": "2026-02-25",
+        "latest_10q_filed": "2026-08-05",
         "points": 0.0,
         "notes": [
           "no late-filing notification (NT 10-K/NT 10-Q) on record"
@@ -2917,15 +3363,15 @@
         ]
       },
       "eightk_activity": {
-        "score_points": -0.17,
+        "score_points": -0.0,
         "available": true,
         "filings_reviewed": 8,
         "material_items": 1,
         "latest_item": "3.02",
         "latest_filed": "2026-06-03",
-        "points": -0.17,
+        "points": -0.0,
         "notes": [
-          "8-K Item 3.02 filed 2026-06-03 (90 day(s) ago) is a materially negative event"
+          "8-K Item 3.02 filed 2026-06-03 has decayed out of the scoring window"
         ],
         "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
       }
@@ -2954,17 +3400,50 @@
         ]
       },
       "eightk_activity": {
-        "score_points": -1.6,
+        "score_points": -1.5,
         "available": true,
         "filings_reviewed": 8,
         "material_items": 1,
         "latest_item": "1.02",
         "latest_filed": "2026-08-27",
-        "points": -1.6,
+        "points": -1.5,
         "notes": [
-          "8-K Item 1.02 filed 2026-08-27 (5 day(s) ago) is a materially negative event"
+          "8-K Item 1.02 filed 2026-08-27 (8 day(s) ago) is a materially negative event"
         ],
         "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
+      }
+    },
+    {
+      "ticker": "SPB",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2025-11-18",
+        "latest_10q_filed": "2026-08-07",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
       }
     },
     {
@@ -3061,15 +3540,15 @@
         ]
       },
       "eightk_activity": {
-        "score_points": -0.37,
+        "score_points": -0.34,
         "available": true,
         "filings_reviewed": 8,
         "material_items": 1,
         "latest_item": "1.02",
         "latest_filed": "2026-06-24",
-        "points": -0.37,
+        "points": -0.34,
         "notes": [
-          "8-K Item 1.02 filed 2026-06-24 (69 day(s) ago) is a materially negative event"
+          "8-K Item 1.02 filed 2026-06-24 (72 day(s) ago) is a materially negative event"
         ],
         "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
       }
@@ -3363,6 +3842,39 @@
       }
     },
     {
+      "ticker": "UTHR",
+      "filing_integrity": {
+        "score_points": 0.0,
+        "available": true,
+        "latest_10k_filed": "2026-02-25",
+        "latest_10q_filed": "2026-08-05",
+        "points": 0.0,
+        "notes": [
+          "no late-filing notification (NT 10-K/NT 10-Q) on record"
+        ]
+      },
+      "proxy_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 3,
+        "contested_filings": 0,
+        "soliciting_material_filings": 2,
+        "points": 0.0,
+        "notes": [
+          "2 DEFA14A soliciting-material filing(s) seen - informational only, not scored"
+        ]
+      },
+      "eightk_activity": {
+        "score_points": 0.0,
+        "available": true,
+        "filings_reviewed": 8,
+        "material_items": 0,
+        "notes": [
+          "no materially negative 8-K item in the reviewed filings"
+        ]
+      }
+    },
+    {
       "ticker": "VGT",
       "filing_integrity": {
         "score_points": 0.0,
@@ -3537,15 +4049,15 @@
         ]
       },
       "eightk_activity": {
-        "score_points": -1.22,
+        "score_points": -1.14,
         "available": true,
         "filings_reviewed": 8,
         "material_items": 2,
         "latest_item": "3.02",
         "latest_filed": "2026-08-26",
-        "points": -1.22,
+        "points": -1.14,
         "notes": [
-          "8-K Item 3.02 filed 2026-08-26 (6 day(s) ago) is a materially negative event"
+          "8-K Item 3.02 filed 2026-08-26 (9 day(s) ago) is a materially negative event"
         ],
         "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
       }
@@ -3640,15 +4152,15 @@
         ]
       },
       "eightk_activity": {
-        "score_points": -0.78,
+        "score_points": -0.73,
         "available": true,
         "filings_reviewed": 8,
         "material_items": 3,
         "latest_item": "1.02",
         "latest_filed": "2026-07-27",
-        "points": -0.78,
+        "points": -0.73,
         "notes": [
-          "8-K Item 1.02 filed 2026-07-27 (36 day(s) ago) is a materially negative event"
+          "8-K Item 1.02 filed 2026-07-27 (39 day(s) ago) is a materially negative event"
         ],
         "method": "SEC 8-K Item-code materiality lookup; freshest qualifying item only; 30-day half-life"
       }
@@ -3656,8 +4168,8 @@
   ],
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "52662bb5872ebb8da8c1999e29c95df8050e9288",
-    "config_hash": "a0b747109820f48effbd8dabf5a30f2760e191e1e63f004cdc13c18247360c63",
-    "generated_at": "2026-09-01T17:20:20.197155+00:00"
+    "git_commit_sha": "4a71bc0abf65f002fbd4561558ce152db7109e63",
+    "config_hash": "25d2d1684035bb35da4d7d84b3214da8bbd4212f5398325c2e9caf43de93a922",
+    "generated_at": "2026-09-04T16:51:25.956236+00:00"
   }
 }
