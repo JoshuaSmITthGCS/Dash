@@ -53,6 +53,42 @@ function NewsSortToolbar({ sort, onSortKey, onToggleDirection }) {
   )
 }
 
+// The subset of news_intelligence.py's event taxonomy that names a discrete, idiosyncratic
+// catalyst rather than routine coverage (earnings/guidance/product/analyst chatter) - the
+// "why did this specific thing happen" bucket: litigation, a regulatory action, a deal, a
+// government-contract-or-stake event, a congressional disclosure naming the ticker, or a
+// macro/policy shock (tariffs, rate decisions). Kept in sync by hand with
+// pipeline/config/settings.json's news_intelligence.event_type_markers - there is no schema
+// linking the two, so a new marker added there needs a decision here too.
+const IDIOSYNCRATIC_EVENT_TYPES = ['litigation', 'regulatory', 'm_and_a', 'government_contract', 'political_disclosure', 'macro_exposure']
+
+const EVENT_TYPE_LABELS = {
+  litigation: 'Litigation',
+  regulatory: 'Regulatory action',
+  m_and_a: 'M&A',
+  government_contract: 'Government contract/stake',
+  political_disclosure: 'Political disclosure',
+  macro_exposure: 'Macro/policy',
+}
+
+function isIdiosyncratic(item) {
+  return (item.event_types || []).some((type) => IDIOSYNCRATIC_EVENT_TYPES.includes(type)) || Boolean(item.affiliation)
+}
+
+function EventTypeChips({ item }) {
+  const types = (item.event_types || []).filter((type) => IDIOSYNCRATIC_EVENT_TYPES.includes(type))
+  if (!types.length && !item.affiliation) return null
+  return <div className="news-catalyst-tags">
+    {types.map((type) => <span key={type} className="chip catalyst-tag">{EVENT_TYPE_LABELS[type] || type}</span>)}
+    {item.affiliation && (
+      <span className="chip catalyst-tag catalyst-tag-affiliation" title={item.affiliation.individuals?.map((person) =>
+        `${person.name} — ${person.role}${person.note ? `: ${person.note}` : ''}`).join('\n')}>
+        {item.affiliation.label}
+      </span>
+    )}
+  </div>
+}
+
 function NewsCard({ item, index }) {
   return <a className="card card-pad news-card" href={item.url} target="_blank" rel="noreferrer"
     key={`${item.url}-${index}`}>
@@ -72,6 +108,7 @@ function NewsCard({ item, index }) {
     </div>
     <strong>{item.title}</strong>
     <p>{item.summary}</p>
+    <EventTypeChips item={item} />
     {item.research_rank != null && <small className="news-context">
       {item.published_research
         ? `Published research rank #${item.research_rank}`
@@ -107,12 +144,26 @@ export default function PolicyRadar() {
   const news = sortNews(enrichedNews, newsSort.key, newsSort.direction)
   const publishedNews = news.filter((item) => publishedTickers.has(item.ticker))
   const discoveryNews = news.filter((item) => !publishedTickers.has(item.ticker))
+  const idiosyncraticNews = news.filter(isIdiosyncratic)
   const setSortKey = (key) => setNewsSort(nextNewsSort(newsSort, key))
   const toggleSortDirection = () => setNewsSort({ ...newsSort, direction: newsSort.direction === 'asc' ? 'desc' : 'asc' })
   return <>
     <div className="page-head"><div><h1 className="page-title">Market <span className="accent">pulse</span></h1><p className="page-sub">Company news and sentiment are supporting evidence–not a substitute for earnings, cash flow, or balance-sheet quality.</p></div></div>
     {usMarket && <div className="callout"><strong>U.S. equities: {usMarket.current_status}</strong> · {usMarket.primary_exchanges} · regular session {usMarket.local_open}–{usMarket.local_close} local exchange time</div>}
     {news.length > 0 && <NewsSortToolbar sort={newsSort} onSortKey={setSortKey} onToggleDirection={toggleSortDirection} />}
+
+    {idiosyncraticNews.length > 0 && <>
+      <div className="sec-label">Idiosyncratic catalysts</div>
+      <p className="body-copy news-discovery-note">
+        A single discrete event rather than routine coverage - litigation, a regulatory action, a deal,
+        a government contract or equity stake, a congressional disclosure, or a tariff/macro-policy
+        shock - plus any disclosed ownership or leadership affiliation on file for that ticker. These
+        are the movers that don't fit a repeatable screen; each is a one-off to look into on its own,
+        not a scored signal.
+      </p>
+      <div className="grid">{idiosyncraticNews.map((item, index) => <NewsCard item={item} index={index} key={`idio-${item.url}-${index}`} />)}</div>
+    </>}
+
     <div className="sec-label">News for published research</div>
     <div className="grid">{publishedNews.map((item, index) => <NewsCard item={item} index={index} key={`${item.url}-${index}`} />)}</div>
     {!publishedNews.length && <div className="inline-empty">No recent articles matched the published research companies.</div>}

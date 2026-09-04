@@ -1,0 +1,114 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+theme:
+  id: ai_optical_interconnect
+  display_name: "AI Data-Center Optical Interconnect"
+  taxonomy_tag: AI_OPTICAL_NETWORKING
+  root_driver_tag: ELECTRIFICATION_DEMAND
+  version: 1
+  status: active
+  created: 2026-09-04
+
+  chain:
+    root_driver: >
+      Training and serving large models at hyperscaler scale requires lashing tens of
+      thousands of accelerators together with enough bandwidth that copper interconnect runs
+      out of reach past a few meters, forcing a wholesale shift from copper to optical links
+      inside and between racks.
+    first_order: >
+      Makers of the pluggable optical transceivers themselves and the components inside them
+      - most acutely the EML (electro-absorption modulated laser) chips whose yields have not
+      kept pace with the 800G-to-1.6T transition, making the laser the physical pacing item
+      for how many transceivers can actually ship.
+    second_order: >
+      Fiber, connectivity, and packaging suppliers into that same buildout, plus the
+      networking-silicon and active-electrical-cable makers that sit at the board edge doing
+      the same bandwidth job at shorter reach.
+    disconfirming: >
+      Hyperscaler capex guidance cut or deferred; transceiver order books shortening rather
+      than extending past 2027-2028; a laser-yield breakthrough (silicon photonics or a new
+      EML process) that removes the scarcity; co-packaged optics reaching volume production
+      and disintermediating pluggable-transceiver demand rather than adding to it.
+
+  roles:
+    root:
+      industries: ["communications equipment", "electronic components"]
+      tickers: [LITE, AAOI, CRDO]
+    supplier:
+      industries: ["electronic components", "semiconductors"]
+    infrastructure:
+      industries: ["scientific & technical instruments", "electronic components"]
+      tickers: [GLW]
+
+  thesis: >
+    The 800G-to-1.6T transceiver transition created a hard manufacturing bottleneck - EML
+    laser yield, not demand - that left even a mid-cap component maker (Lumentum) sold out on
+    capacity through 2027-2028 and produced one of the single largest trailing-12-month
+    returns in the entire US market from a name most investors had written off after the
+    2022-2023 telecom-spending downturn. Order backlog at these transceiver and connectivity
+    makers is a cleaner, earlier read on whether the AI buildout is real than the accelerator
+    names themselves, which have priced this exposure for years.
+
+  # Anchors for peer expansion and a sanity check on the keyword list, not the universe.
+  seed_tickers: [LITE, AAOI, CRDO, GLW, COHR, FN]
+  expand_via_tnic: true
+  sectors: [Technology, Industrials]
+  industries:
+    - "communications equipment"
+    - "electronic components"
+    - "semiconductors"
+    - "scientific & technical instruments"
+  keywords:
+    include:
+      - "optical transceiver"
+      - "800G"
+      - "1.6T"
+      - "EML laser"
+      - "co-packaged optics"
+      - "silicon photonics"
+      - "active electrical cable"
+      - "pluggable optics"
+      - "data center interconnect"
+      - "sold out through"
+    exclude:
+      # Guards against unrelated "optical"/"fiber" language outside AI-datacenter networking.
+      - "optical illusion"
+      - "fiber supplement"
+      - "telecom long-haul"
+  sic_codes: [3661, 3674, 3827]   # telephone/telegraph apparatus, semiconductors, lab instruments
+  icb_subsectors: []
+
+  signals:
+    # Backlog is the single cleanest read here: the research finding that motivated this
+    # theme was explicitly "capacity sold out through 2028," i.e. an order-book fact, not a
+    # price fact.
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.30
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.30
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.15
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.15
+    # The hyperscalers whose accelerator buildout this theme is upstream of.
+    - name: hyperscaler_capex_growth
+      source: edgar_xbrl_capex
+      universe: [MSFT, GOOGL, AMZN, META]
+      leading: true
+      weight: 0.10
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

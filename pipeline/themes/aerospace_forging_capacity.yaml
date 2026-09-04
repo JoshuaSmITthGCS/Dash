@@ -1,0 +1,113 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+# Added alongside two AI-linked themes (ai_optical_interconnect, storage_capacity_shortage)
+# as the cleanest NON-AI structural bottleneck a 2026-09-04 market-wide gainer survey found:
+# Howmet's trailing-12-month return traces to aircraft build-rate demand and a physical
+# superalloy forging/casting capacity constraint, not AI-datacenter capex.
+theme:
+  id: aerospace_forging_capacity
+  display_name: "Aerospace Forging & Casting Capacity"
+  taxonomy_tag: AEROSPACE_STRUCTURAL_COMPONENTS
+  # Not a claim about one of theme_graph.ROOT_DRIVER_TAXONOMY's five macro drivers - this is
+  # a commercial-aviation production-rate ramp, not electrification, deglobalization/security,
+  # demographic, disease, or resource-scarcity demand. Left null rather than force-fit, the
+  # same treatment cybersecurity and digital_payments get.
+  root_driver_tag: null
+  version: 1
+  status: active
+  created: 2026-09-04
+
+  chain:
+    root_driver: >
+      Boeing and Airbus have spent 2025-2026 ramping narrow-body build rates back toward and
+      past pre-2019-MAX-grounding levels, while the specialized superalloy forging and casting
+      capacity that shapes titanium and nickel structural and engine parts was never rebuilt
+      to match - a decade of underinvestment meeting a demand ramp, the same shape as the
+      semicap and memory bottlenecks but with a physical furnace and forge press as the
+      constraint instead of a fab or a laser line.
+    first_order: >
+      The forging and casting houses whose capacity is the pacing item for both airframe
+      structural parts and jet-engine turbine components - dominated by a small number of
+      qualified suppliers because requalifying a new forge for a flight-critical part takes
+      years.
+    second_order: >
+      Downstream machining, aftermarket parts, and engine-component suppliers whose volumes
+      move with the same build-rate ramp, one step closer to the finished aircraft or engine.
+    disconfirming: >
+      Boeing/Airbus build-rate guidance cut (as happened repeatedly post-MAX); an OEM
+      qualifying in-house or alternate production that bypasses the incumbent forger - Howmet
+      dropped roughly 20% in one session in 2026 on news that SpaceX was bringing turbine-blade
+      production in-house, a direct demonstration that this moat is not unlimited; a broader
+      narrow-body demand air pocket (recession, fuel-price spike) that pushes airlines to defer
+      deliveries.
+
+  roles:
+    root:
+      industries: ["aerospace & defense"]
+      tickers: [HWM]
+    supplier:
+      industries: ["aerospace & defense", "industrial machinery"]
+      tickers: [HEI, WWD]
+    infrastructure:
+      industries: ["aerospace & defense"]
+      tickers: [TDG]
+
+  thesis: >
+    Howmet was a mature, unglamorous industrial name before a narrow-body production ramp
+    collided with superalloy forging/casting capacity that airlines and OEMs cannot simply
+    order more of - qualifying a new forge for a flight-critical part takes years, not
+    quarters. The move outperformed the broader market by roughly 2.5x over the trailing year
+    with no AI-datacenter linkage at all, and the SpaceX in-house-production episode is a
+    live, dated example of exactly the disconfirming case this theme's guardrails exist to
+    catch rather than ignore.
+
+  # Anchors for peer expansion and a sanity check on the keyword list, not the universe.
+  seed_tickers: [HWM, HEI, WWD, TDG, RTX]
+  expand_via_tnic: true
+  sectors: [Industrials]
+  industries:
+    - "aerospace & defense"
+    - "industrial machinery"
+  keywords:
+    include:
+      - "forging"
+      - "casting"
+      - "superalloy"
+      - "titanium structural"
+      - "nickel-based alloy"
+      - "narrow-body production rate"
+      - "engine build rate"
+      - "qualified supplier"
+    exclude:
+      # Guards against unrelated "forging"/"casting" language (e.g. "forging ahead", metaphor).
+      - "forging a path"
+      - "forging ahead"
+      - "cast a vote"
+  sic_codes: [3724, 3728, 3462]   # aircraft engines, aircraft parts, iron/steel forgings
+  icb_subsectors: []
+
+  signals:
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.35
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.35
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.15
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.15
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

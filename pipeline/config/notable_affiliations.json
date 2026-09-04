@@ -1,0 +1,14 @@
+{
+  "_comment": "Display-only ticker -> disclosed-ownership/leadership affiliation map, surfaced on the news screen's idiosyncratic-catalyst section. This is NOT scored (never read by advisor_engine.py or scorer.py) and never asserts a political judgment on its own - it only echoes facts the maintainer has entered here, each with a verifiable source_url (an SEC filing, a company proxy statement, or a named news report). Add an entry only when the relationship is publicly disclosed and sourced; do not add a name based on rumor or inference. Matching is by ticker only (not text search), so a listed name shows up on every news item for that ticker.",
+  "DJT": {
+    "label": "Majority owner is a sitting or former senior US government official",
+    "individuals": [
+      {
+        "name": "Donald J. Trump",
+        "role": "Majority shareholder (Trump Media & Technology Group)",
+        "note": "Disclosed beneficial ownership in TMTG's SEC filings.",
+        "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=trump+media"
+      }
+    ]
+  }
+}
