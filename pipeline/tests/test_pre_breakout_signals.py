@@ -115,8 +115,15 @@ def _full_coverage_factors(scale=1.0):
         "earnings_acceleration": 1.0 * scale, "revenue_acceleration": 1.0 * scale,
         "roa_delta": 1.0 * scale, "margin_turn": 1.0 * scale,
         "standardized_unexpected_earnings": 1.0 * scale,
-        "momentum_12_1": 1.0 * scale, "path_smoothness": 1.0 * scale,
-        "industry_relative_momentum": 1.0 * scale, "volatility_contraction": 1.0 * scale,
+        "momentum_12_1": 1.0 * scale, "high_52w_drawdown_sigmas": 1.0 * scale,
+        "path_smoothness": 1.0 * scale,
+        "industry_relative_momentum": 1.0 * scale, "volume_ratio_5d_50d": 1.0 * scale,
+        # Negated by PRE_BREAKOUT_SUBFACTORS (extension is a penalty, not a continuation
+        # signal) -- fed in as the opposite sign of `scale` so "larger scale = more bullish
+        # across every subfactor" still holds after that negation, matching every other key
+        # here.
+        "trailing_month_extension": -1.0 * scale,
+        "volatility_contraction": 1.0 * scale,
         "insider_cluster_score": 1.0 * scale, "short_interest_change": 1.0 * scale,
     }
 
@@ -264,6 +271,8 @@ def test_dropping_volatility_contraction_from_momentum_rs_still_produces_a_well_
         0, standardized, reduced_subfactors, reduced_subweights)
 
     assert score is not None
-    assert resolved == 3  # momentum_12_1, path_smoothness, industry_relative_momentum
+    # momentum_12_1, high_52w_drawdown_sigmas, path_smoothness, industry_relative_momentum,
+    # volume_ratio_5d_50d, trailing_month_extension
+    assert resolved == 6
     assert abs(coverage - 1.0) < 1e-9
     assert renorm == 1.0

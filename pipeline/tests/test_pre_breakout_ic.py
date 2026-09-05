@@ -10,9 +10,9 @@ import pre_breakout_pit_store as pbps  # noqa: E402
 import pre_breakout_ic as pbic  # noqa: E402
 
 
-def test_flat_weights_sum_to_one_across_all_eleven_subfactors():
+def test_flat_weights_sum_to_one_across_all_fourteen_subfactors():
     assert abs(sum(pbic.FLAT_WEIGHTS.values()) - 1.0) < 1e-9
-    assert len(pbic.FLAT_WEIGHTS) == 11
+    assert len(pbic.FLAT_WEIGHTS) == 14
 
 
 def test_zero_snapshots_reports_accumulating_with_no_number_published():

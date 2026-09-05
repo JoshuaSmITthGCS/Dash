@@ -15,6 +15,7 @@ FILES = ("trades", "prices", "news", "politicians", "signals", "picks", "status"
 CONGRESS_TRADES_SCHEMA = os.path.join(SCHEMA_DIR, "congress-trades.schema.json")
 PRE_BREAKOUT_SCREEN_PATH = os.path.join(DATA_DIR, "screens", "pre-breakout.json")
 PRE_BREAKOUT_LEGS = {"fundamental_inflection", "momentum_rs", "flow_sentiment"}
+CATALYST_SCREEN_PATH = os.path.join(DATA_DIR, "screens", "catalyst.json")
 
 
 def load(path):
@@ -270,6 +271,37 @@ def pre_breakout_screen_errors():
     return errors
 
 
+def catalyst_screen_errors():
+    """Enforce the catalyst screen's own honesty contract - same pattern and same reasoning
+    as pre_breakout_screen_errors(): no dedicated JSON Schema, a missing/not-yet-built file
+    is not an error, and eligibility must actually mean what it claims.
+    """
+    if not os.path.exists(CATALYST_SCREEN_PATH):
+        return []
+    screen = load(CATALYST_SCREEN_PATH)
+    if screen.get("status") != "success":
+        return []
+    window = screen.get("window") or {}
+    min_days = window.get("minimum_days_to_earnings", 0)
+    max_days = window.get("maximum_days_to_earnings", 14)
+    errors = []
+    for index, row in enumerate(screen.get("results") or []):
+        ticker = row.get("ticker")
+        if row.get("eligibility") and row.get("expected_move_pct") is None:
+            errors.append(f"screens/catalyst.json:results.{index}: row for {ticker} is "
+                          "eligible with no resolved expected_move_pct")
+        days_to_earnings = row.get("days_to_earnings")
+        if row.get("eligibility") and (days_to_earnings is None
+                                       or not (min_days <= days_to_earnings <= max_days)):
+            errors.append(f"screens/catalyst.json:results.{index}: row for {ticker} is "
+                          f"eligible with days_to_earnings={days_to_earnings} outside the "
+                          f"declared [{min_days}, {max_days}] window")
+        if row.get("eligibility") and row.get("reason_codes"):
+            errors.append(f"screens/catalyst.json:results.{index}: row for {ticker} is "
+                          f"eligible despite reason_codes {row['reason_codes']}")
+    return errors
+
+
 def validate(production=False):
     errors = []
     payloads = {}
@@ -393,6 +425,7 @@ def validate(production=False):
     errors.extend(congress_trades_schema_errors())
     errors.extend(swing_context_signal_errors())
     errors.extend(pre_breakout_screen_errors())
+    errors.extend(catalyst_screen_errors())
 
     # Legacy political fixtures stay explicitly demo while the independent advisor and ETF
     # datasets are live.
