@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-04T21:52:22.161355+00:00",
+  "generated_at": "2026-09-06T02:18:08.472534+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "1930426362a48e457db40e7e02ce29afc9937c9a",
-  "config_hash": "25d2d1684035bb35da4d7d84b3214da8bbd4212f5398325c2e9caf43de93a922",
+  "code_commit_hash": "7f9e2c195a9998abd0a9fc34c3e6a307aeae9cfb",
+  "config_hash": "2c789dc1bd47686ef6678a8b171d1cb9292015badf804fbed6fb9c20fbd70e38",
   "headline": {
     "validation_status": "no calibration history yet",
     "ic_periods_accumulated": 0,
@@ -879,7 +879,7 @@
             "total": 40
           },
           "financial_health": {
-            "scored": 32,
+            "scored": 34,
             "total": 40
           },
           "growth": {
@@ -891,65 +891,65 @@
             "total": 40
           },
           "valuation": {
-            "scored": 39,
+            "scored": 40,
             "total": 40
           }
         }
       },
       "screen_universe": {
         "collection": "screen_universe",
-        "total_rows": 855,
+        "total_rows": 854,
         "categories": {
           "accounting_quality": {
-            "scored": 851,
-            "total": 855
+            "scored": 850,
+            "total": 854
           },
           "capital_allocation": {
-            "scored": 852,
-            "total": 855
+            "scored": 851,
+            "total": 854
           },
           "financial_health": {
-            "scored": 816,
-            "total": 855
+            "scored": 813,
+            "total": 854
           },
           "growth": {
-            "scored": 848,
-            "total": 855
+            "scored": 847,
+            "total": 854
           },
           "profitability": {
-            "scored": 852,
-            "total": 855
+            "scored": 851,
+            "total": 854
           },
           "valuation": {
-            "scored": 852,
-            "total": 855
+            "scored": 849,
+            "total": 854
           }
         }
       }
     },
     "enriched_vs_non_enriched": {
-      "enriched_count": 891,
+      "enriched_count": 890,
       "non_enriched_count": 4,
       "score": {
         "enriched": {
-          "n": 891,
-          "mean": 63.69,
-          "median": 65.1,
-          "stdev": 11.36
+          "n": 890,
+          "mean": 63.99,
+          "median": 65.25,
+          "stdev": 11.78
         },
         "non_enriched": {
           "n": 4,
-          "mean": 67.75,
-          "median": 72.55,
-          "stdev": 9.5
+          "mean": 67.78,
+          "median": 72.6,
+          "stdev": 9.52
         }
       },
       "sector_distribution": {
         "enriched": {
           "Technology": 155,
-          "Industrials": 145,
+          "Industrials": 146,
           "Financial Services": 123,
-          "Consumer Cyclical": 114,
+          "Consumer Cyclical": 113,
           "Healthcare": 101,
           "Consumer Defensive": 56,
           "Real Estate": 52,
@@ -957,7 +957,7 @@
           "Basic Materials": 39,
           "Utilities": 37,
           "Communication Services": 26,
-          "Unknown": 2
+          "Unknown": 1
         },
         "non_enriched": {
           "ETF": 2,
@@ -977,8 +977,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "1930426362a48e457db40e7e02ce29afc9937c9a",
-    "config_hash": "25d2d1684035bb35da4d7d84b3214da8bbd4212f5398325c2e9caf43de93a922",
-    "generated_at": "2026-09-04T21:52:22.161355+00:00"
+    "git_commit_sha": "7f9e2c195a9998abd0a9fc34c3e6a307aeae9cfb",
+    "config_hash": "2c789dc1bd47686ef6678a8b171d1cb9292015badf804fbed6fb9c20fbd70e38",
+    "generated_at": "2026-09-06T02:18:08.472534+00:00"
   }
 }

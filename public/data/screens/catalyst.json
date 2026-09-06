@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "model_version": "catalyst-earnings-v0.1.0",
+  "config_version": "screens-v1.0.0",
+  "generated_at": "2026-09-06T02:21:04.392126+00:00",
+  "status": "success",
+  "scope_note": "Earnings-only by design - see catalyst_screen_signals.py's module docstring for why FDA/PDUFA, court rulings, index reconstitution, and government-contract awards are out of scope for this screen rather than missing from it.",
+  "evidence": {
+    "event_isolated_expected_move_pct": {
+      "label": "Event-isolated expected move (variance-difference between the expiry spanning earnings and the one just before it)",
+      "horizon": "through the earnings date",
+      "direction": "n/a - a sizing number, never a directional or over/underpriced claim",
+      "citation": "Dubinsky, Johannes, Kaeck & Seeger, Review of Financial Studies 2019 (\"Option Pricing of Earnings Announcement Risk\"); identity between the straddle and IV formulations: Brenner & Subrahmanyam, Financial Analysts Journal 1988",
+      "effect": "Isolates the incremental variance the market prices into the extra days the event-spanning expiry adds beyond the prior expiry - the catalyst-attributable component, net of ambient daily volatility both expiries otherwise share.",
+      "caveat": "None when the isolation fails to resolve cleanly (no prior expiry, non-positive isolated variance, or either leg's IV/liquidity gate fails) rather than falling back to a cruder single-expiry number - see event_isolated_expected_move_pct and meets_liquidity_floor."
+    },
+    "volatility_risk_premium": {
+      "label": "Market-wide volatility risk premium",
+      "horizon": "n/a - background context for reading the expected move, never scored",
+      "direction": "n/a",
+      "citation": "Coval & Shumway, Journal of Finance 2001; Bakshi & Kapadia, Review of Financial Studies 2003",
+      "effect": "Implied volatility exceeds subsequent realized volatility on average market-wide.",
+      "caveat": "Does NOT transfer cleanly to scheduled earnings specifically - Gao, Xing & Zhang (JFQA 2018) find pre-earnings ATM straddles earn a significant 3.34% return, i.e. earnings uncertainty is on average UNDER-priced, not over-priced. Never scored; published as reading context only."
+    },
+    "pead": {
+      "label": "Post-earnings-announcement drift",
+      "horizon": "n/a - not published by this module",
+      "direction": "n/a",
+      "citation": "Martineau, Journal of Financial Economics 2022; Chordia, Goyal, Sadka, Sadka & Shivakumar, Journal of Financial Economics 2009",
+      "effect": "Classic drift has compressed toward insignificance in large caps since roughly 2005-2006; residual drift in small/illiquid names is largely consumed by transaction costs.",
+      "caveat": "CONTESTED and not scored anywhere in this module. This codebase's PEAD reading already lives in pre_breakout_signals.py's standardized_unexpected_earnings subfactor - this screen does not duplicate it."
+    }
+  },
+  "window": {
+    "minimum_price": 5,
+    "minimum_market_cap": 300000000,
+    "minimum_underlying_dollar_volume": 5000000,
+    "minimum_days_to_earnings": 0,
+    "maximum_days_to_earnings": 14,
+    "minimum_open_interest": 500
+  },
+  "eligible_count": 0,
+  "scored_count": 0,
+  "results": [],
+  "model_metadata": {
+    "semantic_version": "3.2.0",
+    "git_commit_sha": "7f9e2c195a9998abd0a9fc34c3e6a307aeae9cfb",
+    "config_hash": "2c789dc1bd47686ef6678a8b171d1cb9292015badf804fbed6fb9c20fbd70e38",
+    "generated_at": "2026-09-06T02:21:04.392126+00:00"
+  }
+}
