@@ -1,0 +1,108 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+# Added from a second-pass Claude Research screen (2026-09) that found this the one new
+# non-AI-only structural bottleneck durable and multi-sourced enough to be screen-worthy:
+# large power transformers, generator step-up units, and MV/HV switchgear, where demand
+# comes from utilities, renewables, reshoring, and data centers at once - not any single
+# buyer. Distinct from ai_infrastructure.yaml's VRT/ETN enabler role: this theme is the
+# heavy-electrical-equipment backlog itself, not the AI-datacenter buildout specifically.
+theme:
+  id: grid_power_equipment
+  display_name: "Grid Power Equipment Backlog"
+  taxonomy_tag: GRID_ELECTRICAL_EQUIPMENT
+  root_driver_tag: ELECTRIFICATION_DEMAND
+  version: 1
+  status: active
+  created: 2026-09-05
+
+  chain:
+    root_driver: >
+      More than half of the roughly 40 million US distribution transformers are past their
+      service life, while utility grid hardening, renewables interconnection, EV/building
+      electrification, industrial reshoring, and data-center buildout all compete for the
+      same finite large-power-transformer, generator-step-up-unit, and switchgear capacity at
+      once - a multi-buyer demand shock hitting equipment with multi-year lead times.
+    first_order: >
+      Large power transformer, generator step-up unit, and medium/high-voltage switchgear and
+      circuit-breaker manufacturers, whose 2025-2026 lead times ran roughly 125-144 weeks and
+      whose backlogs and book-to-bill ratios are running at multi-year highs.
+    second_order: >
+      Electrical contractors and EPC firms who install this equipment and whose own backlog
+      moves with the same order book, one step downstream of the manufacturer.
+    disconfirming: >
+      Book-to-bill falling back toward or below 1.0; new capacity additions (e.g. Eaton's
+      2027 South Carolina plant, Siemens Energy's planned +50% transformer/GIS capacity)
+      closing the gap faster than order growth; utility capex guidance cut; a demand-side
+      reversal such as a sharp EV/electrification slowdown removing one of the multiple
+      buyer segments at once.
+
+  roles:
+    root:
+      industries: ["electrical equipment"]
+      tickers: [ETN, POWL, AZZ]
+    supplier:
+      industries: ["electrical equipment", "industrial machinery"]
+    infrastructure:
+      industries: ["engineering & construction", "electrical equipment"]
+      tickers: [PWR, MYRG]
+
+  thesis: >
+    Siemens Energy's Grid Technologies segment reported a record EUR51 billion backlog in
+    August 2026 with book-to-bill of 1.48, and will not add its planned +50% transformer/GIS
+    capacity until 2030 - a multi-year gap between order growth and new supply that is
+    technology-agnostic (utilities, renewables, and data centers order the identical
+    equipment) rather than a single-buyer story, which is what makes it durable enough for a
+    systematic screen rather than a diligence note.
+
+  # Anchors for peer expansion and a sanity check on the keyword list, not the universe.
+  seed_tickers: [ETN, POWL, AZZ, PWR, MYRG, GEV]
+  expand_via_tnic: true
+  sectors: [Industrials]
+  industries:
+    - "electrical equipment"
+    - "engineering & construction"
+    - "industrial machinery"
+  keywords:
+    include:
+      - "power transformer"
+      - "generator step-up"
+      - "switchgear"
+      - "circuit breaker"
+      - "grid hardening"
+      - "transmission capacity"
+      - "book-to-bill"
+      - "lead time"
+      - "substation"
+    exclude:
+      # Guards against unrelated "grid"/"switch" language outside heavy electrical equipment.
+      - "power grid video game"
+      - "network switch"
+      - "smart switch"
+  sic_codes: [3612, 3613, 1731]   # power/distribution transformers, switchgear, electrical work
+  icb_subsectors: []
+
+  signals:
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.35
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.30
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.15
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.20
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

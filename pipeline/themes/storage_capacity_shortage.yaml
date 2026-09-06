@@ -1,0 +1,114 @@
+# See pipeline/themes.py for how these fields are consumed. No scoring code changes.
+# Deliberately distinct from ai_infrastructure.yaml, which already claims MU as its DRAM/HBM
+# root: this theme is the finished-storage layer (NAND flash and nearline HDD) rather than
+# the memory layer, and its root tickers (STX, WDC, SNDK) are not claimed by any other theme
+# in this directory as of 2026-09-04.
+theme:
+  id: storage_capacity_shortage
+  display_name: "AI-Driven Storage Capacity Shortage"
+  taxonomy_tag: STORAGE_CAPACITY
+  root_driver_tag: ELECTRIFICATION_DEMAND
+  version: 1
+  status: active
+  created: 2026-09-04
+
+  chain:
+    root_driver: >
+      Training-data lakes and inference logging for large models pull hyperscaler storage
+      demand toward both ends of the storage hierarchy at once - more NAND flash for
+      high-performance enterprise SSDs, and more nearline HDD capacity for the bulk,
+      cost-per-terabyte tier - while DRAM/HBM makers simultaneously divert general-purpose
+      NAND and DRAM wafer capacity toward higher-margin AI memory, tightening supply of the
+      "ordinary" storage products this theme is about.
+    first_order: >
+      NAND flash and nearline HDD manufacturers whose capacity is the pacing item: SanDisk
+      (spun off from Western Digital in 2025) and Micron on NAND, Seagate and Western Digital
+      on nearline HDD - each reporting 2026 capacity effectively sold out under long-term
+      contracts.
+    second_order: >
+      Storage controller, interface, and enterprise-SSD component suppliers whose volumes
+      move with the same capacity cycle, one layer down from the finished drive.
+    disconfirming: >
+      Hyperscaler storage capex guidance cut; NAND/DRAM makers reallocating capacity back to
+      general-purpose product as AI-memory (HBM) demand growth slows; nearline HDD unit
+      shipments falling while pricing holds (inventory destocking rather than genuine
+      shortage); new NAND fab capacity coming online faster than guided.
+
+  roles:
+    root:
+      industries: ["computer storage devices", "semiconductors"]
+      tickers: [STX, WDC, SNDK]
+    supplier:
+      industries: ["electronic components", "semiconductors"]
+    infrastructure:
+      industries: ["semiconductors"]
+      tickers: [MU]
+
+  thesis: >
+    Seagate, Western Digital, and SanDisk each traded through 2025 as cyclical, low-multiple
+    hardware names before an AI-driven storage shortage more than doubled all three inside a
+    year (SanDisk's post-spinoff stub alone rose roughly 8x). By August-September 2026 the
+    NAND-heavy names (SanDisk, Micron) had already given back a meaningful share of their
+    summer gains while nearline-HDD-heavy names (Seagate, Western Digital) held up better -
+    a dispersion this theme's per-company signals are meant to distinguish, rather than
+    treating "storage shortage" as one undifferentiated trade.
+
+  # Anchors for peer expansion and a sanity check on the keyword list, not the universe.
+  seed_tickers: [STX, WDC, SNDK, MU]
+  expand_via_tnic: true
+  sectors: [Technology]
+  industries:
+    - "computer storage devices"
+    - "semiconductors"
+    - "electronic components"
+  keywords:
+    include:
+      - "NAND"
+      - "nearline HDD"
+      - "enterprise SSD"
+      - "storage capacity"
+      - "exabytes shipped"
+      - "long-term supply agreement"
+      - "sold out"
+      - "capacity allocation"
+    exclude:
+      # Guards against unrelated "storage"/"capacity" language (cloud storage services,
+      # battery storage, warehouse capacity).
+      - "cloud storage subscription"
+      - "battery storage"
+      - "warehouse capacity"
+      - "carbon storage"
+  sic_codes: [3572, 3674]   # computer storage devices, semiconductors
+  icb_subsectors: []
+
+  signals:
+    - name: backlog_growth
+      source: edgar_xbrl_dimensional
+      leading: true
+      weight: 0.30
+    - name: segment_revenue_share
+      source: edgar_xbrl_segments
+      leading: false
+      weight: 0.30
+    - name: filing_keyword_density_trend
+      source: edgar_fulltext
+      leading: true
+      weight: 0.15
+    - name: customer_concentration_to_spenders
+      source: edgar_item1_major_customers
+      leading: true
+      weight: 0.15
+    - name: hyperscaler_capex_growth
+      source: edgar_xbrl_capex
+      universe: [MSFT, GOOGL, AMZN, META]
+      leading: true
+      weight: 0.10
+
+  guardrails:
+    exclude_if_valuation_percentile_above: 90
+    require_leading_signal_confirmation: true
+    max_price_momentum_contribution: 0.0
+
+  scoring:
+    output: theme_exposure_score
+    min_signals_required: 2

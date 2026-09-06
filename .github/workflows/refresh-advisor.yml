@@ -146,6 +146,10 @@ jobs:
       # options screen is a real, user-facing feature, so its own extra options-chain
       # requests are enabled here rather than left opt-in.
       ENABLE_MULTIDAY_OPTIONS_SCREEN: '1'
+      # Same reasoning: the earnings-only catalyst screen is a real, user-facing feature
+      # (see build_catalyst_screen.py), not a debugging aid, so its per-qualifying-ticker
+      # options-chain requests are enabled here too.
+      ENABLE_CATALYST_SCREEN: '1'
     steps:
       - name: Select the Eastern-time refresh window
         id: refresh_window
@@ -319,6 +323,13 @@ jobs:
         # functions still exist and are still directly testable, they're just not what's
         # called here anymore. A Yahoo hiccup here shouldn't block the rest of the refresh.
         run: python pipeline/build_options_strategies.py || echo "::warning::Options strategies build failed; keeping previous screen files"
+      - name: Build the earnings-only catalyst/expected-move screen
+        if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
+        # Own options-chain requests (up to two per qualifying ticker: the expiration
+        # spanning earnings and the one just before it), on top of what fetch_advisor.py and
+        # build_options_strategies.py already pulled - not part of their shared chain fetch,
+        # since this screen needs a different expiration pair than either of those windows.
+        run: python pipeline/build_catalyst_screen.py || echo "::warning::Catalyst screen build failed; keeping previous catalyst.json"
       - name: Build protective-put screen from the price history just fetched
         if: steps.refresh_window.outputs.should_run == 'true' && steps.refresh_window.outputs.is_rescore != 'true'
         # Protective put, collar, vertical spread, and advanced strategies each still cost

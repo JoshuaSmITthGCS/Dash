@@ -36,6 +36,8 @@ from price_archive import load_series as archive_series_for
 from research_screens_v2 import industry_relative_returns, momentum_factors, momentum_path_smoothness
 from screen_inputs import (OBSERVATIONS, backtest_entry, latest_observations,
                            median_dollar_volume, universe_rows, with_current_price)
+from swing_signals import (high_52w_drawdown_sigmas, realized_volatility, trailing_return,
+                           volume_surge)
 
 SCHEMA_VERSION = "1.0.0"
 MODEL_VERSION = "pre-breakout-v0.1.0"
@@ -144,6 +146,7 @@ def build_rows(universe, entry_for=None, observations=None, observation_rows=Non
         signed_smoothness = signed_path_smoothness(smoothness, momentum.get("momentum_12_1"))
         archive = archive_for(ticker) or {}
         contraction = volatility_contraction_score(closes, archive.get("highs"), archive.get("lows"))
+        volatility = realized_volatility(closes)
         si_history = pit_history(ticker, "short_percent_of_float", rows=observation_rows)
         si_change = short_interest_change(si_history, as_of)
         observed = observed_latest.get(ticker) or {}
@@ -172,6 +175,14 @@ def build_rows(universe, entry_for=None, observations=None, observation_rows=Non
                 "momentum_12_1": momentum.get("momentum_12_1"),
                 "path_smoothness": signed_smoothness,
                 "industry_relative_momentum": None,
+                # George-Hwang 2004's 52-week-high proximity, volatility-normalized per swing_
+                # signals.high_52w_drawdown_sigmas's "rule 4" (raw proximity ranks partly on
+                # volatility, a different factor never in these declared weights).
+                "high_52w_drawdown_sigmas": high_52w_drawdown_sigmas(closes, volatility),
+                "volume_ratio_5d_50d": volume_surge(volumes, recent=5),
+                # Raw trailing-~1-month return; PRE_BREAKOUT_SUBFACTORS negates this one, so a
+                # large positive value here scores as extension risk, not a bullish reading.
+                "trailing_month_extension": trailing_return(closes, sessions=21),
                 "volatility_contraction": contraction,
                 "insider_cluster_score": (row.get("insider_activity") or {}).get("score_points"),
                 "short_interest_change": si_change,

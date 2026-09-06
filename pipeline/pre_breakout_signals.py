@@ -14,10 +14,18 @@ The three sub-scores and what they are built from (Tier ranking per the research
   JFE 2013; Piotroski 2000), standardized unexpected earnings (Tier A: Foster 1977; Foster,
   Olsen & Shevlin 1984; Bernard & Thomas 1989/1990).
 * ``momentum_rs`` -- 12-1 momentum and industry-relative momentum (Tier A/B: Jegadeesh &
-  Titman 1993; Moskowitz & Grinblatt 1999), frog-in-the-pan path smoothness (Tier B: Da,
-  Gurun & Warachka, RFS 2014), and a volatility-contraction/squeeze reading (Tier C -- the
-  weakest-evidenced, most-foldable subfactor, weighted lowest inside this leg and the first
-  candidate the prospective clock is expected to drop or reweight).
+  Titman 1993; Moskowitz & Grinblatt 1999), 52-week-high proximity normalized by the name's
+  own volatility (Tier A: George & Hwang, Journal of Finance 2004 -- the single
+  best-replicated factor in this leg; dominates raw 12-1 momentum in their tests), frog-in-
+  the-pan path smoothness (Tier B: Da, Gurun & Warachka, RFS 2014), relative breakout volume
+  (Tier B / contested: Lee & Swaminathan, Journal of Finance 2000, find volume predicts
+  momentum's magnitude and persistence, but no peer-reviewed source calibrates a specific
+  volume multiple to breakout continuation), a trailing-one-month extension penalty (Tier A:
+  Jegadeesh 1990's short-term reversal -- a name already run hard in the last ~21 sessions is
+  penalized, independent of and complementary to momentum_12_1's own skipped month), and a
+  volatility-contraction/squeeze reading (Tier C -- the weakest-evidenced, most-foldable
+  subfactor, weighted lowest inside this leg and the first candidate the prospective clock is
+  expected to drop or reweight).
 * ``flow_sentiment`` -- insider cluster buying (Tier A: Cohen, Malloy & Pomorski, JF 2012)
   and short-interest change (Tier B: Boehmer, Huszar & Jordan 2009).
 
@@ -63,8 +71,13 @@ PRE_BREAKOUT_SUBFACTORS = {
     ),
     "momentum_rs": (
         ("momentum_12_1", False),
+        ("high_52w_drawdown_sigmas", False),
         ("path_smoothness", False),
         ("industry_relative_momentum", False),
+        ("volume_ratio_5d_50d", False),
+        # Negated: a large trailing-month return is extension risk (Jegadeesh 1990 reversal),
+        # not a bullish reading -- see module docstring.
+        ("trailing_month_extension", True),
         ("volatility_contraction", False),
     ),
     "flow_sentiment": (
@@ -91,12 +104,21 @@ FUNDAMENTAL_INFLECTION_SUBWEIGHTS = {
 }
 
 MOMENTUM_RS_SUBWEIGHTS = {
-    "momentum_12_1": .40,
-    "path_smoothness": .25,
-    "industry_relative_momentum": .25,
+    # Tier A, the best-replicated single factor in this leg (George & Hwang 2004 report it
+    # dominating raw 12-1 momentum in Fama-MacBeth regressions) -- weighted accordingly.
+    "high_52w_drawdown_sigmas": .25,
+    "momentum_12_1": .25,
+    "industry_relative_momentum": .15,
+    # Tier A (Jegadeesh 1990): a penalty leg, not a continuation leg -- see the `negate=True`
+    # flag on this subfactor in PRE_BREAKOUT_SUBFACTORS.
+    "trailing_month_extension": .15,
+    # Tier B / contested -- volume's direction is well-evidenced, no specific multiple is
+    # (Lee & Swaminathan 2000). See module docstring.
+    "volume_ratio_5d_50d": .10,
+    "path_smoothness": .07,
     # Tier C, weakest evidence -- weighted lowest inside its own leg even before any decision
     # to drop it entirely once the prospective clock reports. See module docstring.
-    "volatility_contraction": .10,
+    "volatility_contraction": .03,
 }
 
 FLOW_SENTIMENT_SUBWEIGHTS = {
@@ -135,21 +157,36 @@ PRE_BREAKOUT_EVIDENCE = {
                   "specifically the *turn* used here for margin_turn/roa_delta.",
     },
     "momentum_rs": {
-        "label": "Momentum / relative strength (12-1, path smoothness, industry-relative, "
-                "volatility contraction)",
+        "label": "Momentum / relative strength (12-1, 52-week-high proximity, path "
+                "smoothness, industry-relative, breakout volume, trailing-month extension "
+                "penalty, volatility contraction)",
         "horizon": "1-6 months",
-        "direction": "continuation",
-        "citation": "Jegadeesh & Titman, Journal of Finance 1993; Moskowitz & Grinblatt, "
-                    "Journal of Finance 1999; Da, Gurun & Warachka, Review of Financial "
-                    "Studies 2014",
-        "effect": "Classic 3-12 month momentum ~1%/month; industry momentum accounts for much "
-                  "of individual-stock momentum; smooth ('continuous information') formation "
-                  "paths earn materially more than choppy ones at the same cumulative return.",
+        "direction": "continuation (trailing_month_extension is a penalty -- see its "
+                    "negate=True flag)",
+        "citation": "Jegadeesh & Titman, Journal of Finance 1993; George & Hwang, Journal of "
+                    "Finance 2004; Moskowitz & Grinblatt, Journal of Finance 1999; Da, Gurun "
+                    "& Warachka, Review of Financial Studies 2014; Lee & Swaminathan, Journal "
+                    "of Finance 2000 (55:2017-2069); Jegadeesh, Journal of Finance 1990",
+        "effect": "Classic 3-12 month momentum ~1%/month. 52-week-high proximity "
+                  "(George-Hwang): ~0.45%/month raw, rising to 0.86-1.13%/month risk-adjusted "
+                  "-- roughly double plain 12-1 momentum in their tests, and the returns do "
+                  "not reverse in the long run the way raw momentum's do. Industry momentum "
+                  "accounts for much of individual-stock momentum; smooth ('continuous "
+                  "information') formation paths earn materially more than choppy ones at the "
+                  "same cumulative return. Volume predicts momentum's magnitude and "
+                  "persistence, but not a specific continuation-vs-failure threshold. "
+                  "Short-term reversal (Jegadeesh 1990): last-month winners give back roughly "
+                  "0.8-2%/month -- the reason trailing_month_extension is scored as a penalty, "
+                  "not a continuation signal.",
         "caveat": "volatility_contraction (Bollinger/ATR squeeze) is Tier C: no peer-reviewed "
                   "base rate exists for squeeze-to-directional-breakout, the squeeze is "
                   "non-directional by construction, and published practitioner 'success "
                   "rates' are marketing with unstated methodology. Included as an unvalidated "
-                  "hypothesis to test, weighted lowest in this leg -- see module docstring.",
+                  "hypothesis to test, weighted lowest in this leg -- see module docstring. "
+                  "volume_ratio_5d_50d is Tier B/contested for the same reason: the specific "
+                  "1.5x/2x/3x multiples practitioners use have no peer-reviewed calibration, "
+                  "so this is scored as a continuous relative-volume reading rather than a "
+                  "hard threshold gate.",
     },
     "flow_sentiment": {
         "label": "Flow / sentiment (insider cluster buying, short-interest change)",

@@ -13,6 +13,7 @@ import ScatterChart from '../components/ScatterChart.jsx'
 export const SCREEN_NAV = [
   ['/screens/swing', 'Swing signals'],
   ['/screens/pre-breakout', 'Pre-breakout'],
+  ['/screens/catalyst', 'Earnings catalyst'],
   ['/screens/fast-growth', 'Fast growth'],
   ['/screens/options', 'Options'],
   ['/screens/momentum', 'Momentum'], ['/screens/quality-value', 'Quality at valuation lows'],

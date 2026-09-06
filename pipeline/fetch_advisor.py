@@ -71,6 +71,9 @@ PUBLISH_LIMIT = int(UNIVERSE.get("publish_limit", 20))
 REVERSE_DCF_ASSUMPTIONS = SETTINGS.get("reverse_dcf", {})
 RETURN_ATTRIBUTION_MONTHS_BACK = int(SETTINGS.get("return_attribution", {}).get("months_back", 12))
 NEWS_CONFIG = SETTINGS["news_intelligence"]
+# Display-only: disclosed ownership/leadership affiliations shown on the news screen's
+# idiosyncratic-catalyst section. Never read by scorer.py or advisor_engine.py.
+NOTABLE_AFFILIATIONS = load_json("notable_affiliations.json", from_config=True) or {}
 # The event layer reuses the article annotation vocabulary (source tiers, event-type markers,
 # title-similarity threshold) and adds materiality, per-event half-lives and horizon settings
 # on top, so it reads one merged config rather than two half-configs.
@@ -967,6 +970,17 @@ def fetch_discovery_news(client, symbols, limit=NEWS_DISCOVERY_LIMIT):
         limit=limit,
     )
     return advisor_articles_for_symbols(payload, selected)
+
+
+def attach_affiliation(item, affiliations=NOTABLE_AFFILIATIONS):
+    """Echo a disclosed ownership/leadership affiliation onto a news item, ticker-keyed.
+
+    Display-only annotation for the news screen's idiosyncratic-catalyst section - never
+    consumed by scorer.py or advisor_engine.py. See notable_affiliations.json's _comment
+    for what belongs in that config (a sourced, disclosed relationship, not an inference).
+    """
+    match = affiliations.get(str(item.get("ticker") or "").upper())
+    return {**item, "affiliation": match} if match else item
 
 
 def curate_candidate_news(items, research_context, limit=70, discovery_slots=25):
@@ -2270,7 +2284,7 @@ def run():
         }
         for index, row in enumerate(research)
     }
-    published_news = curate_candidate_news(all_news, research_context)
+    published_news = [attach_affiliation(item) for item in curate_candidate_news(all_news, research_context)]
 
     # Append this run's observations to the point-in-time store. It only becomes valuable
     # with time depth, so it starts accumulating now, well before any backtest needs it -

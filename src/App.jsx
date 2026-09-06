@@ -29,6 +29,7 @@ const ResearchScreen = lazy(() => import('./pages/ResearchScreen.jsx'))
 const SwingScreen = lazy(() => import('./pages/SwingScreen.jsx'))
 const FastGrowthScreen = lazy(() => import('./pages/FastGrowthScreen.jsx'))
 const OptionsScreen = lazy(() => import('./pages/OptionsScreen.jsx'))
+const CatalystScreen = lazy(() => import('./pages/CatalystScreen.jsx'))
 const StrategyScreen = lazy(() => import('./pages/StrategyScreen.jsx'))
 const ThemeExposureScreen = lazy(() => import('./pages/ThemeExposureScreen.jsx'))
 const ShadowPortfolios = lazy(() => import('./pages/ShadowPortfolios.jsx'))
@@ -329,6 +330,7 @@ function AppContent() {
               element={<Navigate to={`/screens/options/${id}`} replace />} />
           ))}
           <Route path="/screens/pre-breakout" element={<ResearchScreen file="screens/pre-breakout.json" eyebrow="Research filter, prospective clock not yet started" title="Pre-breakout" description="Fundamental inflection, momentum/relative strength, and insider/short-interest flow, equal-weighted into one composite. No out-of-sample record — see the coverage note below before reading anything into a rank." />} />
+          <Route path="/screens/catalyst" element={<CatalystScreen />} />
           <Route path="/screens/momentum" element={<ResearchScreen file="screens/momentum.json" eyebrow="Monthly sleeve" title="Momentum" description="Exact month-end, skip-month price momentum with liquidity gates, hysteresis, and portfolio-level risk controls." />} />
           <Route path="/screens/quality-value" element={<ResearchScreen file="screens/quality-value.json" eyebrow="Quarterly screen" title="Quality at valuation lows" description="Cheapness versus applicable own-history multiples, peer value, business quality, distress, and forward-revision gates. The own-history window is only as deep as the collected point-in-time record, and every row publishes the window it was measured over." />} />
           <Route path="/screens/earnings" element={<ResearchScreen file="screens/earnings-timeliness.json" eyebrow="One-to-three-month horizon" title="Earnings timeliness" description="Point-in-time revisions, earnings information, price confirmation, industry breadth, and tradability–kept separate from structural quality." />} />
