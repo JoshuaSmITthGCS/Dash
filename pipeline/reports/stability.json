@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 107,
+  "refreshes_observed": 108,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -18548,6 +18548,41 @@
           ],
           "score_delta": -0.2,
           "confidence_delta": 0.06
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-06T02:18:08.472534+00:00",
+      "current_refresh": "advisor-2026-09-07T17:53:07.747018+00:00",
+      "shared_tickers": 894,
+      "rank_turnover": {
+        "top_40": 0.0,
+        "top_100": 0.0
+      },
+      "tickers_with_availability_driven_change": 2,
+      "tickers_with_availability_driven_change_pct": 0.002,
+      "mean_abs_score_delta": 0.06,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -3.7,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "NEM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 0.4,
+          "confidence_delta": 0.02
         }
       ]
     }
