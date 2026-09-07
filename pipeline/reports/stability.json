@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 108,
+  "refreshes_observed": 109,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -18583,6 +18583,75 @@
           ],
           "score_delta": 0.4,
           "confidence_delta": 0.02
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-07T17:53:07.747018+00:00",
+      "current_refresh": "advisor-2026-09-07T20:23:32.203589+00:00",
+      "shared_tickers": 894,
+      "rank_turnover": {
+        "top_40": 0.075,
+        "top_100": 0.075
+      },
+      "tickers_with_availability_driven_change": 6,
+      "tickers_with_availability_driven_change_pct": 0.007,
+      "mean_abs_score_delta": 0.33,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "RLI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -10.7,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "NEM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -3.4,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -3.1,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "AZO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -2.2,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "SNX",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -1.1,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "WDC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -0.5,
+          "confidence_delta": 0.01
         }
       ]
     }
