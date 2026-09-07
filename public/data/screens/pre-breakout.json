@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "model_version": "pre-breakout-v0.1.0",
   "config_version": "screens-v2.0.0",
-  "generated_at": "2026-09-07T20:29:39.602072+00:00",
+  "generated_at": "2026-09-07T22:32:03.986483+00:00",
   "status": "success",
   "weights": {
     "fundamental_inflection": 0.3333333333333333,
@@ -98,18 +98,18 @@
   "leg_coverage": {
     "fundamental_inflection": 1.0,
     "momentum_rs": 1.0,
-    "flow_sentiment": 0.984
+    "flow_sentiment": 0.982
   },
   "legs_resolved": {
     "by_legs_resolved": {
-      "3": 842,
-      "2": 14
+      "3": 841,
+      "2": 15
     },
     "minimum_legs_resolved": 2,
     "excluded_by_floor": 0
   },
   "scored_count": 856,
-  "eligible_count": 590,
+  "eligible_count": 589,
   "published_count": 300,
   "coverage_note": "Cross-sectional ranks over the scored universe, recomputed every refresh. Each of the 3 named legs (fundamental_inflection, momentum_rs, flow_sentiment) is itself a weighted blend of subfactors, renormalized over whichever subfactors resolved on a row; the composite is then the equal-weighted blend of whichever legs resolved. A row resolving fewer than 2 of 3 legs is excluded from the ranking entirely -- read `coverage` and `legs_resolved` beside every score. This model has no out-of-sample record: it is registered in pipeline/validation/harness_freeze.json (additional_models, pre-breakout-v0.1.0) on a prospective clock and should be read as a research filter until that clock reports. The momentum_rs leg's volatility_contraction subfactor is Tier C / weakest-evidence per docs/PRE-BREAKOUT-SCREEN-RESEARCH.md -- weighted lowest inside its own leg (see pre_breakout_signals.MOMENTUM_RS_SUBWEIGHTS) and the first candidate the clock is expected to drop or reweight.",
   "results": [
@@ -122,7 +122,7 @@
       "eligibility": true,
       "current_membership": true,
       "percentile": 100.0,
-      "composite_z": 0.9555,
+      "composite_z": 0.9556,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -182,15 +182,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.3999,
+          "z": 0.4002,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.3999,
+            "insider_cluster_score": 0.4002,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.6665,
+            "insider_cluster_score": 0.6671,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -224,7 +224,7 @@
       "eligibility": true,
       "current_membership": true,
       "percentile": 99.83,
-      "composite_z": 0.9024,
+      "composite_z": 0.9025,
       "classification": "extended",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -288,15 +288,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.4575,
+          "z": 0.4579,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.4575,
+            "insider_cluster_score": 0.4579,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.7626,
+            "insider_cluster_score": 0.7632,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -431,7 +431,7 @@
       "eligibility": true,
       "current_membership": true,
       "percentile": 99.49,
-      "composite_z": 0.8967,
+      "composite_z": 0.8966,
       "classification": "extended",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -495,15 +495,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.6027,
+          "z": -0.603,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.6027,
+            "insider_cluster_score": -0.603,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -1.0046,
+            "insider_cluster_score": -1.0049,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -539,7 +539,7 @@
       "eligibility": true,
       "current_membership": true,
       "percentile": 99.32,
-      "composite_z": 0.8631,
+      "composite_z": 0.8632,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -548,7 +548,7 @@
       "structural_score": 63.9,
       "tactical_score": null,
       "data_coverage": 0.87,
-      "market_cap": 5224807936,
+      "market_cap": 5223657984,
       "price": 36.44,
       "median_dollar_volume_60d": 56591367.0,
       "sub_scores": {
@@ -603,15 +603,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.6362,
+          "z": 0.6366,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.6362,
+            "insider_cluster_score": 0.6366,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.0603,
+            "insider_cluster_score": 1.061,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -746,7 +746,7 @@
       "eligibility": true,
       "current_membership": true,
       "percentile": 98.98,
-      "composite_z": 0.831,
+      "composite_z": 0.8312,
       "classification": "unclassified",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -810,15 +810,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.8782,
+          "z": 0.8788,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.8782,
+            "insider_cluster_score": 0.8788,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.4637,
+            "insider_cluster_score": 1.4646,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -1169,7 +1169,7 @@
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 74.7,
+      "structural_score": 71.7,
       "tactical_score": null,
       "data_coverage": 0.89,
       "market_cap": 1231660160,
@@ -1262,7 +1262,7 @@
       "eligibility": true,
       "current_membership": true,
       "percentile": 98.13,
-      "composite_z": 0.7583,
+      "composite_z": 0.7584,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -1271,7 +1271,7 @@
       "structural_score": 81.8,
       "tactical_score": null,
       "data_coverage": 0.89,
-      "market_cap": 77332340736,
+      "market_cap": 76156395520,
       "price": 145.19,
       "median_dollar_volume_60d": 427904066.0,
       "sub_scores": {
@@ -1326,15 +1326,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.2155,
+          "z": 0.2157,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.2155,
+            "insider_cluster_score": 0.2157,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.3592,
+            "insider_cluster_score": 0.3596,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -1469,7 +1469,7 @@
       "eligibility": true,
       "current_membership": true,
       "percentile": 97.79,
-      "composite_z": 0.7274,
+      "composite_z": 0.7277,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -1527,14 +1527,14 @@
           "renormalization_factor": 1.1765
         },
         "flow_sentiment": {
-          "z": 1.4349,
+          "z": 1.4358,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 1.4349
+            "insider_cluster_score": 1.4358
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.4349
+            "insider_cluster_score": 1.4358
           },
           "subfactors_resolved": 1,
           "subfactors_declared": 2,
@@ -1670,7 +1670,7 @@
       "eligibility": true,
       "current_membership": true,
       "percentile": 97.45,
-      "composite_z": 0.7055,
+      "composite_z": 0.7054,
       "classification": "extended",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -1734,15 +1734,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.5336,
+          "z": -0.5338,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.5336,
+            "insider_cluster_score": -0.5338,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -0.8893,
+            "insider_cluster_score": -0.8896,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -1880,7 +1880,7 @@
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 57.2,
+      "structural_score": 60.2,
       "tactical_score": null,
       "data_coverage": 0.87,
       "market_cap": 374147776512,
@@ -1979,7 +1979,7 @@
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 58.1,
+      "structural_score": 61.1,
       "tactical_score": null,
       "data_coverage": 0.85,
       "market_cap": 5634984960,
@@ -2183,7 +2183,7 @@
       "eligibility": true,
       "current_membership": true,
       "percentile": 96.6,
-      "composite_z": 0.6735,
+      "composite_z": 0.6734,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -2251,7 +2251,7 @@
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -0.534,
+            "insider_cluster_score": -0.5341,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -2285,7 +2285,7 @@
       "eligibility": true,
       "current_membership": true,
       "percentile": 96.43,
-      "composite_z": 0.6671,
+      "composite_z": 0.6672,
       "classification": "extended",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -2347,15 +2347,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.1752,
+          "z": 0.1754,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.1752,
+            "insider_cluster_score": 0.1754,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.292,
+            "insider_cluster_score": 0.2923,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -2494,7 +2494,7 @@
       "peer_group": "Profitable Biotechnology",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 96.1,
+      "percentile": 96.09,
       "composite_z": 0.6429,
       "classification": "extended",
       "coverage": 1.0,
@@ -2599,7 +2599,7 @@
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 95.93,
+      "percentile": 95.92,
       "composite_z": 0.6344,
       "classification": "extended",
       "coverage": 1.0,
@@ -2704,8 +2704,8 @@
       "peer_group": "Electrical Equipment",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 95.76,
-      "composite_z": 0.6294,
+      "percentile": 95.75,
+      "composite_z": 0.6295,
       "classification": "extended",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -2767,15 +2767,15 @@
           "renormalization_factor": 1.1765
         },
         "flow_sentiment": {
-          "z": 0.6362,
+          "z": 0.6366,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.6362,
+            "insider_cluster_score": 0.6366,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.0603,
+            "insider_cluster_score": 1.061,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -2809,7 +2809,7 @@
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 95.59,
+      "percentile": 95.58,
       "composite_z": 0.6251,
       "classification": "breaking_out",
       "coverage": 0.667,
@@ -2906,7 +2906,7 @@
       "peer_group": "Capital Markets",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 95.42,
+      "percentile": 95.41,
       "composite_z": 0.6225,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -3005,7 +3005,7 @@
       "peer_group": "Air Freight Logistics",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 95.25,
+      "percentile": 95.24,
       "composite_z": 0.6084,
       "classification": "extended",
       "coverage": 1.0,
@@ -3110,8 +3110,8 @@
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 95.08,
-      "composite_z": 0.6005,
+      "percentile": 95.07,
+      "composite_z": 0.6006,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -3173,15 +3173,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.6362,
+          "z": 0.6366,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.6362,
+            "insider_cluster_score": 0.6366,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.0603,
+            "insider_cluster_score": 1.061,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -3215,8 +3215,8 @@
       "peer_group": "Consumer Defensive",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 94.91,
-      "composite_z": 0.5792,
+      "percentile": 94.9,
+      "composite_z": 0.5793,
       "classification": "extended",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -3280,15 +3280,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.6362,
+          "z": 0.6366,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.6362,
+            "insider_cluster_score": 0.6366,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.0603,
+            "insider_cluster_score": 1.061,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -3323,8 +3323,8 @@
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 94.74,
-      "composite_z": 0.5755,
+      "percentile": 94.73,
+      "composite_z": 0.5757,
       "classification": "extended",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -3388,15 +3388,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.8782,
+          "z": 0.8788,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.8782,
+            "insider_cluster_score": 0.8788,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.4637,
+            "insider_cluster_score": 1.4646,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -3431,7 +3431,7 @@
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 94.57,
+      "percentile": 94.56,
       "composite_z": 0.5745,
       "classification": "extended",
       "coverage": 1.0,
@@ -3536,8 +3536,8 @@
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 94.4,
-      "composite_z": 0.5687,
+      "percentile": 94.39,
+      "composite_z": 0.5689,
       "classification": "extended",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -3597,15 +3597,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.8782,
+          "z": 0.8788,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.8782,
+            "insider_cluster_score": 0.8788,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.4637,
+            "insider_cluster_score": 1.4646,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -3638,8 +3638,8 @@
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 94.23,
-      "composite_z": 0.5614,
+      "percentile": 94.22,
+      "composite_z": 0.5613,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -3648,7 +3648,7 @@
       "structural_score": 78.0,
       "tactical_score": null,
       "data_coverage": 0.89,
-      "market_cap": 113534156800,
+      "market_cap": 109212753920,
       "price": 388.9,
       "median_dollar_volume_60d": 572245361.0,
       "sub_scores": {
@@ -3703,15 +3703,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.8102,
+          "z": -0.8105,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.8102,
+            "insider_cluster_score": -0.8105,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -1.3503,
+            "insider_cluster_score": -1.3509,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -3746,7 +3746,7 @@
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 94.06,
+      "percentile": 94.05,
       "composite_z": 0.5556,
       "classification": "coiling",
       "coverage": 1.0,
@@ -3842,7 +3842,7 @@
       "peer_group": "Networking Equipment",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 93.89,
+      "percentile": 93.88,
       "composite_z": 0.5549,
       "classification": "extended",
       "coverage": 1.0,
@@ -3944,8 +3944,8 @@
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 93.72,
-      "composite_z": 0.5545,
+      "percentile": 93.71,
+      "composite_z": 0.5544,
       "classification": "extended",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -3954,7 +3954,7 @@
       "structural_score": 67.0,
       "tactical_score": null,
       "data_coverage": 0.89,
-      "market_cap": 192786563072,
+      "market_cap": 192484655104,
       "price": 849.28,
       "median_dollar_volume_60d": 3905925434.0,
       "sub_scores": {
@@ -4009,15 +4009,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.8332,
+          "z": -0.8336,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.8332,
+            "insider_cluster_score": -0.8336,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -1.3887,
+            "insider_cluster_score": -1.3893,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -4052,7 +4052,7 @@
       "peer_group": "Saas",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 93.55,
+      "percentile": 93.54,
       "composite_z": 0.5475,
       "classification": "extended",
       "coverage": 1.0,
@@ -4157,7 +4157,7 @@
       "peer_group": "Air Freight Logistics",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 93.38,
+      "percentile": 93.37,
       "composite_z": 0.5377,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -4256,7 +4256,7 @@
       "peer_group": "Engineering Construction",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 93.21,
+      "percentile": 93.2,
       "composite_z": 0.5338,
       "classification": "extended",
       "coverage": 1.0,
@@ -4361,7 +4361,7 @@
       "peer_group": "Grocery Staples Retail",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 93.04,
+      "percentile": 93.03,
       "composite_z": 0.5329,
       "classification": "extended",
       "coverage": 1.0,
@@ -4466,7 +4466,7 @@
       "peer_group": "Industrials",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 92.87,
+      "percentile": 92.86,
       "composite_z": 0.5325,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -4571,7 +4571,7 @@
       "peer_group": "Capital Markets",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 92.7,
+      "percentile": 92.69,
       "composite_z": 0.5289,
       "classification": "breaking_out",
       "coverage": 0.667,
@@ -4668,7 +4668,7 @@
       "peer_group": "Building Products",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 92.53,
+      "percentile": 92.52,
       "composite_z": 0.5287,
       "classification": "coiling",
       "coverage": 1.0,
@@ -4770,14 +4770,14 @@
       "peer_group": "Retail Apparel",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 92.36,
+      "percentile": 92.35,
       "composite_z": 0.517,
       "classification": "unclassified",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 76.7,
+      "structural_score": 73.7,
       "tactical_score": null,
       "data_coverage": 0.87,
       "market_cap": 2954871040,
@@ -4869,7 +4869,7 @@
       "peer_group": "Publishing Advertising",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 92.19,
+      "percentile": 92.18,
       "composite_z": 0.5097,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -4974,7 +4974,7 @@
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 92.02,
+      "percentile": 92.01,
       "composite_z": 0.5044,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -5079,8 +5079,8 @@
       "peer_group": "Ecommerce Retail",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 91.85,
-      "composite_z": 0.4999,
+      "percentile": 91.84,
+      "composite_z": 0.4998,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -5140,15 +5140,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.8332,
+          "z": -0.8336,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.8332,
+            "insider_cluster_score": -0.8336,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -1.3887,
+            "insider_cluster_score": -1.3893,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -5181,7 +5181,7 @@
       "peer_group": "Saas",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 91.68,
+      "percentile": 91.67,
       "composite_z": 0.4915,
       "classification": "extended",
       "coverage": 1.0,
@@ -5286,7 +5286,7 @@
       "peer_group": "Retail Apparel",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 91.51,
+      "percentile": 91.5,
       "composite_z": 0.4851,
       "classification": "extended",
       "coverage": 1.0,
@@ -5391,7 +5391,7 @@
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 91.34,
+      "percentile": 91.33,
       "composite_z": 0.4845,
       "classification": "extended",
       "coverage": 1.0,
@@ -5496,7 +5496,7 @@
       "peer_group": "Auto Dealership",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 91.17,
+      "percentile": 91.16,
       "composite_z": 0.479,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -5601,8 +5601,8 @@
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 91.0,
-      "composite_z": 0.4781,
+      "percentile": 90.99,
+      "composite_z": 0.478,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -5666,15 +5666,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.6027,
+          "z": -0.603,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.6027,
+            "insider_cluster_score": -0.603,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -1.0046,
+            "insider_cluster_score": -1.0049,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -5709,7 +5709,7 @@
       "peer_group": "Industrials",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 90.83,
+      "percentile": 90.82,
       "composite_z": 0.474,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -5814,14 +5814,14 @@
       "peer_group": "Consumer Cyclical",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 90.66,
+      "percentile": 90.65,
       "composite_z": 0.4671,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 69.4,
+      "structural_score": 72.4,
       "tactical_score": null,
       "data_coverage": 0.89,
       "market_cap": 27979044864,
@@ -5919,7 +5919,7 @@
       "peer_group": "Financial Exchange",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 90.49,
+      "percentile": 90.48,
       "composite_z": 0.4573,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -6024,8 +6024,8 @@
       "peer_group": "Asset Manager",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 90.32,
-      "composite_z": 0.4567,
+      "percentile": 90.31,
+      "composite_z": 0.4569,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -6087,15 +6087,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.6823,
+          "z": 0.6827,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.6823,
+            "insider_cluster_score": 0.6827,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.1371,
+            "insider_cluster_score": 1.1379,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -6129,7 +6129,7 @@
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 90.15,
+      "percentile": 90.14,
       "composite_z": 0.4549,
       "classification": "extended",
       "coverage": 1.0,
@@ -6234,7 +6234,7 @@
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 89.98,
+      "percentile": 89.97,
       "composite_z": 0.4449,
       "classification": "extended",
       "coverage": 1.0,
@@ -6333,7 +6333,7 @@
       "peer_group": "Profitable Biotechnology",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 89.81,
+      "percentile": 89.8,
       "composite_z": 0.4402,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -6438,7 +6438,7 @@
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 89.64,
+      "percentile": 89.63,
       "composite_z": 0.4339,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -6543,7 +6543,7 @@
       "peer_group": "Asset Manager",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 89.47,
+      "percentile": 89.46,
       "composite_z": 0.4263,
       "classification": "extended",
       "coverage": 1.0,
@@ -6645,16 +6645,16 @@
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 89.3,
-      "composite_z": 0.422,
+      "percentile": 89.29,
+      "composite_z": 0.4219,
       "classification": "extended",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 70.6,
+      "structural_score": 71.2,
       "tactical_score": null,
-      "data_coverage": 0.89,
+      "data_coverage": 0.88,
       "market_cap": 168538456064,
       "price": 467.46,
       "median_dollar_volume_60d": 4085012058.0,
@@ -6710,15 +6710,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.8332,
+          "z": -0.8336,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.8332,
+            "insider_cluster_score": -0.8336,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -1.3887,
+            "insider_cluster_score": -1.3893,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -6753,7 +6753,7 @@
       "peer_group": "Semiconductor",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 89.13,
+      "percentile": 89.12,
       "composite_z": 0.4157,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -6858,7 +6858,7 @@
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 88.96,
+      "percentile": 88.95,
       "composite_z": 0.4113,
       "classification": "extended",
       "coverage": 1.0,
@@ -6963,7 +6963,7 @@
       "peer_group": "Semiconductor Capital Equipment",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 88.79,
+      "percentile": 88.78,
       "composite_z": 0.4095,
       "classification": "extended",
       "coverage": 1.0,
@@ -7062,8 +7062,8 @@
       "peer_group": "Leisure Products",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 88.62,
-      "composite_z": 0.4072,
+      "percentile": 88.61,
+      "composite_z": 0.4074,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -7127,15 +7127,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.6362,
+          "z": 0.6366,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.6362,
+            "insider_cluster_score": 0.6366,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.0603,
+            "insider_cluster_score": 1.061,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -7170,14 +7170,14 @@
       "peer_group": "Railroad",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 88.46,
+      "percentile": 88.44,
       "composite_z": 0.4023,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 59.3,
+      "structural_score": 62.3,
       "tactical_score": null,
       "data_coverage": 0.87,
       "market_cap": 91530780672,
@@ -7272,14 +7272,14 @@
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 88.29,
-      "composite_z": 0.4012,
+      "percentile": 88.27,
+      "composite_z": 0.4013,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 65.9,
+      "structural_score": 68.9,
       "tactical_score": null,
       "data_coverage": 0.74,
       "market_cap": 10106635264,
@@ -7335,15 +7335,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.4979,
+          "z": 0.4982,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.4979,
+            "insider_cluster_score": 0.4982,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.8298,
+            "insider_cluster_score": 0.8304,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -7377,7 +7377,7 @@
       "peer_group": "Building Products",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 88.12,
+      "percentile": 88.1,
       "composite_z": 0.396,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -7479,7 +7479,7 @@
       "peer_group": "Beverage Manufacturer",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 87.95,
+      "percentile": 87.93,
       "composite_z": 0.3947,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -7581,7 +7581,7 @@
       "peer_group": "Agricultural Processor",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 87.78,
+      "percentile": 87.76,
       "composite_z": 0.3942,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -7683,8 +7683,8 @@
       "peer_group": "Semiconductor",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 87.61,
-      "composite_z": 0.391,
+      "percentile": 87.59,
+      "composite_z": 0.3909,
       "classification": "extended",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -7748,15 +7748,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.6834,
+          "z": -0.6837,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.6834,
+            "insider_cluster_score": -0.6837,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -1.139,
+            "insider_cluster_score": -1.1395,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -7791,7 +7791,7 @@
       "peer_group": "Engineering Construction",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 87.44,
+      "percentile": 87.41,
       "composite_z": 0.3854,
       "classification": "extended",
       "coverage": 1.0,
@@ -7896,8 +7896,8 @@
       "peer_group": "Semiconductor Capital Equipment",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 87.27,
-      "composite_z": 0.3836,
+      "percentile": 87.24,
+      "composite_z": 0.3835,
       "classification": "extended",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -7961,15 +7961,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.6834,
+          "z": -0.6837,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.6834,
+            "insider_cluster_score": -0.6837,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -1.139,
+            "insider_cluster_score": -1.1395,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -8004,7 +8004,7 @@
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 87.1,
+      "percentile": 87.07,
       "composite_z": 0.3798,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -8103,7 +8103,7 @@
       "peer_group": "Trucking",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 86.93,
+      "percentile": 86.9,
       "composite_z": 0.3741,
       "classification": "extended",
       "coverage": 1.0,
@@ -8208,7 +8208,7 @@
       "peer_group": "Specialty Chemicals",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 86.76,
+      "percentile": 86.73,
       "composite_z": 0.3698,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -8307,7 +8307,7 @@
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 86.59,
+      "percentile": 86.56,
       "composite_z": 0.3649,
       "classification": "extended",
       "coverage": 1.0,
@@ -8412,14 +8412,14 @@
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 86.42,
+      "percentile": 86.39,
       "composite_z": 0.3632,
       "classification": "coiling",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 61.4,
+      "structural_score": 64.4,
       "tactical_score": null,
       "data_coverage": 0.87,
       "market_cap": 11831154688,
@@ -8511,7 +8511,7 @@
       "peer_group": "Specialty Chemicals",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 86.25,
+      "percentile": 86.22,
       "composite_z": 0.3631,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -8613,8 +8613,8 @@
       "peer_group": "Semiconductor",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 86.08,
-      "composite_z": 0.3581,
+      "percentile": 86.05,
+      "composite_z": 0.3582,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -8678,15 +8678,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.2098,
+          "z": 0.21,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.2098,
+            "insider_cluster_score": 0.21,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.3496,
+            "insider_cluster_score": 0.35,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -8721,7 +8721,7 @@
       "peer_group": "Consumer Finance",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 85.91,
+      "percentile": 85.88,
       "composite_z": 0.3564,
       "classification": "coiling",
       "coverage": 1.0,
@@ -8826,7 +8826,7 @@
       "peer_group": "Air Freight Logistics",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 85.74,
+      "percentile": 85.71,
       "composite_z": 0.3539,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -8928,7 +8928,7 @@
       "peer_group": "Industrial Distribution",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 85.57,
+      "percentile": 85.54,
       "composite_z": 0.3518,
       "classification": "extended",
       "coverage": 1.0,
@@ -9033,7 +9033,7 @@
       "peer_group": "Building Products",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 85.4,
+      "percentile": 85.37,
       "composite_z": 0.3471,
       "classification": "coiling",
       "coverage": 1.0,
@@ -9138,7 +9138,7 @@
       "peer_group": "Building Products",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 85.23,
+      "percentile": 85.2,
       "composite_z": 0.3374,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -9243,7 +9243,7 @@
       "peer_group": "Semiconductor",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 85.06,
+      "percentile": 85.03,
       "composite_z": 0.3347,
       "classification": "extended",
       "coverage": 1.0,
@@ -9348,7 +9348,7 @@
       "peer_group": "Aerospace Defense",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 84.89,
+      "percentile": 84.86,
       "composite_z": 0.3328,
       "classification": "extended",
       "coverage": 1.0,
@@ -9453,7 +9453,7 @@
       "peer_group": "Semiconductor",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 84.72,
+      "percentile": 84.69,
       "composite_z": 0.3323,
       "classification": "extended",
       "coverage": 1.0,
@@ -9558,7 +9558,7 @@
       "peer_group": "Auto Parts Supplier",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 84.55,
+      "percentile": 84.52,
       "composite_z": 0.3285,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -9631,7 +9631,7 @@
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -0.169,
+            "insider_cluster_score": -0.1689,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -9666,8 +9666,8 @@
       "peer_group": "Diversified insurers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 84.38,
-      "composite_z": 0.326,
+      "percentile": 84.35,
+      "composite_z": 0.3261,
       "classification": "unclassified",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -9731,15 +9731,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.6362,
+          "z": 0.6366,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.6362,
+            "insider_cluster_score": 0.6366,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.0603,
+            "insider_cluster_score": 1.061,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -9774,7 +9774,7 @@
       "peer_group": "Industrial Reit",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 84.21,
+      "percentile": 84.18,
       "composite_z": 0.3237,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -9879,7 +9879,7 @@
       "peer_group": "Trucking",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 84.04,
+      "percentile": 84.01,
       "composite_z": 0.3213,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -9984,7 +9984,7 @@
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 83.87,
+      "percentile": 83.84,
       "composite_z": 0.3202,
       "classification": "extended",
       "coverage": 1.0,
@@ -10086,7 +10086,7 @@
       "peer_group": "Trucking",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 83.7,
+      "percentile": 83.67,
       "composite_z": 0.3193,
       "classification": "extended",
       "coverage": 1.0,
@@ -10188,7 +10188,7 @@
       "peer_group": "Industrials",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 83.53,
+      "percentile": 83.5,
       "composite_z": 0.3192,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -10290,7 +10290,7 @@
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 83.36,
+      "percentile": 83.33,
       "composite_z": 0.3177,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -10392,7 +10392,7 @@
       "peer_group": "Property & casualty insurers",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 83.19,
+      "percentile": 83.16,
       "composite_z": 0.3169,
       "classification": "coiling",
       "coverage": 1.0,
@@ -10497,7 +10497,7 @@
       "peer_group": "Healthcare",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 83.02,
+      "percentile": 82.99,
       "composite_z": 0.3168,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -10590,116 +10590,14 @@
     },
     {
       "rank": 102,
-      "ticker": "INCY",
-      "name": "Incyte Corporation",
-      "sector": "Healthcare",
-      "peer_group": "Profitable Biotechnology",
-      "eligibility": true,
-      "current_membership": false,
-      "percentile": 82.85,
-      "composite_z": 0.3145,
-      "classification": "breaking_out",
-      "coverage": 1.0,
-      "legs_resolved": 3,
-      "legs_declared": 3,
-      "renormalization_factor": 1.0,
-      "structural_score": 84.7,
-      "tactical_score": null,
-      "data_coverage": 0.89,
-      "market_cap": 25691938816,
-      "price": 126.75,
-      "median_dollar_volume_60d": 186490828.0,
-      "sub_scores": {
-        "fundamental_inflection": {
-          "z": 0.4643,
-          "weight": 0.3333333333333333,
-          "applied": true,
-          "subfactor_contributions": {
-            "earnings_acceleration": -0.021,
-            "revenue_acceleration": -0.3963,
-            "roa_delta": 0.5123,
-            "margin_turn": 0.3693
-          },
-          "subfactor_z": {
-            "earnings_acceleration": -0.0596,
-            "revenue_acceleration": -1.6842,
-            "roa_delta": 2.1771,
-            "margin_turn": 2.0928
-          },
-          "subfactors_resolved": 4,
-          "subfactors_declared": 5,
-          "coverage": 0.85,
-          "renormalization_factor": 1.1765
-        },
-        "momentum_rs": {
-          "z": 0.4793,
-          "weight": 0.3333333333333333,
-          "applied": true,
-          "subfactor_contributions": {
-            "momentum_12_1": 0.2231,
-            "high_52w_drawdown_sigmas": 0.2834,
-            "path_smoothness": 0.0512,
-            "industry_relative_momentum": 0.057,
-            "volume_ratio_5d_50d": -0.0345,
-            "trailing_month_extension": -0.0698,
-            "volatility_contraction": -0.031
-          },
-          "subfactor_z": {
-            "momentum_12_1": 0.8922,
-            "high_52w_drawdown_sigmas": 1.1337,
-            "path_smoothness": 0.731,
-            "industry_relative_momentum": 0.3802,
-            "volume_ratio_5d_50d": -0.3453,
-            "trailing_month_extension": -0.4653,
-            "volatility_contraction": -1.0343
-          },
-          "subfactors_resolved": 7,
-          "subfactors_declared": 7,
-          "coverage": 1.0,
-          "renormalization_factor": 1.0
-        },
-        "flow_sentiment": {
-          "z": 0.0,
-          "weight": 0.3333333333333333,
-          "applied": true,
-          "subfactor_contributions": {
-            "short_interest_change": 0.0
-          },
-          "subfactor_z": {
-            "short_interest_change": 0
-          },
-          "subfactors_resolved": 1,
-          "subfactors_declared": 2,
-          "coverage": 0.4,
-          "renormalization_factor": 2.5
-        }
-      },
-      "raw_factors": {
-        "earnings_acceleration": 0.1125,
-        "revenue_acceleration": -1.7848,
-        "roa_delta": 0.0331,
-        "margin_turn": 0.1637,
-        "momentum_12_1": 0.4175,
-        "path_smoothness": 0.5418,
-        "industry_relative_momentum": 0.1336,
-        "high_52w_drawdown_sigmas": -0.0618,
-        "volume_ratio_5d_50d": 0.8399,
-        "trailing_month_extension": 8.6025,
-        "volatility_contraction": 0.134,
-        "short_interest_change": 0.0
-      },
-      "reason_codes": []
-    },
-    {
-      "rank": 103,
       "ticker": "NXPI",
       "name": "NXP Semiconductors N.V.",
       "sector": "Technology",
       "peer_group": "Semiconductor",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 82.68,
-      "composite_z": 0.3135,
+      "percentile": 82.82,
+      "composite_z": 0.3137,
       "classification": "unclassified",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -10761,15 +10659,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.4921,
+          "z": 0.4925,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.4921,
+            "insider_cluster_score": 0.4925,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.8202,
+            "insider_cluster_score": 0.8208,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -10796,14 +10694,14 @@
       "reason_codes": []
     },
     {
-      "rank": 104,
+      "rank": 103,
       "ticker": "FTDR",
       "name": "frontdoor, inc.",
       "sector": "Consumer Cyclical",
       "peer_group": "Consumer Cyclical",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 82.51,
+      "percentile": 82.65,
       "composite_z": 0.3111,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -10904,14 +10802,14 @@
       "reason_codes": []
     },
     {
-      "rank": 105,
+      "rank": 104,
       "ticker": "RS",
       "name": "Reliance, Inc.",
       "sector": "Basic Materials",
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 82.34,
+      "percentile": 82.48,
       "composite_z": 0.3088,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -11006,14 +10904,14 @@
       "reason_codes": []
     },
     {
-      "rank": 106,
+      "rank": 105,
       "ticker": "SYY",
       "name": "Sysco Corporation",
       "sector": "Consumer Defensive",
       "peer_group": "Food Distributor",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 82.17,
+      "percentile": 82.31,
       "composite_z": 0.3062,
       "classification": "coiling",
       "coverage": 1.0,
@@ -11102,14 +11000,14 @@
       "reason_codes": []
     },
     {
-      "rank": 107,
+      "rank": 106,
       "ticker": "MPWR",
       "name": "Monolithic Power Systems, Inc.",
       "sector": "Technology",
       "peer_group": "Semiconductor",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 82.0,
+      "percentile": 82.14,
       "composite_z": 0.3042,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -11201,14 +11099,14 @@
       "reason_codes": []
     },
     {
-      "rank": 108,
+      "rank": 107,
       "ticker": "HAE",
       "name": "Haemonetics Corporation",
       "sector": "Healthcare",
       "peer_group": "Medical Devices",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 81.83,
+      "percentile": 81.97,
       "composite_z": 0.3039,
       "classification": "extended",
       "coverage": 1.0,
@@ -11306,24 +11204,24 @@
       "reason_codes": []
     },
     {
-      "rank": 109,
+      "rank": 108,
       "ticker": "ETN",
       "name": "Eaton Corporation, PLC",
       "sector": "Industrials",
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 81.66,
-      "composite_z": 0.3028,
+      "percentile": 81.8,
+      "composite_z": 0.3029,
       "classification": "unclassified",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 59.7,
+      "structural_score": 62.7,
       "tactical_score": null,
       "data_coverage": 0.85,
-      "market_cap": 159533056000,
+      "market_cap": 159574147072,
       "price": 410.85,
       "median_dollar_volume_60d": 938337579.0,
       "sub_scores": {
@@ -11378,15 +11276,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.7111,
+          "z": 0.7116,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.7111,
+            "insider_cluster_score": 0.7116,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.1852,
+            "insider_cluster_score": 1.186,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -11414,14 +11312,14 @@
       "reason_codes": []
     },
     {
-      "rank": 110,
+      "rank": 109,
       "ticker": "XPO",
       "name": "XPO, Inc.",
       "sector": "Industrials",
       "peer_group": "Trucking",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 81.49,
+      "percentile": 81.63,
       "composite_z": 0.3007,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -11519,14 +11417,14 @@
       "reason_codes": []
     },
     {
-      "rank": 111,
+      "rank": 110,
       "ticker": "MUSA",
       "name": "Murphy USA Inc.",
       "sector": "Consumer Cyclical",
       "peer_group": "Consumer Cyclical",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 81.32,
+      "percentile": 81.46,
       "composite_z": 0.2996,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -11624,14 +11522,14 @@
       "reason_codes": []
     },
     {
-      "rank": 112,
+      "rank": 111,
       "ticker": "ZBRA",
       "name": "Zebra Technologies Corporation",
       "sector": "Technology",
       "peer_group": "Networking Equipment",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 81.15,
+      "percentile": 81.29,
       "composite_z": 0.2995,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -11726,21 +11624,21 @@
       "reason_codes": []
     },
     {
-      "rank": 113,
+      "rank": 112,
       "ticker": "BURL",
       "name": "Burlington Stores, Inc.",
       "sector": "Consumer Cyclical",
       "peer_group": "Retail Apparel",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 80.98,
+      "percentile": 81.12,
       "composite_z": 0.2983,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 60.1,
+      "structural_score": 63.1,
       "tactical_score": null,
       "data_coverage": 0.89,
       "market_cap": 16666755072,
@@ -11831,14 +11729,14 @@
       "reason_codes": []
     },
     {
-      "rank": 114,
+      "rank": 113,
       "ticker": "UNP",
       "name": "Union Pacific Corporation",
       "sector": "Industrials",
       "peer_group": "Railroad",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 80.81,
+      "percentile": 80.95,
       "composite_z": 0.2941,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -11933,14 +11831,14 @@
       "reason_codes": []
     },
     {
-      "rank": 115,
+      "rank": 114,
       "ticker": "ROKU",
       "name": "Roku, Inc.",
       "sector": "Communication Services",
       "peer_group": "Media Entertainment",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 80.65,
+      "percentile": 80.78,
       "composite_z": 0.293,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -12038,14 +11936,14 @@
       "reason_codes": []
     },
     {
-      "rank": 116,
+      "rank": 115,
       "ticker": "FN",
       "name": "Fabrinet",
       "sector": "Technology",
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 80.48,
+      "percentile": 80.61,
       "composite_z": 0.2912,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -12143,15 +12041,15 @@
       "reason_codes": []
     },
     {
-      "rank": 117,
+      "rank": 116,
       "ticker": "KEX",
       "name": "Kirby Corporation",
       "sector": "Industrials",
       "peer_group": "Marine Shipping",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 80.31,
-      "composite_z": 0.2886,
+      "percentile": 80.44,
+      "composite_z": 0.2888,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -12209,15 +12107,15 @@
           "renormalization_factor": 1.1765
         },
         "flow_sentiment": {
-          "z": 0.6362,
+          "z": 0.6366,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.6362,
+            "insider_cluster_score": 0.6366,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.0603,
+            "insider_cluster_score": 1.061,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -12242,14 +12140,14 @@
       "reason_codes": []
     },
     {
-      "rank": 118,
+      "rank": 117,
       "ticker": "UFPI",
       "name": "UFP Industries, Inc.",
       "sector": "Basic Materials",
       "peer_group": "Basic Materials",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 80.14,
+      "percentile": 80.27,
       "composite_z": 0.2853,
       "classification": "coiling",
       "coverage": 1.0,
@@ -12338,21 +12236,21 @@
       "reason_codes": []
     },
     {
-      "rank": 119,
+      "rank": 118,
       "ticker": "CARR",
       "name": "Carrier Global Corporation",
       "sector": "Industrials",
       "peer_group": "Building Products",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 79.97,
+      "percentile": 80.1,
       "composite_z": 0.2853,
       "classification": "unclassified",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 55.1,
+      "structural_score": 58.1,
       "tactical_score": null,
       "data_coverage": 0.87,
       "market_cap": 49220448256,
@@ -12440,14 +12338,14 @@
       "reason_codes": []
     },
     {
-      "rank": 120,
+      "rank": 119,
       "ticker": "PH",
       "name": "Parker-Hannifin Corporation",
       "sector": "Industrials",
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 79.8,
+      "percentile": 79.93,
       "composite_z": 0.2852,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -12545,14 +12443,14 @@
       "reason_codes": []
     },
     {
-      "rank": 121,
+      "rank": 120,
       "ticker": "GWW",
       "name": "W.W. Grainger, Inc.",
       "sector": "Industrials",
       "peer_group": "Industrial Distribution",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 79.63,
+      "percentile": 79.76,
       "composite_z": 0.2827,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -12650,14 +12548,14 @@
       "reason_codes": []
     },
     {
-      "rank": 122,
+      "rank": 121,
       "ticker": "FND",
       "name": "Floor & Decor Holdings, Inc.",
       "sector": "Consumer Cyclical",
       "peer_group": "Consumer Cyclical",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 79.46,
+      "percentile": 79.59,
       "composite_z": 0.2824,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -12755,21 +12653,21 @@
       "reason_codes": []
     },
     {
-      "rank": 123,
+      "rank": 122,
       "ticker": "BMY",
       "name": "Bristol-Myers Squibb Company",
       "sector": "Healthcare",
       "peer_group": "Large Cap Pharma",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 79.29,
+      "percentile": 79.42,
       "composite_z": 0.2813,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 83.8,
+      "structural_score": 80.8,
       "tactical_score": null,
       "data_coverage": 0.89,
       "market_cap": 136494186496,
@@ -12860,14 +12758,14 @@
       "reason_codes": []
     },
     {
-      "rank": 124,
+      "rank": 123,
       "ticker": "BIIB",
       "name": "Biogen Inc.",
       "sector": "Healthcare",
       "peer_group": "Large Cap Pharma",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 79.12,
+      "percentile": 79.25,
       "composite_z": 0.2789,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -12962,15 +12860,15 @@
       "reason_codes": []
     },
     {
-      "rank": 125,
+      "rank": 124,
       "ticker": "JPM",
       "name": "JP Morgan Chase & Co.",
       "sector": "Financial Services",
       "peer_group": "Large banks",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 78.95,
-      "composite_z": 0.2716,
+      "percentile": 79.08,
+      "composite_z": 0.2717,
       "classification": "coiling",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -13028,15 +12926,15 @@
           "renormalization_factor": 1.1765
         },
         "flow_sentiment": {
-          "z": 0.1233,
+          "z": 0.1235,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.1233,
+            "insider_cluster_score": 0.1235,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.2055,
+            "insider_cluster_score": 0.2058,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -13061,14 +12959,14 @@
       "reason_codes": []
     },
     {
-      "rank": 126,
+      "rank": 125,
       "ticker": "WMS",
       "name": "Advanced Drainage Systems, Inc.",
       "sector": "Industrials",
       "peer_group": "Building Products",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 78.78,
+      "percentile": 78.91,
       "composite_z": 0.2665,
       "classification": "coiling",
       "coverage": 1.0,
@@ -13166,15 +13064,15 @@
       "reason_codes": []
     },
     {
-      "rank": 127,
+      "rank": 126,
       "ticker": "CCK",
       "name": "Crown Holdings, Inc.",
       "sector": "Consumer Cyclical",
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 78.61,
-      "composite_z": 0.2662,
+      "percentile": 78.74,
+      "composite_z": 0.2663,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -13238,15 +13136,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.4114,
+          "z": 0.4118,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.4114,
+            "insider_cluster_score": 0.4118,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.6857,
+            "insider_cluster_score": 0.6863,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -13274,14 +13172,14 @@
       "reason_codes": []
     },
     {
-      "rank": 128,
+      "rank": 127,
       "ticker": "LMT",
       "name": "Lockheed Martin Corporation",
       "sector": "Industrials",
       "peer_group": "Aerospace Defense",
       "eligibility": true,
       "current_membership": true,
-      "percentile": 78.44,
+      "percentile": 78.57,
       "composite_z": 0.2652,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -13379,14 +13277,14 @@
       "reason_codes": []
     },
     {
-      "rank": 129,
+      "rank": 128,
       "ticker": "NEU",
       "name": "NewMarket Corp",
       "sector": "Basic Materials",
       "peer_group": "Specialty Chemicals",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 78.27,
+      "percentile": 78.4,
       "composite_z": 0.2626,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -13484,14 +13382,14 @@
       "reason_codes": []
     },
     {
-      "rank": 130,
+      "rank": 129,
       "ticker": "BMRN",
       "name": "BioMarin Pharmaceutical Inc.",
       "sector": "Healthcare",
       "peer_group": "Profitable Biotechnology",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 78.1,
+      "percentile": 78.23,
       "composite_z": 0.261,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -13589,14 +13487,14 @@
       "reason_codes": []
     },
     {
-      "rank": 131,
+      "rank": 130,
       "ticker": "BEN",
       "name": "Franklin Templeton, Inc.",
       "sector": "Financial Services",
       "peer_group": "Asset Manager",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 77.93,
+      "percentile": 78.06,
       "composite_z": 0.2601,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -13694,14 +13592,14 @@
       "reason_codes": []
     },
     {
-      "rank": 132,
+      "rank": 131,
       "ticker": "TTC",
       "name": "Toro Company (The)",
       "sector": "Industrials",
       "peer_group": "Industrials",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 77.76,
+      "percentile": 77.89,
       "composite_z": 0.2592,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -13799,14 +13697,14 @@
       "reason_codes": []
     },
     {
-      "rank": 133,
+      "rank": 132,
       "ticker": "ON",
       "name": "ON Semiconductor Corporation",
       "sector": "Technology",
       "peer_group": "Semiconductor",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 77.59,
+      "percentile": 77.72,
       "composite_z": 0.2579,
       "classification": "extended",
       "coverage": 1.0,
@@ -13904,14 +13802,14 @@
       "reason_codes": []
     },
     {
-      "rank": 134,
+      "rank": 133,
       "ticker": "TRGP",
       "name": "Targa Resources, Inc.",
       "sector": "Energy",
       "peer_group": "Midstream Mlp",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 77.42,
+      "percentile": 77.55,
       "composite_z": 0.2555,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -14003,14 +13901,14 @@
       "reason_codes": []
     },
     {
-      "rank": 135,
+      "rank": 134,
       "ticker": "NSIT",
       "name": "Insight Enterprises, Inc.",
       "sector": "Technology",
       "peer_group": "Ems Electronic Components",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 77.25,
+      "percentile": 77.38,
       "composite_z": 0.254,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -14105,14 +14003,14 @@
       "reason_codes": []
     },
     {
-      "rank": 136,
+      "rank": 135,
       "ticker": "REYN",
       "name": "Reynolds Consumer Products Inc.",
       "sector": "Consumer Cyclical",
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 77.08,
+      "percentile": 77.21,
       "composite_z": 0.2533,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -14207,14 +14105,14 @@
       "reason_codes": []
     },
     {
-      "rank": 137,
+      "rank": 136,
       "ticker": "OKTA",
       "name": "Okta, Inc.",
       "sector": "Technology",
       "peer_group": "Saas",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 76.91,
+      "percentile": 77.04,
       "composite_z": 0.2505,
       "classification": "extended",
       "coverage": 1.0,
@@ -14312,21 +14210,21 @@
       "reason_codes": []
     },
     {
-      "rank": 138,
+      "rank": 137,
       "ticker": "RGA",
       "name": "Reinsurance Group of America, I",
       "sector": "Financial Services",
       "peer_group": "Reinsurer",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 76.74,
+      "percentile": 76.87,
       "composite_z": 0.2503,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 76.6,
+      "structural_score": 73.6,
       "tactical_score": null,
       "data_coverage": 0.83,
       "market_cap": 16538952704,
@@ -14414,14 +14312,14 @@
       "reason_codes": []
     },
     {
-      "rank": 139,
+      "rank": 138,
       "ticker": "GHC",
       "name": "Graham Holdings Company",
       "sector": "Industrials",
       "peer_group": "Industrials",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 76.57,
+      "percentile": 76.7,
       "composite_z": 0.25,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -14516,14 +14414,14 @@
       "reason_codes": []
     },
     {
-      "rank": 140,
+      "rank": 139,
       "ticker": "USFD",
       "name": "US Foods Holding Corp.",
       "sector": "Consumer Defensive",
       "peer_group": "Food Distributor",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 76.4,
+      "percentile": 76.53,
       "composite_z": 0.2496,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -14618,14 +14516,14 @@
       "reason_codes": []
     },
     {
-      "rank": 141,
+      "rank": 140,
       "ticker": "CLH",
       "name": "Clean Harbors, Inc.",
       "sector": "Industrials",
       "peer_group": "Waste Management",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 76.23,
+      "percentile": 76.36,
       "composite_z": 0.2486,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -14717,14 +14615,14 @@
       "reason_codes": []
     },
     {
-      "rank": 142,
+      "rank": 141,
       "ticker": "DE",
       "name": "Deere & Company",
       "sector": "Industrials",
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 76.06,
+      "percentile": 76.19,
       "composite_z": 0.2485,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -14822,14 +14720,14 @@
       "reason_codes": []
     },
     {
-      "rank": 143,
+      "rank": 142,
       "ticker": "AXTA",
       "name": "Axalta Coating Systems Ltd.",
       "sector": "Basic Materials",
       "peer_group": "Specialty Chemicals",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 75.89,
+      "percentile": 76.02,
       "composite_z": 0.2477,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -14924,15 +14822,15 @@
       "reason_codes": []
     },
     {
-      "rank": 144,
+      "rank": 143,
       "ticker": "KEYS",
       "name": "Keysight Technologies Inc.",
       "sector": "Technology",
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 75.72,
-      "composite_z": 0.2475,
+      "percentile": 75.85,
+      "composite_z": 0.2474,
       "classification": "extended",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -14996,15 +14894,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.6027,
+          "z": -0.603,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.6027,
+            "insider_cluster_score": -0.603,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -1.0046,
+            "insider_cluster_score": -1.0049,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -15032,14 +14930,14 @@
       "reason_codes": []
     },
     {
-      "rank": 145,
+      "rank": 144,
       "ticker": "PAYC",
       "name": "Paycom Software, Inc.",
       "sector": "Technology",
       "peer_group": "Saas",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 75.55,
+      "percentile": 75.68,
       "composite_z": 0.2467,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -15137,14 +15035,14 @@
       "reason_codes": []
     },
     {
-      "rank": 146,
+      "rank": 145,
       "ticker": "CHRW",
       "name": "C.H. Robinson Worldwide, Inc.",
       "sector": "Industrials",
       "peer_group": "Air Freight Logistics",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 75.38,
+      "percentile": 75.51,
       "composite_z": 0.2393,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -15236,15 +15134,15 @@
       "reason_codes": []
     },
     {
-      "rank": 147,
+      "rank": 146,
       "ticker": "KNSL",
       "name": "Kinsale Capital Group, Inc.",
       "sector": "Financial Services",
       "peer_group": "Property & casualty insurers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 75.21,
-      "composite_z": 0.2378,
+      "percentile": 75.34,
+      "composite_z": 0.2379,
       "classification": "unclassified",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -15308,15 +15206,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.6362,
+          "z": 0.6366,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.6362,
+            "insider_cluster_score": 0.6366,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.0603,
+            "insider_cluster_score": 1.061,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -15344,14 +15242,14 @@
       "reason_codes": []
     },
     {
-      "rank": 148,
+      "rank": 147,
       "ticker": "AYI",
       "name": "Acuity Inc.",
       "sector": "Industrials",
       "peer_group": "Electrical Equipment",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 75.04,
+      "percentile": 75.17,
       "composite_z": 0.2364,
       "classification": "coiling",
       "coverage": 1.0,
@@ -15446,15 +15344,15 @@
       "reason_codes": []
     },
     {
-      "rank": 149,
+      "rank": 148,
       "ticker": "SFBS",
       "name": "ServisFirst Bancshares, Inc.",
       "sector": "Financial Services",
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 74.87,
-      "composite_z": 0.2325,
+      "percentile": 75.0,
+      "composite_z": 0.2326,
       "classification": "unclassified",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -15512,15 +15410,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.3481,
+          "z": 0.3483,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.3481,
+            "insider_cluster_score": 0.3483,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.5801,
+            "insider_cluster_score": 0.5806,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -15545,21 +15443,21 @@
       "reason_codes": []
     },
     {
-      "rank": 150,
+      "rank": 149,
       "ticker": "UPS",
       "name": "United Parcel Service, Inc.",
       "sector": "Industrials",
       "peer_group": "Air Freight Logistics",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 74.7,
-      "composite_z": 0.2324,
+      "percentile": 74.83,
+      "composite_z": 0.2325,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 74.9,
+      "structural_score": 71.9,
       "tactical_score": null,
       "data_coverage": 0.89,
       "market_cap": 87026450432,
@@ -15613,15 +15511,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.6362,
+          "z": 0.6366,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.6362,
+            "insider_cluster_score": 0.6366,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.0603,
+            "insider_cluster_score": 1.061,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -15647,14 +15545,14 @@
       "reason_codes": []
     },
     {
-      "rank": 151,
+      "rank": 150,
       "ticker": "PCAR",
       "name": "PACCAR Inc.",
       "sector": "Industrials",
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 74.53,
+      "percentile": 74.66,
       "composite_z": 0.232,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -15752,14 +15650,14 @@
       "reason_codes": []
     },
     {
-      "rank": 152,
+      "rank": 151,
       "ticker": "FUL",
       "name": "H. B. Fuller Company",
       "sector": "Basic Materials",
       "peer_group": "Specialty Chemicals",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 74.36,
+      "percentile": 74.49,
       "composite_z": 0.2296,
       "classification": "coiling",
       "coverage": 1.0,
@@ -15857,122 +15755,14 @@
       "reason_codes": []
     },
     {
-      "rank": 153,
-      "ticker": "MCY",
-      "name": "Mercury General Corporation",
-      "sector": "Financial Services",
-      "peer_group": "Property & casualty insurers",
-      "eligibility": true,
-      "current_membership": false,
-      "percentile": 74.19,
-      "composite_z": 0.2274,
-      "classification": "breaking_out",
-      "coverage": 1.0,
-      "legs_resolved": 3,
-      "legs_declared": 3,
-      "renormalization_factor": 1.0,
-      "structural_score": 87.3,
-      "tactical_score": null,
-      "data_coverage": 0.82,
-      "market_cap": 5789773312,
-      "price": 104.53,
-      "median_dollar_volume_60d": 27614180.0,
-      "sub_scores": {
-        "fundamental_inflection": {
-          "z": -0.521,
-          "weight": 0.3333333333333333,
-          "applied": true,
-          "subfactor_contributions": {
-            "earnings_acceleration": -0.325,
-            "revenue_acceleration": -0.339,
-            "roa_delta": 0.0737,
-            "margin_turn": 0.0997,
-            "standardized_unexpected_earnings": -0.0304
-          },
-          "subfactor_z": {
-            "earnings_acceleration": -1.0834,
-            "revenue_acceleration": -1.6948,
-            "roa_delta": 0.3683,
-            "margin_turn": 0.6648,
-            "standardized_unexpected_earnings": -0.2027
-          },
-          "subfactors_resolved": 5,
-          "subfactors_declared": 5,
-          "coverage": 1.0,
-          "renormalization_factor": 1.0
-        },
-        "momentum_rs": {
-          "z": 0.5671,
-          "weight": 0.3333333333333333,
-          "applied": true,
-          "subfactor_contributions": {
-            "momentum_12_1": 0.1181,
-            "high_52w_drawdown_sigmas": 0.1545,
-            "path_smoothness": 0.0535,
-            "industry_relative_momentum": 0.0601,
-            "volume_ratio_5d_50d": 0.0825,
-            "trailing_month_extension": 0.0792,
-            "volatility_contraction": 0.0192
-          },
-          "subfactor_z": {
-            "momentum_12_1": 0.4725,
-            "high_52w_drawdown_sigmas": 0.6182,
-            "path_smoothness": 0.764,
-            "industry_relative_momentum": 0.4007,
-            "volume_ratio_5d_50d": 0.8252,
-            "trailing_month_extension": 0.5278,
-            "volatility_contraction": 0.6386
-          },
-          "subfactors_resolved": 7,
-          "subfactors_declared": 7,
-          "coverage": 1.0,
-          "renormalization_factor": 1.0
-        },
-        "flow_sentiment": {
-          "z": 0.6362,
-          "weight": 0.3333333333333333,
-          "applied": true,
-          "subfactor_contributions": {
-            "insider_cluster_score": 0.6362,
-            "short_interest_change": 0.0
-          },
-          "subfactor_z": {
-            "insider_cluster_score": 1.0603,
-            "short_interest_change": 0
-          },
-          "subfactors_resolved": 2,
-          "subfactors_declared": 2,
-          "coverage": 1.0,
-          "renormalization_factor": 1.0
-        }
-      },
-      "raw_factors": {
-        "earnings_acceleration": -1.5272,
-        "revenue_acceleration": -2.8968,
-        "roa_delta": 0.0057,
-        "margin_turn": 0.0419,
-        "standardized_unexpected_earnings": 0.1204,
-        "momentum_12_1": 0.2908,
-        "path_smoothness": 0.5578,
-        "industry_relative_momentum": 0.1394,
-        "high_52w_drawdown_sigmas": -0.2315,
-        "volume_ratio_5d_50d": 1.1863,
-        "trailing_month_extension": -4.3291,
-        "volatility_contraction": 0.574,
-        "insider_cluster_score": 0.0,
-        "short_interest_change": 0.0
-      },
-      "reason_codes": []
-    },
-    {
-      "rank": 154,
+      "rank": 152,
       "ticker": "SYK",
       "name": "Stryker Corporation",
       "sector": "Healthcare",
       "peer_group": "Medical Devices",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 74.02,
+      "percentile": 74.32,
       "composite_z": 0.2243,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -16070,14 +15860,14 @@
       "reason_codes": []
     },
     {
-      "rank": 155,
+      "rank": 153,
       "ticker": "NSC",
       "name": "Norfolk Southern Corporation",
       "sector": "Industrials",
       "peer_group": "Railroad",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 73.85,
+      "percentile": 74.15,
       "composite_z": 0.2237,
       "classification": "coiling",
       "coverage": 1.0,
@@ -16172,14 +15962,14 @@
       "reason_codes": []
     },
     {
-      "rank": 156,
+      "rank": 154,
       "ticker": "UTHR",
       "name": "United Therapeutics Corporation",
       "sector": "Healthcare",
       "peer_group": "Healthcare",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 73.68,
+      "percentile": 73.98,
       "composite_z": 0.2236,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -16277,14 +16067,14 @@
       "reason_codes": []
     },
     {
-      "rank": 157,
+      "rank": 155,
       "ticker": "PAG",
       "name": "Penske Automotive Group, Inc.",
       "sector": "Consumer Cyclical",
       "peer_group": "Auto Dealership",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 73.51,
+      "percentile": 73.81,
       "composite_z": 0.2214,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -16382,14 +16172,14 @@
       "reason_codes": []
     },
     {
-      "rank": 158,
+      "rank": 156,
       "ticker": "DKS",
       "name": "Dick's Sporting Goods Inc",
       "sector": "Consumer Cyclical",
       "peer_group": "Consumer Cyclical",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 73.34,
+      "percentile": 73.64,
       "composite_z": 0.2195,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -16487,14 +16277,14 @@
       "reason_codes": []
     },
     {
-      "rank": 159,
+      "rank": 157,
       "ticker": "IOSP",
       "name": "Innospec Inc.",
       "sector": "Basic Materials",
       "peer_group": "Specialty Chemicals",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 73.17,
+      "percentile": 73.47,
       "composite_z": 0.2164,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -16586,14 +16376,14 @@
       "reason_codes": []
     },
     {
-      "rank": 160,
+      "rank": 158,
       "ticker": "FAST",
       "name": "Fastenal Company",
       "sector": "Industrials",
       "peer_group": "Industrial Distribution",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 73.01,
+      "percentile": 73.3,
       "composite_z": 0.2149,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -16691,14 +16481,14 @@
       "reason_codes": []
     },
     {
-      "rank": 161,
+      "rank": 159,
       "ticker": "NDSN",
       "name": "Nordson Corporation",
       "sector": "Industrials",
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 72.84,
+      "percentile": 73.13,
       "composite_z": 0.2141,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -16796,14 +16586,14 @@
       "reason_codes": []
     },
     {
-      "rank": 162,
+      "rank": 160,
       "ticker": "AME",
       "name": "AMETEK, Inc.",
       "sector": "Industrials",
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 72.67,
+      "percentile": 72.96,
       "composite_z": 0.2095,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -16901,14 +16691,14 @@
       "reason_codes": []
     },
     {
-      "rank": 163,
+      "rank": 161,
       "ticker": "PFGC",
       "name": "Performance Food Group Company",
       "sector": "Consumer Defensive",
       "peer_group": "Food Distributor",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 72.5,
+      "percentile": 72.79,
       "composite_z": 0.2095,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -17003,14 +16793,14 @@
       "reason_codes": []
     },
     {
-      "rank": 164,
+      "rank": 162,
       "ticker": "HSIC",
       "name": "Henry Schein, Inc.",
       "sector": "Healthcare",
       "peer_group": "Pharmacy Healthcare Distribution",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 72.33,
+      "percentile": 72.62,
       "composite_z": 0.2065,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -17105,14 +16895,14 @@
       "reason_codes": []
     },
     {
-      "rank": 165,
+      "rank": 163,
       "ticker": "GD",
       "name": "General Dynamics Corporation",
       "sector": "Industrials",
       "peer_group": "Aerospace Defense",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 72.16,
+      "percentile": 72.45,
       "composite_z": 0.2035,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -17207,14 +16997,14 @@
       "reason_codes": []
     },
     {
-      "rank": 166,
+      "rank": 164,
       "ticker": "ROK",
       "name": "Rockwell Automation, Inc.",
       "sector": "Industrials",
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 71.99,
+      "percentile": 72.28,
       "composite_z": 0.1997,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -17312,14 +17102,14 @@
       "reason_codes": []
     },
     {
-      "rank": 167,
+      "rank": 165,
       "ticker": "RNR",
       "name": "RenaissanceRe Holdings Ltd.",
       "sector": "Financial Services",
       "peer_group": "Reinsurer",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 71.82,
+      "percentile": 72.11,
       "composite_z": 0.1989,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -17390,7 +17180,7 @@
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -0.1594,
+            "insider_cluster_score": -0.1593,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -17417,14 +17207,14 @@
       "reason_codes": []
     },
     {
-      "rank": 168,
+      "rank": 166,
       "ticker": "URI",
       "name": "United Rentals, Inc.",
       "sector": "Industrials",
       "peer_group": "Industrials",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 71.65,
+      "percentile": 71.94,
       "composite_z": 0.1981,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -17519,14 +17309,14 @@
       "reason_codes": []
     },
     {
-      "rank": 169,
+      "rank": 167,
       "ticker": "EME",
       "name": "EMCOR Group, Inc.",
       "sector": "Industrials",
       "peer_group": "Engineering Construction",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 71.48,
+      "percentile": 71.77,
       "composite_z": 0.198,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -17624,21 +17414,21 @@
       "reason_codes": []
     },
     {
-      "rank": 170,
+      "rank": 168,
       "ticker": "BRKR",
       "name": "Bruker Corporation",
       "sector": "Healthcare",
       "peer_group": "Medical Devices",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 71.31,
+      "percentile": 71.6,
       "composite_z": 0.196,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 41.9,
+      "structural_score": 44.9,
       "tactical_score": null,
       "data_coverage": 0.84,
       "market_cap": 8913019904,
@@ -17729,14 +17519,14 @@
       "reason_codes": []
     },
     {
-      "rank": 171,
+      "rank": 169,
       "ticker": "HBAN",
       "name": "Huntington Bancshares Incorpora",
       "sector": "Financial Services",
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 71.14,
+      "percentile": 71.43,
       "composite_z": 0.1957,
       "classification": "coiling",
       "coverage": 1.0,
@@ -17828,14 +17618,14 @@
       "reason_codes": []
     },
     {
-      "rank": 172,
+      "rank": 170,
       "ticker": "BG",
       "name": "Bunge Limited",
       "sector": "Consumer Defensive",
       "peer_group": "Agricultural Processor",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 70.97,
+      "percentile": 71.26,
       "composite_z": 0.1919,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -17927,14 +17717,14 @@
       "reason_codes": []
     },
     {
-      "rank": 173,
+      "rank": 171,
       "ticker": "FLS",
       "name": "Flowserve Corporation",
       "sector": "Industrials",
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 70.8,
+      "percentile": 71.09,
       "composite_z": 0.1903,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -18032,14 +17822,14 @@
       "reason_codes": []
     },
     {
-      "rank": 174,
+      "rank": 172,
       "ticker": "CB",
       "name": "Chubb Limited",
       "sector": "Financial Services",
       "peer_group": "Property & casualty insurers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 70.63,
+      "percentile": 70.92,
       "composite_z": 0.1901,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -18134,14 +17924,14 @@
       "reason_codes": []
     },
     {
-      "rank": 175,
+      "rank": 173,
       "ticker": "ICUI",
       "name": "ICU Medical, Inc.",
       "sector": "Healthcare",
       "peer_group": "Medical Devices",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 70.46,
+      "percentile": 70.75,
       "composite_z": 0.1898,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -18239,14 +18029,14 @@
       "reason_codes": []
     },
     {
-      "rank": 176,
+      "rank": 174,
       "ticker": "CFG",
       "name": "Citizens Financial Group, Inc.",
       "sector": "Financial Services",
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 70.29,
+      "percentile": 70.58,
       "composite_z": 0.1897,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -18338,14 +18128,14 @@
       "reason_codes": []
     },
     {
-      "rank": 177,
+      "rank": 175,
       "ticker": "TROW",
       "name": "T. Rowe Price Group, Inc.",
       "sector": "Financial Services",
       "peer_group": "Asset Manager",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 70.12,
+      "percentile": 70.41,
       "composite_z": 0.1885,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -18443,14 +18233,14 @@
       "reason_codes": []
     },
     {
-      "rank": 178,
+      "rank": 176,
       "ticker": "WSM",
       "name": "Williams-Sonoma, Inc.",
       "sector": "Consumer Cyclical",
       "peer_group": "Consumer Cyclical",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 69.95,
+      "percentile": 70.24,
       "composite_z": 0.1881,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -18548,14 +18338,14 @@
       "reason_codes": []
     },
     {
-      "rank": 179,
+      "rank": 177,
       "ticker": "GNRC",
       "name": "Generac Holdlings Inc.",
       "sector": "Industrials",
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 69.78,
+      "percentile": 70.07,
       "composite_z": 0.188,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -18647,14 +18437,14 @@
       "reason_codes": []
     },
     {
-      "rank": 180,
+      "rank": 178,
       "ticker": "SSD",
       "name": "Simpson Manufacturing Company, ",
       "sector": "Basic Materials",
       "peer_group": "Basic Materials",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 69.61,
+      "percentile": 69.9,
       "composite_z": 0.1872,
       "classification": "coiling",
       "coverage": 1.0,
@@ -18743,14 +18533,14 @@
       "reason_codes": []
     },
     {
-      "rank": 181,
+      "rank": 179,
       "ticker": "NUE",
       "name": "Nucor Corporation",
       "sector": "Basic Materials",
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 69.44,
+      "percentile": 69.73,
       "composite_z": 0.1868,
       "classification": "extended",
       "coverage": 1.0,
@@ -18811,15 +18601,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.476,
+          "z": -0.4761,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.476,
+            "insider_cluster_score": -0.4761,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -0.7933,
+            "insider_cluster_score": -0.7935,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -18845,14 +18635,14 @@
       "reason_codes": []
     },
     {
-      "rank": 182,
+      "rank": 180,
       "ticker": "DG",
       "name": "Dollar General Corporation",
       "sector": "Consumer Defensive",
       "peer_group": "Grocery Staples Retail",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 69.27,
+      "percentile": 69.56,
       "composite_z": 0.1846,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -18950,21 +18740,21 @@
       "reason_codes": []
     },
     {
-      "rank": 183,
+      "rank": 181,
       "ticker": "REGN",
       "name": "Regeneron Pharmaceuticals, Inc.",
       "sector": "Healthcare",
       "peer_group": "Biopharmaceutical companies",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 69.1,
+      "percentile": 69.39,
       "composite_z": 0.1813,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 83.1,
+      "structural_score": 80.1,
       "tactical_score": null,
       "data_coverage": 0.89,
       "market_cap": 85217902592,
@@ -19052,15 +18842,15 @@
       "reason_codes": []
     },
     {
-      "rank": 184,
+      "rank": 182,
       "ticker": "SIGI",
       "name": "Selective Insurance Group, Inc.",
       "sector": "Financial Services",
       "peer_group": "Property & casualty insurers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 68.93,
-      "composite_z": 0.1792,
+      "percentile": 69.22,
+      "composite_z": 0.1793,
       "classification": "coiling",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -19069,7 +18859,7 @@
       "structural_score": 80.6,
       "tactical_score": null,
       "data_coverage": 0.87,
-      "market_cap": 5494523904,
+      "market_cap": 5491677184,
       "price": 92.19,
       "median_dollar_volume_60d": 48054599.0,
       "sub_scores": {
@@ -19124,15 +18914,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.3596,
+          "z": 0.3599,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.3596,
+            "insider_cluster_score": 0.3599,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.5993,
+            "insider_cluster_score": 0.5998,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -19160,14 +18950,14 @@
       "reason_codes": []
     },
     {
-      "rank": 185,
+      "rank": 183,
       "ticker": "ARMK",
       "name": "Aramark",
       "sector": "Industrials",
       "peer_group": "Industrials",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 68.76,
+      "percentile": 69.05,
       "composite_z": 0.1784,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -19265,14 +19055,14 @@
       "reason_codes": []
     },
     {
-      "rank": 186,
+      "rank": 184,
       "ticker": "TFX",
       "name": "Teleflex Incorporated",
       "sector": "Healthcare",
       "peer_group": "Medical Devices",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 68.59,
+      "percentile": 68.88,
       "composite_z": 0.1783,
       "classification": "coiling",
       "coverage": 1.0,
@@ -19370,14 +19160,14 @@
       "reason_codes": []
     },
     {
-      "rank": 187,
+      "rank": 185,
       "ticker": "MNST",
       "name": "Monster Beverage Corporation",
       "sector": "Consumer Defensive",
       "peer_group": "Beverage Manufacturer",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 68.42,
+      "percentile": 68.71,
       "composite_z": 0.1772,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -19475,14 +19265,14 @@
       "reason_codes": []
     },
     {
-      "rank": 188,
+      "rank": 186,
       "ticker": "NVDA",
       "name": "NVIDIA Corporation",
       "sector": "Technology",
       "peer_group": "Semiconductor",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 68.25,
+      "percentile": 68.54,
       "composite_z": 0.174,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -19580,14 +19370,14 @@
       "reason_codes": []
     },
     {
-      "rank": 189,
+      "rank": 187,
       "ticker": "PRU",
       "name": "Prudential Financial, Inc.",
       "sector": "Financial Services",
       "peer_group": "Life insurers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 68.08,
+      "percentile": 68.37,
       "composite_z": 0.1731,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -19679,15 +19469,123 @@
       "reason_codes": []
     },
     {
-      "rank": 190,
+      "rank": 188,
+      "ticker": "EXEL",
+      "name": "Exelixis, Inc.",
+      "sector": "Healthcare",
+      "peer_group": "Profitable Biotechnology",
+      "eligibility": true,
+      "current_membership": false,
+      "percentile": 68.2,
+      "composite_z": 0.173,
+      "classification": "breaking_out",
+      "coverage": 1.0,
+      "legs_resolved": 3,
+      "legs_declared": 3,
+      "renormalization_factor": 1.0,
+      "structural_score": 75.9,
+      "tactical_score": null,
+      "data_coverage": 0.89,
+      "market_cap": 14621597696,
+      "price": 59.01,
+      "median_dollar_volume_60d": 129389624.0,
+      "sub_scores": {
+        "fundamental_inflection": {
+          "z": -0.383,
+          "weight": 0.3333333333333333,
+          "applied": true,
+          "subfactor_contributions": {
+            "earnings_acceleration": -0.107,
+            "revenue_acceleration": -0.0482,
+            "roa_delta": -0.1153,
+            "margin_turn": 0.0258,
+            "standardized_unexpected_earnings": -0.1382
+          },
+          "subfactor_z": {
+            "earnings_acceleration": -0.3566,
+            "revenue_acceleration": -0.2411,
+            "roa_delta": -0.5766,
+            "margin_turn": 0.172,
+            "standardized_unexpected_earnings": -0.9216
+          },
+          "subfactors_resolved": 5,
+          "subfactors_declared": 5,
+          "coverage": 1.0,
+          "renormalization_factor": 1.0
+        },
+        "momentum_rs": {
+          "z": 0.5998,
+          "weight": 0.3333333333333333,
+          "applied": true,
+          "subfactor_contributions": {
+            "momentum_12_1": 0.0959,
+            "high_52w_drawdown_sigmas": 0.3303,
+            "path_smoothness": 0.0448,
+            "industry_relative_momentum": -0.0639,
+            "volume_ratio_5d_50d": 0.2088,
+            "trailing_month_extension": -0.0092,
+            "volatility_contraction": -0.0069
+          },
+          "subfactor_z": {
+            "momentum_12_1": 0.3835,
+            "high_52w_drawdown_sigmas": 1.3212,
+            "path_smoothness": 0.6403,
+            "industry_relative_momentum": -0.4258,
+            "volume_ratio_5d_50d": 2.0879,
+            "trailing_month_extension": -0.0615,
+            "volatility_contraction": -0.2302
+          },
+          "subfactors_resolved": 7,
+          "subfactors_declared": 7,
+          "coverage": 1.0,
+          "renormalization_factor": 1.0
+        },
+        "flow_sentiment": {
+          "z": 0.3022,
+          "weight": 0.3333333333333333,
+          "applied": true,
+          "subfactor_contributions": {
+            "insider_cluster_score": 0.3022,
+            "short_interest_change": 0.0
+          },
+          "subfactor_z": {
+            "insider_cluster_score": 0.5037,
+            "short_interest_change": 0
+          },
+          "subfactors_resolved": 2,
+          "subfactors_declared": 2,
+          "coverage": 1.0,
+          "renormalization_factor": 1.0
+        }
+      },
+      "raw_factors": {
+        "earnings_acceleration": -0.3632,
+        "revenue_acceleration": 0.0701,
+        "roa_delta": -0.0048,
+        "margin_turn": 0.0174,
+        "standardized_unexpected_earnings": -0.8733,
+        "momentum_12_1": 0.2639,
+        "path_smoothness": 0.498,
+        "industry_relative_momentum": -0.0968,
+        "high_52w_drawdown_sigmas": 0.0,
+        "volume_ratio_5d_50d": 1.5599,
+        "trailing_month_extension": 3.345,
+        "volatility_contraction": 0.3455,
+        "insider_cluster_score": -0.58,
+        "short_interest_change": 0.0
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 189,
       "ticker": "WSFS",
       "name": "WSFS Financial Corporation",
       "sector": "Financial Services",
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 67.91,
-      "composite_z": 0.1713,
+      "percentile": 68.03,
+      "composite_z": 0.1714,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -19747,15 +19645,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.2213,
+          "z": 0.2215,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.2213,
+            "insider_cluster_score": 0.2215,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.3688,
+            "insider_cluster_score": 0.3692,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -19781,14 +19679,14 @@
       "reason_codes": []
     },
     {
-      "rank": 191,
+      "rank": 190,
       "ticker": "WWD",
       "name": "Woodward, Inc.",
       "sector": "Industrials",
       "peer_group": "Aerospace Defense",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 67.74,
+      "percentile": 67.86,
       "composite_z": 0.1684,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -19886,15 +19784,15 @@
       "reason_codes": []
     },
     {
-      "rank": 192,
+      "rank": 191,
       "ticker": "PSX",
       "name": "Phillips 66",
       "sector": "Energy",
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 67.57,
-      "composite_z": 0.1646,
+      "percentile": 67.69,
+      "composite_z": 0.1645,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -19958,15 +19856,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.4472,
+          "z": -0.4473,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.4472,
+            "insider_cluster_score": -0.4473,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -0.7453,
+            "insider_cluster_score": -0.7455,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -19994,14 +19892,14 @@
       "reason_codes": []
     },
     {
-      "rank": 193,
+      "rank": 192,
       "ticker": "MRVL",
       "name": "Marvell Technology, Inc.",
       "sector": "Technology",
       "peer_group": "Semiconductor",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 67.4,
+      "percentile": 67.52,
       "composite_z": 0.1635,
       "classification": "extended",
       "coverage": 1.0,
@@ -20099,14 +19997,14 @@
       "reason_codes": []
     },
     {
-      "rank": 194,
+      "rank": 193,
       "ticker": "VMI",
       "name": "Valmont Industries, Inc.",
       "sector": "Industrials",
       "peer_group": "Industrials",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 67.23,
+      "percentile": 67.35,
       "composite_z": 0.1628,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -20204,14 +20102,14 @@
       "reason_codes": []
     },
     {
-      "rank": 195,
+      "rank": 194,
       "ticker": "MTD",
       "name": "Mettler-Toledo International, I",
       "sector": "Healthcare",
       "peer_group": "Life Science Tools Diagnostics",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 67.06,
+      "percentile": 67.18,
       "composite_z": 0.1625,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -20309,15 +20207,15 @@
       "reason_codes": []
     },
     {
-      "rank": 196,
+      "rank": 195,
       "ticker": "GL",
       "name": "Globe Life Inc.",
       "sector": "Financial Services",
       "peer_group": "Life insurers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 66.89,
-      "composite_z": 0.1624,
+      "percentile": 67.01,
+      "composite_z": 0.1623,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -20377,15 +20275,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.3665,
+          "z": -0.3666,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.3665,
+            "insider_cluster_score": -0.3666,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -0.6108,
+            "insider_cluster_score": -0.611,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -20411,6 +20309,114 @@
       "reason_codes": []
     },
     {
+      "rank": 196,
+      "ticker": "WRB",
+      "name": "W.R. Berkley Corporation",
+      "sector": "Financial Services",
+      "peer_group": "Property & casualty insurers",
+      "eligibility": true,
+      "current_membership": false,
+      "percentile": 66.84,
+      "composite_z": 0.1595,
+      "classification": "unclassified",
+      "coverage": 1.0,
+      "legs_resolved": 3,
+      "legs_declared": 3,
+      "renormalization_factor": 1.0,
+      "structural_score": 82.6,
+      "tactical_score": null,
+      "data_coverage": 0.85,
+      "market_cap": 25666670592,
+      "price": 69.14,
+      "median_dollar_volume_60d": 134505633.0,
+      "sub_scores": {
+        "fundamental_inflection": {
+          "z": 0.1818,
+          "weight": 0.3333333333333333,
+          "applied": true,
+          "subfactor_contributions": {
+            "earnings_acceleration": -0.1239,
+            "revenue_acceleration": 0.4611,
+            "roa_delta": -0.0595,
+            "margin_turn": -0.0608,
+            "standardized_unexpected_earnings": -0.035
+          },
+          "subfactor_z": {
+            "earnings_acceleration": -0.4131,
+            "revenue_acceleration": 2.3055,
+            "roa_delta": -0.2976,
+            "margin_turn": -0.4052,
+            "standardized_unexpected_earnings": -0.2336
+          },
+          "subfactors_resolved": 5,
+          "subfactors_declared": 5,
+          "coverage": 1.0,
+          "renormalization_factor": 1.0
+        },
+        "momentum_rs": {
+          "z": -0.3399,
+          "weight": 0.3333333333333333,
+          "applied": true,
+          "subfactor_contributions": {
+            "momentum_12_1": -0.1546,
+            "high_52w_drawdown_sigmas": 0.0372,
+            "path_smoothness": -0.1058,
+            "industry_relative_momentum": -0.1404,
+            "volume_ratio_5d_50d": -0.0294,
+            "trailing_month_extension": 0.078,
+            "volatility_contraction": -0.0248
+          },
+          "subfactor_z": {
+            "momentum_12_1": -0.6185,
+            "high_52w_drawdown_sigmas": 0.1486,
+            "path_smoothness": -1.5118,
+            "industry_relative_momentum": -0.9358,
+            "volume_ratio_5d_50d": -0.294,
+            "trailing_month_extension": 0.5198,
+            "volatility_contraction": -0.8252
+          },
+          "subfactors_resolved": 7,
+          "subfactors_declared": 7,
+          "coverage": 1.0,
+          "renormalization_factor": 1.0
+        },
+        "flow_sentiment": {
+          "z": 0.6366,
+          "weight": 0.3333333333333333,
+          "applied": true,
+          "subfactor_contributions": {
+            "insider_cluster_score": 0.6366,
+            "short_interest_change": 0.0
+          },
+          "subfactor_z": {
+            "insider_cluster_score": 1.061,
+            "short_interest_change": 0
+          },
+          "subfactors_resolved": 2,
+          "subfactors_declared": 2,
+          "coverage": 1.0,
+          "renormalization_factor": 1.0
+        }
+      },
+      "raw_factors": {
+        "earnings_acceleration": -0.4537,
+        "revenue_acceleration": 735.2937,
+        "roa_delta": -0.0017,
+        "margin_turn": -0.0113,
+        "standardized_unexpected_earnings": 0.0776,
+        "momentum_12_1": -0.0386,
+        "path_smoothness": -0.5418,
+        "industry_relative_momentum": -0.2426,
+        "high_52w_drawdown_sigmas": -0.3862,
+        "volume_ratio_5d_50d": 0.8551,
+        "trailing_month_extension": -4.225,
+        "volatility_contraction": 0.189,
+        "insider_cluster_score": 0.0,
+        "short_interest_change": 0.0
+      },
+      "reason_codes": []
+    },
+    {
       "rank": 197,
       "ticker": "LNC",
       "name": "Lincoln National Corporation",
@@ -20418,8 +20424,8 @@
       "peer_group": "Life insurers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 66.72,
-      "composite_z": 0.1591,
+      "percentile": 66.67,
+      "composite_z": 0.1592,
       "classification": "unclassified",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -20483,15 +20489,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.0715,
+          "z": 0.0716,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.0715,
+            "insider_cluster_score": 0.0716,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.1191,
+            "insider_cluster_score": 0.1193,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -20526,8 +20532,8 @@
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 66.55,
-      "composite_z": 0.1583,
+      "percentile": 66.5,
+      "composite_z": 0.1584,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -20585,15 +20591,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.1233,
+          "z": 0.1235,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.1233,
+            "insider_cluster_score": 0.1235,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.2055,
+            "insider_cluster_score": 0.2058,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -20625,7 +20631,7 @@
       "peer_group": "Industrials",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 66.38,
+      "percentile": 66.33,
       "composite_z": 0.1568,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -20730,7 +20736,7 @@
       "peer_group": "Saas",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 66.21,
+      "percentile": 66.16,
       "composite_z": 0.1556,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -20835,7 +20841,7 @@
       "peer_group": "Auto Dealership",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 66.04,
+      "percentile": 65.99,
       "composite_z": 0.1542,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -20940,7 +20946,7 @@
       "peer_group": "Specialty Chemicals",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 65.87,
+      "percentile": 65.82,
       "composite_z": 0.153,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -21045,8 +21051,8 @@
       "peer_group": "Medical Devices",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 65.7,
-      "composite_z": 0.1522,
+      "percentile": 65.65,
+      "composite_z": 0.1523,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -21110,15 +21116,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.2443,
+          "z": 0.2446,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.2443,
+            "insider_cluster_score": 0.2446,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.4072,
+            "insider_cluster_score": 0.4076,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -21153,7 +21159,7 @@
       "peer_group": "Semiconductor",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 65.53,
+      "percentile": 65.48,
       "composite_z": 0.152,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -21258,7 +21264,7 @@
       "peer_group": "Aerospace Defense",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 65.37,
+      "percentile": 65.31,
       "composite_z": 0.1513,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -21363,14 +21369,14 @@
       "peer_group": "Financial Exchange",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 65.2,
+      "percentile": 65.14,
       "composite_z": 0.1499,
       "classification": "unclassified",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 74.5,
+      "structural_score": 77.5,
       "tactical_score": null,
       "data_coverage": 0.87,
       "market_cap": 31160127488,
@@ -21462,7 +21468,7 @@
       "peer_group": "It Services Consulting",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 65.03,
+      "percentile": 64.97,
       "composite_z": 0.1463,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -21567,7 +21573,7 @@
       "peer_group": "Specialty Chemicals",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 64.86,
+      "percentile": 64.8,
       "composite_z": 0.1463,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -21672,7 +21678,7 @@
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 64.69,
+      "percentile": 64.63,
       "composite_z": 0.1444,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -21777,14 +21783,14 @@
       "peer_group": "Restaurants",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 64.52,
+      "percentile": 64.46,
       "composite_z": 0.1439,
       "classification": "coiling",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 47.2,
+      "structural_score": 50.2,
       "tactical_score": null,
       "data_coverage": 0.87,
       "market_cap": 7097144320,
@@ -21876,7 +21882,7 @@
       "peer_group": "Ecommerce Retail",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 64.35,
+      "percentile": 64.29,
       "composite_z": 0.1397,
       "classification": "coiling",
       "coverage": 1.0,
@@ -21981,7 +21987,7 @@
       "peer_group": "Tobacco",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 64.18,
+      "percentile": 64.12,
       "composite_z": 0.1382,
       "classification": "coiling",
       "coverage": 1.0,
@@ -22083,7 +22089,7 @@
       "peer_group": "Consumer Cyclical",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 64.01,
+      "percentile": 63.95,
       "composite_z": 0.137,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -22188,7 +22194,7 @@
       "peer_group": "Financial Services",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 63.84,
+      "percentile": 63.78,
       "composite_z": 0.135,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -22290,7 +22296,7 @@
       "peer_group": "Grocery Staples Retail",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 63.67,
+      "percentile": 63.61,
       "composite_z": 0.132,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -22395,7 +22401,7 @@
       "peer_group": "Large Cap Pharma",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 63.5,
+      "percentile": 63.44,
       "composite_z": 0.1313,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -22500,7 +22506,7 @@
       "peer_group": "Payment processors & networks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 63.33,
+      "percentile": 63.27,
       "composite_z": 0.1311,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -22602,7 +22608,7 @@
       "peer_group": "Life Science Tools Diagnostics",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 63.16,
+      "percentile": 63.1,
       "composite_z": 0.129,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -22707,7 +22713,7 @@
       "peer_group": "Managed Care Insurer",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 62.99,
+      "percentile": 62.93,
       "composite_z": 0.1277,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -22809,7 +22815,7 @@
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 62.82,
+      "percentile": 62.76,
       "composite_z": 0.1276,
       "classification": "coiling",
       "coverage": 1.0,
@@ -22911,7 +22917,7 @@
       "peer_group": "Publishing Advertising",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 62.65,
+      "percentile": 62.59,
       "composite_z": 0.1264,
       "classification": "coiling",
       "coverage": 1.0,
@@ -23010,14 +23016,119 @@
     },
     {
       "rank": 222,
+      "ticker": "INCY",
+      "name": "Incyte Corporation",
+      "sector": "Healthcare",
+      "peer_group": "Profitable Biotechnology",
+      "eligibility": true,
+      "current_membership": false,
+      "percentile": 62.41,
+      "composite_z": 0.1251,
+      "classification": "breaking_out",
+      "coverage": 1.0,
+      "legs_resolved": 3,
+      "legs_declared": 3,
+      "renormalization_factor": 1.0,
+      "structural_score": 78.1,
+      "tactical_score": null,
+      "data_coverage": 0.89,
+      "market_cap": 25691938816,
+      "price": 126.75,
+      "median_dollar_volume_60d": 186490828.0,
+      "sub_scores": {
+        "fundamental_inflection": {
+          "z": 0.4643,
+          "weight": 0.3333333333333333,
+          "applied": true,
+          "subfactor_contributions": {
+            "earnings_acceleration": -0.021,
+            "revenue_acceleration": -0.3963,
+            "roa_delta": 0.5123,
+            "margin_turn": 0.3693
+          },
+          "subfactor_z": {
+            "earnings_acceleration": -0.0596,
+            "revenue_acceleration": -1.6842,
+            "roa_delta": 2.1771,
+            "margin_turn": 2.0928
+          },
+          "subfactors_resolved": 4,
+          "subfactors_declared": 5,
+          "coverage": 0.85,
+          "renormalization_factor": 1.1765
+        },
+        "momentum_rs": {
+          "z": 0.4793,
+          "weight": 0.3333333333333333,
+          "applied": true,
+          "subfactor_contributions": {
+            "momentum_12_1": 0.2231,
+            "high_52w_drawdown_sigmas": 0.2834,
+            "path_smoothness": 0.0512,
+            "industry_relative_momentum": 0.057,
+            "volume_ratio_5d_50d": -0.0345,
+            "trailing_month_extension": -0.0698,
+            "volatility_contraction": -0.031
+          },
+          "subfactor_z": {
+            "momentum_12_1": 0.8922,
+            "high_52w_drawdown_sigmas": 1.1337,
+            "path_smoothness": 0.731,
+            "industry_relative_momentum": 0.3802,
+            "volume_ratio_5d_50d": -0.3453,
+            "trailing_month_extension": -0.4653,
+            "volatility_contraction": -1.0343
+          },
+          "subfactors_resolved": 7,
+          "subfactors_declared": 7,
+          "coverage": 1.0,
+          "renormalization_factor": 1.0
+        },
+        "flow_sentiment": {
+          "z": -0.5684,
+          "weight": 0.3333333333333333,
+          "applied": true,
+          "subfactor_contributions": {
+            "insider_cluster_score": -0.5684,
+            "short_interest_change": 0.0
+          },
+          "subfactor_z": {
+            "insider_cluster_score": -0.9473,
+            "short_interest_change": 0
+          },
+          "subfactors_resolved": 2,
+          "subfactors_declared": 2,
+          "coverage": 1.0,
+          "renormalization_factor": 1.0
+        }
+      },
+      "raw_factors": {
+        "earnings_acceleration": 0.1125,
+        "revenue_acceleration": -1.7848,
+        "roa_delta": 0.0331,
+        "margin_turn": 0.1637,
+        "momentum_12_1": 0.4175,
+        "path_smoothness": 0.5418,
+        "industry_relative_momentum": 0.1336,
+        "high_52w_drawdown_sigmas": -0.0618,
+        "volume_ratio_5d_50d": 0.8399,
+        "trailing_month_extension": 8.6025,
+        "volatility_contraction": 0.134,
+        "insider_cluster_score": -2.09,
+        "short_interest_change": 0.0
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 223,
       "ticker": "KEY",
       "name": "KeyCorp",
       "sector": "Financial Services",
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 62.48,
-      "composite_z": 0.1232,
+      "percentile": 62.24,
+      "composite_z": 0.1234,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -23077,14 +23188,14 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.6377,
+          "z": 0.6382,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.6377
+            "insider_cluster_score": 0.6382
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.6377
+            "insider_cluster_score": 0.6382
           },
           "subfactors_resolved": 1,
           "subfactors_declared": 2,
@@ -23108,14 +23219,14 @@
       "reason_codes": []
     },
     {
-      "rank": 223,
+      "rank": 224,
       "ticker": "VECO",
       "name": "Veeco Instruments Inc.",
       "sector": "Technology",
       "peer_group": "Semiconductor Capital Equipment",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 62.31,
+      "percentile": 62.07,
       "composite_z": 0.1181,
       "classification": "extended",
       "coverage": 1.0,
@@ -23213,14 +23324,14 @@
       "reason_codes": []
     },
     {
-      "rank": 224,
+      "rank": 225,
       "ticker": "BDX",
       "name": "Becton, Dickinson and Company",
       "sector": "Healthcare",
       "peer_group": "Medical Devices",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 62.14,
+      "percentile": 61.9,
       "composite_z": 0.1165,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -23318,14 +23429,14 @@
       "reason_codes": []
     },
     {
-      "rank": 225,
+      "rank": 226,
       "ticker": "ENTG",
       "name": "Entegris, Inc.",
       "sector": "Technology",
       "peer_group": "Semiconductor Capital Equipment",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 61.97,
+      "percentile": 61.73,
       "composite_z": 0.1163,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -23423,14 +23534,14 @@
       "reason_codes": []
     },
     {
-      "rank": 226,
+      "rank": 227,
       "ticker": "CINF",
       "name": "Cincinnati Financial Corporatio",
       "sector": "Financial Services",
       "peer_group": "Property & casualty insurers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 61.8,
+      "percentile": 61.56,
       "composite_z": 0.1161,
       "classification": "coiling",
       "coverage": 1.0,
@@ -23522,14 +23633,14 @@
       "reason_codes": []
     },
     {
-      "rank": 227,
+      "rank": 228,
       "ticker": "RRX",
       "name": "Regal Rexnord Corporation",
       "sector": "Industrials",
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 61.63,
+      "percentile": 61.39,
       "composite_z": 0.116,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -23627,21 +23738,21 @@
       "reason_codes": []
     },
     {
-      "rank": 228,
+      "rank": 229,
       "ticker": "ALGN",
       "name": "Align Technology, Inc.",
       "sector": "Healthcare",
       "peer_group": "Medical device companies",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 61.46,
-      "composite_z": 0.1123,
+      "percentile": 61.22,
+      "composite_z": 0.1125,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 83.9,
+      "structural_score": 80.9,
       "tactical_score": null,
       "data_coverage": 0.89,
       "market_cap": 11269406720,
@@ -23695,15 +23806,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.6362,
+          "z": 0.6366,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.6362,
+            "insider_cluster_score": 0.6366,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.0603,
+            "insider_cluster_score": 1.061,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -23729,14 +23840,14 @@
       "reason_codes": []
     },
     {
-      "rank": 229,
+      "rank": 230,
       "ticker": "ONB",
       "name": "Old National Bancorp",
       "sector": "Financial Services",
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 61.29,
+      "percentile": 61.05,
       "composite_z": 0.1117,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -23828,14 +23939,14 @@
       "reason_codes": []
     },
     {
-      "rank": 230,
+      "rank": 231,
       "ticker": "MRK",
       "name": "Merck & Company, Inc.",
       "sector": "Healthcare",
       "peer_group": "Large Cap Pharma",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 61.12,
+      "percentile": 60.88,
       "composite_z": 0.1115,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -23927,21 +24038,21 @@
       "reason_codes": []
     },
     {
-      "rank": 231,
+      "rank": 232,
       "ticker": "CHD",
       "name": "Church & Dwight Company, Inc.",
       "sector": "Consumer Defensive",
       "peer_group": "Consumer Defensive",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 60.95,
+      "percentile": 60.71,
       "composite_z": 0.1101,
       "classification": "unclassified",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 63.2,
+      "structural_score": 66.2,
       "tactical_score": null,
       "data_coverage": 0.89,
       "market_cap": 23376445440,
@@ -24026,14 +24137,14 @@
       "reason_codes": []
     },
     {
-      "rank": 232,
+      "rank": 233,
       "ticker": "TXRH",
       "name": "Texas Roadhouse, Inc.",
       "sector": "Consumer Cyclical",
       "peer_group": "Restaurants",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 60.78,
+      "percentile": 60.54,
       "composite_z": 0.1082,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -24131,15 +24242,15 @@
       "reason_codes": []
     },
     {
-      "rank": 233,
+      "rank": 234,
       "ticker": "C",
       "name": "Citigroup, Inc.",
       "sector": "Financial Services",
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 60.61,
-      "composite_z": 0.107,
+      "percentile": 60.37,
+      "composite_z": 0.1071,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -24197,15 +24308,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.6362,
+          "z": 0.6366,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.6362,
+            "insider_cluster_score": 0.6366,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.0603,
+            "insider_cluster_score": 1.061,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -24230,14 +24341,14 @@
       "reason_codes": []
     },
     {
-      "rank": 234,
+      "rank": 235,
       "ticker": "UCB",
       "name": "United Community Banks, Inc.",
       "sector": "Financial Services",
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 60.44,
+      "percentile": 60.2,
       "composite_z": 0.1066,
       "classification": "coiling",
       "coverage": 1.0,
@@ -24329,14 +24440,14 @@
       "reason_codes": []
     },
     {
-      "rank": 235,
+      "rank": 236,
       "ticker": "IEX",
       "name": "IDEX Corporation",
       "sector": "Industrials",
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 60.27,
+      "percentile": 60.03,
       "composite_z": 0.1041,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -24434,14 +24545,14 @@
       "reason_codes": []
     },
     {
-      "rank": 236,
+      "rank": 237,
       "ticker": "PNC",
       "name": "PNC Financial Services Group, I",
       "sector": "Financial Services",
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 60.1,
+      "percentile": 59.86,
       "composite_z": 0.1012,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -24502,15 +24613,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.4644,
+          "z": -0.4646,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.4644,
+            "insider_cluster_score": -0.4646,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -0.7741,
+            "insider_cluster_score": -0.7743,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -24536,14 +24647,14 @@
       "reason_codes": []
     },
     {
-      "rank": 237,
+      "rank": 238,
       "ticker": "KLAC",
       "name": "KLA Corporation",
       "sector": "Technology",
       "peer_group": "Semiconductor Capital Equipment",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 59.93,
+      "percentile": 59.69,
       "composite_z": 0.0961,
       "classification": "extended",
       "coverage": 1.0,
@@ -24635,14 +24746,14 @@
       "reason_codes": []
     },
     {
-      "rank": 238,
+      "rank": 239,
       "ticker": "CACI",
       "name": "CACI International, Inc.",
       "sector": "Technology",
       "peer_group": "It Services Consulting",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 59.76,
+      "percentile": 59.52,
       "composite_z": 0.0927,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -24740,14 +24851,14 @@
       "reason_codes": []
     },
     {
-      "rank": 239,
+      "rank": 240,
       "ticker": "MSA",
       "name": "MSA Safety Incorporated",
       "sector": "Industrials",
       "peer_group": "Industrials",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 59.59,
+      "percentile": 59.35,
       "composite_z": 0.0906,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -24845,14 +24956,14 @@
       "reason_codes": []
     },
     {
-      "rank": 240,
+      "rank": 241,
       "ticker": "VMC",
       "name": "Vulcan Materials Company (Holdi",
       "sector": "Basic Materials",
       "peer_group": "Building Products",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 59.42,
+      "percentile": 59.18,
       "composite_z": 0.0901,
       "classification": "coiling",
       "coverage": 1.0,
@@ -24947,14 +25058,14 @@
       "reason_codes": []
     },
     {
-      "rank": 241,
+      "rank": 242,
       "ticker": "GAP",
       "name": "Gap, Inc. (The)",
       "sector": "Consumer Cyclical",
       "peer_group": "Retail Apparel",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 59.25,
+      "percentile": 59.01,
       "composite_z": 0.0861,
       "classification": "coiling",
       "coverage": 1.0,
@@ -25052,14 +25163,14 @@
       "reason_codes": []
     },
     {
-      "rank": 242,
+      "rank": 243,
       "ticker": "GBCI",
       "name": "Glacier Bancorp, Inc.",
       "sector": "Financial Services",
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 59.08,
+      "percentile": 58.84,
       "composite_z": 0.0841,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -25154,14 +25265,14 @@
       "reason_codes": []
     },
     {
-      "rank": 243,
+      "rank": 244,
       "ticker": "ABT",
       "name": "Abbott Laboratories",
       "sector": "Healthcare",
       "peer_group": "Medical Devices",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 58.91,
+      "percentile": 58.67,
       "composite_z": 0.0822,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -25250,14 +25361,14 @@
       "reason_codes": []
     },
     {
-      "rank": 244,
+      "rank": 245,
       "ticker": "SAM",
       "name": "Boston Beer Company, Inc. (The)",
       "sector": "Consumer Defensive",
       "peer_group": "Beverage Manufacturer",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 58.74,
+      "percentile": 58.5,
       "composite_z": 0.0814,
       "classification": "coiling",
       "coverage": 1.0,
@@ -25355,14 +25466,14 @@
       "reason_codes": []
     },
     {
-      "rank": 245,
+      "rank": 246,
       "ticker": "VRTX",
       "name": "Vertex Pharmaceuticals Incorpor",
       "sector": "Healthcare",
       "peer_group": "Profitable Biotechnology",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 58.57,
+      "percentile": 58.33,
       "composite_z": 0.0799,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -25460,14 +25571,14 @@
       "reason_codes": []
     },
     {
-      "rank": 246,
+      "rank": 247,
       "ticker": "FAF",
       "name": "First American Corporation (New",
       "sector": "Financial Services",
       "peer_group": "Diversified insurers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 58.4,
+      "percentile": 58.16,
       "composite_z": 0.0793,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -25565,14 +25676,14 @@
       "reason_codes": []
     },
     {
-      "rank": 247,
+      "rank": 248,
       "ticker": "RTX",
       "name": "RTX Corporation",
       "sector": "Industrials",
       "peer_group": "Aerospace Defense",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 58.23,
+      "percentile": 57.99,
       "composite_z": 0.0791,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -25670,14 +25781,14 @@
       "reason_codes": []
     },
     {
-      "rank": 248,
+      "rank": 249,
       "ticker": "JLL",
       "name": "Jones Lang LaSalle Incorporated",
       "sector": "Real Estate",
       "peer_group": "Real Estate",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 58.06,
+      "percentile": 57.82,
       "composite_z": 0.0786,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -25740,15 +25851,15 @@
           "renormalization_factor": 1.1765
         },
         "flow_sentiment": {
-          "z": 0.0369,
+          "z": 0.037,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.0369,
+            "insider_cluster_score": 0.037,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.0615,
+            "insider_cluster_score": 0.0617,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -25775,15 +25886,15 @@
       "reason_codes": []
     },
     {
-      "rank": 249,
+      "rank": 250,
       "ticker": "CRM",
       "name": "Salesforce, Inc.",
       "sector": "Technology",
       "peer_group": "Saas",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 57.89,
-      "composite_z": 0.0779,
+      "percentile": 57.65,
+      "composite_z": 0.078,
       "classification": "unclassified",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -25847,15 +25958,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.1406,
+          "z": 0.1408,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.1406,
+            "insider_cluster_score": 0.1408,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.2344,
+            "insider_cluster_score": 0.2346,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -25883,14 +25994,14 @@
       "reason_codes": []
     },
     {
-      "rank": 250,
+      "rank": 251,
       "ticker": "LLY",
       "name": "Eli Lilly and Company",
       "sector": "Healthcare",
       "peer_group": "Large Cap Pharma",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 57.72,
+      "percentile": 57.48,
       "composite_z": 0.0769,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -25988,14 +26099,14 @@
       "reason_codes": []
     },
     {
-      "rank": 251,
+      "rank": 252,
       "ticker": "KVUE",
       "name": "Kenvue Inc.",
       "sector": "Consumer Defensive",
       "peer_group": "Consumer Defensive",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 57.56,
+      "percentile": 57.31,
       "composite_z": 0.076,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -26093,14 +26204,14 @@
       "reason_codes": []
     },
     {
-      "rank": 252,
+      "rank": 253,
       "ticker": "APO",
       "name": "Apollo Global Management, Inc. ",
       "sector": "Financial Services",
       "peer_group": "Asset Manager",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 57.39,
+      "percentile": 57.14,
       "composite_z": 0.073,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -26198,14 +26309,14 @@
       "reason_codes": []
     },
     {
-      "rank": 253,
+      "rank": 254,
       "ticker": "PLXS",
       "name": "Plexus Corp.",
       "sector": "Technology",
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 57.22,
+      "percentile": 56.97,
       "composite_z": 0.0724,
       "classification": "extended",
       "coverage": 1.0,
@@ -26297,111 +26408,6 @@
       "reason_codes": []
     },
     {
-      "rank": 254,
-      "ticker": "EXEL",
-      "name": "Exelixis, Inc.",
-      "sector": "Healthcare",
-      "peer_group": "Profitable Biotechnology",
-      "eligibility": true,
-      "current_membership": false,
-      "percentile": 57.05,
-      "composite_z": 0.0723,
-      "classification": "breaking_out",
-      "coverage": 1.0,
-      "legs_resolved": 3,
-      "legs_declared": 3,
-      "renormalization_factor": 1.0,
-      "structural_score": 78.0,
-      "tactical_score": null,
-      "data_coverage": 0.89,
-      "market_cap": 14621597696,
-      "price": 59.01,
-      "median_dollar_volume_60d": 129389624.0,
-      "sub_scores": {
-        "fundamental_inflection": {
-          "z": -0.383,
-          "weight": 0.3333333333333333,
-          "applied": true,
-          "subfactor_contributions": {
-            "earnings_acceleration": -0.107,
-            "revenue_acceleration": -0.0482,
-            "roa_delta": -0.1153,
-            "margin_turn": 0.0258,
-            "standardized_unexpected_earnings": -0.1382
-          },
-          "subfactor_z": {
-            "earnings_acceleration": -0.3566,
-            "revenue_acceleration": -0.2411,
-            "roa_delta": -0.5766,
-            "margin_turn": 0.172,
-            "standardized_unexpected_earnings": -0.9216
-          },
-          "subfactors_resolved": 5,
-          "subfactors_declared": 5,
-          "coverage": 1.0,
-          "renormalization_factor": 1.0
-        },
-        "momentum_rs": {
-          "z": 0.5998,
-          "weight": 0.3333333333333333,
-          "applied": true,
-          "subfactor_contributions": {
-            "momentum_12_1": 0.0959,
-            "high_52w_drawdown_sigmas": 0.3303,
-            "path_smoothness": 0.0448,
-            "industry_relative_momentum": -0.0639,
-            "volume_ratio_5d_50d": 0.2088,
-            "trailing_month_extension": -0.0092,
-            "volatility_contraction": -0.0069
-          },
-          "subfactor_z": {
-            "momentum_12_1": 0.3835,
-            "high_52w_drawdown_sigmas": 1.3212,
-            "path_smoothness": 0.6403,
-            "industry_relative_momentum": -0.4258,
-            "volume_ratio_5d_50d": 2.0879,
-            "trailing_month_extension": -0.0615,
-            "volatility_contraction": -0.2302
-          },
-          "subfactors_resolved": 7,
-          "subfactors_declared": 7,
-          "coverage": 1.0,
-          "renormalization_factor": 1.0
-        },
-        "flow_sentiment": {
-          "z": 0.0,
-          "weight": 0.3333333333333333,
-          "applied": true,
-          "subfactor_contributions": {
-            "short_interest_change": 0.0
-          },
-          "subfactor_z": {
-            "short_interest_change": 0
-          },
-          "subfactors_resolved": 1,
-          "subfactors_declared": 2,
-          "coverage": 0.4,
-          "renormalization_factor": 2.5
-        }
-      },
-      "raw_factors": {
-        "earnings_acceleration": -0.3632,
-        "revenue_acceleration": 0.0701,
-        "roa_delta": -0.0048,
-        "margin_turn": 0.0174,
-        "standardized_unexpected_earnings": -0.8733,
-        "momentum_12_1": 0.2639,
-        "path_smoothness": 0.498,
-        "industry_relative_momentum": -0.0968,
-        "high_52w_drawdown_sigmas": 0.0,
-        "volume_ratio_5d_50d": 1.5599,
-        "trailing_month_extension": 3.345,
-        "volatility_contraction": 0.3455,
-        "short_interest_change": 0.0
-      },
-      "reason_codes": []
-    },
-    {
       "rank": 255,
       "ticker": "WFC",
       "name": "Wells Fargo & Company",
@@ -26409,7 +26415,7 @@
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 56.88,
+      "percentile": 56.8,
       "composite_z": 0.0712,
       "classification": "coiling",
       "coverage": 0.667,
@@ -26506,8 +26512,8 @@
       "peer_group": "Restaurants",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 56.71,
-      "composite_z": 0.0677,
+      "percentile": 56.63,
+      "composite_z": 0.0678,
       "classification": "unclassified",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -26571,15 +26577,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.2386,
+          "z": 0.2388,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.2386,
+            "insider_cluster_score": 0.2388,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.3976,
+            "insider_cluster_score": 0.398,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -26614,7 +26620,7 @@
       "peer_group": "Consumer Cyclical",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 56.54,
+      "percentile": 56.46,
       "composite_z": 0.0663,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -26719,7 +26725,7 @@
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 56.37,
+      "percentile": 56.29,
       "composite_z": 0.0662,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -26729,7 +26735,7 @@
       "structural_score": 76.7,
       "tactical_score": null,
       "data_coverage": 0.89,
-      "market_cap": 13390406656,
+      "market_cap": 13267472384,
       "price": 175.06,
       "median_dollar_volume_60d": 111341033.0,
       "sub_scores": {
@@ -26818,7 +26824,7 @@
       "peer_group": "Industrials",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 56.2,
+      "percentile": 56.12,
       "composite_z": 0.0658,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -26923,8 +26929,8 @@
       "peer_group": "Semiconductor Capital Equipment",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 56.03,
-      "composite_z": 0.0641,
+      "percentile": 55.95,
+      "composite_z": 0.064,
       "classification": "extended",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -26933,7 +26939,7 @@
       "structural_score": 54.8,
       "tactical_score": null,
       "data_coverage": 0.89,
-      "market_cap": 11840870400,
+      "market_cap": 11868574720,
       "price": 47.77,
       "median_dollar_volume_60d": 372513420.0,
       "sub_scores": {
@@ -26986,15 +26992,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.5336,
+          "z": -0.5338,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.5336,
+            "insider_cluster_score": -0.5338,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -0.8893,
+            "insider_cluster_score": -0.8896,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -27028,7 +27034,7 @@
       "peer_group": "Consumer Finance",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 55.86,
+      "percentile": 55.78,
       "composite_z": 0.0592,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -27133,7 +27139,7 @@
       "peer_group": "Aerospace Defense",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 55.69,
+      "percentile": 55.61,
       "composite_z": 0.0584,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -27238,7 +27244,7 @@
       "peer_group": "Life insurers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 55.52,
+      "percentile": 55.44,
       "composite_z": 0.0561,
       "classification": "coiling",
       "coverage": 1.0,
@@ -27343,7 +27349,7 @@
       "peer_group": "Retail Apparel",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 55.35,
+      "percentile": 55.27,
       "composite_z": 0.0539,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -27439,7 +27445,7 @@
       "peer_group": "Airline",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 55.18,
+      "percentile": 55.1,
       "composite_z": 0.0534,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -27544,7 +27550,7 @@
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 55.01,
+      "percentile": 54.93,
       "composite_z": 0.0532,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -27643,7 +27649,7 @@
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 54.84,
+      "percentile": 54.76,
       "composite_z": 0.053,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -27748,8 +27754,8 @@
       "peer_group": "Property & casualty insurers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 54.67,
-      "composite_z": 0.0515,
+      "percentile": 54.59,
+      "composite_z": 0.0516,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -27813,14 +27819,14 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.2055,
+          "z": 0.2058,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.2055
+            "insider_cluster_score": 0.2058
           },
           "subfactor_z": {
-            "insider_cluster_score": 0.2055
+            "insider_cluster_score": 0.2058
           },
           "subfactors_resolved": 1,
           "subfactors_declared": 2,
@@ -27853,7 +27859,7 @@
       "peer_group": "Consumer Cyclical",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 54.5,
+      "percentile": 54.42,
       "composite_z": 0.0513,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -27958,17 +27964,17 @@
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 54.33,
+      "percentile": 54.25,
       "composite_z": 0.0511,
       "classification": "coiling",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 79.1,
+      "structural_score": 76.1,
       "tactical_score": null,
       "data_coverage": 0.89,
-      "market_cap": 9794143232,
+      "market_cap": 9698079744,
       "price": 157.08,
       "median_dollar_volume_60d": 104332150.0,
       "sub_scores": {
@@ -28060,7 +28066,7 @@
       "peer_group": "Industrials",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 54.16,
+      "percentile": 54.08,
       "composite_z": 0.0449,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -28165,7 +28171,7 @@
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 53.99,
+      "percentile": 53.91,
       "composite_z": 0.0438,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -28270,7 +28276,7 @@
       "peer_group": "Beverage Manufacturer",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 53.82,
+      "percentile": 53.74,
       "composite_z": 0.0429,
       "classification": "extended",
       "coverage": 1.0,
@@ -28375,8 +28381,8 @@
       "peer_group": "Auto Parts Supplier",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 53.65,
-      "composite_z": 0.0409,
+      "percentile": 53.57,
+      "composite_z": 0.041,
       "classification": "coiling",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -28385,7 +28391,7 @@
       "structural_score": 75.5,
       "tactical_score": null,
       "data_coverage": 0.89,
-      "market_cap": 4927705600,
+      "market_cap": 4875212288,
       "price": 23.14,
       "median_dollar_volume_60d": 55302621.0,
       "sub_scores": {
@@ -28440,15 +28446,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": 0.6362,
+          "z": 0.6366,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": 0.6362,
+            "insider_cluster_score": 0.6366,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": 1.0603,
+            "insider_cluster_score": 1.061,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -28483,7 +28489,7 @@
       "peer_group": "Specialty Chemicals",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 53.48,
+      "percentile": 53.4,
       "composite_z": 0.0403,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -28588,7 +28594,7 @@
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 53.31,
+      "percentile": 53.23,
       "composite_z": 0.0402,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -28653,15 +28659,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.0726,
+          "z": -0.0725,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.0726,
+            "insider_cluster_score": -0.0725,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -0.121,
+            "insider_cluster_score": -0.1209,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -28696,14 +28702,14 @@
       "peer_group": "Consumer Defensive",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 53.14,
+      "percentile": 53.06,
       "composite_z": 0.0381,
       "classification": "coiling",
       "coverage": 1.0,
       "legs_resolved": 3,
       "legs_declared": 3,
       "renormalization_factor": 1.0,
-      "structural_score": 64.5,
+      "structural_score": 67.5,
       "tactical_score": null,
       "data_coverage": 0.89,
       "market_cap": 70765027328,
@@ -28801,7 +28807,7 @@
       "peer_group": "Retail Apparel",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 52.97,
+      "percentile": 52.89,
       "composite_z": 0.0362,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -28897,13 +28903,115 @@
     },
     {
       "rank": 279,
+      "ticker": "UMBF",
+      "name": "UMB Financial Corporation",
+      "sector": "Financial Services",
+      "peer_group": "Banks",
+      "eligibility": true,
+      "current_membership": false,
+      "percentile": 52.72,
+      "composite_z": 0.0357,
+      "classification": "breaking_out",
+      "coverage": 1.0,
+      "legs_resolved": 3,
+      "legs_declared": 3,
+      "renormalization_factor": 1.0,
+      "structural_score": 80.5,
+      "tactical_score": null,
+      "data_coverage": 0.74,
+      "market_cap": 10918576128,
+      "price": 143.76,
+      "median_dollar_volume_60d": 84267788.0,
+      "sub_scores": {
+        "fundamental_inflection": {
+          "z": -0.8756,
+          "weight": 0.3333333333333333,
+          "applied": true,
+          "subfactor_contributions": {
+            "earnings_acceleration": -0.7594,
+            "roa_delta": -0.039,
+            "standardized_unexpected_earnings": -0.0772
+          },
+          "subfactor_z": {
+            "earnings_acceleration": -1.6454,
+            "roa_delta": -0.1266,
+            "standardized_unexpected_earnings": -0.3345
+          },
+          "subfactors_resolved": 3,
+          "subfactors_declared": 5,
+          "coverage": 0.65,
+          "renormalization_factor": 1.5385
+        },
+        "momentum_rs": {
+          "z": 0.3344,
+          "weight": 0.3333333333333333,
+          "applied": true,
+          "subfactor_contributions": {
+            "momentum_12_1": 0.084,
+            "high_52w_drawdown_sigmas": 0.2328,
+            "path_smoothness": 0.0466,
+            "industry_relative_momentum": -0.0053,
+            "volume_ratio_5d_50d": -0.1111,
+            "trailing_month_extension": 0.0359,
+            "volatility_contraction": 0.0516
+          },
+          "subfactor_z": {
+            "momentum_12_1": 0.3358,
+            "high_52w_drawdown_sigmas": 0.9311,
+            "path_smoothness": 0.6651,
+            "industry_relative_momentum": -0.0351,
+            "volume_ratio_5d_50d": -1.1112,
+            "trailing_month_extension": 0.2394,
+            "volatility_contraction": 1.7185
+          },
+          "subfactors_resolved": 7,
+          "subfactors_declared": 7,
+          "coverage": 1.0,
+          "renormalization_factor": 1.0
+        },
+        "flow_sentiment": {
+          "z": 0.6482,
+          "weight": 0.3333333333333333,
+          "applied": true,
+          "subfactor_contributions": {
+            "insider_cluster_score": 0.6482,
+            "short_interest_change": 0.0
+          },
+          "subfactor_z": {
+            "insider_cluster_score": 1.0803,
+            "short_interest_change": 0
+          },
+          "subfactors_resolved": 2,
+          "subfactors_declared": 2,
+          "coverage": 1.0,
+          "renormalization_factor": 1.0
+        }
+      },
+      "raw_factors": {
+        "earnings_acceleration": -2.4272,
+        "roa_delta": 0.0002,
+        "standardized_unexpected_earnings": -0.0618,
+        "momentum_12_1": 0.2495,
+        "path_smoothness": 0.51,
+        "industry_relative_momentum": 0.0149,
+        "high_52w_drawdown_sigmas": -0.1285,
+        "volume_ratio_5d_50d": 0.6133,
+        "trailing_month_extension": -0.574,
+        "volatility_contraction": 0.858,
+        "insider_cluster_score": 0.02,
+        "short_interest_change": 0.0
+      },
+      "reason_codes": []
+    },
+    {
+      "rank": 280,
       "ticker": "WTS",
       "name": "Watts Water Technologies, Inc.",
       "sector": "Industrials",
       "peer_group": "Machinery",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 52.8,
+      "percentile": 52.55,
       "composite_z": 0.0355,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -29001,108 +29109,6 @@
       "reason_codes": []
     },
     {
-      "rank": 280,
-      "ticker": "UMBF",
-      "name": "UMB Financial Corporation",
-      "sector": "Financial Services",
-      "peer_group": "Banks",
-      "eligibility": true,
-      "current_membership": false,
-      "percentile": 52.63,
-      "composite_z": 0.0355,
-      "classification": "breaking_out",
-      "coverage": 1.0,
-      "legs_resolved": 3,
-      "legs_declared": 3,
-      "renormalization_factor": 1.0,
-      "structural_score": 80.5,
-      "tactical_score": null,
-      "data_coverage": 0.74,
-      "market_cap": 10918576128,
-      "price": 143.76,
-      "median_dollar_volume_60d": 84267788.0,
-      "sub_scores": {
-        "fundamental_inflection": {
-          "z": -0.8756,
-          "weight": 0.3333333333333333,
-          "applied": true,
-          "subfactor_contributions": {
-            "earnings_acceleration": -0.7594,
-            "roa_delta": -0.039,
-            "standardized_unexpected_earnings": -0.0772
-          },
-          "subfactor_z": {
-            "earnings_acceleration": -1.6454,
-            "roa_delta": -0.1266,
-            "standardized_unexpected_earnings": -0.3345
-          },
-          "subfactors_resolved": 3,
-          "subfactors_declared": 5,
-          "coverage": 0.65,
-          "renormalization_factor": 1.5385
-        },
-        "momentum_rs": {
-          "z": 0.3344,
-          "weight": 0.3333333333333333,
-          "applied": true,
-          "subfactor_contributions": {
-            "momentum_12_1": 0.084,
-            "high_52w_drawdown_sigmas": 0.2328,
-            "path_smoothness": 0.0466,
-            "industry_relative_momentum": -0.0053,
-            "volume_ratio_5d_50d": -0.1111,
-            "trailing_month_extension": 0.0359,
-            "volatility_contraction": 0.0516
-          },
-          "subfactor_z": {
-            "momentum_12_1": 0.3358,
-            "high_52w_drawdown_sigmas": 0.9311,
-            "path_smoothness": 0.6651,
-            "industry_relative_momentum": -0.0351,
-            "volume_ratio_5d_50d": -1.1112,
-            "trailing_month_extension": 0.2394,
-            "volatility_contraction": 1.7185
-          },
-          "subfactors_resolved": 7,
-          "subfactors_declared": 7,
-          "coverage": 1.0,
-          "renormalization_factor": 1.0
-        },
-        "flow_sentiment": {
-          "z": 0.6477,
-          "weight": 0.3333333333333333,
-          "applied": true,
-          "subfactor_contributions": {
-            "insider_cluster_score": 0.6477,
-            "short_interest_change": 0.0
-          },
-          "subfactor_z": {
-            "insider_cluster_score": 1.0795,
-            "short_interest_change": 0
-          },
-          "subfactors_resolved": 2,
-          "subfactors_declared": 2,
-          "coverage": 1.0,
-          "renormalization_factor": 1.0
-        }
-      },
-      "raw_factors": {
-        "earnings_acceleration": -2.4272,
-        "roa_delta": 0.0002,
-        "standardized_unexpected_earnings": -0.0618,
-        "momentum_12_1": 0.2495,
-        "path_smoothness": 0.51,
-        "industry_relative_momentum": 0.0149,
-        "high_52w_drawdown_sigmas": -0.1285,
-        "volume_ratio_5d_50d": 0.6133,
-        "trailing_month_extension": -0.574,
-        "volatility_contraction": 0.858,
-        "insider_cluster_score": 0.02,
-        "short_interest_change": 0.0
-      },
-      "reason_codes": []
-    },
-    {
       "rank": 281,
       "ticker": "ADI",
       "name": "Analog Devices, Inc.",
@@ -29110,8 +29116,8 @@
       "peer_group": "Semiconductor",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 52.46,
-      "composite_z": 0.033,
+      "percentile": 52.38,
+      "composite_z": 0.0329,
       "classification": "breaking_out",
       "coverage": 1.0,
       "legs_resolved": 3,
@@ -29175,15 +29181,15 @@
           "renormalization_factor": 1.0
         },
         "flow_sentiment": {
-          "z": -0.8332,
+          "z": -0.8336,
           "weight": 0.3333333333333333,
           "applied": true,
           "subfactor_contributions": {
-            "insider_cluster_score": -0.8332,
+            "insider_cluster_score": -0.8336,
             "short_interest_change": 0.0
           },
           "subfactor_z": {
-            "insider_cluster_score": -1.3887,
+            "insider_cluster_score": -1.3893,
             "short_interest_change": 0
           },
           "subfactors_resolved": 2,
@@ -29218,7 +29224,7 @@
       "peer_group": "Commodity producers",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 52.29,
+      "percentile": 52.21,
       "composite_z": 0.0316,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -29323,7 +29329,7 @@
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 52.12,
+      "percentile": 52.04,
       "composite_z": 0.0293,
       "classification": "coiling",
       "coverage": 0.667,
@@ -29417,7 +29423,7 @@
       "peer_group": "Timber REITs",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 51.95,
+      "percentile": 51.87,
       "composite_z": 0.0292,
       "classification": "coiling",
       "coverage": 1.0,
@@ -29516,7 +29522,7 @@
       "peer_group": "Life Science Tools Diagnostics",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 51.78,
+      "percentile": 51.7,
       "composite_z": 0.0284,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -29621,7 +29627,7 @@
       "peer_group": "Large Cap Pharma",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 51.61,
+      "percentile": 51.53,
       "composite_z": 0.0273,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -29723,7 +29729,7 @@
       "peer_group": "Consumer Cyclical",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 51.44,
+      "percentile": 51.36,
       "composite_z": 0.027,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -29733,7 +29739,7 @@
       "structural_score": 77.7,
       "tactical_score": null,
       "data_coverage": 0.76,
-      "market_cap": 149776252928,
+      "market_cap": 145234329600,
       "price": 193.29,
       "median_dollar_volume_60d": 1189898039.0,
       "sub_scores": {
@@ -29825,7 +29831,7 @@
       "peer_group": "Beverage Manufacturer",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 51.27,
+      "percentile": 51.19,
       "composite_z": 0.0248,
       "classification": "coiling",
       "coverage": 1.0,
@@ -29930,7 +29936,7 @@
       "peer_group": "Independent Power Producer",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 51.1,
+      "percentile": 51.02,
       "composite_z": 0.0244,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -30032,7 +30038,7 @@
       "peer_group": "Financial Exchange",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 50.93,
+      "percentile": 50.85,
       "composite_z": 0.024,
       "classification": "coiling",
       "coverage": 1.0,
@@ -30137,7 +30143,7 @@
       "peer_group": "Asset Manager",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 50.76,
+      "percentile": 50.68,
       "composite_z": 0.0229,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -30239,7 +30245,7 @@
       "peer_group": "Saas",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 50.59,
+      "percentile": 50.51,
       "composite_z": 0.0219,
       "classification": "unclassified",
       "coverage": 1.0,
@@ -30344,7 +30350,7 @@
       "peer_group": "Building Products",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 50.42,
+      "percentile": 50.34,
       "composite_z": 0.0195,
       "classification": "coiling",
       "coverage": 1.0,
@@ -30449,7 +30455,7 @@
       "peer_group": "Consumer Cyclical",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 50.25,
+      "percentile": 50.17,
       "composite_z": 0.0181,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -30554,7 +30560,7 @@
       "peer_group": "Grocery Staples Retail",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 50.08,
+      "percentile": 50.0,
       "composite_z": 0.0163,
       "classification": "coiling",
       "coverage": 1.0,
@@ -30656,7 +30662,7 @@
       "peer_group": "Technology",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 49.92,
+      "percentile": 49.83,
       "composite_z": 0.0158,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -30758,7 +30764,7 @@
       "peer_group": "Life Science Tools Diagnostics",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 49.75,
+      "percentile": 49.66,
       "composite_z": 0.0141,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -30857,7 +30863,7 @@
       "peer_group": "Managed Care Insurer",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 49.58,
+      "percentile": 49.49,
       "composite_z": 0.0125,
       "classification": "breaking_out",
       "coverage": 1.0,
@@ -30962,7 +30968,7 @@
       "peer_group": "Banks",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 49.41,
+      "percentile": 49.32,
       "composite_z": 0.0121,
       "classification": "coiling",
       "coverage": 1.0,
@@ -30972,7 +30978,7 @@
       "structural_score": 78.3,
       "tactical_score": null,
       "data_coverage": 0.74,
-      "market_cap": 10397854720,
+      "market_cap": 10396228608,
       "price": 154.12,
       "median_dollar_volume_60d": 77205708.0,
       "sub_scores": {
@@ -31061,7 +31067,7 @@
       "peer_group": "Capital Markets",
       "eligibility": true,
       "current_membership": false,
-      "percentile": 49.24,
+      "percentile": 49.15,
       "composite_z": 0.0101,
       "classification": "coiling",
       "coverage": 1.0,
@@ -31158,8 +31164,8 @@
   ],
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "c6a0ae19c509e0dd1c142889f7b4c398e7d4e20a",
+    "git_commit_sha": "d0aef9059c1dc965e50ba0d7006fc58ce5fa9a0e",
     "config_hash": "93b5358baa5b0d3269738d19deb6465cf3c2c839b12f2bdc0b3a9fec96a48da4",
-    "generated_at": "2026-09-07T20:29:39.602072+00:00"
+    "generated_at": "2026-09-07T22:32:03.986483+00:00"
   }
 }
