@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-06T23:28:16.432671+00:00",
+  "generated_at": "2026-09-07T18:20:12.349160+00:00",
   "themes": [
     {
       "id": "aerospace_forging_capacity",
@@ -15470,17 +15470,6 @@
         "role": "root"
       }
     ],
-    "GE": [
-      {
-        "theme_id": "defense_rearmament",
-        "display_name": "Allied Rearmament & Munitions Capacity",
-        "theme_exposure_score": 49.8,
-        "opportunity_score": 46.9,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "root"
-      }
-    ],
     "RTX": [
       {
         "theme_id": "aerospace_forging_capacity",
@@ -15496,6 +15485,17 @@
         "display_name": "Allied Rearmament & Munitions Capacity",
         "theme_exposure_score": 61.5,
         "opportunity_score": 52.3,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "root"
+      }
+    ],
+    "GE": [
+      {
+        "theme_id": "defense_rearmament",
+        "display_name": "Allied Rearmament & Munitions Capacity",
+        "theme_exposure_score": 49.8,
+        "opportunity_score": 46.9,
         "eligible": true,
         "confidence": 0.55,
         "role": "root"
@@ -17098,50 +17098,50 @@
         "role": "supplier"
       }
     ],
-    "ITRI": [
+    "KEYS": [
       {
         "theme_id": "ai_optical_interconnect",
         "display_name": "AI Data-Center Optical Interconnect",
-        "theme_exposure_score": 36.9,
-        "opportunity_score": 61.2,
-        "eligible": false,
-        "confidence": 0.4,
+        "theme_exposure_score": 61.5,
+        "opportunity_score": 62.7,
+        "eligible": true,
+        "confidence": 0.55,
         "role": "infrastructure"
       },
       {
         "theme_id": "automation_and_robotics",
         "display_name": "Automation & Robotics",
-        "theme_exposure_score": 27.1,
-        "opportunity_score": 56.8,
-        "eligible": false,
+        "theme_exposure_score": 46.3,
+        "opportunity_score": 55.8,
+        "eligible": true,
         "confidence": 0.45,
         "role": "supplier"
       },
       {
         "theme_id": "defense_rearmament",
         "display_name": "Allied Rearmament & Munitions Capacity",
-        "theme_exposure_score": 25.6,
-        "opportunity_score": 56.1,
-        "eligible": false,
+        "theme_exposure_score": 48.6,
+        "opportunity_score": 56.9,
+        "eligible": true,
         "confidence": 0.45,
         "role": "supplier"
       },
       {
         "theme_id": "reshoring_industrial_capacity",
         "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 28.7,
-        "opportunity_score": 57.5,
-        "eligible": false,
+        "theme_exposure_score": 43.5,
+        "opportunity_score": 54.6,
+        "eligible": true,
         "confidence": 0.35,
         "role": "supplier"
       },
       {
         "theme_id": "semicap_equipment",
         "display_name": "Semiconductor Cap Equipment & Fab Buildout",
-        "theme_exposure_score": 26.0,
-        "opportunity_score": 56.3,
-        "eligible": false,
-        "confidence": 0.4,
+        "theme_exposure_score": 45.6,
+        "opportunity_score": 55.5,
+        "eligible": true,
+        "confidence": 0.5,
         "role": "supplier"
       }
     ],
@@ -17230,50 +17230,50 @@
         "role": "supplier"
       }
     ],
-    "KEYS": [
+    "ITRI": [
       {
         "theme_id": "ai_optical_interconnect",
         "display_name": "AI Data-Center Optical Interconnect",
-        "theme_exposure_score": 61.5,
-        "opportunity_score": 62.7,
-        "eligible": true,
-        "confidence": 0.55,
+        "theme_exposure_score": 36.9,
+        "opportunity_score": 61.2,
+        "eligible": false,
+        "confidence": 0.4,
         "role": "infrastructure"
       },
       {
         "theme_id": "automation_and_robotics",
         "display_name": "Automation & Robotics",
-        "theme_exposure_score": 46.3,
-        "opportunity_score": 55.8,
-        "eligible": true,
+        "theme_exposure_score": 27.1,
+        "opportunity_score": 56.8,
+        "eligible": false,
         "confidence": 0.45,
         "role": "supplier"
       },
       {
         "theme_id": "defense_rearmament",
         "display_name": "Allied Rearmament & Munitions Capacity",
-        "theme_exposure_score": 48.6,
-        "opportunity_score": 56.9,
-        "eligible": true,
+        "theme_exposure_score": 25.6,
+        "opportunity_score": 56.1,
+        "eligible": false,
         "confidence": 0.45,
         "role": "supplier"
       },
       {
         "theme_id": "reshoring_industrial_capacity",
         "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 43.5,
-        "opportunity_score": 54.6,
-        "eligible": true,
+        "theme_exposure_score": 28.7,
+        "opportunity_score": 57.5,
+        "eligible": false,
         "confidence": 0.35,
         "role": "supplier"
       },
       {
         "theme_id": "semicap_equipment",
         "display_name": "Semiconductor Cap Equipment & Fab Buildout",
-        "theme_exposure_score": 45.6,
-        "opportunity_score": 55.5,
-        "eligible": true,
-        "confidence": 0.5,
+        "theme_exposure_score": 26.0,
+        "opportunity_score": 56.3,
+        "eligible": false,
+        "confidence": 0.4,
         "role": "supplier"
       }
     ],
@@ -17469,6 +17469,26 @@
         "role": "supplier"
       }
     ],
+    "MKSI": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 37.8,
+        "opportunity_score": 48.9,
+        "eligible": true,
+        "confidence": 0.3,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "semicap_equipment",
+        "display_name": "Semiconductor Cap Equipment & Fab Buildout",
+        "theme_exposure_score": 32.1,
+        "opportunity_score": 46.3,
+        "eligible": false,
+        "confidence": 0.25,
+        "role": "supplier"
+      }
+    ],
     "FN": [
       {
         "theme_id": "ai_infrastructure",
@@ -17493,26 +17513,6 @@
         "display_name": "AI-Driven Storage Capacity Shortage",
         "theme_exposure_score": 58.3,
         "opportunity_score": 57.5,
-        "eligible": false,
-        "confidence": 0.25,
-        "role": "supplier"
-      }
-    ],
-    "MKSI": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 37.8,
-        "opportunity_score": 48.9,
-        "eligible": true,
-        "confidence": 0.3,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "semicap_equipment",
-        "display_name": "Semiconductor Cap Equipment & Fab Buildout",
-        "theme_exposure_score": 32.1,
-        "opportunity_score": 46.3,
         "eligible": false,
         "confidence": 0.25,
         "role": "supplier"
@@ -18146,44 +18146,6 @@
         "role": "supplier"
       }
     ],
-    "RRX": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 33.5,
-        "opportunity_score": 54.8,
-        "eligible": false,
-        "confidence": 0.3,
-        "role": "root"
-      },
-      {
-        "theme_id": "grid_electrification",
-        "display_name": "Grid & Electrification Buildout",
-        "theme_exposure_score": 60.2,
-        "opportunity_score": 66.8,
-        "eligible": true,
-        "confidence": 0.25,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 37.7,
-        "opportunity_score": 56.7,
-        "eligible": true,
-        "confidence": 0.3,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "water_infrastructure",
-        "display_name": "Water Infrastructure & Treatment",
-        "theme_exposure_score": 49.3,
-        "opportunity_score": 61.9,
-        "eligible": true,
-        "confidence": 0.25,
-        "role": "supplier"
-      }
-    ],
     "PH": [
       {
         "theme_id": "automation_and_robotics",
@@ -18347,6 +18309,44 @@
         "opportunity_score": 54.1,
         "eligible": true,
         "confidence": 0.45,
+        "role": "supplier"
+      }
+    ],
+    "RRX": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 33.5,
+        "opportunity_score": 54.8,
+        "eligible": false,
+        "confidence": 0.3,
+        "role": "root"
+      },
+      {
+        "theme_id": "grid_electrification",
+        "display_name": "Grid & Electrification Buildout",
+        "theme_exposure_score": 60.2,
+        "opportunity_score": 66.8,
+        "eligible": true,
+        "confidence": 0.25,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 37.7,
+        "opportunity_score": 56.7,
+        "eligible": true,
+        "confidence": 0.3,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "water_infrastructure",
+        "display_name": "Water Infrastructure & Treatment",
+        "theme_exposure_score": 49.3,
+        "opportunity_score": 61.9,
+        "eligible": true,
+        "confidence": 0.25,
         "role": "supplier"
       }
     ],
@@ -19731,6 +19731,26 @@
         "role": "supplier"
       }
     ],
+    "DBX": [
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 57.6,
+        "opportunity_score": 67.4,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "root"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 54.1,
+        "opportunity_score": 65.8,
+        "eligible": false,
+        "confidence": 0.42,
+        "role": "enabler"
+      }
+    ],
     "CDNS": [
       {
         "theme_id": "automation_and_robotics",
@@ -19816,26 +19836,6 @@
         "eligible": true,
         "confidence": 0.53,
         "role": "supplier"
-      }
-    ],
-    "DBX": [
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 57.6,
-        "opportunity_score": 67.4,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "root"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 54.1,
-        "opportunity_score": 65.8,
-        "eligible": false,
-        "confidence": 0.42,
-        "role": "enabler"
       }
     ],
     "OKTA": [
@@ -20170,6 +20170,35 @@
         "role": "supplier"
       }
     ],
+    "CVLT": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 62.7,
+        "opportunity_score": 54.1,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 85.0,
+        "opportunity_score": 64.2,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 76.1,
+        "opportunity_score": 60.2,
+        "eligible": true,
+        "confidence": 0.42,
+        "role": "supplier"
+      }
+    ],
     "DUOL": [
       {
         "theme_id": "cybersecurity",
@@ -20214,35 +20243,6 @@
         "display_name": "Digital Payments & Financial Infrastructure",
         "theme_exposure_score": 68.8,
         "opportunity_score": 67.2,
-        "eligible": true,
-        "confidence": 0.42,
-        "role": "supplier"
-      }
-    ],
-    "CVLT": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 62.7,
-        "opportunity_score": 54.1,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 85.0,
-        "opportunity_score": 64.2,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 76.1,
-        "opportunity_score": 60.2,
         "eligible": true,
         "confidence": 0.42,
         "role": "supplier"
@@ -21456,62 +21456,6 @@
         "role": "infrastructure"
       }
     ],
-    "STRL": [
-      {
-        "theme_id": "ai_infrastructure",
-        "display_name": "AI Infrastructure Buildout",
-        "theme_exposure_score": 73.0,
-        "opportunity_score": 60.3,
-        "eligible": true,
-        "confidence": 0.37,
-        "role": "infrastructure"
-      },
-      {
-        "theme_id": "data_center_cooling",
-        "display_name": "Data Center Cooling & Thermal Management",
-        "theme_exposure_score": 85.0,
-        "opportunity_score": 65.7,
-        "eligible": true,
-        "confidence": 0.35,
-        "role": "infrastructure"
-      },
-      {
-        "theme_id": "energy_security",
-        "display_name": "Energy Security & Firm Power",
-        "theme_exposure_score": 85.0,
-        "opportunity_score": 65.7,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "infrastructure"
-      },
-      {
-        "theme_id": "grid_electrification",
-        "display_name": "Grid & Electrification Buildout",
-        "theme_exposure_score": 79.0,
-        "opportunity_score": 63.0,
-        "eligible": true,
-        "confidence": 0.35,
-        "role": "infrastructure"
-      },
-      {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 56.2,
-        "opportunity_score": 52.8,
-        "eligible": true,
-        "confidence": 0.35,
-        "role": "infrastructure"
-      },
-      {
-        "theme_id": "water_infrastructure",
-        "display_name": "Water Infrastructure & Treatment",
-        "theme_exposure_score": 71.3,
-        "opportunity_score": 59.6,
-        "eligible": true,
-        "confidence": 0.35,
-        "role": "infrastructure"
-      }
-    ],
     "FIX": [
       {
         "theme_id": "ai_infrastructure",
@@ -21630,6 +21574,62 @@
         "opportunity_score": 45.8,
         "eligible": false,
         "confidence": 0.45,
+        "role": "infrastructure"
+      }
+    ],
+    "STRL": [
+      {
+        "theme_id": "ai_infrastructure",
+        "display_name": "AI Infrastructure Buildout",
+        "theme_exposure_score": 73.0,
+        "opportunity_score": 60.3,
+        "eligible": true,
+        "confidence": 0.37,
+        "role": "infrastructure"
+      },
+      {
+        "theme_id": "data_center_cooling",
+        "display_name": "Data Center Cooling & Thermal Management",
+        "theme_exposure_score": 85.0,
+        "opportunity_score": 65.7,
+        "eligible": true,
+        "confidence": 0.35,
+        "role": "infrastructure"
+      },
+      {
+        "theme_id": "energy_security",
+        "display_name": "Energy Security & Firm Power",
+        "theme_exposure_score": 85.0,
+        "opportunity_score": 65.7,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "infrastructure"
+      },
+      {
+        "theme_id": "grid_electrification",
+        "display_name": "Grid & Electrification Buildout",
+        "theme_exposure_score": 79.0,
+        "opportunity_score": 63.0,
+        "eligible": true,
+        "confidence": 0.35,
+        "role": "infrastructure"
+      },
+      {
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 56.2,
+        "opportunity_score": 52.8,
+        "eligible": true,
+        "confidence": 0.35,
+        "role": "infrastructure"
+      },
+      {
+        "theme_id": "water_infrastructure",
+        "display_name": "Water Infrastructure & Treatment",
+        "theme_exposure_score": 71.3,
+        "opportunity_score": 59.6,
+        "eligible": true,
+        "confidence": 0.35,
         "role": "infrastructure"
       }
     ],
@@ -22318,7 +22318,7 @@
   "principle": "A separate screen, never a modifier on the fundamentals score. Price momentum contributes zero by construction, and names already in the top valuation decile are flagged rather than promoted - specialized ETFs have historically lost about 30% risk-adjusted over five years by doing the opposite (Ben-David, Franzoni, Kim & Moussawi, RFS 2023).",
   "schema_version": 1,
   "source": {
-    "advisor_generated_at": "2026-09-06T02:18:08.472534+00:00",
+    "advisor_generated_at": "2026-09-07T17:53:07.747018+00:00",
     "advisor_universe_mode": "full",
     "advisor_universe_count": 944
   },
@@ -22357,8 +22357,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "e76f7c8b7851bf65a9056f569b053000ac2772d3",
-    "config_hash": "2c789dc1bd47686ef6678a8b171d1cb9292015badf804fbed6fb9c20fbd70e38",
-    "generated_at": "2026-09-06T23:28:16.432671+00:00"
+    "git_commit_sha": "f300ef3541be400b7e87fec400285cff9ee8a955",
+    "config_hash": "93b5358baa5b0d3269738d19deb6465cf3c2c839b12f2bdc0b3a9fec96a48da4",
+    "generated_at": "2026-09-07T18:20:12.349160+00:00"
   }
 }
