@@ -349,6 +349,36 @@ reading `None` until `pit_store` has accumulated at least `settings.json`'s
 `return_attribution.months_back` (12) of history for a given ticker — like every other
 new field here, it has no prospective IC history yet, so it is not a score input.
 
+## Moat persistence: sustained quality across fiscal years, not a moat judgment
+
+`pipeline/moat_persistence.py` answers a narrower question than its name suggests, on purpose.
+"Moat" in the qualitative sense — brand, network effects, switching costs, regulatory capture,
+a durable cost advantage — is not observable from SEC XBRL facts, and this module does not
+attempt to read for any of it. What it measures is mechanical: the fraction of the last
+`settings.json`'s `moat_persistence.years` (5) fiscal years in which **both**
+`return_on_invested_capital` and `gross_profits_to_assets` — the two profitability metrics
+already weighted on published evidence (Novy-Marx, the ROIC literature) — cleared the same
+"good" band `fundamentals.return_on_invested_capital.good_min` / `.gross_profits_to_assets.good_min`
+already use for the champion score. Each year in the window is a point-in-time
+trailing-twelve-month reading from `pipeline/pit_derive.py` against the SEC XBRL history already
+backfilled to `pipeline/data/pit/fundamentals/` (`build_pit_fundamentals.py`) — no new data, no
+network call in this per-refresh path, and a value is never visible before its filing date.
+
+A company whose evidence-backed profitability has held up for five years is better evidence of
+some durable advantage than the same metrics measured once — but it is not proof of one. A
+name riding a multi-year commodity up-cycle, or one not yet disrupted by a new entrant, scores
+identically to a name with a genuine structural edge; the reverse is also possible, since a
+young, real moat with a short filing history reads as `unavailable` rather than as evidence of
+anything. See `docs/LIMITATIONS.md`.
+
+`row.moat_persistence` (`persistence_fraction`, `years_resolved`, `years_qualifying`, `trend`,
+`readings`) is `{"available": false, ...}` — absent, not a defaulted zero — for a ticker with no
+CIK match in `pipeline/data/pit/entity_map.json` or fewer than `moat_persistence.minimum_years`
+(4) resolved years, rather than reporting a confident fraction over 1-2 known years.
+Informational only, like every other new field here: no prospective IC history to validate
+against yet, so it is not wired into `fundamentals.metric_weights` — see
+`docs/VALIDATION-METHODOLOGY.md` for what promoting it to a scored input would require.
+
 ## Theme maturity and crowding: return dispersion and pairwise correlation
 
 `pipeline/theme_trend.py` already computed a theme-level "is this actually moving, and is it

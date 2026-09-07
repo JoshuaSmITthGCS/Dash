@@ -1,5 +1,6 @@
 """Build the public investment-research dataset from Alpha Vantage + Yahoo fundamentals."""
 
+import json
 import math
 import os
 import re
@@ -16,10 +17,11 @@ from data_coverage import data_coverage_components, run_source_reliability
 from data_health import publication_gate, statement_health
 from price_archive import archive_health
 from edgar_enrichment import merge_edgar_fallback
-from edgar_entities import normalize_ticker
+from edgar_entities import EntityResolver, normalize_ticker
+from edgar_entities import CACHE_PATH as ENTITY_MAP_CACHE_PATH
 from edgar_sue import sue_for
 from providers import YahooAdapter
-from common import CONFIG_DIR, LOG, load_json, save_json, update_pipeline_status
+from common import CONFIG_DIR, LOG, STORE_DIR, load_json, save_json, update_pipeline_status
 from fetch_prices import fetch_snapshot
 from fundamentals_extended import (derive_extended, earnings_surprise_rows, extended_inputs,
                                    extended_observations)
@@ -31,6 +33,8 @@ from concentration_risk import summarize as summarize_concentration
 from geographic_exposure import summarize as summarize_geography
 from institutional_ownership import decay as institutional_decay
 from congress_signal import score_congressional_buying
+from pit_fundamentals_store import ShardedStore, shard_for
+from moat_persistence import moat_persistence as compute_moat_persistence
 import pit_store
 from fred import FredClient, FredError, fetch_regime
 from layer_health import assert_layers_vary
@@ -70,6 +74,14 @@ DEFAULT_SYMBOLS = tuple(UNIVERSE.get("symbols", ()))
 PUBLISH_LIMIT = int(UNIVERSE.get("publish_limit", 20))
 REVERSE_DCF_ASSUMPTIONS = SETTINGS.get("reverse_dcf", {})
 RETURN_ATTRIBUTION_MONTHS_BACK = int(SETTINGS.get("return_attribution", {}).get("months_back", 12))
+# Informational only -- see pipeline/moat_persistence.py's module docstring and
+# settings.json's moat_persistence._comment. good_min_roic/good_min_gpa are read from the
+# same fundamentals bands the champion score already uses (not duplicated here) so the two
+# never drift out of sync.
+MOAT_PERSISTENCE_CONFIG = SETTINGS.get("moat_persistence", {})
+MOAT_PERSISTENCE_GOOD_MIN_ROIC = SETTINGS["fundamentals"]["return_on_invested_capital"]["good_min"]
+MOAT_PERSISTENCE_GOOD_MIN_GPA = SETTINGS["fundamentals"]["gross_profits_to_assets"]["good_min"]
+FUNDAMENTALS_PIT_DIR = os.path.join(STORE_DIR, "pit", "fundamentals")
 NEWS_CONFIG = SETTINGS["news_intelligence"]
 # Display-only: disclosed ownership/leadership affiliations shown on the news screen's
 # idiosyncratic-catalyst section. Never read by scorer.py or advisor_engine.py.
@@ -1223,6 +1235,58 @@ def collect_congressional_signals(symbols, *, as_of=None, screen_payload=None):
     return signals, diagnostics
 
 
+def collect_moat_persistence_signals(symbols, *, as_of=None):
+    """One `pipeline/moat_persistence.py` reading per resolvable ticker, informational only.
+
+    No live call of any kind: both inputs are already committed to the repo --
+    ``pipeline/data/pit/entity_map.json`` (a snapshot of SEC's company_tickers.json) for
+    ticker -> CIK, and ``pipeline/data/pit/fundamentals/`` (SEC XBRL history, built by the
+    separately-scheduled ``build_pit_fundamentals.py``) for the filed facts themselves. A
+    ticker with no CIK in the snapshot, or a CIK with no committed filing history, simply has
+    no reading -- this is a coverage gap in already-published static data, not a per-run
+    failure, so it is not retried or treated as degraded the way a live-fetch signal would be.
+
+    This is run over every published row, not the SEC-rate-limited ``insider_candidates``
+    shortlist above: unlike Form 4/13F/congressional signals, nothing here calls a live API,
+    so there is no per-run cost to widening it to the full universe.
+    """
+    diagnostics = {"requested": len(symbols), "entity_map_available": False,
+                   "resolved": 0, "available": 0}
+    if not os.path.exists(ENTITY_MAP_CACHE_PATH):
+        diagnostics["reason"] = "entity_map.json not found -- run build_pit_fundamentals.py"
+        return {}, diagnostics
+    with open(ENTITY_MAP_CACHE_PATH, encoding="utf-8") as handle:
+        cached = json.load(handle)
+    resolver = EntityResolver(cached.get("rows") or [], fetched_at=cached.get("fetched_at"))
+    diagnostics["entity_map_available"] = True
+    diagnostics["entity_map_fetched_at"] = resolver.fetched_at
+
+    store = ShardedStore(FUNDAMENTALS_PIT_DIR)
+    rows_by_shard = {}
+    signals = {}
+    for symbol in symbols:
+        cik, _reason = resolver.try_resolve(symbol)
+        if not cik:
+            continue
+        diagnostics["resolved"] += 1
+        shard = shard_for(cik)
+        if shard not in rows_by_shard:
+            rows_by_shard[shard] = store.load(shard=shard)
+        company_rows = [row for row in rows_by_shard[shard] if row.get("cik") == cik]
+        if not company_rows:
+            continue
+        result = compute_moat_persistence(
+            company_rows, as_of or date.today(), cik=cik,
+            good_min_roic=MOAT_PERSISTENCE_GOOD_MIN_ROIC,
+            good_min_gpa=MOAT_PERSISTENCE_GOOD_MIN_GPA,
+            years=MOAT_PERSISTENCE_CONFIG.get("years"),
+            minimum_years=MOAT_PERSISTENCE_CONFIG.get("minimum_years"))
+        signals[str(symbol).upper()] = result
+        if result.get("available"):
+            diagnostics["available"] += 1
+    return signals, diagnostics
+
+
 def collect_filings_signals(symbols, *, screen_payload=None):
     """Fold the 3-day-published SEC filings screen (10-K/10-Q, DEF 14A, 8-K) into three
     already-scored, already-decayed score inputs.
@@ -2078,6 +2142,16 @@ def run():
         collect_filings_signals(insider_candidates)
     )
 
+    # Moat persistence (pipeline/moat_persistence.py): a multi-year read on whether
+    # return_on_invested_capital and gross_profits_to_assets have both stayed above their
+    # existing 'good' band, not just in the latest filing. Informational only -- see that
+    # module's docstring and settings.json's moat_persistence block; not a score input until
+    # it clears its own IC validation. No live call, so it runs over every published row
+    # rather than the SEC-rate-limited insider_candidates shortlist above.
+    moat_persistence_signals, moat_persistence_diagnostics = collect_moat_persistence_signals(
+        [context["symbol"] for context in contexts]
+    )
+
     # Computed once per refresh, not per row: several of these providers (FRED regime, SEC
     # Form 4) are shared across every published company, so there is no per-ticker source
     # reliability signal to attach -- only a run-wide one.
@@ -2100,6 +2174,11 @@ def run():
         "sec_filings_screen": ("unavailable" if not filings_diagnostics["screen_available"]
                                else "healthy"),
         "fred": "unavailable" if not fred_regime else ("degraded" if fred_failure else "healthy"),
+        "moat_persistence_fundamentals_store": (
+            "unavailable" if not moat_persistence_diagnostics["entity_map_available"]
+            else "degraded" if moat_persistence_diagnostics["available"] == 0
+            else "healthy"
+        ),
     })
 
     research = []
@@ -2147,6 +2226,13 @@ def run():
         row["return_attribution"] = return_attribution.attribute_return_from_history(
             symbol, multiple_field=return_attribution_multiple,
             months_back=RETURN_ATTRIBUTION_MONTHS_BACK, pit_store=pit_store)
+        # Moat persistence (pipeline/moat_persistence.py): fraction of the last N fiscal
+        # years return_on_invested_capital and gross_profits_to_assets both cleared their
+        # existing 'good' band, from SEC XBRL history already committed to
+        # pipeline/data/pit/fundamentals/. Informational only, same reasoning as
+        # return_attribution above -- absent (not zero) for a ticker with no CIK match or too
+        # little filing history, and not wired into any modifier or fundamentals weight.
+        row["moat_persistence"] = moat_persistence_signals.get(symbol)
         # Expectation change - the leg the catalyst and analyst-conviction models were missing.
         # The previous run's consensus target is the only comparison point that exists for
         # target drift: Yahoo serves today's view and nothing else, which is precisely why

@@ -25,6 +25,15 @@ more depth.
   Form 4 (which is parsed structured XBRL): a materially negative 8-K Item code is a reliable
   signal, but the absence of one is not evidence the underlying event was immaterial, only that
   it wasn't filed under a code this lookup recognizes.
+- **`row.moat_persistence` is a financial-statement persistence proxy, not a moat assessment.**
+  `pipeline/moat_persistence.py` measures only whether `return_on_invested_capital` and
+  `gross_profits_to_assets` both stayed above their existing "good" band across several fiscal
+  years — it has no way to read brand strength, network effects, switching costs, or regulatory
+  protection, and does not attempt to. Coverage also depends on two already-committed, not
+  live-fetched, static snapshots: `pipeline/data/pit/entity_map.json` (ticker → CIK; some
+  tickers do not resolve) and `pipeline/data/pit/fundamentals/` (SEC XBRL history; a young
+  filer or one missing a needed concept reads `unavailable` rather than a low score). See
+  `docs/MODEL-CARD.md`'s "Moat persistence" section.
 
 ## Validation
 
