@@ -21,6 +21,12 @@ import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { connectPortfolioBackend, requireAccountSelection, step } from './lib/portfolio-firestore-backend.mjs'
 import { runPortfolioAudit } from './lib/portfolio-audit.mjs'
+import { holdingsAsOf, positionTimeline } from './lib/portfolio-timeline.mjs'
+import { REFERENCE_PORTFOLIO, REFERENCE_PORTFOLIO_RECORDED_AT } from '../src/lib/referencePortfolio.js'
+
+// Snapshots before the export could not have been damaged by the LULU/TSM class of bug --
+// see rebuild-portfolio-snapshots.mjs's own BASELINE_CUTOFF comment for why.
+const SNAPSHOT_CORRECTION_CUTOFF = REFERENCE_PORTFOLIO_RECORDED_AT.slice(0, 10)
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const FIXTURES_DIR = path.join(__dirname, 'fixtures')
@@ -118,7 +124,26 @@ Never writes. Exits 1 if any critical or warning finding is present.`)
     ])
     const statement = await loadStatement(options.statement)
 
-    const report = runPortfolioAudit({ positions, closedPositions, activities, snapshots, trackingState, statement })
+    // Same event-replay machinery rebuild-portfolio-snapshots.mjs uses, built from that
+    // script's own --history default (the events since the export) so a "clean" audit here
+    // means that script would find nothing left to correct either.
+    let correctHoldingsAsOf = null
+    try {
+      const historyEvents = JSON.parse(await readFile(path.join(FIXTURES_DIR, 'fidelity-activity-since-seed.json'), 'utf8')).events
+      const baseline = REFERENCE_PORTFOLIO.map((position, index) => ({
+        id: `${position.ticker}-reference-${index}`, ticker: position.ticker, shares: position.shares, costBasis: position.costBasis,
+      }))
+      const timeline = positionTimeline(baseline, historyEvents)
+      correctHoldingsAsOf = (date) => holdingsAsOf(timeline, date)
+    } catch {
+      // The fixture is optional context, not a hard dependency -- its absence just means this
+      // one check is skipped rather than the whole audit failing to run.
+    }
+
+    const report = runPortfolioAudit({
+      positions, closedPositions, activities, snapshots, trackingState, statement,
+      correctHoldingsAsOf, snapshotCorrectionSince: SNAPSHOT_CORRECTION_CUTOFF,
+    })
 
     if (options.json) {
       console.log(JSON.stringify(report, null, 2))

@@ -7,6 +7,7 @@ import {
   findOrphanFlows,
   findResurrectedPositions,
   findSnapshotsWithoutPrices,
+  findUncorrectedSnapshots,
   runPortfolioAudit,
 } from './portfolio-audit.mjs'
 
@@ -227,5 +228,47 @@ describe('runPortfolioAudit orchestration', () => {
     expect(report.critical).toHaveLength(0)
     expect(report.warnings).toHaveLength(0)
     expect(report.ok).toBe(true)
+  })
+})
+
+describe('findUncorrectedSnapshots', () => {
+  const correctHoldingsAsOf = (date) => {
+    if (date < '2026-09-03') return new Map([['LULU', { shares: 1, costBasisTotal: 117.94 }]])
+    return new Map([['TSM', { shares: 0.482, costBasisTotal: 199.67 }]])
+  }
+
+  it('flags a snapshot whose recorded tickers disagree with the correct holdings for its date', () => {
+    const snapshots = [{
+      marketDate: '2026-09-04', value: 100,
+      prices: [{ ticker: 'LULU', shares: 1, price: 100 }], // wrong: LULU should be gone, TSM should be present
+    }]
+    const findings = findUncorrectedSnapshots(snapshots, correctHoldingsAsOf, null)
+    expect(findings).toHaveLength(1)
+    expect(findings[0]).toMatchObject({ check: 'uncorrected_snapshots', severity: 'warning', count: 1 })
+    expect(findings[0].dates).toContain('2026-09-04')
+  })
+
+  it('is silent when the recorded tickers match the correct holdings', () => {
+    const snapshots = [{ marketDate: '2026-09-04', value: 100, prices: [{ ticker: 'TSM', shares: 0.482, price: 200 }] }]
+    expect(findUncorrectedSnapshots(snapshots, correctHoldingsAsOf, null)).toHaveLength(0)
+  })
+
+  it('skips a snapshot already marked corrected', () => {
+    const snapshots = [{ marketDate: '2026-09-04', value: 100, correctedAt: '2026-09-10T00:00:00Z', prices: [{ ticker: 'LULU', shares: 1, price: 100 }] }]
+    expect(findUncorrectedSnapshots(snapshots, correctHoldingsAsOf, null)).toHaveLength(0)
+  })
+
+  it('skips a snapshot before the given cutoff date', () => {
+    const snapshots = [{ marketDate: '2026-08-01', value: 100, prices: [{ ticker: 'LULU', shares: 1, price: 100 }] }]
+    expect(findUncorrectedSnapshots(snapshots, correctHoldingsAsOf, '2026-08-25')).toHaveLength(0)
+  })
+
+  it('skips a snapshot with no prices array -- that is findSnapshotsWithoutPrices\' job, not this one\'s', () => {
+    const snapshots = [{ marketDate: '2026-09-04', value: 100 }]
+    expect(findUncorrectedSnapshots(snapshots, correctHoldingsAsOf, null)).toHaveLength(0)
+  })
+
+  it('does nothing when no correctHoldingsAsOf function is supplied', () => {
+    expect(findUncorrectedSnapshots([{ marketDate: '2026-09-04', value: 100, prices: [] }], null, null)).toHaveLength(0)
   })
 })

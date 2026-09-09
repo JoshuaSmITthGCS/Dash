@@ -89,13 +89,37 @@ npm run portfolio:reconcile -- --email <your-email> \
 # 4. Confirm the whole ledger, not just positions, is now clean.
 npm run portfolio:audit -- --email <your-email> \
   --statement scripts/fixtures/fidelity-positions-2026-09-09.json
-#    Expect: 0 critical, 0 warnings. Informational findings (reference drift, missing
-#    per-ticker prices on pre-8eae175 snapshots) are expected and fine.
+#    Expect: 0 critical, 0 warnings. One informational finding is expected here now:
+#    "uncorrected_snapshots" -- daily account-value snapshots recorded while LULU/NTNX/TSM
+#    were wrong. Step 5 fixes that.
+
+# 5. Correct the historical daily snapshots recorded while the account was wrong, so past
+#    performance measures (Sharpe, the reconciliation bridge, TWR/MWR) stop reflecting the bug
+#    for date ranges that include Aug 25 - Sep 9. Never overwrites blindly: the original value
+#    and unrealized gain are kept alongside the corrected ones on every document it touches.
+npm run portfolio:rebuild-snapshots -- --email <your-email> \
+  --history scripts/fixtures/fidelity-activity-since-seed.json
+#    Read the printed plan: each affected date, what ticker was wrongly present/absent, and
+#    the exact dollar delta. Then apply it:
+npm run portfolio:rebuild-snapshots -- --email <your-email> \
+  --history scripts/fixtures/fidelity-activity-since-seed.json --commit
+#    A handful of the earliest snapshots may print BLOCKED with "no per-ticker prices recorded"
+#    -- these predate commit 8eae175's per-ticker price capture and cannot be surgically
+#    corrected. Add --allow-estimates to reconstruct those from historical closes alone instead
+#    (a real number, clearly marked `estimated: true`, lower precision than the surgical
+#    correction above since it re-derives the whole total rather than adjusting only what was
+#    wrong): npm run portfolio:rebuild-snapshots -- --email <your-email> --history <file>
+#    --commit --allow-estimates
+
+# 6. Re-run the audit -- the uncorrected_snapshots finding should now be gone.
+npm run portfolio:audit -- --email <your-email> \
+  --statement scripts/fixtures/fidelity-positions-2026-09-09.json
 ```
 
 Both scripts are dry-run by default; `--commit` is required to write anything, and step 3's
 `--verify` fails loudly (exit 1) if the result doesn't match the statement rather than reporting
-a false success.
+a false success. Step 5's script (`scripts/rebuild-portfolio-snapshots.mjs`) is idempotent — a
+snapshot already carrying `correctedAt` is skipped on a later run unless `--force` is passed.
 
 **Also built and unit-tested this session, not yet applied:** none of WP3/WP5/WP6/WP7/WP8 below
 have been started. WP1's app-level change (seeding gated to empty accounts only) IS shipped in
@@ -111,11 +135,13 @@ below.
 | `84491ac` | `planReferencePortfolioSync(..., { mode: 'seed' \| 'reconcile' })`. App runs **seed only**: adds never-delivered tickers, backfills blank purchase dates, never restates, never deletes. `referencePortfolioSeeded` ledger on `tracking/state`. CLI writes seed-only unless `--authoritative`. `portfolioImport.js` explicitly reconciles. |
 | `8eae175` | **Trades are ledger events.** `addPosition` writes `stock_purchase`; every sell path writes `sale_proceeds` beside `realized_gain`. `BASKET_FLOW_TYPES` in `portfolioAnalytics.js` is the shared vocabulary; Modified Dietz, TWR, XIRR, trader-insight units, and the reconciliation bridge all remove these flows. `netInvestedCapital()` deliberately ignores them. `recordSnapshot` stores per-ticker `prices`; `buildPriceModel` prefers the account's recorded prices over the export seed. |
 | `d763050` | `seededTickersFromTrackingState()` — an account seeded before the ledger existed is treated as having received the whole export. |
-| (this session, Sonnet) | **WP1**: `isEmptyAccount()` gate — seeding (whole-position writes from the export) now only ever runs on an account with zero positions, zero activity, and no tracking start date. Any other account gets `recordReferenceObservation()` on a version bump: a dated price observation only, never a position write. The manual "Add missing holdings" button now shows a confirm dialog naming exactly what it will add before writing anything. `src/lib/useFirebasePortfolio.js`, `src/pages/portfolio/usePortfolioForms.js`. **WP2**: `scripts/reconcile-portfolio-activity.mjs` + `scripts/lib/portfolio-reconciliation.mjs` — applies real brokerage events (buy/sell/deposit/dividend) to Firestore through the same `planFifoSale`/`realizedGainForPlan` primitives the app uses, idempotent by deterministic activity-doc id. **WP4**: `scripts/audit-portfolio-ledger.mjs` + `scripts/lib/portfolio-audit.mjs` — read-only checks (resurrected positions, closed-but-held tickers, reconciliation-bridge failures across all history, orphan NAV steps, a statement diff). Shared Firestore credential/connection logic extracted to `scripts/lib/portfolio-firestore-backend.mjs`, used by all three CLI scripts. Real fixtures committed: `scripts/fixtures/fidelity-activity-since-seed.json` (the verified Sep 1-4 delta), `fidelity-activity-2026-06-30_2026-09-04.json` (full 90-day history, for WP3), `fidelity-positions-2026-09-09.json` (the acceptance statement). |
+| (this session, Sonnet) | **WP1**: `isEmptyAccount()` gate — seeding (whole-position writes from the export) now only ever runs on an account with zero positions, zero activity, and no tracking start date. Any other account gets `recordReferenceObservation()` on a version bump: a dated price observation only, never a position write. The manual "Add missing holdings" button now shows a confirm dialog naming exactly what it will add before writing anything. `src/lib/useFirebasePortfolio.js`, `src/pages/portfolio/usePortfolioForms.js`. **WP2**: `scripts/reconcile-portfolio-activity.mjs` + `scripts/lib/portfolio-reconciliation.mjs` — applies real brokerage events (buy/sell/deposit/dividend) to Firestore through the same `planFifoSale`/`realizedGainForPlan` primitives the app uses, idempotent by deterministic activity-doc id. **WP4**: `scripts/audit-portfolio-ledger.mjs` + `scripts/lib/portfolio-audit.mjs` — read-only checks (resurrected positions, closed-but-held tickers, reconciliation-bridge failures across all history, orphan NAV steps, a statement diff, and uncorrected snapshots). **WP3 (partial — see WP3 section)**: `scripts/rebuild-portfolio-snapshots.mjs` + `scripts/lib/portfolio-timeline.mjs` + `scripts/lib/portfolio-snapshot-correction.mjs` — corrects the recorded daily `intradaySnapshots` values for every date the account held the wrong things, using the app's own recorded per-ticker price to remove a wrongly-included holding and a historical close (`public/data/report.json`) to add a wrongly-excluded one, never discarding the original value. Shared Firestore credential/connection logic extracted to `scripts/lib/portfolio-firestore-backend.mjs`, used by all four CLI scripts. Real fixtures committed: `scripts/fixtures/fidelity-activity-since-seed.json` (the verified Sep 1-4 delta, used by both the reconciliation and the snapshot-correction scripts), `fidelity-activity-2026-06-30_2026-09-04.json` (full 90-day history — cost/date validation and a WP3 activity-row-backfill audit trail only; most of its buy events lack a verified per-fill share count), `fidelity-positions-2026-09-09.json` (the acceptance statement). |
 
-Tests: 1641+ passing (was 1574 at the start of this session; +67 across `scripts/lib/portfolio-audit.test.mjs`,
+Tests: 1685 passing (was 1574 at the start of this session; +111 across `scripts/lib/portfolio-audit.test.mjs`,
 `scripts/lib/portfolio-reconciliation.test.mjs`, `scripts/reconcile-portfolio-activity.test.mjs`,
-`scripts/audit-portfolio-ledger.test.mjs`, and additions to `usePortfolioForms.test.js`). The `src/mediums/core/screens/HomeScreen.test.jsx` "as-of eyebrow" test
+`scripts/audit-portfolio-ledger.test.mjs`, `scripts/lib/portfolio-timeline.test.mjs`,
+`scripts/lib/portfolio-snapshot-correction.test.mjs`, `scripts/rebuild-portfolio-snapshots.test.mjs`,
+and additions to `usePortfolioForms.test.js`). The `src/mediums/core/screens/HomeScreen.test.jsx` "as-of eyebrow" test
 is a pre-existing `React.lazy` timing flake under full-suite load; it passes in isolation and on
 a clean tree. Not this work's.
 
@@ -304,6 +330,36 @@ Sep 9 price for all 45 names.
 
 ### WP3 — Derive the missing flow rows for historical trades
 
+**A related but distinct piece is already done (this session): daily snapshot correction.**
+`scripts/rebuild-portfolio-snapshots.mjs` + `scripts/lib/portfolio-timeline.mjs` +
+`scripts/lib/portfolio-snapshot-correction.mjs` correct the recorded `intradaySnapshots.value`
+(and `.unrealizedGain`) for every date on/after the Aug 25 export where the account's
+`prices[]` disagree with what it should have held that date — the LULU-wrongly-present,
+TSM-never-entered damage, applied to the *daily total value* rather than the *activity rows*
+this WP3 section is about. It reconstructs "what should have been held on date D" by replaying
+`scripts/fixtures/fidelity-activity-since-seed.json` on the exact `REFERENCE_PORTFOLIO`
+baseline (§1.5 rules out anything before Aug 25: the bug could not have existed before the
+export did), then corrects each disagreeing snapshot using the app's own recorded price for a
+wrongly-included ticker and a historical close (`public/data/report.json`) for a wrongly-
+excluded one — never destroying the original value, always leaving `originalValue` /
+`originalUnrealizedGain` alongside the correction. A snapshot with no `prices[]` at all (pre-
+`8eae175`) needs `--allow-estimates` (a full reconstruction from historical closes, lower
+precision, always marked `estimated: true`). Wired into `npm run portfolio:audit` as the
+`uncorrected_snapshots` finding. 37 tests across the three files, including an end-to-end test
+against the real fixture and the real `report.json` price history. Run it as step 5 of §1.5.
+
+**Still not started — the activity-row backfill below.** This is about the pre-`8eae175`
+history that has no `stock_purchase`/`sale_proceeds` row at all (every buy/sell made through
+the app before that commit), which is a separate gap from the snapshot correction above:
+fixing a snapshot's total doesn't create the missing activity rows a return calculation for
+an *older* window (say, all of July) would still need. **Also uncovered this session and not
+yet addressed here:** the 90-day activity dump shows a real T3 Defense (DFNS) round-trip trade
+on Aug 3 — bought and fully sold same day, +$22.35 realized — made directly through Fidelity
+and never recorded in Dash at all. `scripts/fixtures/fidelity-activity-2026-06-30_2026-09-04.json`
+has the full 88-event dump (rules field there explains why most of its `buy` events lack a
+verified per-fill `shares` count and so cannot be replayed share-by-share — cost/date totals
+only, confirmed against `REFERENCE_PORTFOLIO`).
+
 **Build:** `scripts/rebuild-trade-ledger.mjs` (+ test). Dry run default.
 
 For every account, read `activity` sorted by `recordedAt`, and emit missing rows:
@@ -343,6 +399,10 @@ Checks:
    `sale_proceeds`; `position_removed` with `manual_holding_removal` — same rules as WP3, reported
    not fixed.
 5. **Snapshot price coverage:** snapshots with no `prices` (pre-`8eae175`) — informational.
+5.5. **Uncorrected snapshots (warning, implemented this session):** a snapshot on/after Aug 25
+   whose recorded `prices[]` ticker set disagrees with what `positionTimeline`/`holdingsAsOf`
+   (replaying `fidelity-activity-since-seed.json` on the `REFERENCE_PORTFOLIO` baseline) says it
+   should have held that date. Points at `npm run portfolio:rebuild-snapshots`.
 6. **Statement check (`--statement <fixture.json>`):** diff stored positions against a Fidelity
    positions fixture (`scripts/fixtures/fidelity-positions-*.json`): tickers held/missing, share
    and cost-basis drift. This is the check that says "Firebase equals what Fidelity says", and it

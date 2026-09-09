@@ -23,7 +23,8 @@
     "evidence:projection": "node scripts/projection-spread-evidence.mjs",
     "portfolio:sync": "node --env-file-if-exists=.env.local scripts/sync-portfolio-firebase.mjs",
     "portfolio:audit": "node --env-file-if-exists=.env.local scripts/audit-portfolio-ledger.mjs",
-    "portfolio:reconcile": "node --env-file-if-exists=.env.local scripts/reconcile-portfolio-activity.mjs"
+    "portfolio:reconcile": "node --env-file-if-exists=.env.local scripts/reconcile-portfolio-activity.mjs",
+    "portfolio:rebuild-snapshots": "node --env-file-if-exists=.env.local scripts/rebuild-portfolio-snapshots.mjs"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.9",

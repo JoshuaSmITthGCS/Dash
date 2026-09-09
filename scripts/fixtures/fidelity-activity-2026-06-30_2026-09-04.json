@@ -1,14 +1,15 @@
 {
-  "source": "Fidelity Activity & Orders → History, account Z32641125, past 90 days, plus pre-window buys from the Aug 25 export",
+  "source": "Fidelity Activity & Orders \u2192 History, account Z32641125, past 90 days, plus pre-window buys from the Aug 25 export",
   "window": {
     "from": "2026-06-30",
     "to": "2026-09-04"
   },
   "rules": [
     "Money-market lines (FZFXX, SPAXX dividends, reinvestments, sweeps/exchanges) are excluded: tracked NAV is invested holdings only.",
-    "cashAfter is Fidelity’s running cash balance after the line, kept only as a verification field; Dash does not track cash.",
+    "cashAfter is Fidelity\u2019s running cash balance after the line, kept only as a verification field; Dash does not track cash.",
     "Multi-fill buys are separate events here; the Aug 25 export collapsed them into one lot per ticker with the shared trade date. Either representation is acceptable for the ledger; the per-lot cost totals are identical.",
-    "priorPurchases carry the export’s cost and date for holdings bought before this window. BSX and VOO have no known acquisition date."
+    "priorPurchases carry the export\u2019s cost and date for holdings bought before this window. BSX and VOO have no known acquisition date.",
+    "Most `buy` events before Sep 2 have no `shares` field: Fidelity's activity log gives the dollar amount per fill but not always the share count, and several tickers were bought across multiple same-day fills at slightly different prices (see e.g. SIGI, HIG, MCY) with no reliable way to split the shares between fills from this data alone. Only LULU's and NTNX's sell events (added after the fact) and TSM's buy carry verified share counts, confirmed against the Sep 9 Positions page. This file's `events` are therefore only reliable for validating dollar totals/dates against REFERENCE_PORTFOLIO's cost basis (already done -- see docs/PLAN-TRADE-LEDGER.md) and as a WP3 backfill audit trail, NOT for share-by-share position replay before Aug 25. scripts/rebuild-portfolio-snapshots.mjs and scripts/reconcile-portfolio-activity.mjs both use fidelity-activity-since-seed.json instead, whose every event has a verified share count."
   ],
   "totals": {
     "deposits": 5600,
@@ -705,7 +706,8 @@
       "date": "2026-09-04",
       "fidelity": "YOU SOLD NUTANIX INC CL A (NTNX) (Cash)",
       "cashAfter": 376.22,
-      "proceeds": 67.86
+      "proceeds": 67.86,
+      "shares": 1
     },
     {
       "kind": "sell",
@@ -713,7 +715,8 @@
       "date": "2026-09-04",
       "fidelity": "YOU SOLD NUTANIX INC CL A (NTNX) (Cash)",
       "cashAfter": 395.48,
-      "proceeds": 19.26
+      "proceeds": 19.26,
+      "shares": 0.284
     }
   ],
   "priorPurchases": [

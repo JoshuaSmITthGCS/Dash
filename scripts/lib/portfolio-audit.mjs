@@ -205,6 +205,42 @@ export function findSnapshotsWithoutPrices(snapshots = []) {
 }
 
 /**
+ * Check 5.5: recorded snapshots since a given date whose values still disagree with what the
+ * account should have held on that date -- i.e., snapshots `rebuild-portfolio-snapshots.mjs`
+ * has not yet corrected. Read-only here: it reports the count and the affected dates, it does
+ * not attempt the correction (that script does, deliberately, since a correction needs
+ * public/data/report.json's price history, which this pure audit module does not load).
+ * `correctHoldingsAsOf(date)` is a caller-supplied function -- built from `positionTimeline`/
+ * `holdingsAsOf` -- since knowing "what should have been held" requires the same event-replay
+ * machinery `rebuild-portfolio-snapshots.mjs` uses, which the audit tool does not duplicate.
+ */
+export function findUncorrectedSnapshots(snapshots = [], correctHoldingsAsOf, since = null) {
+  if (typeof correctHoldingsAsOf !== 'function') return []
+  const affected = []
+  for (const snapshot of snapshots) {
+    const date = snapshot.marketDate || String(snapshot.recordedAt || '').slice(0, 10)
+    if (since && date < since) continue
+    if (snapshot.correctedAt) continue
+    if (!Array.isArray(snapshot.prices) || !snapshot.prices.length) continue // no_prices mode, not this check's job
+    const correctHoldings = correctHoldingsAsOf(date)
+    if (!correctHoldings) continue
+    const recordedTickers = new Set(snapshot.prices.map((row) => normalizeTicker(row.ticker)))
+    const correctTickers = new Set([...correctHoldings.keys()].filter((ticker) => correctHoldings.get(ticker).shares > 1e-9))
+    const disagrees = recordedTickers.size !== correctTickers.size
+      || [...recordedTickers].some((ticker) => !correctTickers.has(ticker))
+      || [...correctTickers].some((ticker) => !recordedTickers.has(ticker))
+    if (disagrees) affected.push(date)
+  }
+  if (!affected.length) return []
+  return [{
+    check: 'uncorrected_snapshots', severity: 'warning', count: affected.length, dates: affected,
+    detail: `${affected.length} recorded snapshot(s) still reflect the wrong holdings for their date `
+      + `(${affected.slice(0, 5).join(', ')}${affected.length > 5 ? ', …' : ''}) -- run `
+      + 'npm run portfolio:rebuild-snapshots to correct them.',
+  }]
+}
+
+/**
  * Check 6: diff stored positions against an external statement (a Fidelity Positions export,
  * transcribed into the fixture shape used by scripts/fixtures/fidelity-positions-*.json).
  * Read-only -- it never suggests a write. This answers "does Firestore equal what Fidelity
@@ -283,6 +319,7 @@ export function auditReferenceDrift(positions = [], closedTickers = [], tracking
 /** Runs every check and returns one flat, ordered finding list plus a pass/fail summary. */
 export function runPortfolioAudit({
   positions = [], closedPositions = [], activities = [], snapshots = [], trackingState = null, statement = null,
+  correctHoldingsAsOf = null, snapshotCorrectionSince = null,
 }) {
   const findings = [
     ...findResurrectedPositions(positions, closedPositions, activities),
@@ -290,6 +327,7 @@ export function runPortfolioAudit({
     ...auditReconciliationBridge(snapshots, activities),
     ...findOrphanFlows(activities),
     ...findSnapshotsWithoutPrices(snapshots),
+    ...findUncorrectedSnapshots(snapshots, correctHoldingsAsOf, snapshotCorrectionSince),
     ...diffAgainstStatement(positions, statement),
     ...auditReferenceDrift(positions, closedPositions.map((row) => row.ticker || row.id), trackingState),
   ]
