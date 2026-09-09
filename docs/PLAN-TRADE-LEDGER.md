@@ -155,8 +155,14 @@ position document is written; one new `intradaySnapshots` doc appears.
 
 ### WP2 — Bring Joshua's account up to date with Fidelity activity
 
-Source of truth: the Fidelity Activity → History screenshots (Aug 31 – Sep 4, 2026). Numbers
-below are transcribed from them; reconfirm against the app before committing.
+Source of truth: the Fidelity Activity → History screenshots (Aug 31 – Sep 4, 2026), now
+committed as **`scripts/fixtures/fidelity-activity-2026-09-04.json`** — use that file as the
+script's `--input`. The Sep 9 Positions page is committed as
+**`scripts/fixtures/fidelity-positions-2026-09-09.json`** and is the acceptance statement:
+diffed against the Aug 25 export it shows 44 positions unchanged to the share and the cent,
+LULU and NTNX gone, TSM new (0.482 sh, $199.67) — so the activity file is the *complete* delta.
+Its totals reconcile: invested $5,609.19 = $6,004.67 account − $395.48 money market; cost
+$5,581.00 = $5,549.26 − 117.94 − 49.99 + 199.67.
 
 **Build:** `scripts/reconcile-portfolio-activity.mjs` (+ `.test.mjs`), reusing the credential
 and backend plumbing from `scripts/sync-portfolio-firebase.mjs` (extract `connect()` and the
@@ -169,7 +175,7 @@ Event schema (one array):
   { "kind": "deposit",  "date": "2026-09-01", "amount": 400.00, "note": "Electronic Funds Transfer Received" },
   { "kind": "dividend", "date": "2026-09-01", "ticker": "SIGI", "amount": 0.89 },
   { "kind": "dividend", "date": "2026-09-01", "ticker": "COP",  "amount": 0.35 },
-  { "kind": "buy",      "date": "2026-09-02", "ticker": "TSM",  "shares": null, "cost": 199.67, "note": "share count from Fidelity Positions tab — REQUIRED" },
+  { "kind": "buy",      "date": "2026-09-02", "ticker": "TSM",  "shares": 0.482, "cost": 199.67 },
   { "kind": "dividend", "date": "2026-09-02", "ticker": "DINO", "amount": 0.61 },
   { "kind": "sell",     "date": "2026-09-03", "ticker": "LULU", "shares": 1,     "proceeds": 102.40 },
   { "kind": "dividend", "date": "2026-09-03", "ticker": "AGO",  "amount": 0.23 },
@@ -192,7 +198,7 @@ Excluded on purpose (rule G): FZFXX dividend/reinvestment, Fidelity Government M
 - `buy` → `positions/<TICKER>-<date>` document with `costBasisUnit: 'per_share'`,
   `costBasis = cost / shares`, `costBasisInputMode: 'total'`, `purchaseDate`; plus
   `activity/position-added-<id>` and `activity/stock_purchase-<id>` (amount = cost).
-  Refuse to run if `shares` is null: the script prints "TSM share count required".
+  Refuse to run if `shares` is null or non-positive.
 - `deposit` → `activity/deposit-<id>`.
 - `dividend` → `activity/dividend-<id>` with `ticker`.
 - All rows: `effectiveDate`, `recordedAt: now`, `source: 'fidelity_activity_import'`,
@@ -202,17 +208,30 @@ Excluded on purpose (rule G): FZFXX dividend/reinvestment, Fidelity Government M
 exists; print "already recorded" per event. A sell whose ticker has no open lots prints
 "nothing to sell — already recorded?" and skips.
 
-**Also in this WP:** set `tracking/state.ledgerComplete = true` **only if** the user confirms
-the $400 EFT is the only external flow since `trackingStartedAt` (ask; do not assume).
+**Also in this WP:**
+- Record the Sep 9 positions page as a dated price observation: an `intradaySnapshots` doc with
+  `id = '2026-09-09T20-05'`, `source: 'fidelity_positions_export'`, `recordedAt` from the fixture,
+  `value`/`investedValue` = 5609.19, `coveragePct: 100`, `positionCount: 45`, and `prices[]`
+  built from the fixture (`ticker, shares, price: lastPrice, value: marketValue, previousClose:
+  null, marketTime`). Same shape `referenceIntradaySnapshot()` writes — reuse its builder with
+  the fixture rows rather than hand-assembling. This gives `latestRecordedPrices()` a real
+  observation for every held name.
+- After `--commit`, assert the stored positions equal the fixture: same 45 tickers, `shares`
+  within 1e-9, `costBasisTotal` within $0.005. Print a per-ticker table; exit 1 on any mismatch.
+- Set `tracking/state.ledgerComplete = true` **only if** the user confirms the $400 EFT is the
+  only external flow since `trackingStartedAt` (ask; do not assume).
 
 **Tests (`scripts/reconcile-portfolio-activity.test.mjs`):** plan for the JSON above against
 a stored portfolio matching `REFERENCE_PORTFOLIO` yields: LULU delete + realized −15.54;
 NTNX two updates ending in delete + realized 37.13; TSM add; dividend/deposit rows; FZFXX
 lines absent; running the plan twice yields zero writes the second time.
 
-**Acceptance:** after `--commit`, the Summary shows no LULU/NTNX tile, TSM present,
-Realized tile reads **+$21.59** (37.13 − 15.54), "Sold" list shows LULU (Sep 3) and NTNX
-(Sep 4), Performance's cash-flow list shows the deposit and four dividends.
+**Acceptance:** after `--commit`, stored positions match
+`scripts/fixtures/fidelity-positions-2026-09-09.json` exactly (45 tickers, cost $5,581.00);
+the Summary shows no LULU/NTNX tile, TSM present, Realized tile reads **+$21.59**
+(37.13 − 15.54), "Sold" list shows LULU (Sep 3) and NTNX (Sep 4), Performance's cash-flow list
+shows the deposit and four dividends, and `latestRecordedPrices(tracking.snapshots)` returns a
+Sep 9 price for all 45 names.
 
 ---
 
@@ -257,9 +276,13 @@ Checks:
    `sale_proceeds`; `position_removed` with `manual_holding_removal` — same rules as WP3, reported
    not fixed.
 5. **Snapshot price coverage:** snapshots with no `prices` (pre-`8eae175`) — informational.
-6. **Reference drift (informational):** `planReferencePortfolioSync(..., { mode: 'reconcile' })`
-   differences, clearly labelled "the statement differs from your record; this is expected after
-   trading and is **not** applied".
+6. **Statement check (`--statement <fixture.json>`):** diff stored positions against a Fidelity
+   positions fixture (`scripts/fixtures/fidelity-positions-*.json`): tickers held/missing, share
+   and cost-basis drift. This is the check that says "Firebase equals what Fidelity says", and it
+   is **read-only** — it never writes. Default statement: the newest fixture in that directory.
+7. **Reference drift (informational):** `planReferencePortfolioSync(..., { mode: 'reconcile' })`
+   differences against the in-code export, clearly labelled "the seed differs from your record;
+   this is expected after trading and is **not** applied".
 
 Output: markdown table per check, plus `--json`.
 
@@ -401,7 +424,8 @@ the copy under the selector names which scope is synthetic.
 WP1  → npm test -- src/pages/portfolio src/lib/referencePortfolio.test.js
 WP4  → npm test -- scripts/ ; npm run portfolio:audit -- --email <you>      # expect findings A/B
 WP3  → npm run portfolio:rebuild-ledger -- --email <you>  (dry run) → --commit
-WP2  → confirm TSM share count → npm run portfolio:reconcile -- --email <you> --input fidelity-2026-09-04.json → --commit
+WP2  → npm run portfolio:reconcile -- --email <you> --input scripts/fixtures/fidelity-activity-2026-09-04.json  (dry run; read it) → --commit
+       npm run portfolio:audit -- --email <you> --statement scripts/fixtures/fidelity-positions-2026-09-09.json   # expect: matches
 WP4  → npm run portfolio:audit -- --email <you>                             # expect clean
 WP5, WP6, WP7, WP8 → npm run lint && npm test && npm run build
 ```
@@ -415,10 +439,16 @@ docs; all suites green.
 
 ## 7. Decisions already made by Joshua (2026-09-09)
 
-1. **TSM share count** on the Sep 2 buy (cost $199.67, marked Margin) — **still needed**; read
-   it from Fidelity → Positions before WP2 `--commit`. The script refuses to run without it.
+1. **TSM: 0.482 shares**, cost $199.67, avg $414.25 — confirmed from the Sep 9 Positions page
+   and written into the activity fixture.
 2. **$400 EFT on Sep 1** — treat as a deposit. Whether it is the *only* external flow since
    tracking started is not yet confirmed; leave `ledgerComplete` untouched unless Joshua says so.
 3. **Dividends: record them. Money-market lines (FZFXX, Fidelity Government MM): excluded.**
 4. **NTNX: record both fills** (1 sh @ $67.86, 0.284 sh @ $19.26).
-5. **Money-market cash stays out of tracked NAV** — unchanged rule.
+5. **Money-market cash stays out of tracked NAV** — unchanged rule. On Sep 9 it was $395.48.
+6. **Refreshing the in-code export is optional and separate.** The Sep 9 positions fixture could
+   replace `REFERENCE_PORTFOLIO` (bump version, `RECORDED_AT`, `EXPECTED`: 45 holdings,
+   $5,581.00 cost, $5,609.19 value, $395.48 money market, $6,004.67 total). Under WP1 that changes
+   nothing for this account except adding the same Sep 9 observation WP2 already records — so do
+   it only if a fresh account should seed from Sep 9 rather than Aug 25. Not required for any
+   acceptance criterion in this plan.
