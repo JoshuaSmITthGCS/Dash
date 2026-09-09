@@ -119,9 +119,18 @@ identical documents and cannot drift. A commit also stores the export's invested
 snapshot and stamps `tracking/state` with the baseline version, which stops the app from
 re-running its own sync for that version.
 
-**Dry run is the default**, because the import is authoritative: a stored holding absent from
-the export is deleted, not left alone. The dry run prints every add, update and removal with
-share counts, cost bases and acquisition dates.
+**Dry run is the default.** The dry run prints every operation with share counts, cost bases
+and acquisition dates.
+
+**A commit only seeds.** The export is a photograph of the morning of Aug 25 and the stored
+portfolio is the record, so a plain `--commit` adds only holdings the account has never been
+given (plus purchase-date backfills onto holdings that carry no date). It cannot restate a share
+count or cost basis, and cannot delete. Differences from the statement it declines to write are
+printed under a heading that names them. `--authoritative` restores the old behaviour — the
+export overwrites and a stored holding absent from it is deleted — for the case where the
+statement really is meant to replace the account's state. Either way the report still shows full
+drift, because "how does this account differ from the statement" is the question it exists to
+answer.
 
 ### Credentials
 

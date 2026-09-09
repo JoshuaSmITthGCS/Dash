@@ -179,7 +179,10 @@ export default function Portfolio({ view = 'summary' }) {
               </div>
               <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing}><Icon name="sync" size={17} className={refresh.refreshing && refresh.activeMode === 'data' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'data' ? 'Refreshing all data…' : 'Refresh all research'}</button>
               <button className="secondary-button" onClick={refresh.requestReanalyze} disabled={refresh.refreshing}><Icon name="research" size={17} className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze portfolio'}</button>
-              <button className="secondary-button" onClick={forms.handleReferenceSync}>Reapply Aug 25 Fidelity snapshot</button>
+              <button className="secondary-button" onClick={forms.handleReferenceSync}
+                title="Adds holdings from the Aug 25 export that this account has never been given. It cannot change or remove anything already in your portfolio.">
+                Add missing holdings from Aug 25 snapshot
+              </button>
               <button className="secondary-button" onClick={exportPortfolio}><Icon name="download" size={17} />Export portfolio</button>
               <ImportHoldings positions={positions} applyPortfolioImport={applyPortfolioImport}
                 onDone={forms.setSyncMessage} />

@@ -112,9 +112,20 @@ export const REFERENCE_PORTFOLIO = [
 }))
 
 /**
- * Reconciles the cloud holdings to the brokerage export. This import is intentionally
- * authoritative: quantities and exact total cost bases are refreshed, missing positions are
- * added, and holdings absent from the export are removed.
+ * Two different jobs, chosen by `mode`, and the difference is which side is the record.
+ *
+ * `seed` (what the app runs) treats the export as what it is: a photograph of Aug 25, useful
+ * for putting an account's opening holdings in place and for nothing else afterwards. It only
+ * ADDS tickers the account has never been given, and it never rewrites a stored share count,
+ * cost basis or date, and never deletes a holding. Firestore is the record: every buy, sale
+ * and edit made since that morning outranks the photograph, permanently. The single exception
+ * is a `backfill` — writing an acquisition date onto a holding that has none — which fills a
+ * blank rather than overwriting an answer.
+ *
+ * `reconcile` is the old authoritative behaviour, kept for the two callers that genuinely
+ * mean it: importing a brokerage file the user just supplied, and the verification report
+ * that answers "how does this account differ from that statement". It refreshes quantities
+ * and cost bases, adds what is missing, and removes what the export does not carry.
  *
  * purchaseDate is the exception to that, in both directions. It is never taken from the
  * export date, only from the transaction history carried on each reference row; and a date
@@ -130,24 +141,48 @@ export const REFERENCE_PORTFOLIO = [
  * holding reappeared as if nothing had been sold. A closed ticker is skipped entirely: not
  * added, and not restated if some other row for it still exists.
  */
-export function planReferencePortfolioSync(positions, reference = REFERENCE_PORTFOLIO, { closedTickers = [] } = {}) {
+export function planReferencePortfolioSync(
+  positions,
+  reference = REFERENCE_PORTFOLIO,
+  { closedTickers = [], seededTickers = [], mode = 'reconcile' } = {},
+) {
   const normalizeTicker = (ticker = '') => String(ticker).trim().toUpperCase()
   const existingByTicker = new Map(
     positions.map((position) => [normalizeTicker(position.ticker), position])
   )
   const referenceTickers = new Set(reference.map((position) => normalizeTicker(position.ticker)))
   const closed = new Set([...closedTickers].map(normalizeTicker))
+  const seeded = new Set([...seededTickers].map(normalizeTicker))
+
+  const addRecord = (snapshot, ticker) => ({
+    kind: 'add',
+    id: `${ticker}-reference`,
+    record: { ...snapshot, ticker, purchaseDate: snapshot.purchaseDate || '' },
+  })
+
+  if (mode === 'seed') {
+    return reference.flatMap((snapshot) => {
+      const ticker = normalizeTicker(snapshot.ticker)
+      if (closed.has(ticker)) return []
+      const existing = existingByTicker.get(ticker)
+      // Delivered once already and no longer held: the account got this holding and something
+      // in the account removed it. That is a decision made in Firestore, and re-delivering it
+      // would overrule the record with the photograph.
+      if (!existing) return seeded.has(ticker) ? [] : [addRecord(snapshot, ticker)]
+      if (existing.purchaseDate || !snapshot.purchaseDate) return []
+      return [{
+        kind: 'backfill',
+        id: existing.id,
+        previous: existing,
+        record: { ticker, purchaseDate: snapshot.purchaseDate },
+      }]
+    })
+  }
 
   const upserts = reference.filter((snapshot) => !closed.has(normalizeTicker(snapshot.ticker))).map((snapshot) => {
     const ticker = normalizeTicker(snapshot.ticker)
     const existing = existingByTicker.get(ticker)
-    if (!existing) {
-      return {
-        kind: 'add',
-        id: `${ticker}-reference`,
-        record: { ...snapshot, ticker, purchaseDate: snapshot.purchaseDate || '' },
-      }
-    }
+    if (!existing) return addRecord(snapshot, ticker)
 
     return {
       kind: 'update',
@@ -168,6 +203,12 @@ export function planReferencePortfolioSync(positions, reference = REFERENCE_PORT
   return [...upserts, ...removals]
 }
 
+/** Every reference ticker this plan hands to the account, for the seeded-once ledger. */
+export function seededTickersAfter(operations, alreadySeeded = []) {
+  const delivered = operations.filter((operation) => operation.kind === 'add').map((operation) => operation.record.ticker)
+  return [...new Set([...alreadySeeded, ...delivered].map((ticker) => String(ticker).trim().toUpperCase()))].sort()
+}
+
 /**
  * The exact document body to write for one planned operation. Shared so the in-app sync and
  * the `sync-portfolio-firebase` CLI shape identical records -- the two run against the same
@@ -182,6 +223,9 @@ export function referenceSyncRecord(operation, importedAt) {
     ? { ...operation.record, id: operation.id, importedAt }
     : { ...operation.record, syncedAt: importedAt }
 }
+
+/** Whether this operation's write must merge into the stored document rather than replace it. */
+export const referenceSyncMerges = (operation) => operation.kind === 'update' || operation.kind === 'backfill'
 
 /**
  * The invested-only intraday observation this export represents, as a document id and body.
@@ -213,10 +257,13 @@ export function referenceIntradaySnapshot(reference = REFERENCE_PORTFOLIO) {
 }
 
 /** Marks which export an account has been reconciled to, so the sync runs once per version. */
-export function referenceTrackingState(importedAt) {
+export function referenceTrackingState(importedAt, seededTickers = null) {
   return {
     referencePortfolioVersion: REFERENCE_PORTFOLIO_VERSION,
     referencePortfolioImportedAt: importedAt,
+    // The tickers this baseline has already handed to the account. A seeding run consults it
+    // so a holding delivered once and since removed is never delivered again.
+    ...(seededTickers ? { referencePortfolioSeeded: seededTickers } : {}),
   }
 }
 
@@ -224,7 +271,9 @@ export function referenceTrackingState(importedAt) {
 export function summarizeReferenceSync(operations) {
   return {
     added: operations.filter((operation) => operation.kind === 'add').length,
-    updated: operations.filter((operation) => operation.kind === 'update').length,
+    // A backfill is an update -- the narrowest one there is, writing a date onto a holding
+    // that had none -- and is counted as one so both callers keep reporting three numbers.
+    updated: operations.filter((operation) => ['update', 'backfill'].includes(operation.kind)).length,
     removed: operations.filter((operation) => operation.kind === 'remove').length,
   }
 }
@@ -247,7 +296,7 @@ const sameValue = (left, right) => {
  * because the planner emits an update for every held ticker.
  */
 export function referenceSyncDrift(operation) {
-  if (operation.kind !== 'update' || !operation.previous) return []
+  if (!['update', 'backfill'].includes(operation.kind) || !operation.previous) return []
   // An empty string and a missing field both mean "no value stored" -- an undated holding is
   // written as '' but read back as undefined on a document that predates the field. Reporting
   // them as one null keeps a report from showing a change where nothing actually differs.

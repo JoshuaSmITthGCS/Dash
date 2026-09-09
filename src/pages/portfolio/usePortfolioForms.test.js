@@ -382,3 +382,37 @@ describe('a sale does not invalidate the cash-flow ledger confirmation', () => {
     expect(portfolio.removePosition).toHaveBeenCalledWith('aaa')
   })
 })
+
+describe('the manual "add missing holdings" button', () => {
+  it('passes the seeded-once ledger through, so nothing already delivered comes back', async () => {
+    const { result, portfolio } = setup({
+      trackingOverrides: { trackingState: { referencePortfolioSeeded: ['LULU', 'MU'] }, trackingLoaded: true },
+      portfolioOverrides: {
+        syncReferencePortfolio: vi.fn().mockResolvedValue({ success: true, added: 0, updated: 0, removed: 0 }),
+      },
+    })
+    await act(async () => { await result.current.handleReferenceSync() })
+    expect(portfolio.syncReferencePortfolio).toHaveBeenCalledWith({ seededTickers: ['LULU', 'MU'] })
+  })
+
+  it('says plainly that nothing changed rather than reporting a sync', async () => {
+    const { result } = setup({
+      portfolioOverrides: {
+        syncReferencePortfolio: vi.fn().mockResolvedValue({ success: true, added: 0, updated: 0, removed: 0 }),
+      },
+    })
+    await act(async () => { await result.current.handleReferenceSync() })
+    expect(result.current.syncMessage).toContain('Your cloud portfolio is the record')
+  })
+
+  it('reports what it added without implying anything was overwritten', async () => {
+    const { result } = setup({
+      portfolioOverrides: {
+        syncReferencePortfolio: vi.fn().mockResolvedValue({ success: true, added: 2, updated: 1, removed: 0 }),
+      },
+    })
+    await act(async () => { await result.current.handleReferenceSync() })
+    expect(result.current.syncMessage).toContain('2 holdings added')
+    expect(result.current.syncMessage).toContain('Nothing already in your portfolio was changed')
+  })
+})

@@ -86,8 +86,10 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
     if (previewPortfolio || !syncState.connected || !tracking.trackingLoaded
       || referenceReady || referencePortfolioSyncStarted.current) return
     referencePortfolioSyncStarted.current = true
-    syncReferencePortfolio().then((result) => {
-      if (result?.success) setSyncMessage(`Fidelity snapshot applied: ${result.added} added · ${result.updated} updated · ${result.removed} removed.`)
+    syncReferencePortfolio({ seededTickers: tracking.trackingState?.referencePortfolioSeeded || [] }).then((result) => {
+      if (result?.success) setSyncMessage(result.added || result.updated
+        ? `Opening holdings seeded from the Aug 25 Fidelity snapshot: ${result.added} added${result.updated ? ` · ${result.updated} purchase date${result.updated === 1 ? '' : 's'} filled in` : ''}.`
+        : 'Your cloud portfolio is already the record; the Aug 25 snapshot had nothing to add.')
       else {
         referencePortfolioSyncStarted.current = false
         setSyncMessage(`Could not apply Fidelity positions: ${result?.error || 'Unknown error'}`)
@@ -124,12 +126,23 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
     setShowAddForm(false)
   }
 
+  // The manual equivalent of the seeding run above. It cannot restate or delete anything, so
+  // on an account that has already been seeded the honest answer is usually "nothing to do" --
+  // which is the point: the snapshot is history, and this collection is the record.
   const handleReferenceSync = async () => {
-    setSyncMessage('Syncing…')
-    const result = await syncReferencePortfolio()
-    setSyncMessage(result.success
-      ? `${result.added} added · ${result.updated} updated · ${result.removed} removed from the Aug 25 Fidelity baseline`
-      : `Sync failed: ${result.error}`)
+    setSyncMessage('Checking the Aug 25 snapshot for holdings you have never been given…')
+    const result = await syncReferencePortfolio({
+      seededTickers: tracking.trackingState?.referencePortfolioSeeded || [],
+    })
+    if (!result.success) {
+      setSyncMessage(`Could not read the snapshot: ${result.error}`)
+      return
+    }
+    setSyncMessage(result.added || result.updated
+      ? `${result.added} holding${result.added === 1 ? '' : 's'} added from the Aug 25 snapshot`
+        + `${result.updated ? ` · ${result.updated} missing purchase date${result.updated === 1 ? '' : 's'} filled in` : ''}.`
+        + ' Nothing already in your portfolio was changed.'
+      : 'Nothing to add. Your cloud portfolio is the record — the Aug 25 snapshot cannot overwrite, restore or remove anything in it.')
   }
 
   const handlePurchaseDateChange = async (positionId, purchaseDate) => {

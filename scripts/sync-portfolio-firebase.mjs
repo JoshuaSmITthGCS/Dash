@@ -25,8 +25,11 @@
 //   npm run portfolio:sync -- --email you@example.com --report portfolio-check.md
 //   npm run portfolio:sync -- --uid abc123 --commit          # admin credentials only
 //
-// Dry run is the DEFAULT and prints the full plan. Nothing is written until --commit,
-// because this import is authoritative: a holding absent from the export is deleted.
+// Dry run is the DEFAULT and prints the full plan. Nothing is written until --commit, and a
+// plain --commit only SEEDS: the export is a photograph of Aug 25 and the stored portfolio is
+// the record, so it adds holdings the account has never been given and fills blank purchase
+// dates, but never restates or deletes. --authoritative opts into the old behaviour, where a
+// holding absent from the export is deleted.
 //
 // Requires FIREBASE_SERVICE_ACCOUNT_JSON (see .env.example) -- the same service-account
 // credential netlify/functions/alert-push.mjs uses. It bypasses firestore.rules by design,
@@ -43,6 +46,7 @@ import { getAuth as getClientAuth, signInWithEmailAndPassword, signOut } from 'f
 import {
   collection as clientCollection,
   doc as clientDoc,
+  getDoc as clientGetDoc,
   getDocs as clientGetDocs,
   getFirestore as getClientFirestore,
   terminate as terminateClient,
@@ -50,6 +54,8 @@ import {
 } from 'firebase/firestore'
 import {
   planReferencePortfolioSync,
+  referenceSyncMerges,
+  seededTickersAfter,
   referenceIntradaySnapshot,
   referenceSyncDrift,
   referenceSyncRecord,
@@ -94,10 +100,11 @@ export function withTimeout(promise, what, ms = NETWORK_TIMEOUT_MS) {
 // Closing explicitly means a finished run actually returns to the shell.
 
 export function parseArguments(argv) {
-  const options = { commit: false, email: null, uid: null, report: null }
+  const options = { commit: false, authoritative: false, email: null, uid: null, report: null }
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index]
     if (argument === '--commit') options.commit = true
+    else if (argument === '--authoritative') options.authoritative = true
     else if (argument === '--help' || argument === '-h') options.help = true
     else if (argument === '--email') options.email = argv[index += 1]
     else if (argument === '--uid') options.uid = argv[index += 1]
@@ -192,6 +199,9 @@ async function connect(options) {
       readClosedTickers: () => withTimeout(
         db.collection('portfolios').doc(uid).collection('closedPositions').get(), 'Firestore read',
       ).then((snapshot) => snapshot.docs.map((item) => item.data()?.ticker || item.id)),
+      readTrackingState: () => withTimeout(
+        db.collection('portfolios').doc(uid).collection('tracking').doc('state').get(), 'Firestore read',
+      ).then((snapshot) => (snapshot.exists ? snapshot.data() : null)),
       commit: (apply) => {
         const batch = db.batch()
         apply({
@@ -256,6 +266,9 @@ async function connect(options) {
     readClosedTickers: () => withTimeout(
       clientGetDocs(clientCollection(db, 'portfolios', uid, 'closedPositions')), 'Firestore read',
     ).then((snapshot) => snapshot.docs.map((item) => item.data()?.ticker || item.id)),
+    readTrackingState: () => withTimeout(
+      clientGetDoc(clientDoc(db, 'portfolios', uid, 'tracking', 'state')), 'Firestore read',
+    ).then((snapshot) => (snapshot.exists() ? snapshot.data() : null)),
     commit: (apply) => {
       const batch = clientWriteBatch(db)
       apply({
@@ -433,6 +446,10 @@ export async function main() {
   --email <address>   account to sync, resolved to a uid via Firebase Auth
   --uid <id>          account to sync, by uid
   --commit            actually write (default is a dry run that writes nothing)
+  --authoritative     let the export overwrite and delete stored holdings. Off by default:
+                      the export is a photograph of Aug 25 and Firestore is the record, so a
+                      plain run only adds holdings the account has never been given. The
+                      report always shows full drift either way.
   --report <path>     write a verification report (.md or .json; - for stdout)
   --help              this message
 
@@ -471,13 +488,33 @@ async function run(options, backend) {
     console.log(`Sold since the export, left alone: ${closedTickers.join(', ')}`)
   }
 
-  const operations = planReferencePortfolioSync(existing, undefined, { closedTickers })
+  // Two plans, on purpose. `drift` answers "how does this account differ from the Aug 25
+  // statement", which is the report's whole job and stays worth seeing. `operations` is what
+  // would actually be written, and unless --authoritative is passed that is seeding only:
+  // additions the account has never been given, plus purchase-date backfills. Firestore is
+  // the record; the statement is history.
+  const seededTickers = (await backend.readTrackingState?.())?.referencePortfolioSeeded || []
+  const drift = planReferencePortfolioSync(existing, undefined, { closedTickers })
+  const operations = options.authoritative
+    ? drift
+    : planReferencePortfolioSync(existing, undefined, { closedTickers, seededTickers, mode: 'seed' })
   const counts = summarizeReferenceSync(operations)
   const snapshot = referenceIntradaySnapshot()
   const writes = operations.length + 2
 
-  console.log(`Plan: ${counts.added} added · ${counts.updated} updated · ${counts.removed} removed\n`)
+  console.log(options.authoritative
+    ? `Plan (--authoritative): ${counts.added} added · ${counts.updated} updated · ${counts.removed} removed\n`
+    : `Plan (seed only): ${counts.added} added · ${counts.updated} purchase date(s) filled · nothing overwritten or removed\n`)
   console.log(describe(operations))
+  if (!options.authoritative) {
+    const suppressed = drift.filter((operation) => operation.kind !== 'add'
+      && (operation.kind === 'remove' || referenceSyncDrift(operation).length))
+    if (suppressed.length) {
+      console.log(`\n${suppressed.length} difference(s) from the statement left alone, because `
+        + 'the stored portfolio is the record. Pass --authoritative to overwrite them:')
+      console.log(describe(suppressed))
+    }
+  }
 
   const closedSet = new Set(closedTickers.map((ticker) => String(ticker).trim().toUpperCase()))
   const applied = REFERENCE_PORTFOLIO.filter((position) => !closedSet.has(position.ticker))
@@ -497,7 +534,7 @@ async function run(options, backend) {
     await emitReport(options, { uid, operations, committed: false })
     console.log('\nDry run — nothing written. Re-run with --commit to apply.')
     if (counts.removed) {
-      console.log(`Note: --commit deletes ${counts.removed} stored holding${counts.removed === 1 ? '' : 's'} absent from the export.`)
+      console.log(`Note: --commit --authoritative deletes ${counts.removed} stored holding${counts.removed === 1 ? '' : 's'} absent from the export.`)
     }
     return
   }
@@ -511,10 +548,10 @@ async function run(options, backend) {
         batch.delete(positionRef)
         return
       }
-      batch.set(positionRef, referenceSyncRecord(operation, importedAt), operation.kind === 'update')
+      batch.set(positionRef, referenceSyncRecord(operation, importedAt), referenceSyncMerges(operation))
     })
     batch.set(batch.snapshotDoc(snapshot.id), snapshot.document, true)
-    batch.set(batch.trackingDoc(), referenceTrackingState(importedAt), true)
+    batch.set(batch.trackingDoc(), referenceTrackingState(importedAt, seededTickersAfter(operations, seededTickers)), true)
   })
 
   console.log(`\nCommitted ${writes} writes at ${importedAt}.`)

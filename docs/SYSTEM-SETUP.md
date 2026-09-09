@@ -522,20 +522,35 @@ Firebase service-account credential stay server-side.
 
 The UI exposes provider health and marks research stale after 36 hours.
 
-**Portfolio writes and the Fidelity baseline.** Firestore holds the user's positions
-(`portfolios/{uid}/positions`, one document per *lot*), the tracking collections
-(`intradaySnapshots`, `activity`, `rebalances`), and `closedPositions` — one document per ticker
-the user has sold out of entirely, keyed by ticker. That last collection exists because
-`src/lib/referencePortfolio.js` carries an authoritative Aug 25 brokerage export that the app
-applies once per account (and can re-apply on demand): the export is a photograph of that day, so
-a name sold afterwards is still listed in it, and re-adding a missing ticker is exactly how a
-recorded sale used to come back. `planReferencePortfolioSync()` now takes `closedTickers` and
-skips those rows entirely; both write paths honour it — the in-app sync
-(`src/lib/useFirebasePortfolio.js`) and the `npm run portfolio:sync` CLI. Buying the ticker again
-clears the marker. The one-shot auto-sync additionally waits for `trackingLoaded`
-(`src/lib/usePortfolioTracking.js`) before concluding an account has never been synced; without
-that it could fire in the window between the positions listener and the tracking-state listener
-resolving, and restate every sold or trimmed share count back to the baseline.
+**Portfolio writes and the Fidelity baseline. Firestore is the record; the export is history.**
+Firestore holds the user's positions (`portfolios/{uid}/positions`, one document per *lot*), the
+tracking collections (`intradaySnapshots`, `activity`, `rebalances`), and `closedPositions` — one
+document per ticker sold out of entirely, keyed by ticker.
+
+`src/lib/referencePortfolio.js` carries a Fidelity positions export taken on the morning of
+Aug 25, 2026. It is a photograph of that morning and nothing more. `planReferencePortfolioSync()`
+therefore takes a `mode`:
+
+- **`seed`** — what the app runs, both the once-per-account automatic run and the manual
+  *Add missing holdings from Aug 25 snapshot* button. It only ADDS a ticker the account has never
+  been given. It never restates a stored share count, cost basis or purchase date, and never
+  deletes a holding. The sole write onto an existing position is a `backfill`: an acquisition
+  date written onto a holding that has none, which fills a blank rather than overruling an
+  answer. Two ledgers make "never been given" durable — `closedPositions` (sold out of) and
+  `referencePortfolioSeeded` on the tracking document (delivered once already, so a holding the
+  account later removed is not re-delivered). Consequence: on a seeded account the button
+  correctly reports that there is nothing to do.
+- **`reconcile`** — the authoritative behaviour, for the two callers that genuinely mean it:
+  `portfolioImport.js` (a brokerage file the user just supplied, meant to become the account's
+  state) and the `npm run portfolio:sync` verification report, whose job is to answer "how does
+  this account differ from that statement". That CLI still *reports* full drift, but since it
+  writes in seed mode unless `--authoritative` is passed, `--commit` can no longer overwrite or
+  delete a holding; the differences it declines to write are printed separately.
+
+The automatic seeding run additionally waits for `trackingLoaded` (`src/lib/usePortfolioTracking.js`)
+before concluding an account has never been seeded — the positions listener and the tracking-state
+listener resolve independently, and firing in the window between them made an already-seeded
+account look untouched.
 
 **Architectural note:** material investment logic lives on both sides. Screen ranking, portfolio
 attribution, stop logic, and fallback recommendations exist in JavaScript alongside the Python

@@ -13,8 +13,10 @@ import { useAuth } from './FirebaseAuthContext'
 import {
   planReferencePortfolioSync,
   referenceIntradaySnapshot,
+  referenceSyncMerges,
   referenceSyncRecord,
   referenceTrackingState,
+  seededTickersAfter,
   summarizeReferenceSync,
   REFERENCE_PORTFOLIO_VERSION,
 } from './referencePortfolio'
@@ -297,18 +299,24 @@ export function useFirebasePortfolio() {
     }
   }
 
-  // Reconcile the signed-in portfolio to the user's Aug 25 Fidelity positions export. The
-  // export is the authoritative invested baseline, so this updates quantities and total cost
-  // bases, adds missing symbols, removes symbols no longer present, and stores the export as
-  // an invested-only intraday observation. Acquisition dates come from the account's
-  // transaction history rather than the export, and a date already stored always wins -- see
-  // planReferencePortfolioSync. Money-market cash and pending activity never enter the
+  // Seeds the signed-in portfolio from the user's Aug 25 Fidelity positions export, and
+  // stores that export as an invested-only intraday observation for the value history.
+  //
+  // Seeding, not reconciling: the export is a photograph of one morning, and this Firestore
+  // collection is the record of what is actually held. So this only ever hands over a
+  // holding the account has never been given -- it does not restate a share count, a cost
+  // basis or a date, and it never deletes. A ticker sold (closedTickers) or already
+  // delivered once and since removed (seededTickers) is left alone permanently. The one
+  // write onto an existing holding is a purchase-date backfill, which fills a blank rather
+  // than overruling a stored answer. Money-market cash and pending activity never enter the
   // position collection or the chart snapshot.
-  const syncReferencePortfolio = async () => {
+  const syncReferencePortfolio = async ({ seededTickers = [] } = {}) => {
     if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
     try {
       const importedAt = new Date().toISOString()
-      const operations = planReferencePortfolioSync(positions, undefined, { closedTickers })
+      const operations = planReferencePortfolioSync(positions, undefined, {
+        closedTickers, seededTickers, mode: 'seed',
+      })
       const batch = writeBatch(db)
       operations.forEach((operation) => {
         const positionRef = doc(db, 'portfolios', currentUser.uid, 'positions', operation.id)
@@ -317,7 +325,7 @@ export function useFirebasePortfolio() {
           return
         }
         batch.set(positionRef, referenceSyncRecord(operation, importedAt), {
-          merge: operation.kind === 'update',
+          merge: referenceSyncMerges(operation),
         })
       })
 
@@ -329,7 +337,7 @@ export function useFirebasePortfolio() {
       )
       batch.set(
         doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'),
-        referenceTrackingState(importedAt),
+        referenceTrackingState(importedAt, seededTickersAfter(operations, seededTickers)),
         { merge: true },
       )
       await batch.commit()
