@@ -186,7 +186,7 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
         shares: remainingShares,
         ...snapshotFieldsForShares(pos, remainingShares, pos.costBasis),
       })
-      : await removePosition(pos.id)
+      : await removePosition(pos.id, { sale: true })
     if (positionResult?.success === false) {
       setSellSaving(false)
       setSyncMessage(`Could not save sale: ${positionResult.error || 'Unknown error'}`)
@@ -247,7 +247,7 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
           shares: depletion.remainingAfter,
           ...snapshotFieldsForShares(lot, depletion.remainingAfter, lot?.costBasis),
         })
-        : await removePosition(depletion.positionId)
+        : await removePosition(depletion.positionId, { sale: true })
       if (result?.success === false) {
         setLotSellSaving(false)
         setSyncMessage(`Could not save sale: ${result.error || 'Unknown error'}`)
@@ -317,7 +317,7 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
           shares: depletion.remainingAfter,
           ...snapshotFieldsForShares(lot, depletion.remainingAfter, lot?.costBasis),
         })
-        : await removePosition(depletion.positionId)
+        : await removePosition(depletion.positionId, { sale: true })
       if (result?.success === false) return { success: false, error: result.error || 'Could not save this sale.' }
     }
     const afterSell = positions

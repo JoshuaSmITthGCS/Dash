@@ -353,6 +353,34 @@ export function intradayPortfolioHigh(points = []) {
 // that was simply deposited and immediately spent.
 const CONTRIBUTION_TYPES = ['deposit', 'external_contribution']
 
+/**
+ * Realized profit and loss actually booked by recorded sales, optionally only on or after
+ * `since`. Sales are the one portfolio event whose result leaves the holdings entirely: the
+ * position is gone, so every holdings-derived figure on the page correctly stops counting it,
+ * and without this the money it made or lost would be invisible outside the reconciliation
+ * bridge. Reads the same `realized_gain` activity rows the bridge and MWR already use.
+ */
+export function realizedResultSummary(transactions = [], { since = null } = {}) {
+  const rows = (Array.isArray(transactions) ? transactions : [])
+    .filter((row) => row?.type === 'realized_gain' && finite(row.amount))
+    .filter((row) => !since || String(row.effectiveDate || row.recordedAt || '').slice(0, 10) >= since)
+  if (!rows.length) {
+    return { available: false, value: null, count: 0, reason: 'No sale has been recorded yet.' }
+  }
+  const value = rows.reduce((sum, row) => sum + Number(row.amount), 0)
+  const dates = rows.map((row) => String(row.effectiveDate || row.recordedAt || '').slice(0, 10)).filter(Boolean).sort()
+  return {
+    available: true,
+    value,
+    count: rows.length,
+    gains: rows.filter((row) => Number(row.amount) > 0).length,
+    losses: rows.filter((row) => Number(row.amount) < 0).length,
+    firstDate: dates[0] || null,
+    lastDate: dates.at(-1) || null,
+    reason: 'Sum of every recorded sale\'s realized gain or loss. Excluded from holdings figures by construction — the shares are no longer held.',
+  }
+}
+
 export function netInvestedCapital(transactions) {
   if (!Array.isArray(transactions) || !transactions.length) return { available: false, value: null, reason: 'Complete contribution and withdrawal history is unavailable.' }
   const external = transactions.filter((row) => [...CONTRIBUTION_TYPES, 'withdrawal'].includes(row.type) && finite(row.amount) && !['pending', 'processing'].includes(row.status))

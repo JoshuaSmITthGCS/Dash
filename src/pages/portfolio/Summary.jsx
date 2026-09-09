@@ -8,7 +8,7 @@ import AnimatedNumber from '../../components/AnimatedNumber.jsx'
 import AllocationDonut from '../../components/AllocationDonut.jsx'
 import { ActionPill } from '../../components/ActionGuidance'
 import { currentHoldingsPerformanceSeriesForPeriod } from '../../lib/portfolioPerformance'
-import { latestMarketDayReturn, selectPeriod } from '../../lib/portfolioAnalytics.js'
+import { latestMarketDayReturn, realizedResultSummary, selectPeriod } from '../../lib/portfolioAnalytics.js'
 import { liveTodayPortfolioReturn } from '../../lib/afterHoursQuotes.js'
 import { money, PERIOD_NAMES, signedPct, SUMMARY_PERIODS } from './format.js'
 import Holdings from './Holdings.jsx'
@@ -108,6 +108,7 @@ export default function Summary({
   priceData,
   holdingsSeriesFull,
   trackingSnapshots,
+  trackingActivities,
   quotesRefreshing,
   summaryPeriod,
   onSummaryPeriodChange,
@@ -118,6 +119,10 @@ export default function Summary({
 }) {
   const { portfolioStats, assetAllocation, sectorAllocation, actionable, exposure } = holdings
   const summary = summaryChartFor({ trackingSnapshots, positions, priceData, period: summaryPeriod, holdingsSeriesFull })
+  // Sold positions leave the holdings, so every figure above is unrealized by construction.
+  // This is the other half of the account's result, and without it a sale reads as the money
+  // having simply left the page.
+  const realized = realizedResultSummary(trackingActivities)
   const currentSessionMove = liveTodayPortfolioReturn(positions, priceData)
   const todayMove = currentSessionMove.available ? currentSessionMove : latestMarketDayReturn(holdingsSeriesFull)
 
@@ -131,8 +136,16 @@ export default function Summary({
         <div className="portfolio-summary-kpis">
           <span><small>Invested value{quotesRefreshing && <Icon name="sync" size={12} className="refresh-spin hero-value-spinner" aria-hidden="true" />}</small><strong>{portfolioStats.totalValue == null ? '–' : <AnimatedNumber value={portfolioStats.totalValue} format={(value) => money(value, 2)} />}</strong></span>
           <span><small>Today · regular session</small><strong className={todayMove?.dollarReturn >= 0 ? 'positive' : 'negative'}>{todayMove?.dollarReturn == null ? 'Unavailable' : `${todayMove.dollarReturn >= 0 ? '+' : '−'}${money(Math.abs(todayMove.dollarReturn), 2)} · ${signedPct(todayMove.returnPct, 2)}`}</strong></span>
-          <span><small>Total profit · {PERIOD_NAMES[summaryPeriod]}</small><strong className={summary.profit >= 0 ? 'positive' : 'negative'}>{summary.profit == null ? 'Unavailable' : `${summary.profit >= 0 ? '+' : '−'}${money(Math.abs(summary.profit), 2)} · ${signedPct(summary.returnPct, 2)}`}</strong></span>
+          <span><small>Unrealized profit · {PERIOD_NAMES[summaryPeriod]}</small><strong className={summary.profit >= 0 ? 'positive' : 'negative'}>{summary.profit == null ? 'Unavailable' : `${summary.profit >= 0 ? '+' : '−'}${money(Math.abs(summary.profit), 2)} · ${signedPct(summary.returnPct, 2)}`}</strong></span>
+          <span><small>Realized · {realized.available ? `${realized.count} sale${realized.count === 1 ? '' : 's'}` : 'sold positions'}</small><strong className={!realized.available ? '' : realized.value >= 0 ? 'positive' : 'negative'}>{!realized.available ? 'None recorded' : `${realized.value >= 0 ? '+' : '−'}${money(Math.abs(realized.value), 2)}`}</strong></span>
         </div>
+        {realized.available && (
+          <p className="portfolio-realized-note">
+            Booked by {realized.count} recorded sale{realized.count === 1 ? '' : 's'}
+            {realized.lastDate ? `, most recently ${realized.lastDate}` : ''}. Sold shares are not
+            in the value, day move or unrealized figures above — they are no longer held.
+          </p>
+        )}
         {summary.chart ? <GrowthChart
           className="portfolio-summary-chart"
           height={390}

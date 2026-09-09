@@ -195,6 +195,7 @@ export default function Portfolio({ view = 'summary' }) {
           priceData={priceData}
           holdingsSeriesFull={holdingsSeriesFull}
           trackingSnapshots={tracking.snapshots}
+          trackingActivities={tracking.activities}
           quotesRefreshing={portfolioQuotes.refreshing}
           summaryPeriod={summaryPeriod}
           onSummaryPeriodChange={setSummaryPeriod}

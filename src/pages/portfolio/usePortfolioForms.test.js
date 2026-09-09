@@ -133,7 +133,7 @@ describe('FIFO cross-lot sell (B3)', () => {
     act(() => { result.current.setLotSellForm({ shares: '15', price: '150', saleDate: '2026-04-01' }) })
     await act(async () => { await result.current.saveLotSell() })
 
-    expect(portfolio.removePosition).toHaveBeenCalledWith('lot-a')
+    expect(portfolio.removePosition).toHaveBeenCalledWith('lot-a', { sale: true })
     // costBasisTotal/snapshotValue are restated because the remaining quantity changed;
     // this lot carries no snapshot price, so there is no snapshot value left to reprice.
     expect(portfolio.updatePosition).toHaveBeenCalledWith('lot-b', {
@@ -251,7 +251,7 @@ describe('a completed exit is recorded so no baseline sync re-adds it', () => {
     act(() => { result.current.startSell(existing[0]) })
     act(() => { result.current.setSellForm({ shares: '1', price: '130', saleDate: '2026-09-02' }) })
     await act(async () => { await result.current.saveSell(existing[0]) })
-    expect(portfolio.removePosition).toHaveBeenCalledWith('lulu')
+    expect(portfolio.removePosition).toHaveBeenCalledWith('lulu', { sale: true })
     expect(portfolio.recordClosedPosition).toHaveBeenCalledWith('LULU', expect.objectContaining({
       saleDate: '2026-09-02', shares: 1, price: 130,
     }))
@@ -295,8 +295,8 @@ describe('submitTrade (the sticky trade bar)', () => {
       outcome = await result.current.submitTrade({ side: 'sell', ticker: 'lulu', shares: '3', price: '140', date: '2026-09-02' })
     })
     expect(outcome.success).toBe(true)
-    expect(portfolio.removePosition).toHaveBeenCalledWith('lot-a')
-    expect(portfolio.removePosition).toHaveBeenCalledWith('lot-b')
+    expect(portfolio.removePosition).toHaveBeenCalledWith('lot-a', { sale: true })
+    expect(portfolio.removePosition).toHaveBeenCalledWith('lot-b', { sale: true })
     // (140-100)*1 + (140-130)*2 = 60
     expect(tracking.recordActivity).toHaveBeenCalledWith(expect.objectContaining({
       type: 'realized_gain', amount: 60, effectiveDate: '2026-09-02',
@@ -362,5 +362,23 @@ describe('the one-time Fidelity baseline sync', () => {
       preview: false,
     })
     expect(portfolio.syncReferencePortfolio).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('a sale does not invalidate the cash-flow ledger confirmation', () => {
+  it('marks the removal as a sale when a sale closes the lot', async () => {
+    const existing = [{ id: 'aaa', ticker: 'AAA', shares: 2, costBasis: 20, currentPrice: 25 }]
+    const { result, portfolio } = setup({ positions: existing })
+    act(() => { result.current.startSell(existing[0]) })
+    act(() => { result.current.setSellForm({ shares: '2', price: '25', saleDate: '2026-04-01' }) })
+    await act(async () => { await result.current.saveSell(existing[0]) })
+    expect(portfolio.removePosition).toHaveBeenCalledWith('aaa', { sale: true })
+  })
+
+  it('leaves a bare Remove as a removal, which is not a sale', async () => {
+    const existing = [{ id: 'aaa', ticker: 'AAA', shares: 2, costBasis: 20 }]
+    const { result, portfolio } = setup({ positions: existing })
+    await act(async () => { await result.current.handleRemove('aaa') })
+    expect(portfolio.removePosition).toHaveBeenCalledWith('aaa')
   })
 })

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   alignSeries, annualizeReturnPct, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, costWeights, currentHoldingsSeries, diversificationScore, enrichPortfolio,
   contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, modifiedDietzReturn, moneyWeightedAccountReturn, netInvestedCapital, opportunityCost, performanceMetrics,
-  portfolioAnnualizedReturn, portfolioReconciliationBridge, portfolioReturnSummary, portfolioRiskDecomposition, portfolioScore, resilienceIndex, returnOverWindow, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace, underwaterProfile, weightedExpenseRatio,
+  portfolioAnnualizedReturn, portfolioReconciliationBridge, realizedResultSummary, portfolioReturnSummary, portfolioRiskDecomposition, portfolioScore, resilienceIndex, returnOverWindow, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace, underwaterProfile, weightedExpenseRatio,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -587,5 +587,39 @@ describe('underwaterProfile', () => {
   it('needs two dated values before it will answer', () => {
     expect(underwaterProfile(null).available).toBe(false)
     expect(underwaterProfile({ dates: ['2025-01-01'], values: [100] }).available).toBe(false)
+  })
+})
+
+describe('realizedResultSummary', () => {
+  const activity = [
+    { type: 'realized_gain', amount: 12.06, effectiveDate: '2026-09-02', note: 'LULU sale' },
+    { type: 'realized_gain', amount: -4.5, effectiveDate: '2026-08-20', note: 'XYZ sale' },
+    { type: 'dividend', amount: 3, effectiveDate: '2026-08-25' },
+    { type: 'realized_gain', amount: 'nonsense', effectiveDate: '2026-08-01' },
+  ]
+
+  it('sums only the realized rows, counting gains and losses separately', () => {
+    const result = realizedResultSummary(activity)
+    expect(result.available).toBe(true)
+    expect(result.value).toBeCloseTo(7.56, 6)
+    expect(result.count).toBe(2)
+    expect(result.gains).toBe(1)
+    expect(result.losses).toBe(1)
+    expect(result.lastDate).toBe('2026-09-02')
+  })
+
+  it('reports unavailable rather than zero when no sale has been recorded', () => {
+    const result = realizedResultSummary([{ type: 'dividend', amount: 3, effectiveDate: '2026-08-25' }])
+    expect(result.available).toBe(false)
+    expect(result.value).toBeNull()
+  })
+
+  it('can be scoped to sales on or after a date', () => {
+    expect(realizedResultSummary(activity, { since: '2026-09-01' }).value).toBeCloseTo(12.06, 6)
+  })
+
+  it('is empty for a missing or malformed ledger rather than throwing', () => {
+    expect(realizedResultSummary().available).toBe(false)
+    expect(realizedResultSummary(null).available).toBe(false)
   })
 })

@@ -242,7 +242,14 @@ export function useFirebasePortfolio() {
     }
   }
 
-  const removePosition = async (positionId) => {
+  // `sale: true` marks a removal that is the last leg of a recorded sale rather than a bare
+  // "take this off my list". The difference matters to the cash-flow ledger: a bare removal
+  // makes shares disappear with no proceeds recorded anywhere, which is exactly the state
+  // ledgerComplete exists to deny, but a sale books its own realized_gain row on the way
+  // through. Resetting the flag on a sale switched the money-weighted and time-weighted
+  // returns off after every complete exit, and left the user re-ticking a deposits-and-
+  // withdrawals checkbox that the sale had not invalidated.
+  const removePosition = async (positionId, { sale = false } = {}) => {
     if (!currentUser) return
 
     try {
@@ -251,10 +258,15 @@ export function useFirebasePortfolio() {
       batch.delete(doc(db, 'portfolios', currentUser.uid, 'positions', positionId))
       batch.set(doc(db, 'portfolios', currentUser.uid, 'activity', `position-removed-${Date.now()}`), {
         type: 'position_removed', ticker: removed?.ticker || null, shares: removed?.shares || null,
-        recordedAt: new Date().toISOString(), source: 'manual_holding_removal',
-        note: 'Removal is not treated as a sale. Realized proceeds must be recorded separately.',
+        recordedAt: new Date().toISOString(),
+        source: sale ? 'sale_completed' : 'manual_holding_removal',
+        note: sale
+          ? 'Last shares of this lot sold. Proceeds are recorded as a realized_gain activity row.'
+          : 'Removal is not treated as a sale. Realized proceeds must be recorded separately.',
       })
-      batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), { ledgerComplete: false }, { merge: true })
+      if (!sale) {
+        batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), { ledgerComplete: false }, { merge: true })
+      }
       await batch.commit()
       return { success: true }
     } catch (error) {
