@@ -3,6 +3,7 @@ import {
   planReferencePortfolioSync,
   referenceTrackingState,
   seededTickersAfter,
+  seededTickersFromTrackingState,
   REFERENCE_PORTFOLIO,
   REFERENCE_PORTFOLIO_RECORDED_AT,
 } from './referencePortfolio'
@@ -273,5 +274,22 @@ describe('reconcile mode is still available for callers that mean it', () => {
       { mode: 'reconcile' },
     ).map((operation) => operation.kind)
     expect(kinds).toEqual(['add', 'remove'])
+  })
+})
+
+describe('seededTickersFromTrackingState', () => {
+  const reference = [{ ticker: 'LULU' }, { ticker: 'MU' }]
+
+  it('reads the stored ledger when there is one', () => {
+    expect(seededTickersFromTrackingState({ referencePortfolioSeeded: ['MU'] }, reference)).toEqual(['MU'])
+  })
+
+  it('treats an account seeded before the ledger existed as having been given the whole export', () => {
+    expect(seededTickersFromTrackingState({ referencePortfolioVersion: 'older' }, reference)).toEqual(['LULU', 'MU'])
+  })
+
+  it('reports nothing for an account that has never been seeded', () => {
+    expect(seededTickersFromTrackingState(null, reference)).toEqual([])
+    expect(seededTickersFromTrackingState({}, reference)).toEqual([])
   })
 })

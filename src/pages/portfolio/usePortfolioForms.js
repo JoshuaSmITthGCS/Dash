@@ -3,7 +3,7 @@
 // report through. Kept apart from the read-only view models so the render path stays pure.
 
 import { useEffect, useRef, useState } from 'react'
-import { REFERENCE_PORTFOLIO_LABEL, REFERENCE_PORTFOLIO_VERSION } from '../../lib/referencePortfolio.js'
+import { REFERENCE_PORTFOLIO_LABEL, REFERENCE_PORTFOLIO_VERSION, seededTickersFromTrackingState } from '../../lib/referencePortfolio.js'
 import { costWeights } from '../../lib/portfolioAnalytics.js'
 import { planFifoSale, realizedGainForPlan } from '../../lib/taxLots.js'
 import { perShareCost } from './format.js'
@@ -86,7 +86,7 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
     if (previewPortfolio || !syncState.connected || !tracking.trackingLoaded
       || referenceReady || referencePortfolioSyncStarted.current) return
     referencePortfolioSyncStarted.current = true
-    syncReferencePortfolio({ seededTickers: tracking.trackingState?.referencePortfolioSeeded || [] }).then((result) => {
+    syncReferencePortfolio({ seededTickers: seededTickersFromTrackingState(tracking.trackingState) }).then((result) => {
       if (result?.success) setSyncMessage(result.added || result.updated
         ? `Opening holdings seeded from the ${REFERENCE_PORTFOLIO_LABEL} Fidelity snapshot: ${result.added} added${result.updated ? ` · ${result.updated} purchase date${result.updated === 1 ? '' : 's'} filled in` : ''}.`
         : `Your cloud portfolio is already the record. The ${REFERENCE_PORTFOLIO_LABEL} snapshot's prices were recorded as a dated observation; no holding was changed.`)
@@ -132,7 +132,7 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
   const handleReferenceSync = async () => {
     setSyncMessage(`Checking the ${REFERENCE_PORTFOLIO_LABEL} snapshot for holdings you have never been given…`)
     const result = await syncReferencePortfolio({
-      seededTickers: tracking.trackingState?.referencePortfolioSeeded || [],
+      seededTickers: seededTickersFromTrackingState(tracking.trackingState),
     })
     if (!result.success) {
       setSyncMessage(`Could not read the snapshot: ${result.error}`)

@@ -211,6 +211,22 @@ export function planReferencePortfolioSync(
   return [...upserts, ...removals]
 }
 
+/**
+ * Which reference tickers an account has already been handed, read off its tracking document.
+ *
+ * Accounts seeded before the seeded-once ledger existed carry a `referencePortfolioVersion`
+ * but no `referencePortfolioSeeded` list -- and an empty list reads as "nothing delivered
+ * yet", which would let the next seeding run hand every removed or sold holding back. Any
+ * account with a version marker was, by definition, given the whole export at the time, so
+ * the export's own tickers are the ledger until one is written.
+ */
+export function seededTickersFromTrackingState(trackingState, reference = REFERENCE_PORTFOLIO) {
+  const stored = trackingState?.referencePortfolioSeeded
+  if (Array.isArray(stored)) return stored
+  if (trackingState?.referencePortfolioVersion) return reference.map((position) => position.ticker)
+  return []
+}
+
 /** Every reference ticker this plan hands to the account, for the seeded-once ledger. */
 export function seededTickersAfter(operations, alreadySeeded = []) {
   const delivered = operations.filter((operation) => operation.kind === 'add').map((operation) => operation.record.ticker)

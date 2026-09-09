@@ -56,6 +56,7 @@ import {
   planReferencePortfolioSync,
   referenceSyncMerges,
   seededTickersAfter,
+  seededTickersFromTrackingState,
   referenceIntradaySnapshot,
   referenceSyncDrift,
   referenceSyncRecord,
@@ -493,7 +494,7 @@ async function run(options, backend) {
   // would actually be written, and unless --authoritative is passed that is seeding only:
   // additions the account has never been given, plus purchase-date backfills. Firestore is
   // the record; the statement is history.
-  const seededTickers = (await backend.readTrackingState?.())?.referencePortfolioSeeded || []
+  const seededTickers = seededTickersFromTrackingState(await backend.readTrackingState?.())
   const drift = planReferencePortfolioSync(existing, undefined, { closedTickers })
   const operations = options.authoritative
     ? drift
