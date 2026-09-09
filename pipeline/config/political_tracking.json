@@ -1,0 +1,554 @@
+{
+  "_comment": "Roster and name-resolution layer for the Political Trading screen. Read by political_tracking.py. Three separate things live here on purpose: 'name_aliases' (how one person's many disclosed name spellings resolve to one key - a data-plumbing fact), 'tracked_filers' (who the screen badges and lets you filter to - an editorial curation choice), and 'external_reference' (third-party figures this pipeline did NOT compute - see its own _source block).",
+  "name_aliases": {
+    "april delaney": [
+      "april mcclain delaney",
+      "april mcclain-delaney"
+    ],
+    "dan crenshaw": [
+      "dan crenshaw",
+      "daniel crenshaw"
+    ],
+    "donald beyer": [
+      "don beyer",
+      "donald sternoff beyer jr"
+    ],
+    "gil cisneros": [
+      "gilbert cisneros",
+      "gilbert ray cisneros",
+      "gilbert ray cisneros jr"
+    ],
+    "james comer": [
+      "james comer jr",
+      "james r comer"
+    ],
+    "linda sanchez": [
+      "linda t sanchez",
+      "linda t. sanchez"
+    ],
+    "marjorie taylor greene": [
+      "marjorie taylor greene"
+    ],
+    "michael mccaul": [
+      "michael t mccaul",
+      "michael t. mccaul"
+    ],
+    "mitch mcconnell": [
+      "a mitchell mcconnell",
+      "addison mitchell mcconnell jr"
+    ],
+    "richard blumenthal": [
+      "richard blumenthal"
+    ],
+    "ro khanna": [
+      "ro khanna",
+      "rohit khanna"
+    ],
+    "rob bresnahan": [
+      "robert bresnahan",
+      "robert bresnahan jr",
+      "robert p bresnahan jr"
+    ],
+    "ron wyden": [
+      "ronald wyden"
+    ],
+    "shelley moore capito": [
+      "shelley capito",
+      "shelley m capito"
+    ],
+    "tim moore": [
+      "timothy k moore",
+      "timothy moore"
+    ],
+    "tommy tuberville": [
+      "thomas h tuberville",
+      "thomas tuberville",
+      "tommy tuberville"
+    ]
+  },
+  "_tracked_filers_comment": "Tiers: 'activity' = among the highest-volume disclosed traders; 'performance' = top-decile 2025 estimated return in the external reference set; 'jurisdiction' = has curated committee coverage in committees.json. Tracking a filer is not an accusation and not a recommendation to follow their trades - it only controls badging and the 'Tracked filers only' filter.",
+  "tracked_filers": {
+    "brandon gill": {
+      "tiers": [
+        "jurisdiction"
+      ],
+      "display_name": "Brandon Gill"
+    },
+    "bryan steil": {
+      "tiers": [
+        "jurisdiction",
+        "performance"
+      ],
+      "display_name": "Bryan Steil"
+    },
+    "cleo fields": {
+      "tiers": [
+        "jurisdiction"
+      ],
+      "display_name": "Cleo Fields"
+    },
+    "david mccormick": {
+      "tiers": [
+        "jurisdiction"
+      ],
+      "display_name": "David Mccormick"
+    },
+    "donald norcross": {
+      "tiers": [
+        "performance"
+      ],
+      "display_name": "Donald Norcross"
+    },
+    "gil cisneros": {
+      "tiers": [
+        "activity",
+        "jurisdiction"
+      ],
+      "display_name": "Gil Cisneros"
+    },
+    "jefferson shreve": {
+      "tiers": [
+        "activity",
+        "jurisdiction"
+      ],
+      "display_name": "Jefferson Shreve"
+    },
+    "josh gottheimer": {
+      "tiers": [
+        "activity",
+        "jurisdiction"
+      ],
+      "display_name": "Josh Gottheimer"
+    },
+    "julie johnson": {
+      "tiers": [
+        "activity",
+        "jurisdiction"
+      ],
+      "display_name": "Julie Johnson"
+    },
+    "lisa mcclain": {
+      "tiers": [
+        "activity",
+        "jurisdiction"
+      ],
+      "display_name": "Lisa McClain"
+    },
+    "marjorie taylor greene": {
+      "tiers": [
+        "activity",
+        "jurisdiction"
+      ],
+      "display_name": "Marjorie Taylor Greene"
+    },
+    "michael mccaul": {
+      "tiers": [
+        "activity",
+        "jurisdiction"
+      ],
+      "display_name": "Michael McCaul"
+    },
+    "nancy pelosi": {
+      "tiers": [
+        "jurisdiction"
+      ],
+      "display_name": "Nancy Pelosi"
+    },
+    "richard blumenthal": {
+      "tiers": [
+        "activity",
+        "jurisdiction"
+      ],
+      "display_name": "Richard Blumenthal"
+    },
+    "ro khanna": {
+      "tiers": [
+        "activity",
+        "jurisdiction"
+      ],
+      "display_name": "Ro Khanna"
+    },
+    "rob bresnahan": {
+      "tiers": [
+        "activity",
+        "jurisdiction"
+      ],
+      "display_name": "Rob Bresnahan"
+    },
+    "sheldon whitehouse": {
+      "tiers": [
+        "jurisdiction"
+      ],
+      "display_name": "Sheldon Whitehouse"
+    },
+    "sheri biggs": {
+      "tiers": [
+        "jurisdiction"
+      ],
+      "display_name": "Sheri Biggs"
+    },
+    "terri sewell": {
+      "tiers": [
+        "performance"
+      ],
+      "display_name": "Terri Sewell"
+    },
+    "tim moore": {
+      "tiers": [
+        "jurisdiction"
+      ],
+      "display_name": "Tim Moore"
+    },
+    "warren davidson": {
+      "tiers": [
+        "jurisdiction",
+        "performance"
+      ],
+      "display_name": "Warren Davidson"
+    }
+  },
+  "external_reference": {
+    "_source": {
+      "publisher": "Unusual Whales",
+      "publication": "Congress Trading Report 2025",
+      "published": "2026-01",
+      "as_of": "2025-12-29",
+      "url": "https://unusualwhales.com/politics",
+      "benchmark_return_pct": 16.8,
+      "benchmark_symbol": "SPY",
+      "methodology": "Share counts estimated from the midpoint of each disclosed STOCK Act amount range and the price on the transaction date, then backtested to 2025-01-01 for a weighted percent return. Covers trades disclosed through 2025-12-29 only; November and December 2025 trades were still inside their 45-day filing window.",
+      "not_computed_here": "None of these figures come from this pipeline. They use a different universe, a different window (2025 calendar YTD), and a different estimator than politician_performance.py's shrunk alpha over priced disclosed buys, so the two columns answer different questions and must never be summed, averaged, or compared as if they were the same measurement."
+    },
+    "politicians": {
+      "alex padilla": {
+        "display_name": "Alex Padilla",
+        "party": "D",
+        "seat": "CA",
+        "return_2025_pct": 61.7
+      },
+      "austin scott": {
+        "display_name": "Austin Scott",
+        "party": "R",
+        "seat": "GA-8",
+        "return_2025_pct": 39.4
+      },
+      "bryan steil": {
+        "display_name": "Bryan Steil",
+        "party": "R",
+        "seat": "WI-1",
+        "return_2025_pct": 62.5
+      },
+      "chip roy": {
+        "display_name": "Chip Roy",
+        "party": "R",
+        "seat": "TX-21",
+        "return_2025_pct": -59.0
+      },
+      "chris pappas": {
+        "display_name": "Chris Pappas",
+        "party": "D",
+        "seat": "NH-1",
+        "return_2025_pct": 29.4
+      },
+      "cleo fields": {
+        "display_name": "Cleo Fields",
+        "party": "D",
+        "seat": "LA-6",
+        "return_2025_pct": 32.3
+      },
+      "dan crenshaw": {
+        "display_name": "Dan Crenshaw",
+        "party": "R",
+        "seat": "TX-2",
+        "return_2025_pct": 16.8
+      },
+      "debbie wasserman schultz": {
+        "display_name": "Debbie Wasserman Schultz",
+        "party": "D",
+        "seat": "FL-25",
+        "return_2025_pct": 28.0
+      },
+      "donald norcross": {
+        "display_name": "Donald Norcross",
+        "party": "D",
+        "seat": "NJ-1",
+        "return_2025_pct": 70.8
+      },
+      "dwight evans": {
+        "display_name": "Dwight Evans",
+        "party": "D",
+        "seat": "PA-3",
+        "return_2025_pct": 41.9
+      },
+      "elissa slotkin": {
+        "display_name": "Elissa Slotkin",
+        "party": "D",
+        "seat": "MI",
+        "return_2025_pct": 33.8
+      },
+      "eugene vindman": {
+        "display_name": "Eugene Vindman",
+        "party": "D",
+        "seat": "VA-7",
+        "return_2025_pct": 34.1
+      },
+      "french hill": {
+        "display_name": "French Hill",
+        "party": "R",
+        "seat": "AR-2",
+        "return_2025_pct": 8.3
+      },
+      "gil cisneros": {
+        "display_name": "Gil Cisneros",
+        "party": "D",
+        "seat": "CA",
+        "trades_2025": 826,
+        "distinct_stocks_2025": 362,
+        "disclosed_volume_2025_usd": 22360000
+      },
+      "jefferson shreve": {
+        "display_name": "Jefferson Shreve",
+        "party": "R",
+        "seat": "IN",
+        "trades_2025": 625,
+        "distinct_stocks_2025": 305,
+        "disclosed_volume_2025_usd": 150900000
+      },
+      "john rutherford": {
+        "display_name": "John Rutherford",
+        "party": "R",
+        "seat": "FL-5",
+        "return_2025_pct": 14.8
+      },
+      "josh gottheimer": {
+        "display_name": "Josh Gottheimer",
+        "party": "D",
+        "seat": "NJ-5",
+        "return_2025_pct": 13.3,
+        "trades_2025": 391,
+        "distinct_stocks_2025": 180,
+        "disclosed_volume_2025_usd": 20130000
+      },
+      "julie johnson": {
+        "display_name": "Julie Johnson",
+        "party": "D",
+        "seat": "TX",
+        "trades_2025": 507,
+        "distinct_stocks_2025": 229,
+        "disclosed_volume_2025_usd": 4230000
+      },
+      "linda sanchez": {
+        "display_name": "Linda Sanchez",
+        "party": "D",
+        "seat": "CA-38",
+        "return_2025_pct": 30.3
+      },
+      "lisa mcclain": {
+        "display_name": "Lisa McClain",
+        "party": "R",
+        "seat": "MI",
+        "trades_2025": 1381,
+        "distinct_stocks_2025": 449,
+        "disclosed_volume_2025_usd": 12840000
+      },
+      "marcy kaptur": {
+        "display_name": "Marcy Kaptur",
+        "party": "D",
+        "seat": "OH-9",
+        "return_2025_pct": 36.3
+      },
+      "marjorie taylor greene": {
+        "display_name": "Marjorie Taylor Greene",
+        "party": "R",
+        "seat": "GA-14",
+        "return_2025_pct": 11.7,
+        "trades_2025": 288,
+        "distinct_stocks_2025": 83,
+        "disclosed_volume_2025_usd": 4850000
+      },
+      "markwayne mullin": {
+        "display_name": "Markwayne Mullin",
+        "party": "R",
+        "seat": "OK",
+        "return_2025_pct": 18.6
+      },
+      "michael bennet": {
+        "display_name": "Michael Bennet",
+        "party": "D",
+        "seat": "CO",
+        "return_2025_pct": 34.4
+      },
+      "michael guest": {
+        "display_name": "Michael Guest",
+        "party": "R",
+        "seat": "MS-3",
+        "return_2025_pct": 52.5
+      },
+      "michael mccaul": {
+        "display_name": "Michael McCaul",
+        "party": "R",
+        "seat": "TX-10",
+        "return_2025_pct": 15.4,
+        "trades_2025": 1059,
+        "distinct_stocks_2025": 295,
+        "disclosed_volume_2025_usd": 79730000
+      },
+      "mike kennedy": {
+        "display_name": "Mike Kennedy",
+        "party": "R",
+        "seat": "UT-3",
+        "return_2025_pct": 32.7
+      },
+      "mitch mcconnell": {
+        "display_name": "Mitch McConnell",
+        "party": "R",
+        "seat": "KY",
+        "return_2025_pct": -1.8
+      },
+      "nancy pelosi": {
+        "display_name": "Nancy Pelosi",
+        "party": "D",
+        "seat": "CA-11",
+        "return_2025_pct": 20.1
+      },
+      "nick lalota": {
+        "display_name": "Nick LaLota",
+        "party": "R",
+        "seat": "NY-1",
+        "return_2025_pct": 61.5
+      },
+      "nicole malliotakis": {
+        "display_name": "Nicole Malliotakis",
+        "party": "R",
+        "seat": "NY-11",
+        "return_2025_pct": 21.9
+      },
+      "pete ricketts": {
+        "display_name": "Pete Ricketts",
+        "party": "R",
+        "seat": "NE",
+        "return_2025_pct": 29.9
+      },
+      "pete sessions": {
+        "display_name": "Pete Sessions",
+        "party": "R",
+        "seat": "TX-17",
+        "return_2025_pct": 12.5
+      },
+      "rand paul": {
+        "display_name": "Rand Paul",
+        "party": "R",
+        "seat": "KY",
+        "return_2025_pct": 33.6
+      },
+      "richard blumenthal": {
+        "display_name": "Richard Blumenthal",
+        "party": "D",
+        "seat": "CT",
+        "trades_2025": 450,
+        "distinct_stocks_2025": 22,
+        "disclosed_volume_2025_usd": 85710000
+      },
+      "rick scott": {
+        "display_name": "Rick Scott",
+        "party": "R",
+        "seat": "FL",
+        "return_2025_pct": 54.8
+      },
+      "ro khanna": {
+        "display_name": "Ro Khanna",
+        "party": "D",
+        "seat": "CA-17",
+        "return_2025_pct": 12.6,
+        "trades_2025": 4284,
+        "distinct_stocks_2025": 579,
+        "disclosed_volume_2025_usd": 59570000
+      },
+      "rob bresnahan": {
+        "display_name": "Rob Bresnahan",
+        "party": "R",
+        "seat": "PA",
+        "trades_2025": 648,
+        "distinct_stocks_2025": 317,
+        "disclosed_volume_2025_usd": 8250000
+      },
+      "sheri biggs": {
+        "display_name": "Sheri Biggs",
+        "party": "R",
+        "seat": "SC-3",
+        "return_2025_pct": 30.6
+      },
+      "stephen lynch": {
+        "display_name": "Stephen Lynch",
+        "party": "D",
+        "seat": "MA-8",
+        "return_2025_pct": 34.8
+      },
+      "susie lee": {
+        "display_name": "Susie Lee",
+        "party": "D",
+        "seat": "NV-3",
+        "return_2025_pct": 16.6
+      },
+      "terri sewell": {
+        "display_name": "Terri Sewell",
+        "party": "D",
+        "seat": "AL-7",
+        "return_2025_pct": 67.9
+      },
+      "tom mcclintock": {
+        "display_name": "Tom McClintock",
+        "party": "R",
+        "seat": "CA-5",
+        "return_2025_pct": 50.0
+      },
+      "tom suozzi": {
+        "display_name": "Tom Suozzi",
+        "party": "D",
+        "seat": "NY-3",
+        "return_2025_pct": 33.8
+      },
+      "tommy tuberville": {
+        "display_name": "Tommy Tuberville",
+        "party": "R",
+        "seat": "AL",
+        "return_2025_pct": 15.6
+      },
+      "tracey mann": {
+        "display_name": "Tracey Mann",
+        "party": "R",
+        "seat": "KS-1",
+        "return_2025_pct": 35.4
+      },
+      "virginia foxx": {
+        "display_name": "Virginia Foxx",
+        "party": "R",
+        "seat": "NC-5",
+        "return_2025_pct": 3.2
+      },
+      "warren davidson": {
+        "display_name": "Warren Davidson",
+        "party": "R",
+        "seat": "OH-8",
+        "return_2025_pct": 78.8
+      }
+    }
+  },
+  "_unusual_timing_comment": "Weights for the composite ranking in political_tracking.unusual_timing(). Four components, each normalized to [0,1] before weighting. A high rank means 'several separately-computable things about this disclosure are unusual at once' - it is not a finding of wrongdoing, and the screen's own copy says so.",
+  "unusual_timing": {
+    "top_n": 15,
+    "size_reference": 500000.0,
+    "excess_return_reference": 25.0,
+    "filing_delay_reference": 90,
+    "news_lookahead_days": 14,
+    "weights": {
+      "size": 1.0,
+      "committee_overlap": 2.0,
+      "excess_return": 2.5,
+      "filing_delay": 1.0,
+      "news_proximity": 1.5
+    },
+    "minimum_components": 2,
+    "max_per_filer": 2
+  }
+}

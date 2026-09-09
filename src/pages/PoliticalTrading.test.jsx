@@ -405,3 +405,163 @@ describe('PoliticalTrading page', () => {
     expect(screen.queryByText('Top 10 unusual stocks')).not.toBeInTheDocument()
   })
 })
+
+describe('PoliticalTrading tracking panels', () => {
+  const profile = (overrides = {}) => ({
+    politician: 'Rohit Khanna', canonical_name: 'ro khanna', chambers: ['house'],
+    name_variants: [], trades: 388, buys: 200, sells: 188, distinct_symbols: 41,
+    disclosed_volume_midpoint: 4_090_000, largest_trade_amount_upper: 100000,
+    avg_filing_delay_days: 21.4, late_filings: 3, late_filing_rate: 0.1,
+    committee_overlap_trades: 17, committees: ['Armed Services'],
+    first_trade_date: '2026-01-02', last_trade_date: '2026-08-30',
+    tracked: true, tracked_tiers: ['activity', 'jurisdiction'],
+    performance: { avg_alpha_pct: 4.2, win_rate: 0.55, n_priced_buys: 30, confidence: 'high' },
+    external: { return_2025_pct: 12.6, trades_2025: 4284 },
+    rank: 1, ...overrides,
+  })
+
+  const timingRow = (overrides = {}) => ({
+    ticker: 'NVDA', asset_description: 'NVIDIA Corp', representative: 'Rohit Khanna',
+    chamber: 'house', transaction_type: 'Purchase', transaction_date: '2026-03-01',
+    disclosure_date: '2026-03-20', amount: '$50,001 - $100,000', filing_delay_days: 19,
+    return_since_purchase_pct: 40, excess_return_vs_spy_pct: 28.5,
+    committee_overlap: { committees: ['Armed Services'], sector: 'Technology', basis: 'market_sector' },
+    components: { size: 1, committee_overlap: 1, excess_return: 0.8, filing_delay: 0 },
+    components_unavailable: ['news_proximity'], unusual_score: 0.72, rank: 1, ...overrides,
+  })
+
+  const payload = (overrides = {}) => ({
+    schema_version: '1.5.0', model_version: 'congress-trades-v1.6.0', history_days: 150,
+    results: [trade({ representative: 'Rohit Khanna', excess_return_vs_spy_pct: 28.5 })],
+    politician_activity: [profile()],
+    tracking: { tracked_filers: 21, committee_profiles: 67, external_reference_politicians: 48 },
+    unusual_timing: {
+      config: { max_per_filer: 2 }, weights: {}, news_component_active: false,
+      candidates: 3622, results: [timingRow()],
+    },
+    ...overrides,
+  })
+
+  beforeEach(() => {
+    useAuth.mockReturnValue({ currentUser: null })
+  })
+
+  const renderWith = (data) => {
+    useData.mockReturnValue({ data, loading: false, error: null })
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
+  }
+
+  it('ranks filers by disclosed activity, separately from the performance leaderboard', () => {
+    renderWith(payload())
+    const panel = screen.getByLabelText('Most active political traders')
+    expect(panel).toHaveTextContent('388 (200b / 188s)')
+    expect(panel).toHaveTextContent('41')
+    expect(panel).toHaveTextContent('$4.1M')
+    expect(panel).toHaveTextContent('21.4d')
+  })
+
+  it('says how many filers have curated committee data, so a blank column is not a finding', () => {
+    renderWith(payload())
+    expect(screen.getByLabelText('Most active political traders'))
+      .toHaveTextContent(/curated by hand for 67 filer\(s\).*never "no overlap"/)
+  })
+
+  it('shows a dash rather than a zero when a filer has no curated committees', () => {
+    renderWith(payload({
+      politician_activity: [profile({ committees: [], committee_overlap_trades: 0 })],
+    }))
+    expect(screen.getByLabelText('Most active political traders')).not.toHaveTextContent('In their jurisdiction0')
+  })
+
+  it('narrows only its own table when tracked filers are filtered', () => {
+    renderWith(payload({
+      politician_activity: [profile(), profile({
+        politician: 'Jane Doe', canonical_name: 'jane doe', tracked: false,
+        tracked_tiers: [], external: null, performance: null, rank: 2,
+      })],
+    }))
+    const panel = screen.getByLabelText('Most active political traders')
+    expect(panel).toHaveTextContent('Jane Doe')
+    fireEvent.click(screen.getByLabelText(/Show tracked filers only/))
+    expect(screen.getByLabelText('Most active political traders')).not.toHaveTextContent('Jane Doe')
+    // The disclosure table below keeps its own, independent filter.
+    expect(screen.getAllByText('AAPL').length).toBeGreaterThan(0)
+  })
+
+  it('labels the external return as third-party and names its source', () => {
+    renderWith(payload({
+      politician_performance: {
+        leaderboard: [{
+          politician: 'Rohit Khanna', n_priced_buys: 30, avg_alpha_pct: 4.2, win_rate: 0.55,
+          performance_score: 0.6, confidence: 'high', rank: 1,
+          external_return_2025_pct: 12.6, tracked: true, tracked_tiers: ['activity'],
+        }],
+        external_source: {
+          publisher: 'Unusual Whales', publication: 'Congress Trading Report 2025',
+          as_of: '2025-12-29', benchmark_symbol: 'SPY', benchmark_return_pct: 16.8,
+          methodology: 'Estimated from disclosure midpoints.',
+        },
+      },
+    }))
+    const panel = screen.getByLabelText('Most profitable politicians')
+    expect(panel).toHaveTextContent('2025 return (external)')
+    expect(panel).toHaveTextContent('+12.6%')
+    expect(panel).toHaveTextContent(/Unusual Whales.*as of 2025-12-29.*not produced by this pipeline/)
+  })
+
+  it('ranks unusual disclosures by what is unusual about them, not by a verdict', () => {
+    renderWith(payload())
+    const panel = screen.getByLabelText('Disclosures unusual on several axes')
+    expect(panel).toHaveTextContent('0.72')
+    expect(panel).toHaveTextContent('Size 100%')
+    expect(panel).toHaveTextContent('Committee jurisdiction 100%')
+    expect(panel).toHaveTextContent('Beat the S&P 80%')
+    // A component measured at zero is not worth a chip; only what is actually unusual.
+    expect(panel).not.toHaveTextContent('Disclosure lag')
+    expect(panel).toHaveTextContent(/not a finding of wrongdoing/i)
+  })
+
+  it('says an inactive news component is unmeasured rather than scoring it as zero', () => {
+    renderWith(payload())
+    expect(screen.getByLabelText('Disclosures unusual on several axes'))
+      .toHaveTextContent(/news feed is not live.*unmeasured, not zero/)
+  })
+
+  it('omits the news caveat when the feed is live', () => {
+    renderWith(payload({
+      unusual_timing: { ...payload().unusual_timing, news_component_active: true },
+    }))
+    expect(screen.getByLabelText('Disclosures unusual on several axes'))
+      .not.toHaveTextContent(/unmeasured, not zero/)
+  })
+
+  it('filters the disclosure table to one filer', () => {
+    renderWith(payload({
+      results: [
+        trade({ representative: 'Rohit Khanna', symbol: 'NVDA' }),
+        trade({ representative: 'Jane Doe', symbol: 'AAPL' }),
+      ],
+    }))
+    expect(screen.getAllByText('AAPL').length).toBeGreaterThan(0)
+    fireEvent.change(screen.getByLabelText('Filer'), { target: { value: 'Rohit Khanna' } })
+    expect(screen.getAllByText('NVDA').length).toBeGreaterThan(0)
+    expect(screen.queryByText('AAPL')).not.toBeInTheDocument()
+  })
+
+  it('shows excess return against the S&P beside the raw return', () => {
+    // The unusual-timing panel renders the same figure, so it is emptied here to keep the
+    // assertion pinned to the disclosure table's own column.
+    renderWith(payload({
+      results: [trade({ return_since_purchase_pct: 40, excess_return_vs_spy_pct: 28.5 })],
+      unusual_timing: { ...payload().unusual_timing, results: [] },
+    }))
+    expect(screen.getByText(/\+40/)).toBeVisible()
+    expect(screen.getByText(/\+28\.5/)).toBeVisible()
+  })
+
+  it('renders nothing for the new panels when the payload predates them', () => {
+    renderWith({ schema_version: '1.4.0', results: [trade()] })
+    expect(screen.queryByLabelText('Most active political traders')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Disclosures unusual on several axes')).not.toBeInTheDocument()
+  })
+})

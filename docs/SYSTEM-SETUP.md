@@ -402,9 +402,51 @@ production are the filing-keyword trend and the spenders' capex, so most publish
 roughly a third of their theme's declared signal weight — the `confidence` field on each row
 reports exactly how much answered.
 
-**Congressional trading** (`build_congress_screen.py`, weekly). A separate screen with its own
-6-factor weighting (track record 25, committee relevance 20, cluster detection 20, trade size 15,
-direction/recency 10, policy catalyst 10). **Not an input to the research score.**
+**Congressional trading** (`build_congress_screen.py`, weekly). A separate screen over House,
+Senate, and executive-branch (OGE 278-T) disclosures. **Not an input to the research score** —
+`congress_signal.py` is the research score's one deliberately narrow political input, and nothing
+below feeds it. The screen publishes four independent layers, each measuring a different thing:
+
+- **Per-trade flags** — late filing, options trade, rare trader, concentrated size, cluster,
+  same-sector repeat, buy/sell flip, novel ticker, extraordinary buy, and (as of schema 1.5.0)
+  `COMMITTEE_OVERLAP`: the filer sits on a committee with jurisdiction over the stock's sector.
+  Every flag is computed from the disclosure data; none asserts that a trade was improper.
+- **Per-filer skill** (`politician_performance.py`) — shrunk alpha vs SPY and win rate over each
+  filer's priced disclosed buys, empirical-Bayes shrunk toward the population so three lucky
+  trades cannot outrank forty solid ones. Each published row now also carries its own
+  `excess_return_vs_spy_pct`, since "since purchase" alone mostly measures the market.
+- **Per-filer activity** (`political_tracking.activity_profiles`) — trade count, distinct stocks,
+  disclosed volume, filing lag, and jurisdiction overlap over the *full* accumulated store.
+  A deliberately different ranking from skill: "whose feed is worth watching" and "who has been
+  right" are different questions and a filer can top one while sitting nowhere on the other.
+- **Per-row anomaly composite** (`political_tracking.unusual_timing`) — how many separately
+  computable things are unusual about one disclosure at once. Missing evidence lowers the score
+  rather than being excused (the denominator is every component active for the run, not just the
+  ones a given row supported), and a component switched off run-wide — headline precedence, when
+  `news.json` is in demo mode — leaves the denominator entirely and is reported as inactive.
+
+Identity resolution matters more here than anywhere else in the pipeline: the feeds spell one
+person several ways ("Rohit Khanna"/"Ro Khanna", "A. Mitchell McConnell, Jr."/"Mitch McConnell"),
+so `political_tracking.canonical_name` merges them through an alias table plus a first+last
+fallback that only ever resolves onto an already-curated key. Counting them separately would
+understate every per-filer number on the page.
+
+**What the committee flag does and does not support.** `committees.json` is hand-curated and
+incomplete by construction — an absent overlap means "this pairing is not curated", never "no
+overlap exists" — so the payload publishes `tracking.committee_profiles` (how many filers are
+curated) and the UI says so in the panel. Committee assignments change every Congress; the file
+carries its own `_verification` note on when it was last checked.
+
+**External figures stay external.** The leaderboard carries third-party 2025 estimates under
+`external_*` keys with a `politician_performance.external_source` provenance block. They are not
+merged into, averaged with, or substituted for the pipeline's own alpha: different universe,
+different window, different estimator. The two columns must not be compared directly, and the
+screen's own copy says so.
+
+A separate, older political path exists in `scorer.py` — the 6-factor weighting (track record 25,
+committee relevance 20, cluster detection 20, trade size 15, direction/recency 10, policy catalyst
+10) reading `trades.json`/`policy_map.json`. That is not this screen and shares no code with it
+beyond `committees.json`, which is why that file carries two independent sector vocabularies.
 
 ---
 

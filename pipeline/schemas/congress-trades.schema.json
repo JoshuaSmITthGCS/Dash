@@ -111,7 +111,17 @@
             "description": "politician_performance.signal_strength() - disclosed size x recency x the filer's shrunk performance-vs-SPY track record; display-only ranking/badge input, never an advisor_engine input"},
           "performance_score": {"type": "number", "minimum": 0, "maximum": 1,
             "description": "the filer's shrunk performance_score at publish time (population baseline when the filer has no priced buys in-window)"},
-          "performance_confidence": {"enum": ["low", "medium", "high"]}
+          "performance_confidence": {"enum": ["low", "medium", "high"]},
+          "excess_return_vs_spy_pct": {"type": ["number", "null"],
+            "description": "politician_performance.trade_alpha() for this row - return_since_purchase_pct minus SPY's return over the identical [transaction_date, price_as_of] window. Absent (not zero) on any row without a priced buy: a sale is never priced and an unpriced buy has nothing to measure."},
+          "committee_overlap": {"type": "object",
+            "description": "Present only when COMMITTEE_OVERLAP is flagged. The evidence behind the flag, not a verdict: which curated committees the filer sits on, which sector matched, and which sector vocabulary matched it. Absence means the pairing is not curated or did not match - never that no overlap exists.",
+            "required": ["committees", "sector", "basis"],
+            "properties": {
+              "committees": {"type": "array", "items": {"type": "string"}},
+              "sector": {"type": "string"},
+              "basis": {"enum": ["market_sector", "policy_sector"]}
+            }}
         }
       }
     },
@@ -156,10 +166,103 @@
               "win_rate": {"type": "number", "minimum": 0, "maximum": 1},
               "performance_score": {"type": "number", "minimum": 0, "maximum": 1},
               "confidence": {"enum": ["low", "medium", "high"]},
+              "rank": {"type": "integer", "minimum": 1},
+              "tracked": {"type": "boolean", "description": "on political_tracking.json's tracked_filers roster"},
+              "tracked_tiers": {"type": "array", "items": {"enum": ["activity", "performance", "jurisdiction"]}},
+              "external_return_2025_pct": {"type": ["number", "null"],
+                "description": "Third-party estimated 2025 calendar-year portfolio return. NOT computed by this pipeline and not comparable to avg_alpha_pct beside it: different universe, different window, different estimator. See politician_performance.external_source for provenance."},
+              "external_trades_2025": {"type": ["integer", "null"]},
+              "external_party": {"type": ["string", "null"]},
+              "external_seat": {"type": ["string", "null"]}
+            }
+          }
+        },
+        "external_source": {"type": "object",
+          "description": "Provenance for every external_* field on the leaderboard: publisher, publication, as-of date, benchmark, and the methodology those figures were produced under. Present so no reader has to guess which columns this pipeline computed."}
+      }
+    },
+    "politician_activity": {
+      "type": "array",
+      "description": "political_tracking.activity_profiles() - one row per filer over the FULL accumulated store (not the published window), aggregated on a canonical name so one person's several disclosed spellings count once. Ranks disclosure activity, which is a different question from politician_performance's skill ranking; both are published so neither stands in for the other. Display-only, never an advisor_engine input.",
+      "items": {
+        "type": "object",
+        "required": ["politician", "canonical_name", "trades", "distinct_symbols",
+                    "disclosed_volume_midpoint", "rank"],
+        "properties": {
+          "politician": {"type": "string", "description": "the most frequently disclosed spelling"},
+          "canonical_name": {"type": "string"},
+          "name_variants": {"type": "array", "items": {"type": "string"},
+            "description": "other spellings merged into this row; empty when only one was seen"},
+          "chambers": {"type": "array", "items": {"type": "string"}},
+          "trades": {"type": "integer", "minimum": 1},
+          "buys": {"type": "integer", "minimum": 0},
+          "sells": {"type": "integer", "minimum": 0},
+          "distinct_symbols": {"type": "integer", "minimum": 0},
+          "disclosed_volume_midpoint": {"type": "number", "minimum": 0,
+            "description": "sum of each disclosure's amount-range midpoint - the forms report bands, not exact figures"},
+          "largest_trade_amount_upper": {"type": ["number", "null"]},
+          "avg_filing_delay_days": {"type": ["number", "null"]},
+          "late_filings": {"type": "integer", "minimum": 0},
+          "late_filing_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+          "committee_overlap_trades": {"type": "integer", "minimum": 0},
+          "committees": {"type": "array", "items": {"type": "string"}},
+          "first_trade_date": {"type": ["string", "null"]},
+          "last_trade_date": {"type": ["string", "null"]},
+          "tracked": {"type": "boolean"},
+          "tracked_tiers": {"type": "array", "items": {"type": "string"}},
+          "performance": {"type": ["object", "null"]},
+          "external": {"type": ["object", "null"],
+            "description": "third-party reference figures for this filer, or null - see politician_performance.external_source"},
+          "rank": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "unusual_timing": {
+      "type": "object",
+      "description": "political_tracking.unusual_timing() - published-window disclosures ranked by how many independently-computable things are unusual about them at once (size, committee jurisdiction, alpha vs SPY, disclosure lag, and headline precedence when the news feed is live). A ranking of rows, not of people, and not an allegation of wrongdoing. Display-only, never an advisor_engine input.",
+      "required": ["config", "weights", "news_component_active", "candidates", "results"],
+      "properties": {
+        "config": {"type": "object"},
+        "weights": {"type": "object"},
+        "news_component_active": {"type": "boolean",
+          "description": "false when news.json is in demo mode - the headline-precedence component is then switched off entirely and reported as unavailable rather than scored as zero, since those are different statements."},
+        "candidates": {"type": "integer", "minimum": 0,
+          "description": "rows that cleared minimum_components before the top-N and per-filer cuts"},
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["representative", "unusual_score", "components", "rank"],
+            "properties": {
+              "ticker": {"type": ["string", "null"]},
+              "asset_description": {"type": ["string", "null"]},
+              "representative": {"type": ["string", "null"]},
+              "chamber": {"type": ["string", "null"]},
+              "transaction_type": {"type": ["string", "null"]},
+              "transaction_date": {"type": ["string", "null"]},
+              "disclosure_date": {"type": ["string", "null"]},
+              "amount": {"type": ["string", "null"]},
+              "filing_delay_days": {"type": ["integer", "null"]},
+              "return_since_purchase_pct": {"type": ["number", "null"]},
+              "excess_return_vs_spy_pct": {"type": ["number", "null"]},
+              "committee_overlap": {"type": ["object", "null"]},
+              "components": {"type": "object",
+                "description": "each computable component in [0,1]; a component absent here was not measurable for this row"},
+              "components_unavailable": {"type": "array", "items": {"type": "string"}},
+              "unusual_score": {"type": "number", "minimum": 0, "maximum": 1},
               "rank": {"type": "integer", "minimum": 1}
             }
           }
         }
+      }
+    },
+    "tracking": {
+      "type": "object",
+      "description": "How much hand-curation actually backs the badges on this screen, so a missing committee or tracked badge reads as 'not curated yet' rather than as a finding about the filer.",
+      "properties": {
+        "tracked_filers": {"type": "integer", "minimum": 0},
+        "committee_profiles": {"type": "integer", "minimum": 0},
+        "external_reference_politicians": {"type": "integer", "minimum": 0}
       }
     }
   }

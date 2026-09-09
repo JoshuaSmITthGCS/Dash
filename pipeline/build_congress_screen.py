@@ -45,6 +45,7 @@ import os
 import re
 from datetime import date, datetime, timedelta, timezone
 
+import political_tracking
 import politician_performance
 from common import LOG, STORE_DIR, load_json, save_json
 from congress_trades import (CongressTradesClient, CongressTradesError, SenateEfdClient,
@@ -288,12 +289,12 @@ def novel_ticker_keys(rows):
     return {_trade_key(row) for _when, row in earliest.values()}
 
 
-def relational_flags(rows):
+def relational_flags(rows, sector_lookup=None):
     """All cross-row flags computed once over the FULL accumulated history, keyed by
     trade identity, so a match outside the published window (e.g. a trade from a year
     ago) is still seen - a member's "novel ticker" trade five months ago must not look
     novel again just because it fell out of the publish window."""
-    sector_lookup = sector_by_ticker()
+    sector_lookup = sector_by_ticker() if sector_lookup is None else sector_lookup
     by_key = {}
     for label, keys in (
         ("CLUSTER_TRADE", cluster_trade_keys(rows)),
@@ -306,7 +307,8 @@ def relational_flags(rows):
     return by_key
 
 
-def classify(trade, *, trade_counts, history_days, relational=None, market_cap_lookup=None):
+def classify(trade, *, trade_counts, history_days, relational=None, market_cap_lookup=None,
+             sector_lookup=None, policy_lookup=None):
     flags = list((relational or {}).get(_trade_key(trade), []))
     filing_delay = _days_between(trade.get("transaction_date"), trade.get("disclosure_date"))
     if filing_delay is not None and filing_delay > LATE_FILING_DAYS:
@@ -327,12 +329,22 @@ def classify(trade, *, trade_counts, history_days, relational=None, market_cap_l
     if ("NOVEL_TICKER" in flags and is_buy(trade.get("transaction_type"))
             and market_cap is not None and market_cap < OBSCURE_MARKET_CAP_CEILING):
         flags.append("EXTRAORDINARY_BUY")
+    # "This filer sits on a committee with jurisdiction over this stock's sector" - one
+    # checkable fact about a curated pairing, not a conflict-of-interest finding and not a
+    # claim about motive or legality. Absent for any filer nobody has curated committee
+    # data for, which is most of them: see political_tracking's docstring and
+    # committees.json's own _verification note on why absence never means "no overlap".
+    overlap = political_tracking.committee_overlap(
+        trade, sector_lookup=sector_lookup, policy_lookup=policy_lookup)
+    if overlap:
+        flags.append("COMMITTEE_OVERLAP")
     return {
         **trade,
         "amount_lower": amount_lower, "amount_upper": amount_upper,
         "filing_delay_days": filing_delay,
         "flags": flags,
         "rare_trader_evaluated": rare_trader_evaluated,
+        **({"committee_overlap": overlap} if overlap else {}),
     }
 
 
@@ -613,9 +625,17 @@ def summary_stats(rows):
             "politicians": politicians, "issuers": issuers}
 
 
-def build_results(rows, *, as_of=None):
+def window_cutoff(as_of, window_days=PUBLISH_WINDOW_DAYS):
+    return (as_of - timedelta(days=window_days)).date().isoformat()
+
+
+def build_results(rows, *, as_of=None, window_days=PUBLISH_WINDOW_DAYS):
+    """Classified disclosures, newest first. ``window_days=None`` classifies the entire
+    accumulated store rather than the published window - what per-politician activity
+    needs, since a filer's disclosure cadence is a property of their whole history and a
+    120-day slice of it would rank whoever happened to file recently."""
     as_of = as_of or datetime.now(timezone.utc)
-    cutoff = (as_of - timedelta(days=PUBLISH_WINDOW_DAYS)).date().isoformat()
+    cutoff = None if window_days is None else window_cutoff(as_of, window_days)
     dates = [row.get("disclosure_date") or row.get("transaction_date") for row in rows
             if row.get("disclosure_date") or row.get("transaction_date")]
     history_days = 0
@@ -632,11 +652,15 @@ def build_results(rows, *, as_of=None):
         if representative:
             trade_counts[representative] = trade_counts.get(representative, 0) + 1
 
-    relational = relational_flags(rows)
+    sector_lookup = sector_by_ticker()
+    policy_lookup = political_tracking.policy_sector_by_ticker()
+    relational = relational_flags(rows, sector_lookup)
     market_cap_lookup = market_cap_by_ticker()
-    window = [row for row in rows if (row.get("disclosure_date") or "") >= cutoff]
+    window = rows if cutoff is None else [
+        row for row in rows if (row.get("disclosure_date") or "") >= cutoff]
     classified = [classify(row, trade_counts=trade_counts, history_days=history_days,
-                          relational=relational, market_cap_lookup=market_cap_lookup)
+                          relational=relational, market_cap_lookup=market_cap_lookup,
+                          sector_lookup=sector_lookup, policy_lookup=policy_lookup)
                  for row in window]
     classified.sort(key=lambda row: row.get("disclosure_date") or "", reverse=True)
     return classified, history_days
@@ -765,7 +789,12 @@ def run():
 
     generated_at = datetime.now(timezone.utc)
     stored = _read_all()
-    results, history_days = build_results(stored, as_of=generated_at)
+    # Classified once over the whole store, then sliced: the published window feeds the
+    # screen's rows, the full set feeds per-politician activity. Classifying twice would
+    # repeat the cross-row relational pass over the entire history for nothing.
+    classified, history_days = build_results(stored, as_of=generated_at, window_days=None)
+    cutoff = window_cutoff(generated_at)
+    results = [row for row in classified if (row.get("disclosure_date") or "") >= cutoff]
 
     # Price history costs one request per symbol, so it is only worth asking for when there
     # is something to measure. FMP is tried first when a key is configured; yfinance - the
@@ -799,15 +828,24 @@ def run():
              f"{len({row['symbol'] for row in backfill_candidates})} symbol(s) this run")
 
     full_history = politician_performance.full_priced_equity_buys(stored, price_cache)
+    benchmark = politician_performance.load_spy_benchmark()
     political_performance = politician_performance.compute_performance_scores(
-        full_history, benchmark=politician_performance.load_spy_benchmark())
+        full_history, benchmark=benchmark)
     for row in results:
         row.update(politician_performance.annotate_row(
             row, political_performance, as_of=generated_at.date()))
+        # The same per-trade alpha the leaderboard already aggregates, published on the row
+        # itself: "since purchase" alone mostly measures what the market did over the
+        # holding window, so a raw +20% in a +20% market is a flat trade, not a good one.
+        # Only present for a priced buy - a sale is never priced (nothing to measure) and
+        # an unpriced row gets no field at all rather than a misleading zero.
+        alpha = politician_performance.trade_alpha(row, benchmark)
+        if alpha is not None:
+            row["excess_return_vs_spy_pct"] = round(alpha, 2)
 
     status, reason_code = publication_status(results, stored, failures)
     payload = {
-        "schema_version": "1.4.0", "model_version": "congress-trades-v1.5.0",
+        "schema_version": "1.5.0", "model_version": "congress-trades-v1.6.0",
         "generated_at": generated_at.isoformat(), "status": status,
         **({"reason_code": reason_code} if reason_code else {}),
         "publish_window_days": PUBLISH_WINDOW_DAYS, "history_days": history_days,
@@ -824,8 +862,22 @@ def run():
             "population": political_performance["population"],
             "config": political_performance["config"],
             "price_backfill": politician_performance.backfill_coverage(stored, price_cache),
-            "leaderboard": politician_performance.leaderboard(political_performance),
+            # Third-party 2025 figures ride along under their own external_* keys, never
+            # merged into or averaged with this pipeline's shrunk alpha - see
+            # political_tracking.merge_external_into_leaderboard and the config's _source
+            # block for why the two columns are not the same measurement.
+            "leaderboard": political_tracking.merge_external_into_leaderboard(
+                politician_performance.leaderboard(political_performance)),
+            "external_source": political_tracking.external_source(),
         },
+        # Who trades the most, computed over the FULL accumulated store rather than the
+        # published window - a filer's disclosure cadence is a property of their history,
+        # and a 120-day slice of it would rank whoever happened to file recently.
+        "politician_activity": political_tracking.activity_profiles(
+            classified, performance=political_performance, late_filing_days=LATE_FILING_DAYS),
+        "unusual_timing": political_tracking.unusual_timing(
+            results, late_filing_days=LATE_FILING_DAYS),
+        "tracking": political_tracking.tracked_coverage(),
         "results": results,
     }
     save_json("screens/congress-trades.json", payload)
