@@ -346,6 +346,55 @@ updates when `activities` prop changes — already true, just add the assertion)
 
 ---
 
+### WP8 — The Data Overview evidence page: say what it measures, and add a Firebase scope
+
+**Finding J (found after §3 was written).** Every scope on the Data Overview — "All portfolio
+history", "Since algorithm activation", **and "Live algorithm only"** — computes its statistics
+from `holdingsSeriesFull` (`src/pages/portfolio/portfolioAnalyticsModel.js:59-66`), which is
+`currentHoldingsSeries(positions, priceData, dates)`: *today's* share counts applied to the
+published price history in `report.json`. None of it reads `tracking.snapshots`. Consequences:
+
+- After WP2 the page re-derives itself with no rebuild (every number there is computed at
+  render from current positions — the "46 priced holdings", the detractors list, Sharpe, IR,
+  capture, the 36-observation series). **Nothing to recompute; just reload.**
+- But the series then describes a basket that never held LULU or NTNX — it cannot know they
+  were held until Sep 3/4. The observation count does not reset because the series is synthetic.
+- "Live algorithm only" is the same synthetic basket sliced from `LIVE_TRACKING_START`
+  (2026-07-20). The label reads as "the real account" and is not.
+
+**Change:**
+1. **Honest labels.** In `src/pages/portfolio/format.js` `ANALYTICS_SCOPES`, rename
+   `live_algorithm` → label "Today's basket, since algorithm start" and `all_history` →
+   "Today's basket, full price history"; keep ids. Add a one-line note under the scope selector
+   in `DataOverview.jsx`: "These scopes re-price the shares you hold *now* across history. They
+   do not include holdings you have since sold. For your recorded account path see the
+   Recorded scope / Performance page."
+2. **New `recorded` scope (Firebase).** Series = `recordedAccountSeries(tracking.snapshots,
+   tracking.activities, true)` from `portfolioAnalytics.js` (flow-adjusted, index-based daily
+   NAV; already removes `BASKET_FLOW_TYPES` after `8eae175`). Convert to the shape
+   `performanceMetrics`/`performanceStatistics` expect (dates + values) — `recordedAccountSeries`
+   already returns `{ dates, values }`. Wire it in `buildAnalyticsModel` as
+   `analyticsScope === 'recorded' ? recordedSeries : …`. `Portfolio.jsx` must pass
+   `tracking.snapshots`/`tracking.activities` into `buildAnalyticsModel` (it already passes
+   `rebalances`). Gate on `ledgerComplete` exactly as `portfolioReturnSummary` does; when not
+   confirmed, show the same "Confirm the complete deposit and withdrawal history first" reason
+   rather than a silently unadjusted series.
+3. **Time-to-valid for the recorded scope** counts recorded market days, not published closes.
+   `timeToValidMetric(observations, lastDate)` already takes a count — pass the recorded one.
+4. **Sold holdings in "Why your portfolio moved today".** `PortfolioMoveExplanation` reads
+   current positions and today's prices; nothing to change. Assert in its test that a closed
+   ticker is absent.
+
+**Tests:** `portfolioAnalyticsModel.test.js` — recorded scope uses snapshot values (fixture with
+three daily snapshots and one `sale_proceeds` row: the sale day shows ~0% return, not the NAV
+drop); `live_algorithm` scope unchanged; labels updated in `format.test.js` if one exists.
+
+**Acceptance:** with the Recorded scope selected on Joshua's account after WP2/WP3/WP6, the
+series' start date is the first recorded snapshot, Sep 3 does not register as a −N% day, and
+the copy under the selector names which scope is synthetic.
+
+---
+
 ## 6. Execution order and verification
 
 ```
@@ -354,7 +403,7 @@ WP4  → npm test -- scripts/ ; npm run portfolio:audit -- --email <you>      # 
 WP3  → npm run portfolio:rebuild-ledger -- --email <you>  (dry run) → --commit
 WP2  → confirm TSM share count → npm run portfolio:reconcile -- --email <you> --input fidelity-2026-09-04.json → --commit
 WP4  → npm run portfolio:audit -- --email <you>                             # expect clean
-WP5, WP6, WP7 → npm run lint && npm test && npm run build
+WP5, WP6, WP7, WP8 → npm run lint && npm test && npm run build
 ```
 
 Definition of done: audit clean on the live account; Summary Realized tile = **+$21.59**;
@@ -364,14 +413,12 @@ docs; all suites green.
 
 ---
 
-## 7. Questions for Joshua before WP2 commits
+## 7. Decisions already made by Joshua (2026-09-09)
 
-1. **TSM share count** on the Sep 2 buy (cost $199.67, marked Margin). Read it from Fidelity
-   → Positions.
-2. Is the **$400 EFT on Sep 1** the only deposit/withdrawal since tracking started? If yes,
-   `ledgerComplete` can be set true and the money-weighted return switches on.
-3. Should **dividends** be recorded (recommended: yes — they are real cash the bridge expects),
-   and should the FZFXX money-market lines stay excluded (recommended: yes, matching the
-   export's own rule)?
-4. The NTNX sale posted as two fills. Recording both keeps the ledger equal to Fidelity to the
-   cent; recording one at the blended $67.85 is simpler. Recommended: both.
+1. **TSM share count** on the Sep 2 buy (cost $199.67, marked Margin) — **still needed**; read
+   it from Fidelity → Positions before WP2 `--commit`. The script refuses to run without it.
+2. **$400 EFT on Sep 1** — treat as a deposit. Whether it is the *only* external flow since
+   tracking started is not yet confirmed; leave `ledgerComplete` untouched unless Joshua says so.
+3. **Dividends: record them. Money-market lines (FZFXX, Fidelity Government MM): excluded.**
+4. **NTNX: record both fills** (1 sh @ $67.86, 0.284 sh @ $19.26).
+5. **Money-market cash stays out of tracked NAV** — unchanged rule.
