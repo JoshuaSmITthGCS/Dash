@@ -9,23 +9,27 @@
 
 /* Portfolio-first dashboard, grouped navigation, and markets workspace. */
 .content { margin-inline: auto; }
-.nav-group { overflow: hidden; border-radius: var(--control-radius); }
+.nav-group { position: relative; flex: none; border-radius: var(--control-radius); }
 .nav-group > summary {
-  min-height: 36px; display: grid; grid-template-columns: 18px minmax(0, 1fr) 14px; align-items: center; gap: var(--sp-2-5);
-  padding: 0 var(--sp-2-5); list-style: none; color: var(--text-secondary); cursor: pointer; font-size: var(--fs-sm);
+  min-height: 36px; display: flex; align-items: center; gap: var(--sp-2);
+  padding: 0 var(--sp-2-5); border-radius: var(--control-radius); list-style: none; color: var(--text-secondary); cursor: pointer; font-size: var(--fs-sm); white-space: nowrap;
   transition: background var(--duration-fast), color var(--duration-fast);
 }
 .nav-group > summary::-webkit-details-marker { display: none; }
-.nav-group > summary:hover, .nav-group.active > summary { background: var(--surface-secondary); color: var(--text-primary); }
+.nav-group > summary:hover, .nav-group.active > summary, .nav-group[open] > summary { background: var(--surface-secondary); color: var(--text-primary); }
 .nav-group-chevron { transition: transform var(--duration-fast) var(--ease-default); }
 .nav-group[open] .nav-group-chevron { transform: rotate(90deg); }
-.nav-group > div { display: grid; gap: var(--sp-px); padding: var(--sp-0-5) 0 var(--sp-1) var(--sp-4); }
+.nav-group > div {
+  position: absolute; z-index: 40; top: calc(100% + var(--sp-1-5)); left: 0; width: 236px;
+  display: grid; gap: var(--sp-px); padding: var(--sp-1-5); border: 1px solid var(--border); border-radius: var(--card-radius);
+  background: var(--surface-primary); box-shadow: var(--surface-shadow);
+}
 .nav-sublink {
-  min-height: 32px; display: flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-2); border-left: 1px solid var(--border-subtle);
-  color: var(--text-tertiary); font-size: var(--fs-2xs); transition: color var(--duration-fast), background var(--duration-fast);
+  min-height: 36px; display: flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-2); border-radius: var(--control-radius);
+  color: var(--text-secondary); font-size: var(--fs-xs); transition: color var(--duration-fast), background var(--duration-fast);
 }
 .nav-sublink:hover { color: var(--text-primary); background: var(--surface-secondary); }
-.nav-sublink.active { border-left-color: var(--brand-primary); color: var(--brand-primary); font-weight: var(--fw-bold); }
+.nav-sublink.active { background: var(--brand-soft); color: var(--brand-primary); font-weight: var(--fw-bold); }
 
 .home-market-summary {
   min-height: 54px; display: grid; grid-template-columns: 1.15fr repeat(5, minmax(96px, 1fr)) auto; align-items: center;

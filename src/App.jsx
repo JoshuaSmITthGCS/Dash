@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState, useCallback, lazy } from 'react'
+import { Suspense, useEffect, useRef, useState, lazy } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import Dashboard from './pages/Dashboard.jsx'
 import { DataStatus } from './components/DataStatus.jsx'
@@ -194,25 +194,33 @@ function ProfilePanel() {
   )
 }
 
-function useSidebarCollapsed() {
-  const [collapsed, setCollapsed] = useState(() => {
-    try { return localStorage.getItem('vs-sidebar-collapsed') === '1' } catch { return false }
-  })
-  const toggle = useCallback(() => {
-    setCollapsed(prev => {
-      const next = !prev
-      try { localStorage.setItem('vs-sidebar-collapsed', next ? '1' : '0') } catch { /* storage unavailable */ }
-      return next
-    })
+function NavGroupDropdown({ group, pathname }) {
+  const detailsRef = useRef(null)
+  const active = group.items.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
+  const close = () => { if (detailsRef.current) detailsRef.current.open = false }
+
+  useEffect(() => {
+    const onDocumentClick = (event) => {
+      if (detailsRef.current && !detailsRef.current.contains(event.target)) detailsRef.current.open = false
+    }
+    document.addEventListener('click', onDocumentClick)
+    return () => document.removeEventListener('click', onDocumentClick)
   }, [])
-  return [collapsed, toggle]
+
+  return (
+    <details className={`nav-group${active ? ' active' : ''}`} ref={detailsRef}>
+      <summary><Icon name={group.icon} size={17} /><span>{group.label}</span><Icon name="chevron" size={12} className="nav-group-chevron" /></summary>
+      <div>{group.items.map((item) => <NavLink key={item.to} to={item.to} onClick={close}
+        onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)}
+        className={({ isActive }) => `nav-sublink${isActive ? ' active' : ''}`}><Icon name={item.icon} size={15} /><span>{item.label}</span></NavLink>)}</div>
+    </details>
+  )
 }
 
 function AppContent() {
   const { currentUser, loading, authError, retryAuth, userProfile } = useAuth()
   const { preferences, updatePreferences } = usePreferences()
   const { pathname, search } = useLocation()
-  const [sidebarCollapsed, toggleSidebar] = useSidebarCollapsed()
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const portfolioPreview = import.meta.env.DEV && new URLSearchParams(search).get('portfolioPreview') === '1'
 
@@ -244,35 +252,22 @@ function AppContent() {
     : currentUser || (portfolioPreview && feature.startsWith('Portfolio')) ? page : <CloudDataUnavailable feature={feature} />
 
   return (
-    <div className={`shell${sidebarCollapsed ? ' sidebar-collapsed' : ''}`} data-auth-resolving={loading ? 'true' : 'false'}>
+    <div className="shell" data-auth-resolving={loading ? 'true' : 'false'}>
       <a className="skip-link" href="#main-content">Skip to content</a>
-      <aside className="rail" aria-label="Primary navigation">
-        <div className="rail-top">
-          <NavLink to="/" className="brand-lockup" aria-label="ValueSignal overview">
-            <span className="brand-mark">V</span>
-            {!sidebarCollapsed && <span><span className="brand">Value<em>Signal</em></span></span>}
-          </NavLink>
-          <button className="sidebar-toggle" onClick={toggleSidebar} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-            <Icon name="chevron" size={14} />
-          </button>
-        </div>
+      <header className="rail" aria-label="Primary navigation">
+        <NavLink to="/" className="brand-lockup" aria-label="ValueSignal overview">
+          <span className="brand-mark">V</span>
+          <span className="brand">Value<em>Signal</em></span>
+        </NavLink>
         <nav className="desktop-nav">
-          <NavLink to="/" end className={({ isActive }) => `navlink${isActive ? ' active' : ''}`} title={sidebarCollapsed ? 'Home' : undefined}><Icon name="overview" size={18} />{!sidebarCollapsed && <span>Home</span>}</NavLink>
-          {!sidebarCollapsed && NAV_GROUPS.map((group) => {
-            const active = group.items.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
-            return <details className={`nav-group${active ? ' active' : ''}`} key={group.label} open={active || undefined}>
-              <summary><Icon name={group.icon} size={18} /><span>{group.label}</span><Icon name="chevron" size={13} className="nav-group-chevron" /></summary>
-              <div>{group.items.map((item) => <NavLink key={item.to} to={item.to} onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)} className={({ isActive }) => `nav-sublink${isActive ? ' active' : ''}`}><Icon name={item.icon} size={15} /><span>{item.label}</span></NavLink>)}</div>
-            </details>
-          })}
-          {NAV_AFTER_GROUPS.map((item) => <NavLink key={item.to} to={item.to} onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)} className={({ isActive }) => `navlink${isActive ? ' active' : ''}`} title={sidebarCollapsed ? item.label : undefined}><Icon name={item.icon} size={18} />{!sidebarCollapsed && <span>{item.label}</span>}</NavLink>)}
+          <NavLink to="/" end className={({ isActive }) => `navlink${isActive ? ' active' : ''}`}><Icon name="overview" size={17} /><span>Home</span></NavLink>
+          {NAV_GROUPS.map((group) => <NavGroupDropdown key={group.label} group={group} pathname={pathname} />)}
+          {NAV_AFTER_GROUPS.map((item) => <NavLink key={item.to} to={item.to} onPointerEnter={() => preloadRoute(item.to)} onFocus={() => preloadRoute(item.to)} className={({ isActive }) => `navlink${isActive ? ' active' : ''}`}><Icon name={item.icon} size={17} /><span>{item.label}</span></NavLink>)}
         </nav>
-        {!sidebarCollapsed && <div className="rail-note">
-          <span>Research framework</span>
-          Fundamentals first. Evidence, not hype.
-        </div>}
-        {!sidebarCollapsed && <ProfilePanel />}
-      </aside>
+        <div className="rail-right">
+          <ProfilePanel />
+        </div>
+      </header>
 
       <main id="main-content" className="content" tabIndex="-1">
         <header className="mobile-header">
