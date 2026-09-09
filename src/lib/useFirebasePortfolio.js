@@ -227,10 +227,23 @@ export function useFirebasePortfolio() {
 
       const batch = writeBatch(db)
       batch.set(doc(db, 'portfolios', currentUser.uid, 'positions', positionId), newPosition)
+      const purchaseCost = newPosition.shares * newPosition.costBasis
       batch.set(doc(db, 'portfolios', currentUser.uid, 'activity', `position-added-${Date.now()}`), {
         type: 'position_added', ticker: newPosition.ticker, shares: newPosition.shares,
-        pricePerShare: newPosition.costBasis, amount: newPosition.shares * newPosition.costBasis,
+        pricePerShare: newPosition.costBasis, amount: purchaseCost,
         effectiveDate: purchaseDate, recordedAt: new Date().toISOString(), source: 'manual_holding_entry',
+      })
+      // The capital this buy moved into the tracked basket. Tracked NAV is invested holdings
+      // only, so without this row the account's value simply jumps by the purchase amount with
+      // nothing accounting for it -- which every return measure reads as investment gain.
+      // 'stock_purchase', not 'external_contribution': nothing here knows whether the money
+      // came from outside or from an earlier sale, and net invested capital ignores it for
+      // exactly that reason. See BASKET_FLOW_TYPES in portfolioAnalytics.js.
+      batch.set(doc(db, 'portfolios', currentUser.uid, 'activity', `purchase-${Date.now()}`), {
+        type: 'stock_purchase', ticker: newPosition.ticker, amount: purchaseCost,
+        effectiveDate: purchaseDate, recordedAt: new Date().toISOString(),
+        source: 'position_purchase',
+        note: 'Capital moved into your holdings by a purchase. Not a deposit into the account.',
       })
       batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), {
         lastActivityAt: new Date().toISOString(), ledgerComplete: false,
@@ -342,7 +355,14 @@ export function useFirebasePortfolio() {
       )
       await batch.commit()
 
-      return { success: true, ...summarizeReferenceSync(operations), version: REFERENCE_PORTFOLIO_VERSION }
+      return {
+        success: true,
+        ...summarizeReferenceSync(operations),
+        version: REFERENCE_PORTFOLIO_VERSION,
+        // Always written, whether or not any holding was seeded: an export refresh moves
+        // prices forward by adding this dated observation to the account's own price history.
+        observedAt: snapshot.document.recordedAt,
+      }
     } catch (error) {
       console.error('Failed to sync reference portfolio:', error)
       return { success: false, error: error.message }

@@ -18,6 +18,7 @@ import PullToRefreshIndicator from '../components/PullToRefreshIndicator.jsx'
 import ImportHoldings from './portfolio/ImportHoldings.jsx'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
+import { REFERENCE_PORTFOLIO_LABEL } from '../lib/referencePortfolio.js'
 import { currentHoldingsSeries } from '../lib/portfolioAnalytics.js'
 import StockTickerTape from '../components/StockTickerTape.jsx'
 import modelSettings from '../../pipeline/config/settings.json'
@@ -95,7 +96,11 @@ export default function Portfolio({ view = 'summary' }) {
   })
   const forms = usePortfolioForms({ portfolio, tracking, previewPortfolio, positions })
 
-  const { priceData, pricesUpdatedAt, benchmarkQuote } = buildPriceModel({ data, positions, quotes: portfolioQuotes })
+  // tracking.snapshots is the account's own recorded price history, and it outranks the
+  // brokerage-export price seeded onto a position document — see buildPriceModel.
+  const { priceData, pricesUpdatedAt, benchmarkQuote } = buildPriceModel({
+    data, positions, quotes: portfolioQuotes, recordedSnapshots: tracking.snapshots,
+  })
   const holdings = buildHoldingsModel({ data, positions, priceData, etfData })
   const benchmarks = buildBenchmarkModel({
     data,
@@ -180,8 +185,8 @@ export default function Portfolio({ view = 'summary' }) {
               <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing}><Icon name="sync" size={17} className={refresh.refreshing && refresh.activeMode === 'data' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'data' ? 'Refreshing all data…' : 'Refresh all research'}</button>
               <button className="secondary-button" onClick={refresh.requestReanalyze} disabled={refresh.refreshing}><Icon name="research" size={17} className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze portfolio'}</button>
               <button className="secondary-button" onClick={forms.handleReferenceSync}
-                title="Adds holdings from the Aug 25 export that this account has never been given. It cannot change or remove anything already in your portfolio.">
-                Add missing holdings from Aug 25 snapshot
+                title={`Adds holdings from the ${REFERENCE_PORTFOLIO_LABEL} Fidelity export that this account has never been given, and records that export's prices as a dated observation. It cannot change or remove anything already in your portfolio.`}>
+                Add missing holdings from {REFERENCE_PORTFOLIO_LABEL} snapshot
               </button>
               <button className="secondary-button" onClick={exportPortfolio}><Icon name="download" size={17} />Export portfolio</button>
               <ImportHoldings positions={positions} applyPortfolioImport={applyPortfolioImport}

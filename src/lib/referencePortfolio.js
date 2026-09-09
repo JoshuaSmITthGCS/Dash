@@ -42,6 +42,14 @@ export const REFERENCE_PORTFOLIO_EXPECTED = {
 }
 export const REFERENCE_PORTFOLIO_RECORDED_AT = '2026-08-25T11:55:00.000Z'
 
+/**
+ * How the shipped export is named on screen. Derived, never typed: this file is expected to be
+ * refreshed with a newer export from time to time, and a hardcoded "Aug 25" in a button label
+ * or a status line is a claim that silently stops being true on the day that happens.
+ */
+export const REFERENCE_PORTFOLIO_LABEL = new Date(REFERENCE_PORTFOLIO_RECORDED_AT)
+  .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' })
+
 // [ticker, shares, total cost basis, last price, market value, acquisition date]. The
 // export's positions view carries no previous close, so snapshotPreviousClose is null here
 // rather than guessed at -- every consumer treats it as an optional fallback behind the live

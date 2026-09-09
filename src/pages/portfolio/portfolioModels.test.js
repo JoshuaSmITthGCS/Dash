@@ -39,6 +39,64 @@ describe('buildPriceModel', () => {
     expect(model.pricesUpdatedAt).toBe('2026-08-14T16:00:00.000Z')
     expect(model.benchmarkQuote).toBeNull()
   })
+
+  // The brokerage export is a seed. The account's own recorded observations are the record,
+  // and they are what a holding falls back to once the published research goes stale.
+  describe('the account\'s recorded price history outranks the export seeded on a position', () => {
+    // Seeded from the Aug 25 export and never repriced since: this is the stale value a
+    // holding used to keep indefinitely.
+    const seeded = {
+      ticker: 'AAPL', shares: 2, costBasis: 100,
+      snapshotPrice: 150, snapshotRecordedAt: '2026-08-25T11:55:00.000Z',
+      snapshotSource: 'Fidelity export price · Aug 25, 2026',
+    }
+    const recordedSnapshots = [{
+      recordedAt: '2026-09-08T20:00:00.000Z', source: 'performance_view',
+      prices: [{ ticker: 'AAPL', price: 210, previousClose: 208 }],
+    }]
+
+    it('marks the holding at the recorded observation, not the export price', () => {
+      const model = buildPriceModel({
+        data: report(), positions: [seeded], quotes: {}, recordedSnapshots,
+      })
+      expect(model.priceData.AAPL).toMatchObject({ price: 210, recordedPrice: true })
+    })
+
+    it('names where that price came from, so the source is never guessed at', () => {
+      const model = buildPriceModel({ data: report(), positions: [seeded], quotes: {}, recordedSnapshots })
+      const holdings = buildHoldingsModel({
+        data: report(), positions: [{ id: 'a', ...seeded }], priceData: model.priceData, etfData: { etfs: [] },
+      })
+      expect(holdings.portfolioPositions[0].quoteSource).toBe('Recorded 2026-09-08')
+      expect(holdings.portfolioPositions[0].currentValue).toBe(420)
+    })
+
+    it('still yields to a live quote refresh', () => {
+      const model = buildPriceModel({
+        data: report(), positions: [seeded], recordedSnapshots,
+        quotes: { fetchedAt: '2026-09-09T19:00:00.000Z', quotes: { AAPL: { price: 215 } } },
+      })
+      expect(model.priceData.AAPL.price).toBe(215)
+    })
+
+    it('falls back to the export seed only while the account has recorded nothing', () => {
+      const model = buildPriceModel({ data: report(), positions: [seeded], quotes: {}, recordedSnapshots: [] })
+      expect(model.priceData.AAPL).toMatchObject({ price: 150, positionSnapshot: true })
+    })
+
+    // Refreshing the Fidelity export adds a dated observation to this same history, so it
+    // moves prices forward without rewriting anything stored against a position.
+    it('takes a refreshed export through the history like any other observation', () => {
+      const model = buildPriceModel({
+        data: report(), positions: [seeded], quotes: {},
+        recordedSnapshots: [...recordedSnapshots, {
+          recordedAt: '2026-09-09T13:30:00.000Z', source: 'fidelity_positions_export',
+          prices: [{ ticker: 'AAPL', price: 218, previousClose: null }],
+        }],
+      })
+      expect(model.priceData.AAPL.price).toBe(218)
+    })
+  })
 })
 
 describe('buildHoldingsModel', () => {

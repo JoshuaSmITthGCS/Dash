@@ -552,6 +552,49 @@ before concluding an account has never been seeded — the positions listener an
 listener resolve independently, and firing in the window between them made an already-seeded
 account look untouched.
 
+**What a holding is priced at.** Newest source wins, and the account's own record outranks the
+export (`buildPriceModel`, `src/pages/portfolio/portfolioModels.js`):
+
+1. a live quote refresh, when newer than the published research (`portfolio-prices.mjs`);
+2. the account's most recent recorded observation — `latestRecordedPrices()` over the
+   `intradaySnapshots` collection;
+3. the published research price from `report.json`;
+4. the export price stamped onto the position document when it was seeded.
+
+(4) is a seed value only: what a holding is marked at before this account has ever priced it.
+Every recorded observation supersedes it, and the UI names the source it used
+(`Recorded 2026-09-08`) rather than leaving it to be guessed at. Two writers fill
+`intradaySnapshots`, in one shared shape: the daily account-value observation (`recordSnapshot`,
+which stores the per-ticker `prices` behind its total) and a brokerage export applied as a dated
+observation (`referenceIntradaySnapshot`).
+
+**Trades are ledger events, because tracked NAV is invested holdings only.** Cash is
+deliberately not a tracked bucket (the money-market line is excluded by name), so buying moves
+money into what is measured and selling moves it out — neither is performance. Both are written
+automatically to `activity`: `stock_purchase` by `addPosition`, and `sale_proceeds` (alongside
+the `realized_gain` row) by every sell path. `BASKET_FLOW_TYPES` in
+`src/lib/portfolioAnalytics.js` is the single vocabulary all of it shares, and every measure
+taken off an invested-holdings NAV removes these flows: Modified Dietz, the time-weighted
+series, money-weighted XIRR, the trader-insight unit ledger, and the reconciliation bridge,
+which carries them as its own `+ Purchases into holdings` / `− Sale proceeds out of holdings`
+lines. Without them a sale reads as a loss of the whole position in every one of those, and the
+bridge fails by the proceeds. `netInvestedCapital()` deliberately does **not** count them — a
+trade moves capital between buckets rather than adding any — so a buy is recorded as
+`stock_purchase` rather than `external_contribution`, which stays reserved for a purchase
+declared as outside money. The one overlap to know about: a manually recorded deposit that
+funded a purchase inside the same bridge window is counted by both lines, since no cash balance
+exists to net them against; the ledger's own copy says to record deposits only for cash a trade
+does not already account for.
+
+**Refreshing the Fidelity export.** Replace the rows in `src/lib/referencePortfolio.js`, update
+`REFERENCE_PORTFOLIO_EXPECTED` and `REFERENCE_PORTFOLIO_RECORDED_AT` to the new statement, and
+bump `REFERENCE_PORTFOLIO_VERSION` — `verifyReferencePortfolio()` fails loudly if the rows and
+the stated brokerage totals disagree. On-screen labels derive from
+`REFERENCE_PORTFOLIO_LABEL`, so nothing has to be re-worded. A refreshed export then reaches an
+existing account in exactly one way: as a new dated observation in the price history above, plus
+seeding for any ticker the account has never been given. It does not restate a share count, a
+cost basis or a date, because the stored portfolio is the record.
+
 **Architectural note:** material investment logic lives on both sides. Screen ranking, portfolio
 attribution, stop logic, and fallback recommendations exist in JavaScript alongside the Python
 pipeline, so the platform has more than one decision authority.

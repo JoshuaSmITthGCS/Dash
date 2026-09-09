@@ -416,3 +416,59 @@ describe('the manual "add missing holdings" button', () => {
     expect(result.current.syncMessage).toContain('Nothing already in your portfolio was changed')
   })
 })
+
+describe('a sale books where the money went, not only what it earned', () => {
+  it('records proceeds alongside the realized gain on a single-lot sale', async () => {
+    const existing = [{ id: 'aaa', ticker: 'AAA', shares: 4, costBasis: 20, currentPrice: 25 }]
+    const { result, tracking } = setup({ positions: existing })
+    act(() => { result.current.startSell(existing[0]) })
+    act(() => { result.current.setSellForm({ shares: '4', price: '25', saleDate: '2026-04-01' }) })
+    await act(async () => { await result.current.saveSell(existing[0]) })
+
+    expect(tracking.recordActivity).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'realized_gain', amount: 20, effectiveDate: '2026-04-01',
+    }))
+    expect(tracking.recordActivity).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'sale_proceeds', amount: 100, effectiveDate: '2026-04-01',
+    }))
+  })
+
+  it('records the full proceeds of a cross-lot sale, not just the gain', async () => {
+    const twoLots = [
+      { id: 'lot-a', ticker: 'AAA', shares: 10, costBasis: 100, purchaseDate: '2026-01-01' },
+      { id: 'lot-b', ticker: 'AAA', shares: 8, costBasis: 120, purchaseDate: '2026-02-01' },
+    ]
+    const { result, tracking } = setup({ positions: twoLots })
+    act(() => { result.current.startLotSell('AAA') })
+    act(() => { result.current.setLotSellForm({ shares: '15', price: '150', saleDate: '2026-04-01' }) })
+    await act(async () => { await result.current.saveLotSell() })
+
+    expect(tracking.recordActivity).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'sale_proceeds', amount: 2250, effectiveDate: '2026-04-01',
+    }))
+  })
+
+  it('records proceeds for a sale entered through the trade bar too', async () => {
+    const held = [{ id: 'lot-a', ticker: 'LULU', shares: 1, costBasis: 100, purchaseDate: '2026-07-30' }]
+    const { result, tracking } = setup({ positions: held })
+    await act(async () => {
+      await result.current.submitTrade({ side: 'sell', ticker: 'LULU', shares: '1', price: '130', date: '2026-09-02' })
+    })
+    expect(tracking.recordActivity).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'sale_proceeds', amount: 130, effectiveDate: '2026-09-02',
+    }))
+    expect(tracking.recordActivity).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'realized_gain', amount: 30, effectiveDate: '2026-09-02',
+    }))
+  })
+
+  it('books the proceeds on the day the sale happened, not the day it was entered', async () => {
+    const held = [{ id: 'lot-a', ticker: 'LULU', shares: 1, costBasis: 100, purchaseDate: '2026-07-30' }]
+    const { result, tracking } = setup({ positions: held })
+    await act(async () => {
+      await result.current.submitTrade({ side: 'sell', ticker: 'LULU', shares: '1', price: '130', date: '2026-09-02' })
+    })
+    const proceeds = tracking.recordActivity.mock.calls.map(([row]) => row).find((row) => row.type === 'sale_proceeds')
+    expect(proceeds.effectiveDate).toBe('2026-09-02')
+  })
+})

@@ -1,3 +1,5 @@
+import { BASKET_FLOW_TYPES, BASKET_INFLOW_TYPES } from './portfolioAnalytics.js'
+
 const finite = (value) => value !== null && value !== '' && typeof value !== 'boolean' && Number.isFinite(Number(value))
 
 function closesByDate(history) {
@@ -72,7 +74,7 @@ export function benchmarkShadowPortfolio(cashFlows = [], benchmarkHistory, optio
   const requestedStartDate = String(options.startDate || '').slice(0, 10)
   const seeded = Boolean(requestedStartDate) && finite(options.startingValue) && Number(options.startingValue) > 0
   const flows = cashFlows
-    .filter((row) => ['deposit', 'external_contribution', 'withdrawal'].includes(row.type) && finite(row.amount) && row.effectiveDate && !['pending', 'processing'].includes(row.status))
+    .filter((row) => BASKET_FLOW_TYPES.includes(row.type) && finite(row.amount) && row.effectiveDate && !['pending', 'processing'].includes(row.status))
     .map((row) => ({ type: row.type, amount: Number(row.amount), effectiveDate: String(row.effectiveDate).slice(0, 10) }))
     .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate))
   if ((!flows.length && !seeded) || dates.length < 2) return { available: false, reason: 'Not enough cash-flow or benchmark history to build a comparison.' }
@@ -93,7 +95,9 @@ export function benchmarkShadowPortfolio(cashFlows = [], benchmarkHistory, optio
     if (!finite(close)) continue
     while (pending.length && pending[0].effectiveDate <= date) {
       const flow = pending.shift()
-      if (flow.type === 'deposit' || flow.type === 'external_contribution') { units += flow.amount / close; netContributions += flow.amount }
+      // Anything that moved money into the basket buys units; anything that moved money out
+      // (a withdrawal, or a sale's proceeds) sells them.
+      if (BASKET_INFLOW_TYPES.includes(flow.type)) { units += flow.amount / close; netContributions += flow.amount }
       else { units = Math.max(0, units - flow.amount / close); netContributions -= flow.amount }
     }
     outDates.push(date)

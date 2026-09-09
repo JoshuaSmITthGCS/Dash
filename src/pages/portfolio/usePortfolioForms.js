@@ -3,7 +3,7 @@
 // report through. Kept apart from the read-only view models so the render path stays pure.
 
 import { useEffect, useRef, useState } from 'react'
-import { REFERENCE_PORTFOLIO_VERSION } from '../../lib/referencePortfolio.js'
+import { REFERENCE_PORTFOLIO_LABEL, REFERENCE_PORTFOLIO_VERSION } from '../../lib/referencePortfolio.js'
 import { costWeights } from '../../lib/portfolioAnalytics.js'
 import { planFifoSale, realizedGainForPlan } from '../../lib/taxLots.js'
 import { perShareCost } from './format.js'
@@ -88,8 +88,8 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
     referencePortfolioSyncStarted.current = true
     syncReferencePortfolio({ seededTickers: tracking.trackingState?.referencePortfolioSeeded || [] }).then((result) => {
       if (result?.success) setSyncMessage(result.added || result.updated
-        ? `Opening holdings seeded from the Aug 25 Fidelity snapshot: ${result.added} added${result.updated ? ` · ${result.updated} purchase date${result.updated === 1 ? '' : 's'} filled in` : ''}.`
-        : 'Your cloud portfolio is already the record; the Aug 25 snapshot had nothing to add.')
+        ? `Opening holdings seeded from the ${REFERENCE_PORTFOLIO_LABEL} Fidelity snapshot: ${result.added} added${result.updated ? ` · ${result.updated} purchase date${result.updated === 1 ? '' : 's'} filled in` : ''}.`
+        : `Your cloud portfolio is already the record. The ${REFERENCE_PORTFOLIO_LABEL} snapshot's prices were recorded as a dated observation; no holding was changed.`)
       else {
         referencePortfolioSyncStarted.current = false
         setSyncMessage(`Could not apply Fidelity positions: ${result?.error || 'Unknown error'}`)
@@ -130,7 +130,7 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
   // on an account that has already been seeded the honest answer is usually "nothing to do" --
   // which is the point: the snapshot is history, and this collection is the record.
   const handleReferenceSync = async () => {
-    setSyncMessage('Checking the Aug 25 snapshot for holdings you have never been given…')
+    setSyncMessage(`Checking the ${REFERENCE_PORTFOLIO_LABEL} snapshot for holdings you have never been given…`)
     const result = await syncReferencePortfolio({
       seededTickers: tracking.trackingState?.referencePortfolioSeeded || [],
     })
@@ -139,10 +139,11 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
       return
     }
     setSyncMessage(result.added || result.updated
-      ? `${result.added} holding${result.added === 1 ? '' : 's'} added from the Aug 25 snapshot`
+      ? `${result.added} holding${result.added === 1 ? '' : 's'} added from the ${REFERENCE_PORTFOLIO_LABEL} snapshot`
         + `${result.updated ? ` · ${result.updated} missing purchase date${result.updated === 1 ? '' : 's'} filled in` : ''}.`
         + ' Nothing already in your portfolio was changed.'
-      : 'Nothing to add. Your cloud portfolio is the record — the Aug 25 snapshot cannot overwrite, restore or remove anything in it.')
+      : `Nothing to add. Your cloud portfolio is the record — the ${REFERENCE_PORTFOLIO_LABEL} snapshot cannot overwrite, restore or remove anything in it. `
+        + 'Its prices were recorded as a dated observation, which is how a refreshed export moves your holdings\' prices forward.')
   }
 
   const handlePurchaseDateChange = async (positionId, purchaseDate) => {
@@ -161,6 +162,24 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
       captureRebalance(tracking, today(), positions, positions.filter((row) => row.id !== positionId))
       setSyncMessage('Position removed from the cloud portfolio on every connected device.')
     }
+  }
+
+  // Both halves of a sale's ledger entry, always written together.
+  //
+  // The realized gain is the profit. The proceeds are the money: tracked NAV is invested
+  // holdings only, so selling moves the position's market value out of what is measured, and
+  // unless that is recorded the shares just vanish from the account value. Every consumer then
+  // reads the drop as a loss -- the time-weighted return charts a cliff, the money-weighted
+  // return charges the strategy for it, and the reconciliation bridge fails by the full
+  // proceeds. See SALE_PROCEEDS_TYPE in portfolioAnalytics.js.
+  const recordSale = async ({ ticker, proceeds, realizedGain, saleDate, shares, note }) => {
+    await tracking.recordActivity({
+      type: 'realized_gain', amount: realizedGain, effectiveDate: saleDate, note,
+    })
+    await tracking.recordActivity({
+      type: 'sale_proceeds', amount: proceeds, effectiveDate: saleDate,
+      note: `${shares} ${ticker} share${shares === 1 ? '' : 's'} sold. Proceeds left your holdings; this is not a withdrawal from the account.`,
+    })
   }
 
   // Every sale funnels through here once its position writes have committed: if the ticker
@@ -209,7 +228,10 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
       ? positions.map((row) => (row.id === pos.id ? { ...row, shares: remainingShares } : row))
       : positions.filter((row) => row.id !== pos.id)
     captureRebalance(tracking, sellForm.saleDate, positions, afterSell)
-    await tracking.recordActivity({ type: 'realized_gain', amount: realizedGain, effectiveDate: sellForm.saleDate, note: `${pos.ticker} sale` })
+    await recordSale({
+      ticker: pos.ticker, proceeds, realizedGain, saleDate: sellForm.saleDate,
+      shares: sharesSold, note: `${pos.ticker} sale`,
+    })
     await closeIfFullyExited(pos.ticker, { [pos.id]: sharesSold }, {
       saleDate: sellForm.saleDate, realizedGain, shares: sharesSold, price,
     })
@@ -279,8 +301,9 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
     const lotSummary = gain.perLot
       .map((row) => `${row.quantity} @ $${row.costBasisPerUnit.toFixed(2)} (${row.purchaseDate || 'undated lot'})`)
       .join('; ')
-    await tracking.recordActivity({
-      type: 'realized_gain', amount: gain.totalRealizedGain, effectiveDate: lotSellForm.saleDate,
+    await recordSale({
+      ticker: lotSellTicker, proceeds: gain.totalProceeds, realizedGain: gain.totalRealizedGain,
+      saleDate: lotSellForm.saleDate, shares: plan.totalQuantity,
       note: `${lotSellTicker} FIFO sale across ${plan.depletions.length} lot${plan.depletions.length === 1 ? '' : 's'}: ${lotSummary}`,
     })
     await closeIfFullyExited(
@@ -342,8 +365,9 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
       .filter(Boolean)
     captureRebalance(tracking, tradeDate, positions, afterSell)
     const gain = realizedGainForPlan(plan, pricePerShare)
-    await tracking.recordActivity({
-      type: 'realized_gain', amount: gain.totalRealizedGain, effectiveDate: tradeDate,
+    await recordSale({
+      ticker: symbol, proceeds: gain.totalProceeds, realizedGain: gain.totalRealizedGain,
+      saleDate: tradeDate, shares: quantity,
       note: `${symbol} sale (${plan.depletions.length} lot${plan.depletions.length === 1 ? '' : 's'}, FIFO)`,
     })
     await closeIfFullyExited(
