@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 114,
+  "refreshes_observed": 115,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -18980,6 +18980,81 @@
           ],
           "score_delta": -1.0,
           "confidence_delta": 0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-09T16:32:40.557390+00:00",
+      "current_refresh": "advisor-2026-09-09T19:45:37.821248+00:00",
+      "shared_tickers": 893,
+      "rank_turnover": {
+        "top_40": 0.225,
+        "top_100": 0.225
+      },
+      "tickers_with_availability_driven_change": 6,
+      "tickers_with_availability_driven_change_pct": 0.007,
+      "mean_abs_score_delta": 0.35,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 3.8,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 3.2,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "BKNG",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "current_ratio",
+            "earnings_growth",
+            "free_cash_flow_yield",
+            "profit_margin",
+            "revenue_growth"
+          ],
+          "score_delta": -2.5,
+          "confidence_delta": 0.09
+        },
+        {
+          "ticker": "AZO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 2.2,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "SNX",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.1,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "WDC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 0.6,
+          "confidence_delta": -0.01
         }
       ]
     }
