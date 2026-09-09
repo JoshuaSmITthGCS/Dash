@@ -47,6 +47,61 @@ whose `closedPositions/{ticker}` document exists, or whose `importedAt`/`syncedA
 
 ---
 
+## 1.5. Status as of this session (Sonnet) — read this before doing anything else
+
+WP1, WP2, and WP4 are **built and unit-tested against real fixture data**, but **nothing has
+been written to the live Firestore account** — this session has no `.env.local` or
+`FIREBASE_SERVICE_ACCOUNT_JSON`, so `--commit` has never been run for real. Everything below is
+verified against `scripts/fixtures/*.json` (the real Sep 9 statement and the real Sep 1-4
+activity, transcribed from Joshua's Fidelity screenshots), not against production.
+
+**What's proven, not just written:** `scripts/reconcile-portfolio-activity.test.mjs` applies
+`scripts/fixtures/fidelity-activity-since-seed.json` to a copy of the in-code
+`REFERENCE_PORTFOLIO` (i.e., simulates the real account's Aug 25 state) and diffs the result
+against `scripts/fixtures/fidelity-positions-2026-09-09.json` (the real Sep 9 statement) with
+`diffAgainstStatement()` — **zero findings**. That is the strongest evidence available without
+live credentials that WP2's script will bring the real account to exactly the right state.
+
+**To actually fix the account**, in an environment with `.env.local` (or
+`FIREBASE_SERVICE_ACCOUNT_JSON`) configured for this Firebase project:
+
+```bash
+# 1. See exactly what would change. Writes nothing.
+npm run portfolio:audit -- --email <your-email>
+#    Expect: critical finding on LULU (resurrected) or a statement mismatch, since the
+#    account currently still holds LULU and is missing TSM/the NTNX exit.
+
+# 2. See exactly what the reconciliation would do. Writes nothing.
+npm run portfolio:reconcile -- --email <your-email> \
+  --input scripts/fixtures/fidelity-activity-since-seed.json
+#    Read the printed plan. It should show: LULU closed (realized -$15.54), NTNX closed across
+#    two fills (realized +$37.13), TSM added (0.482 sh, $199.67), 5 dividends, 1 deposit ($400).
+
+# 3. Apply it, and verify the result against the real Sep 9 statement in the same run.
+npm run portfolio:reconcile -- --email <your-email> \
+  --input scripts/fixtures/fidelity-activity-since-seed.json \
+  --commit --verify scripts/fixtures/fidelity-positions-2026-09-09.json
+#    Expect: "Committed 20 writes." then "✅ Verified: stored positions match ... exactly."
+#    (1 TSM position add + 2 position updates/deletes for LULU/NTNX + 3 closedPositions/
+#    stock_purchase-adjacent writes + 14 activity rows: 5 dividends, 1 deposit, 3 realized_gain,
+#    3 sale_proceeds, 2 position_added/stock_purchase for TSM.)
+
+# 4. Confirm the whole ledger, not just positions, is now clean.
+npm run portfolio:audit -- --email <your-email> \
+  --statement scripts/fixtures/fidelity-positions-2026-09-09.json
+#    Expect: 0 critical, 0 warnings. Informational findings (reference drift, missing
+#    per-ticker prices on pre-8eae175 snapshots) are expected and fine.
+```
+
+Both scripts are dry-run by default; `--commit` is required to write anything, and step 3's
+`--verify` fails loudly (exit 1) if the result doesn't match the statement rather than reporting
+a false success.
+
+**Also built and unit-tested this session, not yet applied:** none of WP3/WP5/WP6/WP7/WP8 below
+have been started. WP1's app-level change (seeding gated to empty accounts only) IS shipped in
+this branch's code (not a script) and covered by `usePortfolioForms.test.js` — see the table
+below.
+
 ## 2. Already shipped on this branch (do not redo)
 
 | Commit | What it did |
@@ -55,9 +110,12 @@ whose `closedPositions/{ticker}` document exists, or whose `importedAt`/`syncedA
 | `1cbd103` | A sale no longer flips `ledgerComplete` (only a bare Remove does); `realizedResultSummary()` + Realized KPI on Summary. |
 | `84491ac` | `planReferencePortfolioSync(..., { mode: 'seed' \| 'reconcile' })`. App runs **seed only**: adds never-delivered tickers, backfills blank purchase dates, never restates, never deletes. `referencePortfolioSeeded` ledger on `tracking/state`. CLI writes seed-only unless `--authoritative`. `portfolioImport.js` explicitly reconciles. |
 | `8eae175` | **Trades are ledger events.** `addPosition` writes `stock_purchase`; every sell path writes `sale_proceeds` beside `realized_gain`. `BASKET_FLOW_TYPES` in `portfolioAnalytics.js` is the shared vocabulary; Modified Dietz, TWR, XIRR, trader-insight units, and the reconciliation bridge all remove these flows. `netInvestedCapital()` deliberately ignores them. `recordSnapshot` stores per-ticker `prices`; `buildPriceModel` prefers the account's recorded prices over the export seed. |
-| (this session) | `seededTickersFromTrackingState()` — an account seeded before the ledger existed is treated as having received the whole export. |
+| `d763050` | `seededTickersFromTrackingState()` — an account seeded before the ledger existed is treated as having received the whole export. |
+| (this session, Sonnet) | **WP1**: `isEmptyAccount()` gate — seeding (whole-position writes from the export) now only ever runs on an account with zero positions, zero activity, and no tracking start date. Any other account gets `recordReferenceObservation()` on a version bump: a dated price observation only, never a position write. The manual "Add missing holdings" button now shows a confirm dialog naming exactly what it will add before writing anything. `src/lib/useFirebasePortfolio.js`, `src/pages/portfolio/usePortfolioForms.js`. **WP2**: `scripts/reconcile-portfolio-activity.mjs` + `scripts/lib/portfolio-reconciliation.mjs` — applies real brokerage events (buy/sell/deposit/dividend) to Firestore through the same `planFifoSale`/`realizedGainForPlan` primitives the app uses, idempotent by deterministic activity-doc id. **WP4**: `scripts/audit-portfolio-ledger.mjs` + `scripts/lib/portfolio-audit.mjs` — read-only checks (resurrected positions, closed-but-held tickers, reconciliation-bridge failures across all history, orphan NAV steps, a statement diff). Shared Firestore credential/connection logic extracted to `scripts/lib/portfolio-firestore-backend.mjs`, used by all three CLI scripts. Real fixtures committed: `scripts/fixtures/fidelity-activity-since-seed.json` (the verified Sep 1-4 delta), `fidelity-activity-2026-06-30_2026-09-04.json` (full 90-day history, for WP3), `fidelity-positions-2026-09-09.json` (the acceptance statement). |
 
-Tests: 1574+ passing. The `src/mediums/core/screens/HomeScreen.test.jsx` "as-of eyebrow" test
+Tests: 1641+ passing (was 1574 at the start of this session; +67 across `scripts/lib/portfolio-audit.test.mjs`,
+`scripts/lib/portfolio-reconciliation.test.mjs`, `scripts/reconcile-portfolio-activity.test.mjs`,
+`scripts/audit-portfolio-ledger.test.mjs`, and additions to `usePortfolioForms.test.js`). The `src/mediums/core/screens/HomeScreen.test.jsx` "as-of eyebrow" test
 is a pre-existing `React.lazy` timing flake under full-suite load; it passes in isolation and on
 a clean tree. Not this work's.
 
@@ -115,7 +173,7 @@ a clean tree. Not this work's.
 
 ## 5. Work packages
 
-### WP1 — Seeding only ever runs on an empty account
+### WP1 — Seeding only ever runs on an empty account ✅ IMPLEMENTED (this session)
 
 **Files:** `src/pages/portfolio/usePortfolioForms.js` (the `useEffect` at ~L79),
 `src/lib/useFirebasePortfolio.js` (`syncReferencePortfolio`), `src/pages/Portfolio.jsx`
@@ -151,9 +209,18 @@ contains "Nothing to add". `referencePortfolio.test.js` unchanged.
 **Acceptance:** with a non-empty account and `REFERENCE_PORTFOLIO_VERSION` bumped, no
 position document is written; one new `intradaySnapshots` doc appears.
 
+**Implemented exactly as items 1, 2, and 5 above** (renamed slightly: `syncReferencePortfolio`
+stays the full seed path, kept for the empty-account case and the manual button;
+`recordReferenceObservation()` is the new observation-only function used for a non-empty
+account's automatic version-bump refresh). Item 3 was already true (the exported
+`syncReferencePortfolio` has always hardcoded `mode: 'seed'`, never accepted an override) so
+needed no change. **Item 4 (CLI `--i-understand-this-overwrites`) was not implemented** —
+`--authoritative` alone still gates the CLI's destructive path; a future session should add the
+second flag if the single `--authoritative` flag proves too easy to pass by habit.
+
 ---
 
-### WP2 — Bring Joshua's account up to date with Fidelity activity
+### WP2 — Bring Joshua's account up to date with Fidelity activity ✅ SCRIPT BUILT, NOT YET RUN LIVE (this session)
 
 Source of truth: the Fidelity Activity → History screenshots (Aug 31 – Sep 4, 2026), now
 committed as **`scripts/fixtures/fidelity-activity-2026-09-04.json`** — use that file as the
@@ -259,7 +326,7 @@ account's recorded history except windows flagged `needs_review`.
 
 ---
 
-### WP4 — Ledger audit tool (the thing that would have caught LULU)
+### WP4 — Ledger audit tool (the thing that would have caught LULU) ✅ IMPLEMENTED (this session)
 
 **Build:** `scripts/audit-portfolio-ledger.mjs`, wired as `npm run portfolio:audit`. Read-only.
 Exit code 1 on any finding. Reuse the shared backend from WP2.
@@ -421,14 +488,21 @@ the copy under the selector names which scope is synthetic.
 ## 6. Execution order and verification
 
 ```
-WP1  → npm test -- src/pages/portfolio src/lib/referencePortfolio.test.js
-WP4  → npm test -- scripts/ ; npm run portfolio:audit -- --email <you>      # expect findings A/B
-WP3  → npm run portfolio:rebuild-ledger -- --email <you>  (dry run) → --commit
-WP2  → npm run portfolio:reconcile -- --email <you> --input scripts/fixtures/fidelity-activity-2026-09-04.json  (dry run; read it) → --commit
-       npm run portfolio:audit -- --email <you> --statement scripts/fixtures/fidelity-positions-2026-09-09.json   # expect: matches
-WP4  → npm run portfolio:audit -- --email <you>                             # expect clean
-WP5, WP6, WP7, WP8 → npm run lint && npm test && npm run build
+WP1  → DONE (this session). npm test -- src/pages/portfolio src/lib/referencePortfolio.test.js
+WP4  → DONE (this session). npm test -- scripts/
+       npm run portfolio:audit -- --email <you>      # run this first, live, before anything else
+                                                      # — expect a critical LULU-resurrection
+                                                      # finding and/or a statement mismatch
+WP2  → DONE (this session; script built, not yet run live). Run it now:
+       npm run portfolio:reconcile -- --email <you> --input scripts/fixtures/fidelity-activity-since-seed.json   (dry run; read it)
+       npm run portfolio:reconcile -- --email <you> --input scripts/fixtures/fidelity-activity-since-seed.json --commit --verify scripts/fixtures/fidelity-positions-2026-09-09.json
+WP4  → npm run portfolio:audit -- --email <you> --statement scripts/fixtures/fidelity-positions-2026-09-09.json   # expect: 0 critical, 0 warnings
+WP3  → NOT STARTED. npm run portfolio:rebuild-ledger -- --email <you>  (dry run) → --commit
+WP5, WP6, WP7, WP8 → NOT STARTED. npm run lint && npm test && npm run build
 ```
+
+**§1.5 has the exact copy-pasteable commands for the WP2/WP4 live run** — this section is the
+ordering; that one is the runbook.
 
 Definition of done: audit clean on the live account; Summary Realized tile = **+$21.59**;
 LULU and NTNX absent from holdings and present under "Sold"; TSM held; a bumped

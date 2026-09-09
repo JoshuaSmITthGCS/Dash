@@ -369,6 +369,39 @@ export function useFirebasePortfolio() {
     }
   }
 
+  // The lighter half of a baseline refresh: record what the export says prices were, on the
+  // date it says they were observed, without touching a single position document. This is
+  // what an established account gets when REFERENCE_PORTFOLIO_VERSION changes -- seeding
+  // (syncReferencePortfolio above) is reserved for an account that has never held anything,
+  // so a version bump alone can never be the thing that adds, restates, or resurrects a
+  // holding on an account that has been traded in. See usePortfolioForms.js's isEmptyAccount
+  // gate, which decides which of these two functions the automatic refresh calls.
+  const recordReferenceObservation = async () => {
+    if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
+    try {
+      const importedAt = new Date().toISOString()
+      const snapshot = referenceIntradaySnapshot()
+      const batch = writeBatch(db)
+      batch.set(
+        doc(db, 'portfolios', currentUser.uid, 'intradaySnapshots', snapshot.id),
+        snapshot.document,
+        { merge: true },
+      )
+      // referencePortfolioSeeded is deliberately left untouched: this call never seeds
+      // anything, so it must not claim any ticker was ever delivered.
+      batch.set(
+        doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'),
+        { referencePortfolioVersion: REFERENCE_PORTFOLIO_VERSION, referencePortfolioImportedAt: importedAt },
+        { merge: true },
+      )
+      await batch.commit()
+      return { success: true, version: REFERENCE_PORTFOLIO_VERSION, observedAt: snapshot.document.recordedAt }
+    } catch (error) {
+      console.error('Failed to record reference observation:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
   // Clear all positions
   const clearAll = async () => {
     if (!currentUser) return
@@ -491,6 +524,7 @@ export function useFirebasePortfolio() {
     clearAll,
     exportPortfolio,
     applyPortfolioImport,
-    syncReferencePortfolio
+    syncReferencePortfolio,
+    recordReferenceObservation,
   }
 }

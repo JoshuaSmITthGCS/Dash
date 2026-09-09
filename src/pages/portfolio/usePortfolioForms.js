@@ -3,7 +3,9 @@
 // report through. Kept apart from the read-only view models so the render path stays pure.
 
 import { useEffect, useRef, useState } from 'react'
-import { REFERENCE_PORTFOLIO_LABEL, REFERENCE_PORTFOLIO_VERSION, seededTickersFromTrackingState } from '../../lib/referencePortfolio.js'
+import {
+  planReferencePortfolioSync, REFERENCE_PORTFOLIO_LABEL, REFERENCE_PORTFOLIO_VERSION, seededTickersFromTrackingState,
+} from '../../lib/referencePortfolio.js'
 import { costWeights } from '../../lib/portfolioAnalytics.js'
 import { planFifoSale, realizedGainForPlan } from '../../lib/taxLots.js'
 import { perShareCost } from './format.js'
@@ -44,6 +46,20 @@ export function remainingSharesAfterSale(positions, ticker, soldByPositionId) {
     .reduce((sum, row) => sum + Math.max(0, Number(row.shares || 0) - Number(soldByPositionId[row.id] || 0)), 0)
 }
 
+// An account with nothing held, nothing recorded, and no tracking start date. Seeding --
+// adding whole positions from the Fidelity export -- is restricted to exactly this state.
+// Once an account holds anything or has any activity, a REFERENCE_PORTFOLIO_VERSION bump
+// must never add, restate, or resurrect a position on its own; only recordReferenceObservation
+// (a price observation, no position writes) runs automatically from then on. This is what
+// makes it structurally impossible for a future export refresh to repeat the LULU
+// resurrection: the position-writing code path is simply never reached on a traded account,
+// regardless of what the seeded/closed ticker ledgers believe.
+export function isEmptyAccount(positions, tracking) {
+  return (positions || []).length === 0
+    && (tracking?.activities || []).length === 0
+    && !tracking?.trackingState?.trackingStartedAt
+}
+
 export function usePortfolioForms({ portfolio, tracking, previewPortfolio, positions = [] }) {
   const {
     addPosition,
@@ -52,7 +68,9 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
     recordClosedPosition,
     clearClosedPosition,
     closedPositions = [],
+    closedTickers = [],
     syncReferencePortfolio,
+    recordReferenceObservation,
     syncState,
   } = portfolio
 
@@ -74,18 +92,40 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
   const [lotSellSaving, setLotSellSaving] = useState(false)
   const referencePortfolioSyncStarted = useRef(false)
 
-  // Apply the user's authoritative Fidelity position export once on the signed-in account.
-  // The version marker prevents later manual portfolio edits from being overwritten.
+  // Runs once per REFERENCE_PORTFOLIO_VERSION on the signed-in account, and does one of two
+  // structurally different things depending on whether the account has ever been used:
+  //
+  //   - EMPTY account (isEmptyAccount above): seeds opening holdings from the export via
+  //     syncReferencePortfolio. This is the only place in the app that ever writes a whole
+  //     position from REFERENCE_PORTFOLIO.
+  //   - Any other account: calls recordReferenceObservation only, which records the export's
+  //     prices as a dated observation in the account's own price history (see
+  //     latestRecordedPrices in portfolioPosition.js) and stamps the version marker so this
+  //     effect does not fire again for it -- and does not touch a single position document.
+  //
+  // trackingLoaded, not just trackingState: the positions listener and the tracking-state
+  // listener resolve independently, and gating on trackingState alone used to fire in the
+  // window between them, when trackingState was still null only because it had not been read
+  // yet. That re-applied the whole Aug 25 baseline on an already-synced account -- restoring
+  // sold and trimmed share counts -- on any page load where positions answered first.
   useEffect(() => {
     const referenceReady = tracking.trackingState?.referencePortfolioVersion === REFERENCE_PORTFOLIO_VERSION
-    // trackingLoaded, not just trackingState: the positions listener and the tracking-state
-    // listener resolve independently, and this used to fire in the window between them, when
-    // trackingState was still null only because it had not been read yet. That re-applied the
-    // whole Aug 25 baseline on an already-synced account -- restoring sold and trimmed share
-    // counts -- on any page load where positions answered first.
     if (previewPortfolio || !syncState.connected || !tracking.trackingLoaded
       || referenceReady || referencePortfolioSyncStarted.current) return
     referencePortfolioSyncStarted.current = true
+
+    if (!isEmptyAccount(positions, tracking)) {
+      recordReferenceObservation().then((result) => {
+        if (!result?.success) {
+          referencePortfolioSyncStarted.current = false
+          setSyncMessage(`Could not record the ${REFERENCE_PORTFOLIO_LABEL} price observation: ${result?.error || 'Unknown error'}`)
+        }
+        // Success is deliberately silent: this is routine price bookkeeping on an account
+        // that already has holdings, not an event worth a status line every time it fires.
+      })
+      return
+    }
+
     syncReferencePortfolio({ seededTickers: seededTickersFromTrackingState(tracking.trackingState) }).then((result) => {
       if (result?.success) setSyncMessage(result.added || result.updated
         ? `Opening holdings seeded from the ${REFERENCE_PORTFOLIO_LABEL} Fidelity snapshot: ${result.added} added${result.updated ? ` · ${result.updated} purchase date${result.updated === 1 ? '' : 's'} filled in` : ''}.`
@@ -95,7 +135,7 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
         setSyncMessage(`Could not apply Fidelity positions: ${result?.error || 'Unknown error'}`)
       }
     })
-  }, [previewPortfolio, syncReferencePortfolio, syncState.connected, tracking.trackingLoaded,
+  }, [previewPortfolio, syncReferencePortfolio, recordReferenceObservation, syncState.connected, tracking.trackingLoaded,
     tracking.trackingState?.referencePortfolioVersion])
 
   // `draft` is passed by AddPositionForm, which keeps its own fields so a keystroke does not
@@ -129,11 +169,35 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
   // The manual equivalent of the seeding run above. It cannot restate or delete anything, so
   // on an account that has already been seeded the honest answer is usually "nothing to do" --
   // which is the point: the snapshot is history, and this collection is the record.
+  //
+  // A dry-run plan is computed here first, client-side, so the confirmation names exactly
+  // what will happen before a single Firestore write occurs -- this button is the one place
+  // seeding can be triggered on an account that already holds positions, so it is the one
+  // place a person, not just a version check, gets the final say.
   const handleReferenceSync = async () => {
+    const seededTickers = seededTickersFromTrackingState(tracking.trackingState)
+    const preview = planReferencePortfolioSync(positions, undefined, { closedTickers, seededTickers, mode: 'seed' })
+    const additions = preview.filter((operation) => operation.kind === 'add')
+    const backfills = preview.filter((operation) => operation.kind === 'backfill')
+    if (!additions.length && !backfills.length) {
+      setSyncMessage(`Nothing to add. Your cloud portfolio is the record — the ${REFERENCE_PORTFOLIO_LABEL} snapshot cannot overwrite, restore or remove anything in it. `
+        + 'Its prices were recorded as a dated observation, which is how a refreshed export moves your holdings\' prices forward.')
+      return
+    }
+    const summary = [
+      additions.length ? `add ${additions.length} holding${additions.length === 1 ? '' : 's'} (${additions.map((operation) => operation.record.ticker).join(', ')})` : null,
+      backfills.length ? `fill in ${backfills.length} missing purchase date${backfills.length === 1 ? '' : 's'}` : null,
+    ].filter(Boolean).join(' and ')
+    const confirmed = window.confirm(
+      `This will ${summary} from the ${REFERENCE_PORTFOLIO_LABEL} Fidelity snapshot.
+
+`
+      + 'It cannot change or remove anything already in your portfolio. Continue?',
+    )
+    if (!confirmed) return
+
     setSyncMessage(`Checking the ${REFERENCE_PORTFOLIO_LABEL} snapshot for holdings you have never been given…`)
-    const result = await syncReferencePortfolio({
-      seededTickers: seededTickersFromTrackingState(tracking.trackingState),
-    })
+    const result = await syncReferencePortfolio({ seededTickers })
     if (!result.success) {
       setSyncMessage(`Could not read the snapshot: ${result.error}`)
       return

@@ -1,7 +1,14 @@
 import { act, renderHook } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
-import { usePortfolioForms } from './usePortfolioForms.js'
-import { REFERENCE_PORTFOLIO_VERSION } from '../../lib/referencePortfolio.js'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { isEmptyAccount, usePortfolioForms } from './usePortfolioForms.js'
+import { REFERENCE_PORTFOLIO, REFERENCE_PORTFOLIO_VERSION } from '../../lib/referencePortfolio.js'
+
+// The manual "add missing holdings" button confirms before writing (see handleReferenceSync).
+// Default to "yes" so every test not specifically about the confirmation dialog reaches the
+// code it means to exercise; tests that care about cancellation override this per-test.
+let confirmSpy
+beforeEach(() => { confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true) })
+afterEach(() => { confirmSpy.mockRestore() })
 
 function setup({ positions = [], portfolioOverrides = {}, trackingOverrides = {}, preview = true } = {}) {
   const portfolio = {
@@ -11,12 +18,15 @@ function setup({ positions = [], portfolioOverrides = {}, trackingOverrides = {}
     recordClosedPosition: vi.fn().mockResolvedValue({ success: true }),
     clearClosedPosition: vi.fn().mockResolvedValue({ success: true }),
     closedPositions: [],
+    closedTickers: [],
     syncReferencePortfolio: vi.fn().mockResolvedValue({ success: true }),
+    recordReferenceObservation: vi.fn().mockResolvedValue({ success: true }),
     syncState: { connected: false },
     ...portfolioOverrides,
   }
   const tracking = {
     trackingState: {},
+    activities: [],
     recordActivity: vi.fn().mockResolvedValue({ success: true }),
     recordRebalance: vi.fn().mockResolvedValue({ success: true }),
     ...trackingOverrides,
@@ -24,6 +34,9 @@ function setup({ positions = [], portfolioOverrides = {}, trackingOverrides = {}
   const { result } = renderHook(() => usePortfolioForms({ portfolio, tracking, previewPortfolio: preview, positions }))
   return { result, portfolio, tracking }
 }
+
+// Every REFERENCE_PORTFOLIO ticker, for tests that need an account already fully seeded.
+const ALL_REFERENCE_TICKERS = REFERENCE_PORTFOLIO.map((position) => position.ticker)
 
 describe('usePortfolioForms rebalance capture (B2/turnover)', () => {
   it('records a rebalance event when a position is added', async () => {
@@ -334,8 +347,28 @@ describe('submitTrade (the sticky trade bar)', () => {
   })
 })
 
-describe('the one-time Fidelity baseline sync', () => {
+describe('isEmptyAccount', () => {
+  it('is true with no positions, no activities, and no tracking start date', () => {
+    expect(isEmptyAccount([], { activities: [], trackingState: {} })).toBe(true)
+    expect(isEmptyAccount([], null)).toBe(true)
+  })
+
+  it('is false the moment any position is held', () => {
+    expect(isEmptyAccount([{ ticker: 'AAPL', shares: 1 }], { activities: [] })).toBe(false)
+  })
+
+  it('is false once any activity has been recorded, even with zero positions', () => {
+    expect(isEmptyAccount([], { activities: [{ type: 'deposit' }] })).toBe(false)
+  })
+
+  it('is false once tracking has a start date, even with zero positions and no activities', () => {
+    expect(isEmptyAccount([], { activities: [], trackingState: { trackingStartedAt: '2026-01-01' } })).toBe(false)
+  })
+})
+
+describe('the one-time Fidelity baseline refresh', () => {
   const connected = { syncState: { connected: true } }
+  const held = [{ id: 'aaa', ticker: 'AAA', shares: 1, costBasis: 10 }]
 
   it('waits for the tracking document to load before deciding the account has never synced', async () => {
     const { portfolio } = setup({
@@ -344,6 +377,7 @@ describe('the one-time Fidelity baseline sync', () => {
       preview: false,
     })
     expect(portfolio.syncReferencePortfolio).not.toHaveBeenCalled()
+    expect(portfolio.recordReferenceObservation).not.toHaveBeenCalled()
   })
 
   it('does not re-apply the baseline once the loaded tracking state says this version was applied', async () => {
@@ -353,15 +387,53 @@ describe('the one-time Fidelity baseline sync', () => {
       preview: false,
     })
     expect(portfolio.syncReferencePortfolio).not.toHaveBeenCalled()
+    expect(portfolio.recordReferenceObservation).not.toHaveBeenCalled()
   })
 
-  it('applies the baseline once when the loaded tracking state has no version marker', async () => {
+  it('seeds an empty account (no positions, no activity, no tracking start date)', async () => {
     const { portfolio } = setup({
       portfolioOverrides: connected,
       trackingOverrides: { trackingState: null, trackingLoaded: true },
       preview: false,
     })
     expect(portfolio.syncReferencePortfolio).toHaveBeenCalledTimes(1)
+    expect(portfolio.recordReferenceObservation).not.toHaveBeenCalled()
+  })
+
+  // This is the WP1 guarantee: once an account holds anything, a version bump can never reach
+  // the position-writing code path automatically, no matter what the seeded/closed ticker
+  // ledgers believe. Only a price observation is recorded.
+  it('never seeds a non-empty account — records a price observation only', async () => {
+    const { portfolio } = setup({
+      positions: held,
+      portfolioOverrides: connected,
+      trackingOverrides: { trackingState: null, trackingLoaded: true },
+      preview: false,
+    })
+    expect(portfolio.recordReferenceObservation).toHaveBeenCalledTimes(1)
+    expect(portfolio.syncReferencePortfolio).not.toHaveBeenCalled()
+  })
+
+  it('also treats an account with recorded activity (but zero current positions) as non-empty', async () => {
+    const { portfolio } = setup({
+      positions: [],
+      portfolioOverrides: connected,
+      trackingOverrides: { trackingState: null, trackingLoaded: true, activities: [{ type: 'realized_gain', amount: 10 }] },
+      preview: false,
+    })
+    expect(portfolio.recordReferenceObservation).toHaveBeenCalledTimes(1)
+    expect(portfolio.syncReferencePortfolio).not.toHaveBeenCalled()
+  })
+
+  it('surfaces an error from the observation-only path without retrying silently forever', async () => {
+    const { result } = setup({
+      positions: held,
+      portfolioOverrides: { ...connected, recordReferenceObservation: vi.fn().mockResolvedValue({ success: false, error: 'offline' }) },
+      trackingOverrides: { trackingState: null, trackingLoaded: true },
+      preview: false,
+    })
+    await act(async () => {}) // flush the effect's promise
+    expect(result.current.syncMessage).toContain('offline')
   })
 })
 
@@ -395,14 +467,38 @@ describe('the manual "add missing holdings" button', () => {
     expect(portfolio.syncReferencePortfolio).toHaveBeenCalledWith({ seededTickers: ['LULU', 'MU'] })
   })
 
-  it('says plainly that nothing changed rather than reporting a sync', async () => {
+  it('says plainly that nothing changed, without even asking to confirm, when the account already holds the whole export', async () => {
     const { result } = setup({
+      trackingOverrides: { trackingState: { referencePortfolioSeeded: ALL_REFERENCE_TICKERS }, trackingLoaded: true },
       portfolioOverrides: {
         syncReferencePortfolio: vi.fn().mockResolvedValue({ success: true, added: 0, updated: 0, removed: 0 }),
       },
     })
     await act(async () => { await result.current.handleReferenceSync() })
     expect(result.current.syncMessage).toContain('Your cloud portfolio is the record')
+    expect(confirmSpy).not.toHaveBeenCalled()
+  })
+
+  it('asks for confirmation before writing anything, naming what will be added', async () => {
+    const { result } = setup({
+      portfolioOverrides: {
+        syncReferencePortfolio: vi.fn().mockResolvedValue({ success: true, added: 2, updated: 1, removed: 0 }),
+      },
+    })
+    await act(async () => { await result.current.handleReferenceSync() })
+    expect(confirmSpy).toHaveBeenCalledTimes(1)
+    expect(confirmSpy.mock.calls[0][0]).toMatch(/add \d+ holding/)
+  })
+
+  it('writes nothing when the confirmation is declined', async () => {
+    confirmSpy.mockReturnValue(false)
+    const { result, portfolio } = setup({
+      portfolioOverrides: {
+        syncReferencePortfolio: vi.fn().mockResolvedValue({ success: true, added: 2, updated: 1, removed: 0 }),
+      },
+    })
+    await act(async () => { await result.current.handleReferenceSync() })
+    expect(portfolio.syncReferencePortfolio).not.toHaveBeenCalled()
   })
 
   it('reports what it added without implying anything was overwritten', async () => {

@@ -1,4 +1,4 @@
-import modelSettings from '../../pipeline/config/settings.json'
+import modelSettings from '../../pipeline/config/settings.json' with { type: 'json' }
 
 const PERIOD_DAYS = { '1D': 2, '1W': 7, '1M': 31, '3M': 93, '6M': 186, YTD: 'year-to-date', '1Y': 366, All: null }
 const analyticsConfig = modelSettings.portfolio_analytics

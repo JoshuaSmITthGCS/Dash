@@ -1,0 +1,70 @@
+{
+  "source": "Fidelity Activity & Orders → History, account Z32641125 — the delta since the Aug 25, 2026 export (REFERENCE_PORTFOLIO_RECORDED_AT). This is the file scripts/reconcile-portfolio-activity.mjs (WP2) applies: every event here assumes the account already holds exactly the Aug 25 seed basket.",
+  "note": "Derived programmatically from fidelity-activity-2026-06-30_2026-09-04.json by filtering to date >= 2026-08-25. Do not hand-edit; regenerate if the full-history fixture changes.",
+  "baseline": "REFERENCE_PORTFOLIO_VERSION as shipped when this file was generated",
+  "events": [
+    {
+      "kind": "dividend",
+      "ticker": "SCHW",
+      "date": "2026-08-28",
+      "amount": 0.63
+    },
+    {
+      "kind": "deposit",
+      "date": "2026-09-01",
+      "amount": 400
+    },
+    {
+      "kind": "dividend",
+      "ticker": "COP",
+      "date": "2026-09-01",
+      "amount": 0.35
+    },
+    {
+      "kind": "dividend",
+      "ticker": "SIGI",
+      "date": "2026-09-01",
+      "amount": 0.89
+    },
+    {
+      "kind": "buy",
+      "ticker": "TSM",
+      "date": "2026-09-02",
+      "cost": 199.67,
+      "shares": 0.482
+    },
+    {
+      "kind": "dividend",
+      "ticker": "DINO",
+      "date": "2026-09-02",
+      "amount": 0.61
+    },
+    {
+      "kind": "sell",
+      "ticker": "LULU",
+      "date": "2026-09-03",
+      "proceeds": 102.4,
+      "shares": 1
+    },
+    {
+      "kind": "dividend",
+      "ticker": "AGO",
+      "date": "2026-09-03",
+      "amount": 0.23
+    },
+    {
+      "kind": "sell",
+      "ticker": "NTNX",
+      "date": "2026-09-04",
+      "proceeds": 67.86,
+      "shares": 1
+    },
+    {
+      "kind": "sell",
+      "ticker": "NTNX",
+      "date": "2026-09-04",
+      "proceeds": 19.26,
+      "shares": 0.284
+    }
+  ]
+}

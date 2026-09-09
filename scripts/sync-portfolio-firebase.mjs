@@ -36,22 +36,17 @@
 // so it is a server-side secret and must never be given a VITE_ prefix.
 
 import { writeFile } from 'node:fs/promises'
-import { createInterface } from 'node:readline'
 import { pathToFileURL } from 'node:url'
-import { cert, getApps, initializeApp } from 'firebase-admin/app'
-import { getAuth } from 'firebase-admin/auth'
-import { getFirestore } from 'firebase-admin/firestore'
-import { initializeApp as initializeClientApp } from 'firebase/app'
-import { getAuth as getClientAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth'
 import {
-  collection as clientCollection,
-  doc as clientDoc,
-  getDoc as clientGetDoc,
-  getDocs as clientGetDocs,
-  getFirestore as getClientFirestore,
-  terminate as terminateClient,
-  writeBatch as clientWriteBatch,
-} from 'firebase/firestore'
+  BATCH_LIMIT,
+  connectPortfolioBackend,
+  step,
+  withTimeout,
+} from './lib/portfolio-firestore-backend.mjs'
+
+// Re-exported for scripts/sync-portfolio-firebase.test.mjs, which predates the shared backend
+// module and tests this utility directly rather than through connectPortfolioBackend.
+export { withTimeout }
 import {
   planReferencePortfolioSync,
   referenceSyncMerges,
@@ -68,37 +63,6 @@ import {
   REFERENCE_PORTFOLIO_RECORDED_AT,
   REFERENCE_PORTFOLIO_VERSION,
 } from '../src/lib/referencePortfolio.js'
-
-// Firestore caps a batch at 500 writes. 46 holdings plus the snapshot and tracking documents
-// is far below it, but a plan is only bounded by what the account already holds.
-const BATCH_LIMIT = 500
-
-// Every network call is bounded and announced before it starts. firebase-admin retries a
-// blocked connection with long backoff and prints nothing while it does, so an unreachable
-// Google endpoint -- a proxy, a VPN, an offline machine -- otherwise looks like the script
-// silently froze, with no way to tell which step it froze on.
-const NETWORK_TIMEOUT_MS = 30_000
-
-const step = (message) => process.stdout.write(`${message}\n`)
-
-export function withTimeout(promise, what, ms = NETWORK_TIMEOUT_MS) {
-  let timer
-  const limit = new Promise((_, reject) => {
-    timer = setTimeout(
-      () => reject(new Error(
-        `${what} did not respond within ${ms / 1000}s.\n`
-        + '  This step talks to Google. A proxy, VPN, or offline machine blocks it silently.\n'
-        + '  Check connectivity, then re-run — nothing has been written.',
-      )),
-      ms,
-    )
-    timer.unref?.()
-  })
-  return Promise.race([promise, limit]).finally(() => clearTimeout(timer))
-}
-
-// Both SDKs hold a connection open, which can keep the process alive after the work is done.
-// Closing explicitly means a finished run actually returns to the shell.
 
 export function parseArguments(argv) {
   const options = { commit: false, authoritative: false, email: null, uid: null, report: null }
@@ -122,170 +86,6 @@ export function parseArguments(argv) {
     throw new Error('--report needs a file path, or - for stdout.')
   }
   return options
-}
-
-function adminCredential() {
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
-  if (!raw) return null
-  let credential
-  try { credential = JSON.parse(raw) } catch { throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON.') }
-  const missing = ['project_id', 'client_email', 'private_key'].filter((field) => !credential[field])
-  if (missing.length) {
-    throw new Error(`FIREBASE_SERVICE_ACCOUNT_JSON is missing ${missing.join(', ')}. `
-      + 'Use the whole downloaded service-account key file, not a fragment of it.')
-  }
-  return credential
-}
-
-function clientConfig() {
-  const config = {
-    apiKey: process.env.VITE_FIREBASE_API_KEY,
-    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.VITE_FIREBASE_APP_ID,
-  }
-  return config.apiKey && config.projectId ? config : null
-}
-
-/** Reads a secret without echoing it, so it never lands in a terminal scrollback. */
-function promptPassword(question) {
-  if (!process.stdin.isTTY) {
-    return Promise.reject(new Error(
-      'No terminal to prompt for a password on. Set PORTFOLIO_SYNC_PASSWORD instead, '
-      + 'or configure FIREBASE_SERVICE_ACCOUNT_JSON to use admin credentials.',
-    ))
-  }
-  return new Promise((resolve) => {
-    const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true })
-    rl._writeToOutput = (chunk) => { if (chunk.includes(question)) rl.output.write(question) }
-    rl.question(question, (answer) => {
-      rl.close()
-      process.stdout.write('\n')
-      resolve(answer)
-    })
-  })
-}
-
-/**
- * One interface over the two credential paths, so the plan/report/commit logic below never
- * branches on which is in use and behaves identically either way.
- */
-async function connect(options) {
-  const credential = adminCredential()
-  if (credential) {
-    step(`Admin credentials loaded for project ${credential.project_id}.`)
-    const app = getApps().length ? getApps()[0] : initializeApp({ credential: cert(credential) })
-    const db = getFirestore(app)
-    let uid = options.uid
-    if (!uid) {
-      step(`Resolving ${options.email} via Firebase Auth…`)
-      try {
-        uid = (await withTimeout(getAuth(app).getUserByEmail(options.email), 'Firebase Auth')).uid
-      } catch (error) {
-        if (error.code === 'auth/user-not-found') {
-          throw new Error(`No Firebase user has the email ${options.email}. `
-            + 'Sign in to the app once with it, or pass --uid instead.')
-        }
-        throw error
-      }
-    }
-    return {
-      mode: 'admin',
-      uid,
-      readPositions: () => withTimeout(
-        db.collection('portfolios').doc(uid).collection('positions').get(), 'Firestore read',
-      ).then((snapshot) => snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
-      readClosedTickers: () => withTimeout(
-        db.collection('portfolios').doc(uid).collection('closedPositions').get(), 'Firestore read',
-      ).then((snapshot) => snapshot.docs.map((item) => item.data()?.ticker || item.id)),
-      readTrackingState: () => withTimeout(
-        db.collection('portfolios').doc(uid).collection('tracking').doc('state').get(), 'Firestore read',
-      ).then((snapshot) => (snapshot.exists ? snapshot.data() : null)),
-      commit: (apply) => {
-        const batch = db.batch()
-        apply({
-          positionDoc: (id) => db.collection('portfolios').doc(uid).collection('positions').doc(id),
-          snapshotDoc: (id) => db.collection('portfolios').doc(uid).collection('intradaySnapshots').doc(id),
-          trackingDoc: () => db.collection('portfolios').doc(uid).collection('tracking').doc('state'),
-          set: (ref, data, merge) => batch.set(ref, data, merge ? { merge: true } : {}),
-          delete: (ref) => batch.delete(ref),
-        })
-        return withTimeout(batch.commit(), 'Firestore write')
-      },
-      close: async () => {
-        try { await db.terminate?.() } catch { /* best effort */ }
-      },
-    }
-  }
-
-  const config = clientConfig()
-  if (!config) {
-    throw new Error(
-      'No Firebase credentials found.\n'
-      + '  Sign-in mode needs VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID in .env.local\n'
-      + '  (the same values `npm run dev` uses). Admin mode needs FIREBASE_SERVICE_ACCOUNT_JSON.',
-    )
-  }
-  if (options.uid) {
-    throw new Error('--uid needs admin credentials. Sign-in mode can only sync the account it '
-      + 'signs in as, so pass --email instead.')
-  }
-
-  const password = process.env.PORTFOLIO_SYNC_PASSWORD
-    || await promptPassword(`Password for ${options.email}: `)
-  if (!password) throw new Error('No password given, so there is nothing to sign in with.')
-
-  step(`Signing in as ${options.email} on project ${config.projectId}…`)
-  const app = initializeClientApp(config, 'portfolio-sync-cli')
-  const auth = getClientAuth(app)
-  let user
-  try {
-    user = (await withTimeout(signInWithEmailAndPassword(auth, options.email, password), 'Firebase sign-in')).user
-  } catch (error) {
-    const friendly = {
-      'auth/invalid-credential': 'Email or password not accepted.',
-      'auth/wrong-password': 'Wrong password.',
-      'auth/user-not-found': `No account for ${options.email}.`,
-      'auth/too-many-requests': 'Too many attempts; Firebase has throttled this account briefly.',
-      'auth/network-request-failed': 'Could not reach Firebase. Check connectivity, proxy, or VPN.',
-      'auth/invalid-email': `${options.email} is not a valid email address.`,
-      'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
-        'VITE_FIREBASE_API_KEY in .env.local is not a valid key for this project.',
-    }[error.code]
-    throw new Error(friendly || error.message)
-  }
-  const db = getClientFirestore(app)
-  const uid = user.uid
-  return {
-    mode: 'sign-in',
-    uid,
-    readPositions: () => withTimeout(
-      clientGetDocs(clientCollection(db, 'portfolios', uid, 'positions')), 'Firestore read',
-    ).then((snapshot) => snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
-    readClosedTickers: () => withTimeout(
-      clientGetDocs(clientCollection(db, 'portfolios', uid, 'closedPositions')), 'Firestore read',
-    ).then((snapshot) => snapshot.docs.map((item) => item.data()?.ticker || item.id)),
-    readTrackingState: () => withTimeout(
-      clientGetDoc(clientDoc(db, 'portfolios', uid, 'tracking', 'state')), 'Firestore read',
-    ).then((snapshot) => (snapshot.exists() ? snapshot.data() : null)),
-    commit: (apply) => {
-      const batch = clientWriteBatch(db)
-      apply({
-        positionDoc: (id) => clientDoc(db, 'portfolios', uid, 'positions', id),
-        snapshotDoc: (id) => clientDoc(db, 'portfolios', uid, 'intradaySnapshots', id),
-        trackingDoc: () => clientDoc(db, 'portfolios', uid, 'tracking', 'state'),
-        set: (ref, data, merge) => batch.set(ref, data, merge ? { merge: true } : {}),
-        delete: (ref) => batch.delete(ref),
-      })
-      return withTimeout(batch.commit(), 'Firestore write')
-    },
-    close: async () => {
-      try { await signOut(auth) } catch { /* best effort */ }
-      try { await terminateClient(db) } catch { /* best effort */ }
-    },
-  }
 }
 
 const money = (value) => `$${value.toFixed(2)}`
@@ -464,7 +264,7 @@ Reference baseline: ${REFERENCE_PORTFOLIO_VERSION} (${REFERENCE_PORTFOLIO.length
   }
 
   step(`sync-portfolio-firebase · baseline ${REFERENCE_PORTFOLIO_VERSION} · ${REFERENCE_PORTFOLIO.length} holdings`)
-  const backend = await connect(options)
+  const backend = await connectPortfolioBackend(options)
   try {
     return await run(options, backend)
   } finally {
