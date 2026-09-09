@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 113,
+  "refreshes_observed": 114,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -18853,6 +18853,132 @@
             "price_to_book"
           ],
           "score_delta": -0.5,
+          "confidence_delta": 0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-08T22:25:11.559274+00:00",
+      "current_refresh": "advisor-2026-09-09T16:32:40.557390+00:00",
+      "shared_tickers": 893,
+      "rank_turnover": {
+        "top_40": 0.225,
+        "top_100": 0.225
+      },
+      "tickers_with_availability_driven_change": 21,
+      "tickers_with_availability_driven_change_pct": 0.024,
+      "mean_abs_score_delta": 1.07,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "MRNA",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "interest_coverage"
+          ],
+          "score_delta": 5.6,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "ELS",
+          "metrics_with_value_change": [
+            "cash_conversion",
+            "ev_to_fcf"
+          ],
+          "metrics_with_availability_change": [
+            "capex_to_depreciation",
+            "fcf_growth_3y"
+          ],
+          "score_delta": 3.6,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "SNOW",
+          "metrics_with_value_change": [
+            "net_buyback_yield"
+          ],
+          "metrics_with_availability_change": [
+            "return_on_invested_capital"
+          ],
+          "score_delta": 3.1,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "AZO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -2.7,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "DCI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -2.2,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "BKNG",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "current_ratio",
+            "earnings_growth",
+            "free_cash_flow_yield",
+            "profit_margin",
+            "revenue_growth"
+          ],
+          "score_delta": 2.1,
+          "confidence_delta": -0.09
+        },
+        {
+          "ticker": "PCAR",
+          "metrics_with_value_change": [
+            "gross_profits_to_assets"
+          ],
+          "metrics_with_availability_change": [
+            "altman_z",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "interest_coverage",
+            "operating_margin_trend",
+            "return_on_invested_capital"
+          ],
+          "score_delta": 1.9,
+          "confidence_delta": -0.15
+        },
+        {
+          "ticker": "PGR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -1.9,
+          "confidence_delta": -0.05
+        },
+        {
+          "ticker": "ITT",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -1.3,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "ZTS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -1.0,
           "confidence_delta": 0.01
         }
       ]
