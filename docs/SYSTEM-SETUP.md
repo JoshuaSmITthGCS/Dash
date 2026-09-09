@@ -522,6 +522,21 @@ Firebase service-account credential stay server-side.
 
 The UI exposes provider health and marks research stale after 36 hours.
 
+**Portfolio writes and the Fidelity baseline.** Firestore holds the user's positions
+(`portfolios/{uid}/positions`, one document per *lot*), the tracking collections
+(`intradaySnapshots`, `activity`, `rebalances`), and `closedPositions` — one document per ticker
+the user has sold out of entirely, keyed by ticker. That last collection exists because
+`src/lib/referencePortfolio.js` carries an authoritative Aug 25 brokerage export that the app
+applies once per account (and can re-apply on demand): the export is a photograph of that day, so
+a name sold afterwards is still listed in it, and re-adding a missing ticker is exactly how a
+recorded sale used to come back. `planReferencePortfolioSync()` now takes `closedTickers` and
+skips those rows entirely; both write paths honour it — the in-app sync
+(`src/lib/useFirebasePortfolio.js`) and the `npm run portfolio:sync` CLI. Buying the ticker again
+clears the marker. The one-shot auto-sync additionally waits for `trackingLoaded`
+(`src/lib/usePortfolioTracking.js`) before concluding an account has never been synced; without
+that it could fire in the window between the positions listener and the tracking-state listener
+resolving, and restate every sold or trimmed share count back to the baseline.
+
 **Architectural note:** material investment logic lives on both sides. Screen ranking, portfolio
 attribution, stop logic, and fallback recommendations exist in JavaScript alongside the Python
 pipeline, so the platform has more than one decision authority.

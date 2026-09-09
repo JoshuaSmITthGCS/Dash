@@ -189,6 +189,9 @@ async function connect(options) {
       readPositions: () => withTimeout(
         db.collection('portfolios').doc(uid).collection('positions').get(), 'Firestore read',
       ).then((snapshot) => snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
+      readClosedTickers: () => withTimeout(
+        db.collection('portfolios').doc(uid).collection('closedPositions').get(), 'Firestore read',
+      ).then((snapshot) => snapshot.docs.map((item) => item.data()?.ticker || item.id)),
       commit: (apply) => {
         const batch = db.batch()
         apply({
@@ -250,6 +253,9 @@ async function connect(options) {
     readPositions: () => withTimeout(
       clientGetDocs(clientCollection(db, 'portfolios', uid, 'positions')), 'Firestore read',
     ).then((snapshot) => snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
+    readClosedTickers: () => withTimeout(
+      clientGetDocs(clientCollection(db, 'portfolios', uid, 'closedPositions')), 'Firestore read',
+    ).then((snapshot) => snapshot.docs.map((item) => item.data()?.ticker || item.id)),
     commit: (apply) => {
       const batch = clientWriteBatch(db)
       apply({
@@ -457,7 +463,15 @@ async function run(options, backend) {
   const existing = await backend.readPositions()
   console.log(`Currently stored: ${existing.length} position${existing.length === 1 ? '' : 's'}`)
 
-  const operations = planReferencePortfolioSync(existing)
+  // Tickers the account has sold out of since the export was taken. The export still lists
+  // them -- it is a photograph of Aug 25 -- and re-adding them here would undo a recorded
+  // sale, the same way the in-app sync used to. Same ledger the app writes.
+  const closedTickers = (await backend.readClosedTickers?.()) || []
+  if (closedTickers.length) {
+    console.log(`Sold since the export, left alone: ${closedTickers.join(', ')}`)
+  }
+
+  const operations = planReferencePortfolioSync(existing, undefined, { closedTickers })
   const counts = summarizeReferenceSync(operations)
   const snapshot = referenceIntradaySnapshot()
   const writes = operations.length + 2
@@ -465,10 +479,12 @@ async function run(options, backend) {
   console.log(`Plan: ${counts.added} added · ${counts.updated} updated · ${counts.removed} removed\n`)
   console.log(describe(operations))
 
-  const invested = REFERENCE_PORTFOLIO.reduce((sum, position) => sum + position.snapshotValue, 0)
-  const cost = REFERENCE_PORTFOLIO.reduce((sum, position) => sum + position.costBasisTotal, 0)
-  const undated = REFERENCE_PORTFOLIO.filter((position) => !position.purchaseDate)
-  console.log(`\nAfter this sync: ${REFERENCE_PORTFOLIO.length} holdings · ${money(cost)} cost · ${money(invested)} value`)
+  const closedSet = new Set(closedTickers.map((ticker) => String(ticker).trim().toUpperCase()))
+  const applied = REFERENCE_PORTFOLIO.filter((position) => !closedSet.has(position.ticker))
+  const invested = applied.reduce((sum, position) => sum + position.snapshotValue, 0)
+  const cost = applied.reduce((sum, position) => sum + position.costBasisTotal, 0)
+  const undated = applied.filter((position) => !position.purchaseDate)
+  console.log(`\nAfter this sync: ${applied.length} holdings · ${money(cost)} cost · ${money(invested)} value`)
   if (undated.length) {
     console.log(`Undated holdings (no buy in the transaction history): ${undated.map((position) => position.ticker).join(', ')}`)
   }

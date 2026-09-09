@@ -17,6 +17,7 @@ import RecommendationShadowPanel from './RecommendationShadowPanel'
 import DipWatchBadge from './DipWatchBadge'
 import useBodyScrollLock from '../lib/useBodyScrollLock'
 import { useDialog } from '../lib/useDialog.js'
+import TradeBar from './TradeBar.jsx'
 import ResearchRadarChart from './ResearchRadarChart'
 import Icon from './Icons'
 import SetupQualityBreakdown from './SetupQualityBreakdown'
@@ -192,7 +193,7 @@ export function InsideInformationView({ info }) {
   )
 }
 
-export default function StockDetailModal({ stock: suppliedStock, onClose, benchmarkHistory, position, recommendationOverride, stopLoss }) {
+export default function StockDetailModal({ stock: suppliedStock, onClose, benchmarkHistory, position, recommendationOverride, stopLoss, trade }) {
   const [tab, setTab] = useState('evidence')
   const [showMore, setShowMore] = useState(false)
   const { preferences } = usePreferences()
@@ -575,6 +576,19 @@ export default function StockDetailModal({ stock: suppliedStock, onClose, benchm
           <strong>Disclaimer:</strong> Algorithmic research from quantitative metrics, not financial
           advice. Verify the filings and your own suitability before acting.
         </div>
+
+        {/* Pinned to the bottom of the scrolling panel, so the trade is one tap from the
+            research rather than behind a collapsed section on the page underneath. */}
+        {trade?.onSubmit && (
+          <TradeBar
+            ticker={stock.ticker}
+            currentPrice={position?.price ?? stock.price}
+            position={position}
+            onSubmit={trade.onSubmit}
+            closed={trade.closed}
+            onReopen={trade.onReopen}
+          />
+        )}
       </div>
     </div>
   )

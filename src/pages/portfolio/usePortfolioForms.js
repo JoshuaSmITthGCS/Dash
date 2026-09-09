@@ -33,11 +33,25 @@ function snapshotFieldsForShares(position, shares, costBasis) {
   }
 }
 
+// Shares of `ticker` still open across every lot once `soldByPositionId` is applied. A sale
+// that takes this to zero is a closed position, and has to be recorded as one -- otherwise
+// the next Fidelity baseline sync sees a ticker it expects, does not find it, and adds it
+// back. That is the whole of the "I sold it and it reappeared" bug.
+export function remainingSharesAfterSale(positions, ticker, soldByPositionId) {
+  const target = String(ticker || '').trim().toUpperCase()
+  return positions
+    .filter((row) => String(row.ticker || '').trim().toUpperCase() === target)
+    .reduce((sum, row) => sum + Math.max(0, Number(row.shares || 0) - Number(soldByPositionId[row.id] || 0)), 0)
+}
+
 export function usePortfolioForms({ portfolio, tracking, previewPortfolio, positions = [] }) {
   const {
     addPosition,
     removePosition,
     updatePosition,
+    recordClosedPosition,
+    clearClosedPosition,
+    closedPositions = [],
     syncReferencePortfolio,
     syncState,
   } = portfolio
@@ -64,7 +78,13 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
   // The version marker prevents later manual portfolio edits from being overwritten.
   useEffect(() => {
     const referenceReady = tracking.trackingState?.referencePortfolioVersion === REFERENCE_PORTFOLIO_VERSION
-    if (previewPortfolio || !syncState.connected || referenceReady || referencePortfolioSyncStarted.current) return
+    // trackingLoaded, not just trackingState: the positions listener and the tracking-state
+    // listener resolve independently, and this used to fire in the window between them, when
+    // trackingState was still null only because it had not been read yet. That re-applied the
+    // whole Aug 25 baseline on an already-synced account -- restoring sold and trimmed share
+    // counts -- on any page load where positions answered first.
+    if (previewPortfolio || !syncState.connected || !tracking.trackingLoaded
+      || referenceReady || referencePortfolioSyncStarted.current) return
     referencePortfolioSyncStarted.current = true
     syncReferencePortfolio().then((result) => {
       if (result?.success) setSyncMessage(`Fidelity snapshot applied: ${result.added} added · ${result.updated} updated · ${result.removed} removed.`)
@@ -73,27 +93,33 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
         setSyncMessage(`Could not apply Fidelity positions: ${result?.error || 'Unknown error'}`)
       }
     })
-  }, [previewPortfolio, syncReferencePortfolio, syncState.connected, tracking.trackingState?.referencePortfolioVersion])
+  }, [previewPortfolio, syncReferencePortfolio, syncState.connected, tracking.trackingLoaded,
+    tracking.trackingState?.referencePortfolioVersion])
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!formData.ticker || !formData.shares || !formData.costBasis) {
+  // `draft` is passed by AddPositionForm, which keeps its own fields so a keystroke does not
+  // re-render the whole portfolio page (and the ~900-row model it derives) between the key
+  // and the character. Falls back to the hook's own formData for callers that drive the
+  // fields through setFormData.
+  const handleSubmit = async (e, draft) => {
+    e?.preventDefault?.()
+    const entry = draft || formData
+    if (!entry.ticker || !entry.shares || !entry.costBasis) {
       alert('Please fill in all required fields')
       return
     }
-    const shares = parseFloat(formData.shares)
-    const costBasis = perShareCost(formData.costBasis, shares, formData.costMode)
+    const shares = parseFloat(entry.shares)
+    const costBasis = perShareCost(entry.costBasis, shares, entry.costMode)
     if (!Number.isFinite(costBasis) || costBasis <= 0) {
       alert('Enter a valid share count and cost')
       return
     }
-    const result = await addPosition(formData.ticker, shares, costBasis, formData.purchaseDate, formData.costMode)
+    const result = await addPosition(entry.ticker, shares, costBasis, entry.purchaseDate, entry.costMode)
     if (result?.success === false) {
       setSyncMessage(`Could not sync position: ${result.error}`)
       return
     }
-    captureRebalance(tracking, today(), positions, [...positions, { ticker: formData.ticker, shares, costBasis }])
-    setSyncMessage(`${formData.ticker} saved to your cloud portfolio.`)
+    captureRebalance(tracking, today(), positions, [...positions, { ticker: entry.ticker, shares, costBasis }])
+    setSyncMessage(`${entry.ticker} saved to your cloud portfolio.`)
     setFormData({ ticker: '', shares: '', costBasis: '', costMode: 'share', purchaseDate: today() })
     setShowAddForm(false)
   }
@@ -122,6 +148,14 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
       captureRebalance(tracking, today(), positions, positions.filter((row) => row.id !== positionId))
       setSyncMessage('Position removed from the cloud portfolio on every connected device.')
     }
+  }
+
+  // Every sale funnels through here once its position writes have committed: if the ticker
+  // has no open shares left anywhere, it is a closed position and gets recorded as one.
+  const closeIfFullyExited = async (ticker, soldByPositionId, details) => {
+    const remaining = remainingSharesAfterSale(positions, ticker, soldByPositionId)
+    if (remaining > 0.0000001) return
+    await recordClosedPosition?.(ticker, details)
   }
 
   const startSell = (pos) => {
@@ -163,6 +197,9 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
       : positions.filter((row) => row.id !== pos.id)
     captureRebalance(tracking, sellForm.saleDate, positions, afterSell)
     await tracking.recordActivity({ type: 'realized_gain', amount: realizedGain, effectiveDate: sellForm.saleDate, note: `${pos.ticker} sale` })
+    await closeIfFullyExited(pos.ticker, { [pos.id]: sharesSold }, {
+      saleDate: sellForm.saleDate, realizedGain, shares: sharesSold, price,
+    })
     setSellSaving(false)
     cancelSell()
     setSyncMessage(`Sold ${sharesSold} ${pos.ticker} share${sharesSold === 1 ? '' : 's'} at $${price.toFixed(2)} · ${realizedGain >= 0 ? '+' : '−'}$${Math.abs(realizedGain).toFixed(2)} realized.`)
@@ -233,6 +270,11 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
       type: 'realized_gain', amount: gain.totalRealizedGain, effectiveDate: lotSellForm.saleDate,
       note: `${lotSellTicker} FIFO sale across ${plan.depletions.length} lot${plan.depletions.length === 1 ? '' : 's'}: ${lotSummary}`,
     })
+    await closeIfFullyExited(
+      lotSellTicker,
+      Object.fromEntries(plan.depletions.map((row) => [row.positionId, row.quantity])),
+      { saleDate: lotSellForm.saleDate, realizedGain: gain.totalRealizedGain, shares: plan.totalQuantity, price },
+    )
     setLotSellSaving(false)
     const closedTicker = lotSellTicker
     const soldQuantity = plan.totalQuantity
@@ -240,6 +282,77 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
     setSyncMessage(`Sold ${soldQuantity} ${closedTicker} share${soldQuantity === 1 ? '' : 's'} at $${price.toFixed(2)} `
       + `across ${plan.depletions.length} lot${plan.depletions.length === 1 ? '' : 's'} · `
       + `${gain.totalRealizedGain >= 0 ? '+' : '−'}$${Math.abs(gain.totalRealizedGain).toFixed(2)} realized.`)
+  }
+
+  // One entry point for a trade typed anywhere in the app -- today that is the sticky trade
+  // bar in the stock research modal (src/components/TradeBar.jsx), which is reachable from
+  // any holding tile without first expanding it. Buys add a lot; sells deplete FIFO across
+  // every lot of the ticker, exactly as the Sell-across-lots sheet does, and record the
+  // realized result and (on a full exit) the closed position. `date` is free: a sale entered
+  // days after the fact books its realized gain on the day it actually happened.
+  const submitTrade = async ({ side, ticker, shares, price, date }) => {
+    const symbol = String(ticker || '').trim().toUpperCase()
+    const quantity = parseFloat(shares)
+    const pricePerShare = parseFloat(price)
+    const tradeDate = date || today()
+    if (!symbol) return { success: false, error: 'A ticker is required.' }
+    if (!Number.isFinite(quantity) || quantity <= 0) return { success: false, error: 'Enter a positive share count.' }
+    if (!Number.isFinite(pricePerShare) || pricePerShare <= 0) return { success: false, error: 'Enter a valid price per share.' }
+
+    if (side === 'buy') {
+      const result = await addPosition(symbol, quantity, pricePerShare, tradeDate, 'share')
+      if (result?.success === false) return { success: false, error: result.error || 'Could not save this buy.' }
+      captureRebalance(tracking, tradeDate, positions, [...positions, { ticker: symbol, shares: quantity, costBasis: pricePerShare }])
+      const message = `Bought ${quantity} ${symbol} share${quantity === 1 ? '' : 's'} at $${pricePerShare.toFixed(2)} on ${tradeDate}.`
+      setSyncMessage(message)
+      return { success: true, message }
+    }
+
+    const plan = planFifoSale(positions, symbol, quantity)
+    if (!plan.available) return { success: false, error: plan.reason }
+    for (const depletion of plan.depletions) {
+      const lot = positions.find((row) => row.id === depletion.positionId)
+      const result = depletion.remainingAfter > 0.0000001
+        ? await updatePosition(depletion.positionId, {
+          shares: depletion.remainingAfter,
+          ...snapshotFieldsForShares(lot, depletion.remainingAfter, lot?.costBasis),
+        })
+        : await removePosition(depletion.positionId)
+      if (result?.success === false) return { success: false, error: result.error || 'Could not save this sale.' }
+    }
+    const afterSell = positions
+      .map((row) => {
+        const depletion = plan.depletions.find((item) => item.positionId === row.id)
+        if (!depletion) return row
+        return depletion.remainingAfter > 0.0000001 ? { ...row, shares: depletion.remainingAfter } : null
+      })
+      .filter(Boolean)
+    captureRebalance(tracking, tradeDate, positions, afterSell)
+    const gain = realizedGainForPlan(plan, pricePerShare)
+    await tracking.recordActivity({
+      type: 'realized_gain', amount: gain.totalRealizedGain, effectiveDate: tradeDate,
+      note: `${symbol} sale (${plan.depletions.length} lot${plan.depletions.length === 1 ? '' : 's'}, FIFO)`,
+    })
+    await closeIfFullyExited(
+      symbol,
+      Object.fromEntries(plan.depletions.map((row) => [row.positionId, row.quantity])),
+      { saleDate: tradeDate, realizedGain: gain.totalRealizedGain, shares: quantity, price: pricePerShare },
+    )
+    const message = `Sold ${quantity} ${symbol} share${quantity === 1 ? '' : 's'} at $${pricePerShare.toFixed(2)} on ${tradeDate} · `
+      + `${gain.totalRealizedGain >= 0 ? '+' : '−'}$${Math.abs(gain.totalRealizedGain).toFixed(2)} realized.`
+    setSyncMessage(message)
+    return { success: true, message }
+  }
+
+  // Undo of a recorded exit: only clears the "do not re-add this" marker, since the sale
+  // itself already moved the shares and the realized gain into the ledger. Buying the ticker
+  // again clears it too (see addPosition), so this is for a sale entered by mistake.
+  const reopenClosedPosition = async (ticker) => {
+    const result = await clearClosedPosition?.(ticker)
+    setSyncMessage(result?.success === false
+      ? `Could not reopen ${ticker}: ${result.error || 'Unknown error'}`
+      : `${String(ticker).toUpperCase()} is no longer marked as sold. Add the position back to hold it again.`)
+    return result
   }
 
   const startEdit = (pos) => {
@@ -294,5 +407,6 @@ export function usePortfolioForms({ portfolio, tracking, previewPortfolio, posit
     sellingId, sellForm, setSellForm, sellSaving, startSell, cancelSell, saveSell,
     lotSellTicker, lotSellForm, setLotSellForm, lotSellSaving, lotSellPlan,
     startLotSell, cancelLotSell, saveLotSell,
+    submitTrade, closedPositions, reopenClosedPosition,
   }
 }

@@ -164,3 +164,56 @@
   .evidence-loadings, .evidence-regimes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 520px) { .evidence-loadings { grid-template-columns: 1fr; } }
+
+/* ---------------------------------------------------------------------------
+   Sticky trade bar (src/components/TradeBar.jsx)
+
+   The research modal is the scroll container, so `position: sticky; bottom: 0`
+   keeps the trade controls in reach at any scroll depth without the fixed
+   positioning that would fight the mobile keyboard.
+   --------------------------------------------------------------------------- */
+.trade-bar { position: sticky; bottom: calc(-1 * var(--sp-6)); z-index: 2; display: grid; gap: var(--sp-2);
+  margin: var(--sp-4) calc(-1 * var(--sp-6)) calc(-1 * var(--sp-6));
+  padding: var(--sp-3) var(--sp-6) calc(var(--sp-4) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-primary) 94%, transparent);
+  backdrop-filter: blur(10px); }
+.trade-bar-launch { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.trade-bar-held { display: grid; margin-right: auto; }
+.trade-bar-held strong { font: var(--fw-semibold) var(--fs-base) var(--font-mono); }
+.trade-bar-held small { color: var(--text-tertiary); font-size: var(--fs-2xs); }
+.trade-launch { min-height: 46px; }
+.trade-launch svg { transform: rotate(90deg); }
+.trade-bar-form { display: grid; gap: var(--sp-2-5); }
+.trade-bar-sides { display: inline-flex; gap: var(--sp-1); padding: var(--sp-0-5);
+  border: 1px solid var(--border); border-radius: 999px; justify-self: start; }
+.trade-side { min-height: 34px; padding: 0 var(--sp-4); border: 0; border-radius: 999px;
+  background: transparent; color: var(--text-secondary); font: var(--fw-semibold) var(--fs-xs) var(--font-sans);
+  cursor: pointer; }
+.trade-side[disabled] { opacity: .45; cursor: not-allowed; }
+.trade-side.active.buy { background: var(--positive-soft); color: var(--positive); }
+.trade-side.active.sell { background: var(--negative-soft); color: var(--negative); }
+.trade-bar-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2-5); }
+.trade-bar-fields label { display: grid; gap: var(--sp-1); }
+.trade-bar-fields span { color: var(--text-tertiary); font-size: var(--fs-2xs); }
+.trade-bar-fields input { width: 100%; min-height: 46px; padding: 0 var(--sp-3);
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface-primary);
+  color: var(--text-primary); font: var(--fs-base) var(--font-mono); }
+.trade-bar-quick { display: flex; align-items: center; gap: var(--sp-1-5); flex-wrap: wrap; }
+.trade-bar-quick > span { color: var(--text-tertiary); font-size: var(--fs-2xs); }
+.trade-bar-actions { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.trade-bar-estimate { margin: 0 auto 0 0; color: var(--text-secondary); font: var(--fs-xs) var(--font-mono); }
+.trade-confirm { min-height: 46px; }
+.trade-confirm.sell { background: var(--negative); border-color: var(--negative); color: #fff; }
+.trade-bar-note, .trade-bar-closed { margin: 0; color: var(--text-tertiary); font-size: var(--fs-2xs); line-height: 1.5; }
+.trade-bar-closed { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.trade-bar-status { margin: 0; font-size: var(--fs-xs); }
+.trade-bar-status.success { color: var(--positive); }
+.trade-bar-status.error { color: var(--negative); }
+@media (max-width: 620px) {
+  .trade-bar { margin-inline: calc(-1 * var(--sp-4)); padding-inline: var(--sp-4); bottom: calc(-1 * var(--sp-6)); }
+  .trade-bar-fields { grid-template-columns: 1fr 1fr; }
+  .trade-bar-fields label:last-child { grid-column: 1 / -1; }
+  .trade-bar-estimate { width: 100%; }
+  .trade-bar-actions .secondary-button, .trade-bar-actions .trade-confirm { flex: 1; }
+}

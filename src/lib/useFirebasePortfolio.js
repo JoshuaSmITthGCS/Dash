@@ -40,9 +40,16 @@ const RETIRED_TICKERS = new Set(['DECJ', 'TTM', 'AMZM'])
 const isRetiredReferencePosition = (documentId, stored = {}) =>
   RETIRED_TICKERS.has(String(stored.ticker || '').trim().toUpperCase())
 
+// A ticker the user has sold out of completely. Stored per ticker (not per lot) because the
+// question every consumer asks is "do I still own this?", and answered from Firestore rather
+// than inferred from the absence of a position: absence is exactly what the Fidelity baseline
+// sync treats as "missing, re-add it". See planReferencePortfolioSync's closedTickers.
+const closedPositionId = (ticker) => String(ticker || '').trim().toUpperCase()
+
 export function useFirebasePortfolio() {
   const { currentUser } = useAuth()
   const [positions, setPositions] = useState([])
+  const [closedPositions, setClosedPositions] = useState([])
   const [loading, setLoading] = useState(true)
   const [migrated, setMigrated] = useState(false)
   const [syncState, setSyncState] = useState({ connected: false, lastSyncedAt: null, error: '' })
@@ -117,6 +124,7 @@ export function useFirebasePortfolio() {
   useEffect(() => {
     if (!currentUser) {
       setPositions([])
+      setClosedPositions([])
       setLoading(false)
       setSyncState({ connected: false, lastSyncedAt: null, error: '' })
       return undefined
@@ -147,8 +155,53 @@ export function useFirebasePortfolio() {
       setLoading(false)
       setSyncState({ connected: false, lastSyncedAt: null, error: error.message })
     })
-    return unsubscribe
+    const unsubscribeClosed = onSnapshot(collection(db, 'portfolios', userId, 'closedPositions'), (snapshot) => {
+      setClosedPositions(snapshot.docs
+        .map((item) => ({ id: item.id, ...item.data() }))
+        .sort((left, right) => String(right.saleDate || right.closedAt || '').localeCompare(String(left.saleDate || left.closedAt || ''))))
+    }, (error) => {
+      console.error('Closed-position subscription failed:', error)
+    })
+    return () => { unsubscribe(); unsubscribeClosed() }
   }, [currentUser, migrated])
+
+  const closedTickers = closedPositions.map((row) => closedPositionId(row.ticker || row.id))
+
+  // Marks a ticker as sold out of, so no later baseline sync re-creates it. Written by the
+  // sell flows the moment a sale takes the last share; cleared by a fresh buy below.
+  const recordClosedPosition = async (ticker, { saleDate = null, realizedGain = null, shares = null, price = null } = {}) => {
+    if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
+    const id = closedPositionId(ticker)
+    if (!id) return { success: false, error: 'A ticker is required.' }
+    try {
+      await setDoc(doc(db, 'portfolios', currentUser.uid, 'closedPositions', id), {
+        ticker: id,
+        saleDate: saleDate || new Date().toISOString().split('T')[0],
+        closedAt: new Date().toISOString(),
+        ...(Number.isFinite(Number(realizedGain)) ? { realizedGain: Number(realizedGain) } : {}),
+        ...(Number.isFinite(Number(shares)) ? { shares: Number(shares) } : {}),
+        ...(Number.isFinite(Number(price)) ? { price: Number(price) } : {}),
+      }, { merge: true })
+      return { success: true }
+    } catch (error) {
+      console.error('Failed to record closed position:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Reopens a ticker: a buy, or an undo of a sale recorded by mistake.
+  const clearClosedPosition = async (ticker) => {
+    if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
+    const id = closedPositionId(ticker)
+    if (!id) return { success: false, error: 'A ticker is required.' }
+    try {
+      await deleteDoc(doc(db, 'portfolios', currentUser.uid, 'closedPositions', id))
+      return { success: true }
+    } catch (error) {
+      console.error('Failed to clear closed position:', error)
+      return { success: false, error: error.message }
+    }
+  }
 
   // Add new position
   const addPosition = async (ticker, shares, costBasis, purchaseDate = new Date().toISOString().split('T')[0], costBasisInputMode = 'share') => {
@@ -180,6 +233,7 @@ export function useFirebasePortfolio() {
       batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), {
         lastActivityAt: new Date().toISOString(), ledgerComplete: false,
       }, { merge: true })
+      batch.delete(doc(db, 'portfolios', currentUser.uid, 'closedPositions', closedPositionId(ticker)))
       await batch.commit()
       return { success: true }
     } catch (error) {
@@ -242,7 +296,7 @@ export function useFirebasePortfolio() {
     if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
     try {
       const importedAt = new Date().toISOString()
-      const operations = planReferencePortfolioSync(positions)
+      const operations = planReferencePortfolioSync(positions, undefined, { closedTickers })
       const batch = writeBatch(db)
       operations.forEach((operation) => {
         const positionRef = doc(db, 'portfolios', currentUser.uid, 'positions', operation.id)
@@ -385,11 +439,15 @@ export function useFirebasePortfolio() {
 
   return {
     positions,
+    closedPositions,
+    closedTickers,
     loading,
     syncState,
     addPosition,
     removePosition,
     updatePosition,
+    recordClosedPosition,
+    clearClosedPosition,
     clearAll,
     exportPortfolio,
     applyPortfolioImport,

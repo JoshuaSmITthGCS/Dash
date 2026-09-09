@@ -240,3 +240,19 @@ details { border-top: 1px solid var(--border); padding-top: var(--sp-3); } summa
 @media (max-width: 680px) {
   .lot-sell-preview li { grid-template-columns: 1fr; gap: var(--sp-0-5); }
 }
+
+/* Sell without expanding the tile: essential-only is the default density, and it used to
+   hide every action the holding had. */
+.portfolio-stock-quick-actions { display: flex; justify-content: flex-end; gap: var(--sp-3);
+  padding: 0 var(--sp-3) var(--sp-2-5); }
+.portfolio-stock-quick-actions .text-button { font-size: var(--fs-2xs); }
+
+/* Recorded exits — see ClosedPositions in src/pages/portfolio/Holdings.jsx. */
+.closed-positions { margin-top: var(--sp-3); padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--border); border-radius: var(--card-radius); background: var(--surface-primary); }
+.closed-positions summary { display: flex; align-items: baseline; gap: var(--sp-2); cursor: pointer; }
+.closed-positions ul { display: grid; gap: var(--sp-2); margin: var(--sp-3) 0 0; padding: 0; list-style: none; }
+.closed-positions li { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+  font-size: var(--fs-xs); color: var(--text-secondary); }
+.closed-positions li .text-button { margin-left: auto; }
+.closed-positions p { margin: var(--sp-3) 0 0; color: var(--text-tertiary); font-size: var(--fs-2xs); line-height: 1.5; }

@@ -1,47 +1,56 @@
 // "All holdings": the essential-only switch, the three comparison tabs, the add form,
 // the holdings grid, and the sell sheet.
 
+import { useRef, useState } from 'react'
 import { MobileSheet } from '../../components/MobileSheet.jsx'
 import { PortfolioSortToolbar } from './PortfolioBits.jsx'
 import HoldingCard from './HoldingCard.jsx'
 import { BenchmarkTable, FixedBasisTable } from './ComparisonTables.jsx'
 import { lotCountsByTicker } from '../../lib/taxLots.js'
 
-function AddPositionForm({ formData, setFormData, onSubmit }) {
+// Fields are local, and only the completed entry is handed up on submit. Lifting them into
+// the page's write hook meant every character re-derived the full holdings model for every
+// position on the page before the character could paint -- which reads, while typing, as the
+// field having dropped what you typed.
+function AddPositionForm({ formData, onSubmit }) {
+  const [draft, setDraft] = useState(formData)
+  // Re-seed when the hook resets the form (a save clears it) rather than on every render.
+  const seeded = useRef(formData)
+  if (seeded.current !== formData) { seeded.current = formData; if (draft !== formData) setDraft(formData) }
   return (
     <div className="card add-position-card">
       <h3>Add New Position</h3>
-      <form onSubmit={onSubmit} className="add-position-form">
+      <form onSubmit={(event) => onSubmit(event, draft)} className="add-position-form">
         <div>
           <label className="field-label" htmlFor="position-ticker">Ticker</label>
-          <input id="position-ticker" type="text" placeholder="AAPL" value={formData.ticker} required
-            onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })} />
+          <input id="position-ticker" type="text" placeholder="AAPL" value={draft.ticker} required
+            onChange={(e) => setDraft({ ...draft, ticker: e.target.value.toUpperCase() })} />
         </div>
         <div>
           <label className="field-label" htmlFor="position-shares">Shares</label>
-          <input id="position-shares" type="number" step="0.001" placeholder="10" value={formData.shares} required
-            onChange={(e) => setFormData({ ...formData, shares: e.target.value })} />
+          <input id="position-shares" type="number" step="0.001" placeholder="10" value={draft.shares} required
+            onChange={(e) => setDraft({ ...draft, shares: e.target.value })} />
         </div>
         <div>
           <label className="field-row-label">
             <span>Cost basis</span>
-            <select className="field-mode-select" value={formData.costMode}
+            <select className="field-mode-select" value={draft.costMode}
               aria-label="Cost basis units"
-              onChange={(e) => setFormData({ ...formData, costMode: e.target.value })}>
+              onChange={(e) => setDraft({ ...draft, costMode: e.target.value })}>
               <option value="share">$/share</option>
               <option value="total">Total $</option>
             </select>
           </label>
           <input type="number" step="0.01" id="position-cost"
-            aria-label={formData.costMode === 'total' ? 'Total cost basis in dollars' : 'Cost basis per share in dollars'}
-            placeholder={formData.costMode === 'total' ? '200.00' : '150.00'}
-            value={formData.costBasis} required
-            onChange={(e) => setFormData({ ...formData, costBasis: e.target.value })} />
+            aria-label={draft.costMode === 'total' ? 'Total cost basis in dollars' : 'Cost basis per share in dollars'}
+            placeholder={draft.costMode === 'total' ? '200.00' : '150.00'}
+            value={draft.costBasis} required
+            onChange={(e) => setDraft({ ...draft, costBasis: e.target.value })} />
         </div>
         <div>
           <label className="field-label" htmlFor="position-date">Purchase Date</label>
-          <input id="position-date" type="date" value={formData.purchaseDate} required
-            onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })} />
+          <input id="position-date" type="date" value={draft.purchaseDate} required
+            onChange={(e) => setDraft({ ...draft, purchaseDate: e.target.value })} />
         </div>
         <div><button type="submit" className="tab active">Add</button></div>
       </form>
@@ -121,6 +130,42 @@ function LotSellSheet({ ticker, forms }) {
   )
 }
 
+// Proof that a sale registered. A closed ticker is deliberately absent from every holding
+// total, so without this the only evidence of a recorded sale is the absence of a tile --
+// indistinguishable from the sale never having saved.
+function ClosedPositions({ rows, onReopen }) {
+  if (!rows.length) return null
+  return (
+    <details className="closed-positions">
+      <summary>
+        <span className="sec-label">Sold</span>
+        <strong>{rows.length} position{rows.length === 1 ? '' : 's'} closed</strong>
+      </summary>
+      <ul>
+        {rows.map((row) => (
+          <li key={row.ticker || row.id}>
+            <b className="mono">{row.ticker || row.id}</b>
+            <span>Sold {row.saleDate || String(row.closedAt || '').slice(0, 10) || 'recently'}
+              {Number.isFinite(Number(row.shares)) ? ` · ${row.shares} sh` : ''}
+              {Number.isFinite(Number(row.price)) ? ` @ $${Number(row.price).toFixed(2)}` : ''}</span>
+            {Number.isFinite(Number(row.realizedGain)) && (
+              <span className={Number(row.realizedGain) >= 0 ? 'positive' : 'negative'}>
+                {Number(row.realizedGain) >= 0 ? '+' : '−'}${Math.abs(Number(row.realizedGain)).toFixed(2)} realized
+              </span>
+            )}
+            <button type="button" className="text-button" onClick={() => onReopen(row.ticker || row.id)}>Undo</button>
+          </li>
+        ))}
+      </ul>
+      <p>
+        These are excluded from holdings, allocation and every portfolio total, and no
+        brokerage-baseline sync will add them back. Undo only clears that block — it does not
+        restore the shares or reverse the realized gain already booked.
+      </p>
+    </details>
+  )
+}
+
 export default function Holdings({
   holdings,
   sortedPositions,
@@ -172,7 +217,7 @@ export default function Holdings({
       </div>
 
       {forms.showAddForm && (
-        <AddPositionForm formData={forms.formData} setFormData={forms.setFormData} onSubmit={forms.handleSubmit} />
+        <AddPositionForm formData={forms.formData} onSubmit={forms.handleSubmit} />
       )}
 
       {viewMode === 'holdings' && (
@@ -185,6 +230,7 @@ export default function Holdings({
           ))}
           {sortedPositions.length === 0 && <div className="portfolio-holdings-empty">No positions yet. Add a position to start tracking.</div>}
         </div>
+        <ClosedPositions rows={forms.closedPositions || []} onReopen={forms.reopenClosedPosition} />
         {sellingPosition && <SellSheet position={sellingPosition} forms={forms} />}
         {forms.lotSellTicker && <LotSellSheet ticker={forms.lotSellTicker} forms={forms} />}
         </>

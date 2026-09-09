@@ -1,12 +1,16 @@
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { usePortfolioForms } from './usePortfolioForms.js'
+import { REFERENCE_PORTFOLIO_VERSION } from '../../lib/referencePortfolio.js'
 
-function setup({ positions = [], portfolioOverrides = {}, trackingOverrides = {} } = {}) {
+function setup({ positions = [], portfolioOverrides = {}, trackingOverrides = {}, preview = true } = {}) {
   const portfolio = {
     addPosition: vi.fn().mockResolvedValue({ success: true }),
     removePosition: vi.fn().mockResolvedValue({ success: true }),
     updatePosition: vi.fn().mockResolvedValue({ success: true }),
+    recordClosedPosition: vi.fn().mockResolvedValue({ success: true }),
+    clearClosedPosition: vi.fn().mockResolvedValue({ success: true }),
+    closedPositions: [],
     syncReferencePortfolio: vi.fn().mockResolvedValue({ success: true }),
     syncState: { connected: false },
     ...portfolioOverrides,
@@ -17,7 +21,7 @@ function setup({ positions = [], portfolioOverrides = {}, trackingOverrides = {}
     recordRebalance: vi.fn().mockResolvedValue({ success: true }),
     ...trackingOverrides,
   }
-  const { result } = renderHook(() => usePortfolioForms({ portfolio, tracking, previewPortfolio: true, positions }))
+  const { result } = renderHook(() => usePortfolioForms({ portfolio, tracking, previewPortfolio: preview, positions }))
   return { result, portfolio, tracking }
 }
 
@@ -237,5 +241,126 @@ describe('usePortfolioForms snapshot restatement on quantity writes', () => {
     const [, updates] = portfolio.updatePosition.mock.calls[0]
     expect(updates.snapshotValue).toBeNull()
     expect(updates.costBasisTotal).toBe(80)
+  })
+})
+
+describe('a completed exit is recorded so no baseline sync re-adds it', () => {
+  it('marks the ticker closed when the last share of the only lot is sold', async () => {
+    const existing = [{ id: 'lulu', ticker: 'LULU', shares: 1, costBasis: 117.94, currentPrice: 130 }]
+    const { result, portfolio } = setup({ positions: existing })
+    act(() => { result.current.startSell(existing[0]) })
+    act(() => { result.current.setSellForm({ shares: '1', price: '130', saleDate: '2026-09-02' }) })
+    await act(async () => { await result.current.saveSell(existing[0]) })
+    expect(portfolio.removePosition).toHaveBeenCalledWith('lulu')
+    expect(portfolio.recordClosedPosition).toHaveBeenCalledWith('LULU', expect.objectContaining({
+      saleDate: '2026-09-02', shares: 1, price: 130,
+    }))
+  })
+
+  it('does not mark the ticker closed while another lot of it is still open', async () => {
+    const existing = [
+      { id: 'lot-a', ticker: 'LULU', shares: 1, costBasis: 117.94, purchaseDate: '2026-07-30' },
+      { id: 'lot-b', ticker: 'LULU', shares: 2, costBasis: 121, purchaseDate: '2026-08-30' },
+    ]
+    const { result, portfolio } = setup({ positions: existing })
+    act(() => { result.current.startSell(existing[0]) })
+    act(() => { result.current.setSellForm({ shares: '1', price: '130', saleDate: '2026-09-02' }) })
+    await act(async () => { await result.current.saveSell(existing[0]) })
+    expect(portfolio.recordClosedPosition).not.toHaveBeenCalled()
+  })
+
+  it('marks the ticker closed when a cross-lot sale empties every lot', async () => {
+    const existing = [
+      { id: 'lot-a', ticker: 'LULU', shares: 1, costBasis: 100, purchaseDate: '2026-07-30' },
+      { id: 'lot-b', ticker: 'LULU', shares: 2, costBasis: 120, purchaseDate: '2026-08-30' },
+    ]
+    const { result, portfolio } = setup({ positions: existing })
+    act(() => { result.current.startLotSell('LULU') })
+    act(() => { result.current.setLotSellForm({ shares: '3', price: '130', saleDate: '2026-09-02' }) })
+    await act(async () => { await result.current.saveLotSell() })
+    expect(portfolio.recordClosedPosition).toHaveBeenCalledWith('LULU', expect.objectContaining({ saleDate: '2026-09-02' }))
+  })
+})
+
+describe('submitTrade (the sticky trade bar)', () => {
+  const held = [
+    { id: 'lot-a', ticker: 'LULU', shares: 1, costBasis: 100, purchaseDate: '2026-07-30' },
+    { id: 'lot-b', ticker: 'LULU', shares: 2, costBasis: 130, purchaseDate: '2026-08-30' },
+  ]
+
+  it('sells FIFO across lots, books the realized gain on the date given, and closes the ticker', async () => {
+    const { result, portfolio, tracking } = setup({ positions: held })
+    let outcome
+    await act(async () => {
+      outcome = await result.current.submitTrade({ side: 'sell', ticker: 'lulu', shares: '3', price: '140', date: '2026-09-02' })
+    })
+    expect(outcome.success).toBe(true)
+    expect(portfolio.removePosition).toHaveBeenCalledWith('lot-a')
+    expect(portfolio.removePosition).toHaveBeenCalledWith('lot-b')
+    // (140-100)*1 + (140-130)*2 = 60
+    expect(tracking.recordActivity).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'realized_gain', amount: 60, effectiveDate: '2026-09-02',
+    }))
+    expect(portfolio.recordClosedPosition).toHaveBeenCalledWith('LULU', expect.objectContaining({ saleDate: '2026-09-02' }))
+  })
+
+  it('refuses to sell more shares than are held, without touching any position', async () => {
+    const { result, portfolio } = setup({ positions: held })
+    let outcome
+    await act(async () => {
+      outcome = await result.current.submitTrade({ side: 'sell', ticker: 'LULU', shares: '9', price: '140', date: '2026-09-02' })
+    })
+    expect(outcome.success).toBe(false)
+    expect(portfolio.updatePosition).not.toHaveBeenCalled()
+    expect(portfolio.removePosition).not.toHaveBeenCalled()
+  })
+
+  it('buys as a new lot dated when the buy actually happened', async () => {
+    const { result, portfolio } = setup({ positions: [] })
+    await act(async () => {
+      await result.current.submitTrade({ side: 'buy', ticker: 'lulu', shares: '2', price: '150', date: '2026-09-08' })
+    })
+    expect(portfolio.addPosition).toHaveBeenCalledWith('LULU', 2, 150, '2026-09-08', 'share')
+  })
+
+  it('rejects a zero or missing quantity before writing anything', async () => {
+    const { result, portfolio } = setup({ positions: held })
+    let outcome
+    await act(async () => {
+      outcome = await result.current.submitTrade({ side: 'buy', ticker: 'LULU', shares: '', price: '150', date: '2026-09-08' })
+    })
+    expect(outcome.success).toBe(false)
+    expect(portfolio.addPosition).not.toHaveBeenCalled()
+  })
+})
+
+describe('the one-time Fidelity baseline sync', () => {
+  const connected = { syncState: { connected: true } }
+
+  it('waits for the tracking document to load before deciding the account has never synced', async () => {
+    const { portfolio } = setup({
+      portfolioOverrides: connected,
+      trackingOverrides: { trackingState: null, trackingLoaded: false },
+      preview: false,
+    })
+    expect(portfolio.syncReferencePortfolio).not.toHaveBeenCalled()
+  })
+
+  it('does not re-apply the baseline once the loaded tracking state says this version was applied', async () => {
+    const { portfolio } = setup({
+      portfolioOverrides: connected,
+      trackingOverrides: { trackingState: { referencePortfolioVersion: REFERENCE_PORTFOLIO_VERSION }, trackingLoaded: true },
+      preview: false,
+    })
+    expect(portfolio.syncReferencePortfolio).not.toHaveBeenCalled()
+  })
+
+  it('applies the baseline once when the loaded tracking state has no version marker', async () => {
+    const { portfolio } = setup({
+      portfolioOverrides: connected,
+      trackingOverrides: { trackingState: null, trackingLoaded: true },
+      preview: false,
+    })
+    expect(portfolio.syncReferencePortfolio).toHaveBeenCalledTimes(1)
   })
 })

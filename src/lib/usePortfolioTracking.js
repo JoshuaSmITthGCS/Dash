@@ -15,17 +15,27 @@ export function usePortfolioTracking() {
   const [activities, setActivities] = useState([])
   const [rebalances, setRebalances] = useState([])
   const [trackingState, setTrackingState] = useState(null)
+  // Whether the tracking document has actually been read yet, which is not the same question
+  // as whether it holds anything. Before this, a null trackingState meant both "still
+  // loading" and "nothing stored", and the one-time Fidelity baseline sync read that as
+  // "never synced" and re-applied the whole Aug 25 export on any page load where the
+  // positions listener answered first -- resurrecting sold holdings. Consumers that gate on
+  // stored tracking state must wait for this.
+  const [trackingLoaded, setTrackingLoaded] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (!currentUser) {
       setSnapshots([]); setActivities([]); setRebalances([]); setTrackingState(null); setError('')
+      setTrackingLoaded(false)
       return undefined
     }
+    setTrackingLoaded(false)
     const userId = currentUser.uid
     const stopState = onSnapshot(doc(db, 'portfolios', userId, 'tracking', 'state'), (snapshot) => {
       setTrackingState(snapshot.exists() ? snapshot.data() : null)
-    }, (reason) => setError(reason.message))
+      setTrackingLoaded(true)
+    }, (reason) => { setError(reason.message); setTrackingLoaded(true) })
     const stopSnapshots = onSnapshot(collection(db, 'portfolios', userId, 'intradaySnapshots'), (snapshot) => {
       setSnapshots(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })).sort((a, b) => String(a.recordedAt).localeCompare(String(b.recordedAt))))
     }, (reason) => setError(reason.message))
@@ -119,7 +129,7 @@ export function usePortfolioTracking() {
   }
 
   return {
-    snapshots, activities, rebalances, trackingState: effectiveTrackingState, error,
+    snapshots, activities, rebalances, trackingState: effectiveTrackingState, trackingLoaded, error,
     recordSnapshot, recordActivity, setLedgerComplete, recordRebalance,
   }
 }

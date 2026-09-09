@@ -247,10 +247,26 @@ export default function Portfolio({ view = 'summary' }) {
           recommendationOverride={selectedStock.recommendation}
           stopLoss={selectedStock.stopLoss}
           position={selectedStock.shares
-            ? { shares: selectedStock.shares, price: selectedStock.currentPrice, purchaseDate: selectedStock.purchaseDate }
+            ? {
+              // Every lot of the ticker, not just the row that was tapped: the trade bar
+              // sells the holding FIFO across lots, and guidance ("trim 3 shares") reads
+              // wrong if it is scoped to one of several lots of the same company.
+              shares: positions
+                .filter((row) => String(row.ticker || '').toUpperCase() === String(selectedStock.ticker || '').toUpperCase())
+                .reduce((sum, row) => sum + (Number(row.shares) || 0), 0) || selectedStock.shares,
+              price: selectedStock.currentPrice,
+              purchaseDate: selectedStock.purchaseDate,
+            }
             : null}
           benchmarkHistory={holdings.benchmarkHistory}
           onClose={() => setSelectedStock(null)}
+          // Sizes are summed across every lot of the ticker, because the trade bar sells the
+          // ticker (FIFO across lots), not the one row that happened to be tapped.
+          trade={previewPortfolio ? null : {
+            onSubmit: forms.submitTrade,
+            closed: forms.closedPositions.some((row) => row.ticker === String(selectedStock.ticker || '').toUpperCase()),
+            onReopen: forms.reopenClosedPosition,
+          }}
         />
       )}
     </>

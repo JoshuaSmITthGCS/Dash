@@ -163,3 +163,31 @@ describe('planReferencePortfolioSync', () => {
     })
   })
 })
+
+describe('closed positions are never re-added by a baseline sync', () => {
+  const reference = [
+    { ticker: 'LULU', shares: 1, costBasis: 117.94, snapshotPrice: 122.78, purchaseDate: '2026-07-30' },
+    { ticker: 'MU', shares: 0.1, costBasis: 983, snapshotPrice: 910, purchaseDate: '2026-07-23' },
+  ]
+
+  it('skips a sold ticker the export still lists, and leaves the rest authoritative', () => {
+    const operations = planReferencePortfolioSync([], reference, { closedTickers: ['LULU'] })
+    expect(operations.map((operation) => operation.record.ticker)).toEqual(['MU'])
+  })
+
+  it('matches the closed ticker regardless of case or padding', () => {
+    const operations = planReferencePortfolioSync([], reference, { closedTickers: [' lulu '] })
+    expect(operations.some((operation) => operation.record.ticker === 'LULU')).toBe(false)
+  })
+
+  it('does not restate a closed ticker that some stored row still holds, and does not delete it either', () => {
+    const stored = [{ id: 'LULU-manual', ticker: 'LULU', shares: 5, costBasis: 130 }]
+    const operations = planReferencePortfolioSync(stored, reference, { closedTickers: ['LULU'] })
+    expect(operations.find((operation) => operation.id === 'LULU-manual')).toBeUndefined()
+  })
+
+  it('re-adds the ticker again once it is no longer marked closed', () => {
+    const operations = planReferencePortfolioSync([], reference, { closedTickers: [] })
+    expect(operations.map((operation) => operation.record.ticker).sort()).toEqual(['LULU', 'MU'])
+  })
+})

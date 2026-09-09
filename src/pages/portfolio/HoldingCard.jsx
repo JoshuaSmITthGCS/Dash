@@ -30,6 +30,16 @@ export default function HoldingCard({ pos, essentialOnly, forms, onSelectStock, 
         </span>
       </button>
 
+      {/* Essential-only is the default view, and it used to hide the details block that held
+          every action -- so the common case was a holding you could look at but not trade.
+          Sell stays reachable at this density; the rest still live under the full detail. */}
+      {essentialOnly && !editing && !selling && (
+        <div className="portfolio-stock-quick-actions">
+          <button type="button" className="text-button" onClick={() => startSell(pos)}>Sell</button>
+          {pos.priceInfo && <button type="button" className="text-button" onClick={() => onSelectStock(pos)}>Research &amp; trade</button>}
+        </div>
+      )}
+
       {!essentialOnly && <div className="portfolio-stock-details">
         <div className="portfolio-stock-allocation">{pos.allocationPct == null ? 'Allocation unavailable' : `${pos.allocationPct.toFixed(1)}% of portfolio`}</div>
         <div className="holding-value">

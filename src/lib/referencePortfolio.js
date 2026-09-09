@@ -122,15 +122,23 @@ export const REFERENCE_PORTFOLIO = [
  * Purchased column survives every later sync. An empty stored date is backfilled from the
  * history, which is what puts real acquisition dates on holdings imported before those dates
  * were known. A holding the history does not reach stays undated rather than dated wrongly.
+ *
+ * `closedTickers` is the second exception, and the more important one: the export is a
+ * photograph of Aug 25, and a name sold after that date is no longer held no matter what the
+ * photograph shows. Re-adding it here is how a recorded sale silently came back -- the sale
+ * committed correctly, the next sync re-created the position from the baseline, and the
+ * holding reappeared as if nothing had been sold. A closed ticker is skipped entirely: not
+ * added, and not restated if some other row for it still exists.
  */
-export function planReferencePortfolioSync(positions, reference = REFERENCE_PORTFOLIO) {
+export function planReferencePortfolioSync(positions, reference = REFERENCE_PORTFOLIO, { closedTickers = [] } = {}) {
   const normalizeTicker = (ticker = '') => String(ticker).trim().toUpperCase()
   const existingByTicker = new Map(
     positions.map((position) => [normalizeTicker(position.ticker), position])
   )
   const referenceTickers = new Set(reference.map((position) => normalizeTicker(position.ticker)))
+  const closed = new Set([...closedTickers].map(normalizeTicker))
 
-  const upserts = reference.map((snapshot) => {
+  const upserts = reference.filter((snapshot) => !closed.has(normalizeTicker(snapshot.ticker))).map((snapshot) => {
     const ticker = normalizeTicker(snapshot.ticker)
     const existing = existingByTicker.get(ticker)
     if (!existing) {
