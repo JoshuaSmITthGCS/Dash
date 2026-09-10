@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 113,
+  "refreshes_observed": 116,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -18853,6 +18853,347 @@
             "price_to_book"
           ],
           "score_delta": -0.5,
+          "confidence_delta": 0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-08T22:25:11.559274+00:00",
+      "current_refresh": "advisor-2026-09-09T16:32:40.557390+00:00",
+      "shared_tickers": 893,
+      "rank_turnover": {
+        "top_40": 0.225,
+        "top_100": 0.225
+      },
+      "tickers_with_availability_driven_change": 21,
+      "tickers_with_availability_driven_change_pct": 0.024,
+      "mean_abs_score_delta": 1.07,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "MRNA",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "interest_coverage"
+          ],
+          "score_delta": 5.6,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "ELS",
+          "metrics_with_value_change": [
+            "cash_conversion",
+            "ev_to_fcf"
+          ],
+          "metrics_with_availability_change": [
+            "capex_to_depreciation",
+            "fcf_growth_3y"
+          ],
+          "score_delta": 3.6,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "SNOW",
+          "metrics_with_value_change": [
+            "net_buyback_yield"
+          ],
+          "metrics_with_availability_change": [
+            "return_on_invested_capital"
+          ],
+          "score_delta": 3.1,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "AZO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -2.7,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "DCI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -2.2,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "BKNG",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "current_ratio",
+            "earnings_growth",
+            "free_cash_flow_yield",
+            "profit_margin",
+            "revenue_growth"
+          ],
+          "score_delta": 2.1,
+          "confidence_delta": -0.09
+        },
+        {
+          "ticker": "PCAR",
+          "metrics_with_value_change": [
+            "gross_profits_to_assets"
+          ],
+          "metrics_with_availability_change": [
+            "altman_z",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "interest_coverage",
+            "operating_margin_trend",
+            "return_on_invested_capital"
+          ],
+          "score_delta": 1.9,
+          "confidence_delta": -0.15
+        },
+        {
+          "ticker": "PGR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -1.9,
+          "confidence_delta": -0.05
+        },
+        {
+          "ticker": "ITT",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -1.3,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "ZTS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -1.0,
+          "confidence_delta": 0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-09T16:32:40.557390+00:00",
+      "current_refresh": "advisor-2026-09-09T19:45:37.821248+00:00",
+      "shared_tickers": 893,
+      "rank_turnover": {
+        "top_40": 0.225,
+        "top_100": 0.225
+      },
+      "tickers_with_availability_driven_change": 6,
+      "tickers_with_availability_driven_change_pct": 0.007,
+      "mean_abs_score_delta": 0.35,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 3.8,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 3.2,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "BKNG",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "current_ratio",
+            "earnings_growth",
+            "free_cash_flow_yield",
+            "profit_margin",
+            "revenue_growth"
+          ],
+          "score_delta": -2.5,
+          "confidence_delta": 0.09
+        },
+        {
+          "ticker": "AZO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 2.2,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "SNX",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.1,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "WDC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 0.6,
+          "confidence_delta": -0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-09T19:45:37.821248+00:00",
+      "current_refresh": "advisor-2026-09-09T22:22:44.219124+00:00",
+      "shared_tickers": 894,
+      "rank_turnover": {
+        "top_40": 0.1,
+        "top_100": 0.1
+      },
+      "tickers_with_availability_driven_change": 11,
+      "tickers_with_availability_driven_change_pct": 0.012,
+      "mean_abs_score_delta": 0.3,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "GMED",
+          "metrics_with_value_change": [
+            "capex_to_depreciation",
+            "ev_to_ebit",
+            "net_buyback_yield"
+          ],
+          "metrics_with_availability_change": [
+            "net_debt_to_ebitda"
+          ],
+          "score_delta": -9.0,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "BXP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "altman_z",
+            "debt_to_equity",
+            "earnings_growth",
+            "forward_pe",
+            "peg",
+            "price_to_tangible_book",
+            "profit_margin",
+            "return_on_equity",
+            "return_on_invested_capital",
+            "revenue_growth"
+          ],
+          "score_delta": -7.4,
+          "confidence_delta": -0.12
+        },
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -3.0,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "XOM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "return_on_invested_capital"
+          ],
+          "score_delta": -1.7,
+          "confidence_delta": -0.42
+        },
+        {
+          "ticker": "TFC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "cash_conversion",
+            "fcf_growth_3y"
+          ],
+          "score_delta": 1.5,
+          "confidence_delta": -0.13
+        },
+        {
+          "ticker": "CIEN",
+          "metrics_with_value_change": [
+            "piotroski_f"
+          ],
+          "metrics_with_availability_change": [
+            "capex_to_depreciation"
+          ],
+          "score_delta": -1.2,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "ALL",
+          "metrics_with_value_change": [
+            "net_buyback_yield"
+          ],
+          "metrics_with_availability_change": [
+            "interest_coverage",
+            "operating_margin_trend"
+          ],
+          "score_delta": -1.1,
+          "confidence_delta": -0.1
+        },
+        {
+          "ticker": "SNX",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -1.1,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -0.9,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "WDC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -0.7,
           "confidence_delta": 0.01
         }
       ]
