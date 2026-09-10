@@ -66,19 +66,23 @@ live credentials that WP2's script will bring the real account to exactly the ri
 `FIREBASE_SERVICE_ACCOUNT_JSON`) configured for this Firebase project:
 
 ```bash
+# 0. Get the merged code onto the machine that holds the Firebase credentials.
+git checkout main
+git pull origin main
+
 # 1. See exactly what would change. Writes nothing.
-npm run portfolio:audit -- --email <your-email>
+npm run portfolio:audit -- --email jbmsmusic05@gmail.com
 #    Expect: critical finding on LULU (resurrected) or a statement mismatch, since the
 #    account currently still holds LULU and is missing TSM/the NTNX exit.
 
 # 2. See exactly what the reconciliation would do. Writes nothing.
-npm run portfolio:reconcile -- --email <your-email> \
+npm run portfolio:reconcile -- --email jbmsmusic05@gmail.com \
   --input scripts/fixtures/fidelity-activity-since-seed.json
 #    Read the printed plan. It should show: LULU closed (realized -$15.54), NTNX closed across
 #    two fills (realized +$37.13), TSM added (0.482 sh, $199.67), 5 dividends, 1 deposit ($400).
 
 # 3. Apply it, and verify the result against the real Sep 9 statement in the same run.
-npm run portfolio:reconcile -- --email <your-email> \
+npm run portfolio:reconcile -- --email jbmsmusic05@gmail.com \
   --input scripts/fixtures/fidelity-activity-since-seed.json \
   --commit --verify scripts/fixtures/fidelity-positions-2026-09-09.json
 #    Expect: "Committed 20 writes." then "✅ Verified: stored positions match ... exactly."
@@ -87,7 +91,7 @@ npm run portfolio:reconcile -- --email <your-email> \
 #    3 sale_proceeds, 2 position_added/stock_purchase for TSM.)
 
 # 4. Confirm the whole ledger, not just positions, is now clean.
-npm run portfolio:audit -- --email <your-email> \
+npm run portfolio:audit -- --email jbmsmusic05@gmail.com \
   --statement scripts/fixtures/fidelity-positions-2026-09-09.json
 #    Expect: 0 critical, 0 warnings. One informational finding is expected here now:
 #    "uncorrected_snapshots" -- daily account-value snapshots recorded while LULU/NTNX/TSM
@@ -97,22 +101,22 @@ npm run portfolio:audit -- --email <your-email> \
 #    performance measures (Sharpe, the reconciliation bridge, TWR/MWR) stop reflecting the bug
 #    for date ranges that include Aug 25 - Sep 9. Never overwrites blindly: the original value
 #    and unrealized gain are kept alongside the corrected ones on every document it touches.
-npm run portfolio:rebuild-snapshots -- --email <your-email> \
+npm run portfolio:rebuild-snapshots -- --email jbmsmusic05@gmail.com \
   --history scripts/fixtures/fidelity-activity-since-seed.json
 #    Read the printed plan: each affected date, what ticker was wrongly present/absent, and
 #    the exact dollar delta. Then apply it:
-npm run portfolio:rebuild-snapshots -- --email <your-email> \
+npm run portfolio:rebuild-snapshots -- --email jbmsmusic05@gmail.com \
   --history scripts/fixtures/fidelity-activity-since-seed.json --commit
 #    A handful of the earliest snapshots may print BLOCKED with "no per-ticker prices recorded"
 #    -- these predate commit 8eae175's per-ticker price capture and cannot be surgically
 #    corrected. Add --allow-estimates to reconstruct those from historical closes alone instead
 #    (a real number, clearly marked `estimated: true`, lower precision than the surgical
 #    correction above since it re-derives the whole total rather than adjusting only what was
-#    wrong): npm run portfolio:rebuild-snapshots -- --email <your-email> --history <file>
+#    wrong): npm run portfolio:rebuild-snapshots -- --email jbmsmusic05@gmail.com --history <file>
 #    --commit --allow-estimates
 
 # 6. Re-run the audit -- the uncorrected_snapshots finding should now be gone.
-npm run portfolio:audit -- --email <your-email> \
+npm run portfolio:audit -- --email jbmsmusic05@gmail.com \
   --statement scripts/fixtures/fidelity-positions-2026-09-09.json
 ```
 
