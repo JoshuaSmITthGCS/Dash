@@ -13,8 +13,10 @@ import { useAuth } from './FirebaseAuthContext'
 import {
   planReferencePortfolioSync,
   referenceIntradaySnapshot,
+  referenceSyncMerges,
   referenceSyncRecord,
   referenceTrackingState,
+  seededTickersAfter,
   summarizeReferenceSync,
   REFERENCE_PORTFOLIO_VERSION,
 } from './referencePortfolio'
@@ -40,9 +42,16 @@ const RETIRED_TICKERS = new Set(['DECJ', 'TTM', 'AMZM'])
 const isRetiredReferencePosition = (documentId, stored = {}) =>
   RETIRED_TICKERS.has(String(stored.ticker || '').trim().toUpperCase())
 
+// A ticker the user has sold out of completely. Stored per ticker (not per lot) because the
+// question every consumer asks is "do I still own this?", and answered from Firestore rather
+// than inferred from the absence of a position: absence is exactly what the Fidelity baseline
+// sync treats as "missing, re-add it". See planReferencePortfolioSync's closedTickers.
+const closedPositionId = (ticker) => String(ticker || '').trim().toUpperCase()
+
 export function useFirebasePortfolio() {
   const { currentUser } = useAuth()
   const [positions, setPositions] = useState([])
+  const [closedPositions, setClosedPositions] = useState([])
   const [loading, setLoading] = useState(true)
   const [migrated, setMigrated] = useState(false)
   const [syncState, setSyncState] = useState({ connected: false, lastSyncedAt: null, error: '' })
@@ -117,6 +126,7 @@ export function useFirebasePortfolio() {
   useEffect(() => {
     if (!currentUser) {
       setPositions([])
+      setClosedPositions([])
       setLoading(false)
       setSyncState({ connected: false, lastSyncedAt: null, error: '' })
       return undefined
@@ -147,8 +157,53 @@ export function useFirebasePortfolio() {
       setLoading(false)
       setSyncState({ connected: false, lastSyncedAt: null, error: error.message })
     })
-    return unsubscribe
+    const unsubscribeClosed = onSnapshot(collection(db, 'portfolios', userId, 'closedPositions'), (snapshot) => {
+      setClosedPositions(snapshot.docs
+        .map((item) => ({ id: item.id, ...item.data() }))
+        .sort((left, right) => String(right.saleDate || right.closedAt || '').localeCompare(String(left.saleDate || left.closedAt || ''))))
+    }, (error) => {
+      console.error('Closed-position subscription failed:', error)
+    })
+    return () => { unsubscribe(); unsubscribeClosed() }
   }, [currentUser, migrated])
+
+  const closedTickers = closedPositions.map((row) => closedPositionId(row.ticker || row.id))
+
+  // Marks a ticker as sold out of, so no later baseline sync re-creates it. Written by the
+  // sell flows the moment a sale takes the last share; cleared by a fresh buy below.
+  const recordClosedPosition = async (ticker, { saleDate = null, realizedGain = null, shares = null, price = null } = {}) => {
+    if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
+    const id = closedPositionId(ticker)
+    if (!id) return { success: false, error: 'A ticker is required.' }
+    try {
+      await setDoc(doc(db, 'portfolios', currentUser.uid, 'closedPositions', id), {
+        ticker: id,
+        saleDate: saleDate || new Date().toISOString().split('T')[0],
+        closedAt: new Date().toISOString(),
+        ...(Number.isFinite(Number(realizedGain)) ? { realizedGain: Number(realizedGain) } : {}),
+        ...(Number.isFinite(Number(shares)) ? { shares: Number(shares) } : {}),
+        ...(Number.isFinite(Number(price)) ? { price: Number(price) } : {}),
+      }, { merge: true })
+      return { success: true }
+    } catch (error) {
+      console.error('Failed to record closed position:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Reopens a ticker: a buy, or an undo of a sale recorded by mistake.
+  const clearClosedPosition = async (ticker) => {
+    if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
+    const id = closedPositionId(ticker)
+    if (!id) return { success: false, error: 'A ticker is required.' }
+    try {
+      await deleteDoc(doc(db, 'portfolios', currentUser.uid, 'closedPositions', id))
+      return { success: true }
+    } catch (error) {
+      console.error('Failed to clear closed position:', error)
+      return { success: false, error: error.message }
+    }
+  }
 
   // Add new position
   const addPosition = async (ticker, shares, costBasis, purchaseDate = new Date().toISOString().split('T')[0], costBasisInputMode = 'share') => {
@@ -172,14 +227,28 @@ export function useFirebasePortfolio() {
 
       const batch = writeBatch(db)
       batch.set(doc(db, 'portfolios', currentUser.uid, 'positions', positionId), newPosition)
+      const purchaseCost = newPosition.shares * newPosition.costBasis
       batch.set(doc(db, 'portfolios', currentUser.uid, 'activity', `position-added-${Date.now()}`), {
         type: 'position_added', ticker: newPosition.ticker, shares: newPosition.shares,
-        pricePerShare: newPosition.costBasis, amount: newPosition.shares * newPosition.costBasis,
+        pricePerShare: newPosition.costBasis, amount: purchaseCost,
         effectiveDate: purchaseDate, recordedAt: new Date().toISOString(), source: 'manual_holding_entry',
+      })
+      // The capital this buy moved into the tracked basket. Tracked NAV is invested holdings
+      // only, so without this row the account's value simply jumps by the purchase amount with
+      // nothing accounting for it -- which every return measure reads as investment gain.
+      // 'stock_purchase', not 'external_contribution': nothing here knows whether the money
+      // came from outside or from an earlier sale, and net invested capital ignores it for
+      // exactly that reason. See BASKET_FLOW_TYPES in portfolioAnalytics.js.
+      batch.set(doc(db, 'portfolios', currentUser.uid, 'activity', `purchase-${Date.now()}`), {
+        type: 'stock_purchase', ticker: newPosition.ticker, amount: purchaseCost,
+        effectiveDate: purchaseDate, recordedAt: new Date().toISOString(),
+        source: 'position_purchase',
+        note: 'Capital moved into your holdings by a purchase. Not a deposit into the account.',
       })
       batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), {
         lastActivityAt: new Date().toISOString(), ledgerComplete: false,
       }, { merge: true })
+      batch.delete(doc(db, 'portfolios', currentUser.uid, 'closedPositions', closedPositionId(ticker)))
       await batch.commit()
       return { success: true }
     } catch (error) {
@@ -188,7 +257,14 @@ export function useFirebasePortfolio() {
     }
   }
 
-  const removePosition = async (positionId) => {
+  // `sale: true` marks a removal that is the last leg of a recorded sale rather than a bare
+  // "take this off my list". The difference matters to the cash-flow ledger: a bare removal
+  // makes shares disappear with no proceeds recorded anywhere, which is exactly the state
+  // ledgerComplete exists to deny, but a sale books its own realized_gain row on the way
+  // through. Resetting the flag on a sale switched the money-weighted and time-weighted
+  // returns off after every complete exit, and left the user re-ticking a deposits-and-
+  // withdrawals checkbox that the sale had not invalidated.
+  const removePosition = async (positionId, { sale = false } = {}) => {
     if (!currentUser) return
 
     try {
@@ -197,10 +273,15 @@ export function useFirebasePortfolio() {
       batch.delete(doc(db, 'portfolios', currentUser.uid, 'positions', positionId))
       batch.set(doc(db, 'portfolios', currentUser.uid, 'activity', `position-removed-${Date.now()}`), {
         type: 'position_removed', ticker: removed?.ticker || null, shares: removed?.shares || null,
-        recordedAt: new Date().toISOString(), source: 'manual_holding_removal',
-        note: 'Removal is not treated as a sale. Realized proceeds must be recorded separately.',
+        recordedAt: new Date().toISOString(),
+        source: sale ? 'sale_completed' : 'manual_holding_removal',
+        note: sale
+          ? 'Last shares of this lot sold. Proceeds are recorded as a realized_gain activity row.'
+          : 'Removal is not treated as a sale. Realized proceeds must be recorded separately.',
       })
-      batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), { ledgerComplete: false }, { merge: true })
+      if (!sale) {
+        batch.set(doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'), { ledgerComplete: false }, { merge: true })
+      }
       await batch.commit()
       return { success: true }
     } catch (error) {
@@ -231,18 +312,24 @@ export function useFirebasePortfolio() {
     }
   }
 
-  // Reconcile the signed-in portfolio to the user's Aug 25 Fidelity positions export. The
-  // export is the authoritative invested baseline, so this updates quantities and total cost
-  // bases, adds missing symbols, removes symbols no longer present, and stores the export as
-  // an invested-only intraday observation. Acquisition dates come from the account's
-  // transaction history rather than the export, and a date already stored always wins -- see
-  // planReferencePortfolioSync. Money-market cash and pending activity never enter the
+  // Seeds the signed-in portfolio from the user's Aug 25 Fidelity positions export, and
+  // stores that export as an invested-only intraday observation for the value history.
+  //
+  // Seeding, not reconciling: the export is a photograph of one morning, and this Firestore
+  // collection is the record of what is actually held. So this only ever hands over a
+  // holding the account has never been given -- it does not restate a share count, a cost
+  // basis or a date, and it never deletes. A ticker sold (closedTickers) or already
+  // delivered once and since removed (seededTickers) is left alone permanently. The one
+  // write onto an existing holding is a purchase-date backfill, which fills a blank rather
+  // than overruling a stored answer. Money-market cash and pending activity never enter the
   // position collection or the chart snapshot.
-  const syncReferencePortfolio = async () => {
+  const syncReferencePortfolio = async ({ seededTickers = [] } = {}) => {
     if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
     try {
       const importedAt = new Date().toISOString()
-      const operations = planReferencePortfolioSync(positions)
+      const operations = planReferencePortfolioSync(positions, undefined, {
+        closedTickers, seededTickers, mode: 'seed',
+      })
       const batch = writeBatch(db)
       operations.forEach((operation) => {
         const positionRef = doc(db, 'portfolios', currentUser.uid, 'positions', operation.id)
@@ -251,7 +338,7 @@ export function useFirebasePortfolio() {
           return
         }
         batch.set(positionRef, referenceSyncRecord(operation, importedAt), {
-          merge: operation.kind === 'update',
+          merge: referenceSyncMerges(operation),
         })
       })
 
@@ -263,14 +350,54 @@ export function useFirebasePortfolio() {
       )
       batch.set(
         doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'),
-        referenceTrackingState(importedAt),
+        referenceTrackingState(importedAt, seededTickersAfter(operations, seededTickers)),
         { merge: true },
       )
       await batch.commit()
 
-      return { success: true, ...summarizeReferenceSync(operations), version: REFERENCE_PORTFOLIO_VERSION }
+      return {
+        success: true,
+        ...summarizeReferenceSync(operations),
+        version: REFERENCE_PORTFOLIO_VERSION,
+        // Always written, whether or not any holding was seeded: an export refresh moves
+        // prices forward by adding this dated observation to the account's own price history.
+        observedAt: snapshot.document.recordedAt,
+      }
     } catch (error) {
       console.error('Failed to sync reference portfolio:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // The lighter half of a baseline refresh: record what the export says prices were, on the
+  // date it says they were observed, without touching a single position document. This is
+  // what an established account gets when REFERENCE_PORTFOLIO_VERSION changes -- seeding
+  // (syncReferencePortfolio above) is reserved for an account that has never held anything,
+  // so a version bump alone can never be the thing that adds, restates, or resurrects a
+  // holding on an account that has been traded in. See usePortfolioForms.js's isEmptyAccount
+  // gate, which decides which of these two functions the automatic refresh calls.
+  const recordReferenceObservation = async () => {
+    if (!currentUser) return { success: false, error: 'Firebase is not connected.' }
+    try {
+      const importedAt = new Date().toISOString()
+      const snapshot = referenceIntradaySnapshot()
+      const batch = writeBatch(db)
+      batch.set(
+        doc(db, 'portfolios', currentUser.uid, 'intradaySnapshots', snapshot.id),
+        snapshot.document,
+        { merge: true },
+      )
+      // referencePortfolioSeeded is deliberately left untouched: this call never seeds
+      // anything, so it must not claim any ticker was ever delivered.
+      batch.set(
+        doc(db, 'portfolios', currentUser.uid, 'tracking', 'state'),
+        { referencePortfolioVersion: REFERENCE_PORTFOLIO_VERSION, referencePortfolioImportedAt: importedAt },
+        { merge: true },
+      )
+      await batch.commit()
+      return { success: true, version: REFERENCE_PORTFOLIO_VERSION, observedAt: snapshot.document.recordedAt }
+    } catch (error) {
+      console.error('Failed to record reference observation:', error)
       return { success: false, error: error.message }
     }
   }
@@ -385,14 +512,19 @@ export function useFirebasePortfolio() {
 
   return {
     positions,
+    closedPositions,
+    closedTickers,
     loading,
     syncState,
     addPosition,
     removePosition,
     updatePosition,
+    recordClosedPosition,
+    clearClosedPosition,
     clearAll,
     exportPortfolio,
     applyPortfolioImport,
-    syncReferencePortfolio
+    syncReferencePortfolio,
+    recordReferenceObservation,
   }
 }

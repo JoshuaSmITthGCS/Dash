@@ -21,6 +21,7 @@ import GrowthChart from '../../components/GrowthChart'
 import Icon from '../../components/Icons'
 import { compareBenchmarkSeries, netInvestedCapital, portfolioReconciliationBridge, portfolioReturnSummary, selectPeriod } from '../../lib/portfolioAnalytics.js'
 import { marketDate } from '../../lib/usePortfolioTracking.js'
+import { snapshotPriceRows } from '../../lib/portfolioPosition.js'
 import { money, moveColor, PERFORMANCE_PERIODS, PERIOD_NAMES, signedPct } from './format.js'
 
 const CASH_FLOW_TYPES = [
@@ -29,6 +30,15 @@ const CASH_FLOW_TYPES = [
   { value: 'dividend', label: 'Dividend received' },
   { value: 'fee', label: 'Fee charged' },
 ]
+
+// Written automatically by the trade paths, never by this form, but shown in the recent list
+// so the ledger accounts for every movement rather than only the hand-entered ones.
+const TRADE_FLOW_LABELS = {
+  stock_purchase: 'Bought (money into holdings)',
+  sale_proceeds: 'Sold (proceeds out of holdings)',
+  external_contribution: 'Outside money invested',
+  realized_gain: 'Realized gain/loss',
+}
 
 function CashFlowLedger({ tracking }) {
   const [form, setForm] = useState({ type: 'deposit', amount: '', effectiveDate: new Date().toISOString().slice(0, 10) })
@@ -55,7 +65,7 @@ function CashFlowLedger({ tracking }) {
 
   const flows = netInvestedCapital(tracking.activities)
   const recent = [...(tracking.activities || [])]
-    .filter((row) => CASH_FLOW_TYPES.some((type) => type.value === row.type))
+    .filter((row) => CASH_FLOW_TYPES.some((type) => type.value === row.type) || TRADE_FLOW_LABELS[row.type])
     .slice(0, 8)
 
   return (
@@ -89,7 +99,8 @@ function CashFlowLedger({ tracking }) {
       <label className="cash-flow-ledger-complete">
         <input type="checkbox" checked={Boolean(tracking.trackingState?.ledgerComplete)}
           onChange={(e) => tracking.setLedgerComplete(e.target.checked)} />
-        <span>This ledger has every deposit and withdrawal since tracking started — enable the money-weighted return once checked.</span>
+        <span>This ledger has every deposit and withdrawal since tracking started — enable the money-weighted return once checked.
+          Buys and sales record themselves, so only add a deposit or withdrawal here for cash you moved that no trade already accounts for.</span>
       </label>
 
       {flows.available && <p className="cash-flow-ledger-summary">Net external flows recorded: {money(flows.deposits)} in, {money(flows.withdrawals)} out ({flows.count} entries).</p>}
@@ -98,7 +109,7 @@ function CashFlowLedger({ tracking }) {
         <ul className="cash-flow-ledger-list">
           {recent.map((row) => (
             <li key={row.id}>
-              <span>{CASH_FLOW_TYPES.find((type) => type.value === row.type)?.label || row.type}</span>
+              <span>{CASH_FLOW_TYPES.find((type) => type.value === row.type)?.label || TRADE_FLOW_LABELS[row.type] || row.type}</span>
               <span>{money(row.amount)}</span>
               <span>{row.effectiveDate}</span>
             </li>
@@ -118,6 +129,10 @@ function ReconciliationBridge({ bridge }) {
     ['Beginning NAV', bridge.beginningNav],
     ['+ Deposits', bridge.deposits],
     ['− Withdrawals', -bridge.withdrawals],
+    // Tracked value is invested holdings only, so buying moves money in and selling moves it
+    // out. Neither is performance, and both step the NAV they are reconciled against.
+    ['+ Purchases into holdings', bridge.purchases],
+    ['− Sale proceeds out of holdings', -bridge.saleProceeds],
     ['+ Dividends', bridge.dividends],
     ['− Fees', -bridge.fees],
     ['+ Realized gains', bridge.realizedGains],
@@ -167,7 +182,10 @@ export default function Performance({
     if (alreadyRecorded) return
     const pricedCount = (holdings.positions || []).filter((row) => row.currentValue != null).length
     const coveragePct = holdings.positions?.length ? Math.round(pricedCount / holdings.positions.length * 100) : 0
-    tracking.recordSnapshot({ value: holdings.totalValue, coveragePct, source: 'performance_view', unrealizedGain: holdings.totalGain })
+    tracking.recordSnapshot({
+      value: holdings.totalValue, coveragePct, source: 'performance_view', unrealizedGain: holdings.totalGain,
+      prices: snapshotPriceRows(holdings.positions),
+    })
   }, [holdings.totalValue, holdings.totalGain, tracking?.snapshots])
 
   const returnSummary = tracking

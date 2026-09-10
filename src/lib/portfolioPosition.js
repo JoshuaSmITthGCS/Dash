@@ -30,6 +30,90 @@ export function mergePortfolioQuotes(priceData, quotes = {}) {
   return merged
 }
 
+/**
+ * The most recent price this account has actually recorded for each ticker, from the
+ * `intradaySnapshots` collection in Firestore.
+ *
+ * This is the account's own price record, and it is the reason a holding does not stay pinned
+ * to whatever a brokerage export said on the morning it was seeded. Two writers fill that
+ * collection and both store prices in the same shape: the app's own daily observation
+ * (recordSnapshot in usePortfolioTracking.js) and a brokerage export applied as a dated
+ * observation (referenceIntradaySnapshot in referencePortfolio.js). So updating the export
+ * moves prices forward by adding an observation to this history, not by rewriting position
+ * documents — which is what keeps the stored portfolio the record.
+ *
+ * Newest wins per ticker, judged by the observation's own timestamp rather than by document
+ * order, since a later-applied export can carry an earlier date than a snapshot already taken.
+ */
+export function latestRecordedPrices(snapshots = []) {
+  const latest = {}
+  for (const snapshot of Array.isArray(snapshots) ? snapshots : []) {
+    const recordedAt = snapshot?.recordedAt || null
+    const time = Date.parse(recordedAt || '')
+    if (!Array.isArray(snapshot?.prices) || !Number.isFinite(time)) continue
+    for (const row of snapshot.prices) {
+      const ticker = String(row?.ticker || '').trim().toUpperCase()
+      if (!ticker || !finite(row?.price)) continue
+      if (latest[ticker] && latest[ticker].time >= time) continue
+      latest[ticker] = {
+        ticker,
+        time,
+        recordedAt,
+        price: Number(row.price),
+        previousClose: finite(row.previousClose) ? Number(row.previousClose) : null,
+        source: snapshot.source || null,
+      }
+    }
+  }
+  return latest
+}
+
+/**
+ * Marks each holding at the account's own most recent recorded price, where that observation
+ * is newer than the published research price it would otherwise use. A live quote refresh
+ * still wins — it is newer than anything recorded — and so does a research price published
+ * after the last observation.
+ */
+export function mergeRecordedPrices(priceData, recorded = {}, publishedAt = null) {
+  const merged = { ...priceData }
+  const publishedTime = Date.parse(publishedAt || '')
+  for (const [ticker, observation] of Object.entries(recorded)) {
+    const current = merged[ticker]
+    if (current?.portfolioQuote) continue
+    // A position-document snapshot is a seed value, so any recorded observation at least as
+    // new as it replaces it. A published research price is only beaten by a newer observation.
+    const incumbentTime = current?.positionSnapshot
+      ? Date.parse(current.quoteMarketTime || '')
+      : publishedTime
+    if (finite(current?.price) && Number.isFinite(incumbentTime) && incumbentTime > observation.time) continue
+    merged[ticker] = {
+      ...(current || { ticker }),
+      price: observation.price,
+      previousClose: observation.previousClose
+        ?? (finite(current?.previousClose) ? Number(current.previousClose) : null),
+      positionSnapshot: false,
+      recordedPrice: true,
+      recordedAt: observation.recordedAt,
+      quoteMarketTime: observation.recordedAt,
+    }
+  }
+  return merged
+}
+
+/** The per-ticker price rows an account-value observation stores alongside its total. */
+export function snapshotPriceRows(positions = [], recordedAt = new Date().toISOString()) {
+  return positions
+    .filter((row) => row?.ticker && finite(row?.currentPrice))
+    .map((row) => ({
+      ticker: String(row.ticker).trim().toUpperCase(),
+      shares: finite(row.shares) ? Number(row.shares) : null,
+      price: Number(row.currentPrice),
+      value: finite(row.currentValue) ? Number(row.currentValue) : null,
+      previousClose: finite(row.priceInfo?.previousClose) ? Number(row.priceInfo.previousClose) : null,
+      marketTime: row.priceInfo?.quoteMarketTime || recordedAt,
+    }))
+}
+
 /** Prefer a newer brokerage-export price while retaining the published history/metadata. */
 export function mergePositionSnapshots(priceData, positions = [], publishedAt = null) {
   const merged = { ...priceData }

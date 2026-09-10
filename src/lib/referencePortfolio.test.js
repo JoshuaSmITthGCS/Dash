@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   planReferencePortfolioSync,
+  referenceTrackingState,
+  seededTickersAfter,
+  seededTickersFromTrackingState,
   REFERENCE_PORTFOLIO,
   REFERENCE_PORTFOLIO_RECORDED_AT,
 } from './referencePortfolio'
@@ -161,5 +164,132 @@ describe('planReferencePortfolioSync', () => {
       expect(position.costBasis * position.shares).toBeCloseTo(position.costBasisTotal, 8)
       expect(position.snapshotPreviousClose).toBeNull()
     })
+  })
+})
+
+describe('closed positions are never re-added by a baseline sync', () => {
+  const reference = [
+    { ticker: 'LULU', shares: 1, costBasis: 117.94, snapshotPrice: 122.78, purchaseDate: '2026-07-30' },
+    { ticker: 'MU', shares: 0.1, costBasis: 983, snapshotPrice: 910, purchaseDate: '2026-07-23' },
+  ]
+
+  it('skips a sold ticker the export still lists, and leaves the rest authoritative', () => {
+    const operations = planReferencePortfolioSync([], reference, { closedTickers: ['LULU'] })
+    expect(operations.map((operation) => operation.record.ticker)).toEqual(['MU'])
+  })
+
+  it('matches the closed ticker regardless of case or padding', () => {
+    const operations = planReferencePortfolioSync([], reference, { closedTickers: [' lulu '] })
+    expect(operations.some((operation) => operation.record.ticker === 'LULU')).toBe(false)
+  })
+
+  it('does not restate a closed ticker that some stored row still holds, and does not delete it either', () => {
+    const stored = [{ id: 'LULU-manual', ticker: 'LULU', shares: 5, costBasis: 130 }]
+    const operations = planReferencePortfolioSync(stored, reference, { closedTickers: ['LULU'] })
+    expect(operations.find((operation) => operation.id === 'LULU-manual')).toBeUndefined()
+  })
+
+  it('re-adds the ticker again once it is no longer marked closed', () => {
+    const operations = planReferencePortfolioSync([], reference, { closedTickers: [] })
+    expect(operations.map((operation) => operation.record.ticker).sort()).toEqual(['LULU', 'MU'])
+  })
+})
+
+describe('seed mode — the snapshot is history, Firestore is the record', () => {
+  const reference = [
+    { ticker: 'LULU', shares: 1, costBasis: 117.94, snapshotPrice: 122.78, purchaseDate: '2026-07-30' },
+    { ticker: 'MU', shares: 0.101, costBasis: 983, snapshotPrice: 910, purchaseDate: '2026-07-23' },
+  ]
+  const seed = (positions, options = {}) =>
+    planReferencePortfolioSync(positions, reference, { mode: 'seed', ...options })
+
+  it('gives a fresh account its opening holdings', () => {
+    expect(seed([]).map((operation) => operation.kind)).toEqual(['add', 'add'])
+  })
+
+  it('never restates a stored share count, cost basis or date', () => {
+    // Every field disagrees with the export. All of them are the account's own, and win.
+    const stored = [
+      { id: 'mu-1', ticker: 'MU', shares: 99, costBasis: 1, purchaseDate: '2026-01-01' },
+      { id: 'lulu-1', ticker: 'LULU', shares: 42, costBasis: 2, purchaseDate: '2026-02-02' },
+    ]
+    expect(seed(stored)).toEqual([])
+  })
+
+  it('never removes a holding the export does not carry', () => {
+    const stored = [{ id: 'nvda-1', ticker: 'NVDA', shares: 3, costBasis: 100, purchaseDate: '2026-09-01' }]
+    const operations = seed(stored)
+    expect(operations.some((operation) => operation.kind === 'remove')).toBe(false)
+    expect(operations.every((operation) => operation.kind === 'add')).toBe(true)
+  })
+
+  it('fills a missing purchase date, since that fills a blank rather than overruling an answer', () => {
+    const stored = [
+      { id: 'mu-1', ticker: 'MU', shares: 99, costBasis: 1, purchaseDate: '' },
+      { id: 'lulu-1', ticker: 'LULU', shares: 42, costBasis: 2, purchaseDate: '2026-02-02' },
+    ]
+    const [operation] = seed(stored)
+    expect(operation).toMatchObject({ kind: 'backfill', id: 'mu-1', record: { purchaseDate: '2026-07-23' } })
+    expect(operation.record.shares).toBeUndefined()
+    expect(operation.record.costBasis).toBeUndefined()
+  })
+
+  it('does not re-deliver a holding it already seeded once and the account has since removed', () => {
+    expect(seed([], { seededTickers: ['LULU'] }).map((operation) => operation.record.ticker)).toEqual(['MU'])
+  })
+
+  it('leaves a sold ticker alone even on an account that was never seeded', () => {
+    expect(seed([], { closedTickers: ['LULU'] }).map((operation) => operation.record.ticker)).toEqual(['MU'])
+  })
+
+  it('is a no-op on an account already holding the whole snapshot', () => {
+    const stored = reference.map((row, index) => ({ id: `p${index}`, ...row }))
+    expect(seed(stored)).toEqual([])
+  })
+})
+
+describe('the seeded-once ledger', () => {
+  it('accumulates every ticker handed over, uppercased and deduplicated', () => {
+    const operations = planReferencePortfolioSync([], [
+      { ticker: 'LULU', shares: 1, costBasis: 100 },
+      { ticker: 'MU', shares: 1, costBasis: 100 },
+    ], { mode: 'seed' })
+    expect(seededTickersAfter(operations, ['mu', 'NVDA'])).toEqual(['LULU', 'MU', 'NVDA'])
+  })
+
+  it('is written onto the tracking document beside the version marker', () => {
+    expect(referenceTrackingState('2026-09-09T00:00:00.000Z', ['LULU'])).toMatchObject({
+      referencePortfolioSeeded: ['LULU'],
+    })
+    // Omitted rather than blanked when a caller has nothing to record.
+    expect(referenceTrackingState('2026-09-09T00:00:00.000Z').referencePortfolioSeeded).toBeUndefined()
+  })
+})
+
+describe('reconcile mode is still available for callers that mean it', () => {
+  it('remains authoritative for a user-supplied brokerage file', () => {
+    const kinds = planReferencePortfolioSync(
+      [{ id: 'old', ticker: 'ZZZZ', shares: 1, costBasis: 5 }],
+      [{ ticker: 'MU', shares: 1, costBasis: 100 }],
+      { mode: 'reconcile' },
+    ).map((operation) => operation.kind)
+    expect(kinds).toEqual(['add', 'remove'])
+  })
+})
+
+describe('seededTickersFromTrackingState', () => {
+  const reference = [{ ticker: 'LULU' }, { ticker: 'MU' }]
+
+  it('reads the stored ledger when there is one', () => {
+    expect(seededTickersFromTrackingState({ referencePortfolioSeeded: ['MU'] }, reference)).toEqual(['MU'])
+  })
+
+  it('treats an account seeded before the ledger existed as having been given the whole export', () => {
+    expect(seededTickersFromTrackingState({ referencePortfolioVersion: 'older' }, reference)).toEqual(['LULU', 'MU'])
+  })
+
+  it('reports nothing for an account that has never been seeded', () => {
+    expect(seededTickersFromTrackingState(null, reference)).toEqual([])
+    expect(seededTickersFromTrackingState({}, reference)).toEqual([])
   })
 })

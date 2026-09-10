@@ -1,4 +1,4 @@
-import modelSettings from '../../pipeline/config/settings.json'
+import modelSettings from '../../pipeline/config/settings.json' with { type: 'json' }
 
 const PERIOD_DAYS = { '1D': 2, '1W': 7, '1M': 31, '3M': 93, '6M': 186, YTD: 'year-to-date', '1Y': 366, All: null }
 const analyticsConfig = modelSettings.portfolio_analytics
@@ -353,8 +353,68 @@ export function intradayPortfolioHigh(points = []) {
 // that was simply deposited and immediately spent.
 const CONTRIBUTION_TYPES = ['deposit', 'external_contribution']
 
+// The mirror image of 'external_contribution', and logged automatically by every recorded
+// sale. Tracked NAV is invested holdings only -- cash is deliberately not a tracked bucket
+// (FZFXX is excluded by name) -- so selling moves money across the boundary of what is
+// measured, exactly as buying does in the other direction. Without this row the shares simply
+// vanish from NAV with nothing accounting for where their market value went, and every
+// consumer reads that as a loss: time-weighted return charts a cliff, money-weighted return
+// credits the drop against the strategy, and the reconciliation bridge fails by the full
+// proceeds. It is deliberately not the plain 'withdrawal' type, which means money that left
+// the brokerage account entirely.
+export const SALE_PROCEEDS_TYPE = 'sale_proceeds'
+export const STOCK_PURCHASE_TYPE = 'stock_purchase'
+
+// Every movement that steps tracked NAV without being performance. Two kinds, and the
+// difference is whether new money arrived:
+//
+//   - deposit / withdrawal / external_contribution -- capital entering or leaving the account.
+//   - stock_purchase / sale_proceeds -- capital crossing between cash and holdings inside it.
+//     Not capital added or removed, so netInvestedCapital ignores them by design, but they do
+//     move an invested-holdings NAV and so must be removed from any return measured off it.
+//
+// A buy is written as stock_purchase rather than external_contribution because nothing here
+// knows whether it was funded by new money or by a previous sale, and guessing would silently
+// inflate net invested capital. external_contribution stays for a purchase explicitly declared
+// as outside money.
+export const BASKET_INFLOW_TYPES = [...CONTRIBUTION_TYPES, STOCK_PURCHASE_TYPE]
+export const BASKET_OUTFLOW_TYPES = ['withdrawal', SALE_PROCEEDS_TYPE]
+export const BASKET_FLOW_TYPES = [...BASKET_INFLOW_TYPES, ...BASKET_OUTFLOW_TYPES]
+
+/**
+ * Realized profit and loss actually booked by recorded sales, optionally only on or after
+ * `since`. Sales are the one portfolio event whose result leaves the holdings entirely: the
+ * position is gone, so every holdings-derived figure on the page correctly stops counting it,
+ * and without this the money it made or lost would be invisible outside the reconciliation
+ * bridge. Reads the same `realized_gain` activity rows the bridge and MWR already use.
+ */
+export function realizedResultSummary(transactions = [], { since = null } = {}) {
+  const rows = (Array.isArray(transactions) ? transactions : [])
+    .filter((row) => row?.type === 'realized_gain' && finite(row.amount))
+    .filter((row) => !since || String(row.effectiveDate || row.recordedAt || '').slice(0, 10) >= since)
+  if (!rows.length) {
+    return { available: false, value: null, count: 0, reason: 'No sale has been recorded yet.' }
+  }
+  const value = rows.reduce((sum, row) => sum + Number(row.amount), 0)
+  const dates = rows.map((row) => String(row.effectiveDate || row.recordedAt || '').slice(0, 10)).filter(Boolean).sort()
+  return {
+    available: true,
+    value,
+    count: rows.length,
+    gains: rows.filter((row) => Number(row.amount) > 0).length,
+    losses: rows.filter((row) => Number(row.amount) < 0).length,
+    firstDate: dates[0] || null,
+    lastDate: dates.at(-1) || null,
+    reason: 'Sum of every recorded sale\'s realized gain or loss. Excluded from holdings figures by construction — the shares are no longer held.',
+  }
+}
+
 export function netInvestedCapital(transactions) {
   if (!Array.isArray(transactions) || !transactions.length) return { available: false, value: null, reason: 'Complete contribution and withdrawal history is unavailable.' }
+  // Deliberately external flows only. Buying a stock with money already in the account moves
+  // capital between buckets rather than adding any, and selling one does not take capital out
+  // -- so the trade rows below (stock_purchase, sale_proceeds) are absent here on purpose,
+  // even though the NAV-step measures further down must account for both.
   const external = transactions.filter((row) => [...CONTRIBUTION_TYPES, 'withdrawal'].includes(row.type) && finite(row.amount) && !['pending', 'processing'].includes(row.status))
   if (!external.length || external.some((row) => !(row.effectiveDate || row.date))) return { available: false, value: null, reason: 'Complete dated external cash flows are unavailable.' }
   const deposits = external.filter((row) => CONTRIBUTION_TYPES.includes(row.type)).reduce((sum, row) => sum + Number(row.amount), 0)
@@ -405,12 +465,18 @@ export function contributionAdjustedPerformance(currentValue, transactions, hist
   }
 }
 
+// Every flow that steps NAV without being return, for the three measures below (Modified
+// Dietz, the time-weighted series, and money-weighted XIRR). All three measure a NAV that is
+// invested holdings only, so a purchase and a sale's proceeds belong here exactly as a deposit
+// and a withdrawal do -- leave them out and selling a holding is charted and compounded as a
+// loss of the entire position. This is a different question from "how much of my own money is
+// in here", which netInvestedCapital answers from external flows alone.
 function settledExternalFlows(transactions = [], startDate = null, endDate = null) {
   const start = startDate == null ? null : Date.parse(startDate)
   const end = endDate == null ? null : Date.parse(endDate)
   return transactions.filter((row) => {
     const date = Date.parse(row.effectiveDate || row.date)
-    return [...CONTRIBUTION_TYPES, 'withdrawal'].includes(row.type)
+    return BASKET_FLOW_TYPES.includes(row.type)
       && finite(row.amount)
       && !['pending', 'processing'].includes(row.status)
       && Number.isFinite(date)
@@ -418,7 +484,7 @@ function settledExternalFlows(transactions = [], startDate = null, endDate = nul
       && (end == null || date <= end)
   }).map((row) => ({
     date: row.effectiveDate || row.date,
-    amount: (CONTRIBUTION_TYPES.includes(row.type) ? 1 : -1) * Number(row.amount),
+    amount: (BASKET_INFLOW_TYPES.includes(row.type) ? 1 : -1) * Number(row.amount),
     type: row.type,
   })).sort((left, right) => left.date.localeCompare(right.date))
 }
@@ -659,8 +725,13 @@ function dailySnapshotsWithUnrealizedGain(snapshots = []) {
 
 /**
  * Portfolio reconciliation bridge (Master Remediation Prompt v3, B2): beginning NAV + deposits
- * - withdrawals + dividends - fees + realized gains + unrealized-gain change should equal
- * ending NAV, to the cent. FX and taxes are not tracked by this app (USD-only, no lot-level tax
+ * - withdrawals + purchases - sale proceeds + dividends - fees + realized gains +
+ * unrealized-gain change should equal ending NAV, to the cent. Buys and sales appear here
+ * because tracked NAV is invested holdings only: a purchase moves money into that basket and a
+ * sale moves its market value out, and neither is price movement. One overlap to know about --
+ * a manually recorded deposit that funded a purchase in the same window is counted by both
+ * lines, since this app tracks no cash balance to net them against; the ledger's own copy says
+ * to record deposits only for cash a trade does not already account for. FX and taxes are not tracked by this app (USD-only, no lot-level tax
  * engine yet -- see docs/MODEL-RISK-REGISTER.md) and are published as explicit zero-but-untracked
  * lines rather than silently omitted. Trading costs are likewise untracked (no realized spread/
  * commission data exists here).
@@ -695,6 +766,10 @@ export function portfolioReconciliationBridge(snapshots = [], activities = []) {
     .reduce((sum, row) => sum + Number(row.amount), 0)
   const deposits = total('deposit') + total('external_contribution')
   const withdrawals = total('withdrawal')
+  // Reported on its own line rather than folded into withdrawals: money that left the
+  // holdings for the brokerage's cash is a different fact from money that left the account.
+  const saleProceeds = total(SALE_PROCEEDS_TYPE)
+  const purchases = total(STOCK_PURCHASE_TYPE)
   const dividends = total('dividend')
   const fees = total('fee')
   const realizedGains = total('realized_gain')
@@ -702,8 +777,8 @@ export function portfolioReconciliationBridge(snapshots = [], activities = []) {
   const fx = { value: 0, tracked: false, reason: 'This app does not track multi-currency exposure; every figure is assumed USD.' }
   const taxes = { value: 0, tracked: false, reason: 'No tax-lot ledger exists yet -- see docs/MODEL-RISK-REGISTER.md.' }
   const tradingCosts = { value: 0, tracked: false, reason: 'No realized spread, commission, or slippage data is recorded.' }
-  const reconstructedEndingNav = beginning.value + deposits - withdrawals + dividends - fees
-    + realizedGains + unrealizedGainChange + fx.value - taxes.value - tradingCosts.value
+  const reconstructedEndingNav = beginning.value + deposits - withdrawals + purchases - saleProceeds
+    + dividends - fees + realizedGains + unrealizedGainChange + fx.value - taxes.value - tradingCosts.value
   const residual = ending.value - reconstructedEndingNav
   const reconciled = Math.abs(residual) <= RECONCILIATION_TOLERANCE_DOLLARS
   return {
@@ -714,6 +789,8 @@ export function portfolioReconciliationBridge(snapshots = [], activities = []) {
     endingNav: ending.value,
     deposits,
     withdrawals,
+    saleProceeds,
+    purchases,
     dividends,
     fees,
     realizedGains,

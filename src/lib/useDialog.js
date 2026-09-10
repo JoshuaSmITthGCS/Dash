@@ -22,6 +22,14 @@ const FOCUSABLE = [
  */
 export function useDialog(open, onClose) {
   const panelRef = useRef(null)
+  // The caller almost always passes a fresh arrow function on every render (`onClose={() =>
+  // setSelected(null)}`, or a handler rebuilt by a form hook). If that identity were a
+  // dependency of the effect below, every keystroke inside the dialog would tear the trap
+  // down and set it up again -- and teardown restores focus to the opener, so the field
+  // being typed into lost focus (and, on mobile, the keyboard) on every character. Held in
+  // a ref instead: the effect reads the latest handler without re-running for it.
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
 
   const visibleFocusable = useCallback(() => {
     const panel = panelRef.current
@@ -41,6 +49,7 @@ export function useDialog(open, onClose) {
     if (!open) return undefined
     const panel = panelRef.current
     const previous = document.activeElement
+    const close = () => closeRef.current?.()
 
     // Prefer the first real control; fall back to the panel itself so the reader
     // lands inside the dialog rather than at the top of the page behind it.
@@ -49,7 +58,7 @@ export function useDialog(open, onClose) {
     else panel?.focus()
 
     const onKeyDown = (event) => {
-      if (event.key === 'Escape') { event.stopPropagation(); onClose(); return }
+      if (event.key === 'Escape') { event.stopPropagation(); close(); return }
       if (event.key !== 'Tab') return
       const nodes = visibleFocusable()
       if (!nodes.length) { event.preventDefault(); panel?.focus(); return }
@@ -66,10 +75,16 @@ export function useDialog(open, onClose) {
     document.addEventListener('keydown', onKeyDown, true)
     return () => {
       document.removeEventListener('keydown', onKeyDown, true)
-      // The opener can be gone by now (a row that re-rendered), so this is optional.
-      if (previous && document.contains(previous)) previous.focus?.()
+      // The opener can be gone by now (a row that re-rendered), so this is optional. It is
+      // also skipped when focus already moved somewhere outside this panel on its own --
+      // pulling it back to the opener there would fight the user rather than help them.
+      const active = document.activeElement
+      const focusIsInside = active && panel?.contains(active)
+      if (previous && document.contains(previous) && (focusIsInside || active === document.body)) {
+        previous.focus?.()
+      }
     }
-  }, [open, onClose, visibleFocusable])
+  }, [open, visibleFocusable])
 
   return panelRef
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   alignSeries, annualizeReturnPct, compareBenchmarkSeries, concentrationLiquidityScore, correlationDiversification, costWeights, currentHoldingsSeries, diversificationScore, enrichPortfolio,
   contributionAdjustedPerformance, intradayPortfolioHigh, latestMarketDayReturn, modifiedDietzReturn, moneyWeightedAccountReturn, netInvestedCapital, opportunityCost, performanceMetrics,
-  portfolioAnnualizedReturn, portfolioReconciliationBridge, portfolioReturnSummary, portfolioRiskDecomposition, portfolioScore, resilienceIndex, returnOverWindow, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace, underwaterProfile, weightedExpenseRatio,
+  portfolioAnnualizedReturn, portfolioReconciliationBridge, realizedResultSummary, portfolioReturnSummary, portfolioRiskDecomposition, portfolioScore, resilienceIndex, returnOverWindow, sectorLookThrough, selectPeriod, shrinkCovarianceMatrix, sliceSeriesFrom, trackedAllTimeEarnings, trailingCashFlowPace, underwaterProfile, weightedExpenseRatio,
 } from './portfolioAnalytics.js'
 
 describe('portfolio report analytics', () => {
@@ -58,6 +58,66 @@ describe('portfolio report analytics', () => {
       expect(bridge.reconciled).toBe(false)
       expect(bridge.residual).toBeCloseTo(60, 6)
       expect(bridge.reason).toContain('unrecorded cash flow')
+    })
+
+    // The case that used to break the bridge outright: shares leave the holdings and their
+    // market value leaves tracked NAV with them, so without the proceeds line the whole
+    // position value reads as an unexplained loss.
+    it('reconciles a sale, whose proceeds leave tracked NAV along with the shares', () => {
+      // Sold a position worth 400 that carried 100 of unrealized gain, so NAV falls by 400
+      // and that 100 moves from unrealized to realized.
+      const sold = [
+        { value: 10000, unrealizedGain: 1000, marketDate: '2026-01-01', recordedAt: '2026-01-01T20:00:00Z' },
+        { value: 9600, unrealizedGain: 900, marketDate: '2026-01-02', recordedAt: '2026-01-02T20:00:00Z' },
+      ]
+      const bridge = portfolioReconciliationBridge(sold, [
+        { type: 'realized_gain', amount: 100, effectiveDate: '2026-01-02' },
+        { type: 'sale_proceeds', amount: 400, effectiveDate: '2026-01-02' },
+      ])
+      expect(bridge.saleProceeds).toBe(400)
+      expect(bridge.residual).toBeCloseTo(0, 6)
+      expect(bridge.status).toBe('RECONCILED')
+    })
+
+    it('reconciles a purchase, which raises tracked NAV without being performance', () => {
+      const bought = [
+        { value: 10000, unrealizedGain: 1000, marketDate: '2026-01-01', recordedAt: '2026-01-01T20:00:00Z' },
+        { value: 10500, unrealizedGain: 1000, marketDate: '2026-01-02', recordedAt: '2026-01-02T20:00:00Z' },
+      ]
+      const bridge = portfolioReconciliationBridge(bought, [
+        { type: 'stock_purchase', amount: 500, effectiveDate: '2026-01-02' },
+      ])
+      expect(bridge.purchases).toBe(500)
+      expect(bridge.residual).toBeCloseTo(0, 6)
+      expect(bridge.status).toBe('RECONCILED')
+    })
+
+    it('reconciles a sale reinvested the same day, which nets to no NAV step', () => {
+      // Sell 400 (booking 100 of gain), buy 400 of something else at market the same day:
+      // NAV ends where it started, and the 100 has moved from unrealized to realized.
+      const flat = [
+        { value: 10000, unrealizedGain: 1000, marketDate: '2026-01-01', recordedAt: '2026-01-01T20:00:00Z' },
+        { value: 10000, unrealizedGain: 900, marketDate: '2026-01-02', recordedAt: '2026-01-02T20:00:00Z' },
+      ]
+      const bridge = portfolioReconciliationBridge(flat, [
+        { type: 'realized_gain', amount: 100, effectiveDate: '2026-01-02' },
+        { type: 'sale_proceeds', amount: 400, effectiveDate: '2026-01-02' },
+        { type: 'stock_purchase', amount: 400, effectiveDate: '2026-01-02' },
+      ])
+      expect(bridge.residual).toBeCloseTo(0, 6)
+      expect(bridge.status).toBe('RECONCILED')
+    })
+
+    it('still fails loudly when a sale books its gain but not where the money went', () => {
+      const sold = [
+        { value: 10000, unrealizedGain: 1000, marketDate: '2026-01-01', recordedAt: '2026-01-01T20:00:00Z' },
+        { value: 9600, unrealizedGain: 900, marketDate: '2026-01-02', recordedAt: '2026-01-02T20:00:00Z' },
+      ]
+      const bridge = portfolioReconciliationBridge(sold, [
+        { type: 'realized_gain', amount: 100, effectiveDate: '2026-01-02' },
+      ])
+      expect(bridge.status).toBe('RECONCILIATION_FAILED')
+      expect(bridge.residual).toBeCloseTo(-400, 6)
     })
 
     it('only counts activity dated within the bridged period, not before or after it', () => {
@@ -587,5 +647,91 @@ describe('underwaterProfile', () => {
   it('needs two dated values before it will answer', () => {
     expect(underwaterProfile(null).available).toBe(false)
     expect(underwaterProfile({ dates: ['2025-01-01'], values: [100] }).available).toBe(false)
+  })
+})
+
+describe('realizedResultSummary', () => {
+  const activity = [
+    { type: 'realized_gain', amount: 12.06, effectiveDate: '2026-09-02', note: 'LULU sale' },
+    { type: 'realized_gain', amount: -4.5, effectiveDate: '2026-08-20', note: 'XYZ sale' },
+    { type: 'dividend', amount: 3, effectiveDate: '2026-08-25' },
+    { type: 'realized_gain', amount: 'nonsense', effectiveDate: '2026-08-01' },
+  ]
+
+  it('sums only the realized rows, counting gains and losses separately', () => {
+    const result = realizedResultSummary(activity)
+    expect(result.available).toBe(true)
+    expect(result.value).toBeCloseTo(7.56, 6)
+    expect(result.count).toBe(2)
+    expect(result.gains).toBe(1)
+    expect(result.losses).toBe(1)
+    expect(result.lastDate).toBe('2026-09-02')
+  })
+
+  it('reports unavailable rather than zero when no sale has been recorded', () => {
+    const result = realizedResultSummary([{ type: 'dividend', amount: 3, effectiveDate: '2026-08-25' }])
+    expect(result.available).toBe(false)
+    expect(result.value).toBeNull()
+  })
+
+  it('can be scoped to sales on or after a date', () => {
+    expect(realizedResultSummary(activity, { since: '2026-09-01' }).value).toBeCloseTo(12.06, 6)
+  })
+
+  it('is empty for a missing or malformed ledger rather than throwing', () => {
+    expect(realizedResultSummary().available).toBe(false)
+    expect(realizedResultSummary(null).available).toBe(false)
+  })
+})
+
+describe('a sale is not charted or compounded as a loss', () => {
+  // Sold a 400 holding on Jan 2. Tracked NAV is invested holdings only, so it drops by 400 --
+  // which is money moving to cash, not a 4% loss.
+  const snapshots = [
+    { value: 10000, marketDate: '2026-01-01', recordedAt: '2026-01-01T20:00:00Z' },
+    { value: 9600, marketDate: '2026-01-02', recordedAt: '2026-01-02T20:00:00Z' },
+  ]
+  const sale = [
+    { type: 'sale_proceeds', amount: 400, effectiveDate: '2026-01-02' },
+    { type: 'realized_gain', amount: 100, effectiveDate: '2026-01-02' },
+  ]
+
+  it('reports a flat time-weighted return, not the NAV step the sale caused', () => {
+    const series = portfolioReturnSummary(snapshots, sale, true).strategy
+    expect(series.available).toBe(true)
+    expect(series.returnPct).toBeCloseTo(0, 6)
+  })
+
+  it('still charts a real loss when nothing was sold', () => {
+    const series = portfolioReturnSummary(snapshots, [], true).strategy
+    expect(series.returnPct).toBeCloseTo(-4, 6)
+  })
+
+  it('keeps Modified Dietz flat across the sale', () => {
+    const result = modifiedDietzReturn(10000, 9600, sale, '2026-01-01', '2026-01-02', true)
+    expect(result.available).toBe(true)
+    expect(result.returnPct).toBeCloseTo(0, 6)
+  })
+
+  it('treats a purchase as money in, not as a gain', () => {
+    const bought = [
+      { value: 10000, marketDate: '2026-01-01', recordedAt: '2026-01-01T20:00:00Z' },
+      { value: 10500, marketDate: '2026-01-02', recordedAt: '2026-01-02T20:00:00Z' },
+    ]
+    const result = modifiedDietzReturn(10000, 10500, [
+      { type: 'stock_purchase', amount: 500, effectiveDate: '2026-01-02' },
+    ], '2026-01-01', '2026-01-02', true)
+    expect(result.returnPct).toBeCloseTo(0, 6)
+    expect(portfolioReturnSummary(bought, [
+      { type: 'stock_purchase', amount: 500, effectiveDate: '2026-01-02' },
+    ], true).strategy.returnPct).toBeCloseTo(0, 6)
+  })
+
+  it('leaves net invested capital alone — a trade moves money, it does not add any', () => {
+    expect(netInvestedCapital([
+      { type: 'deposit', amount: 1000, effectiveDate: '2026-01-01' },
+      ...sale,
+      { type: 'stock_purchase', amount: 400, effectiveDate: '2026-01-03' },
+    ]).value).toBe(1000)
   })
 })

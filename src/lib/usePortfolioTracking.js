@@ -3,6 +3,16 @@ import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
 import { useAuth } from './FirebaseAuthContext.jsx'
 
+// 'stock_purchase' and 'sale_proceeds' are written by the trade paths rather than the
+// cash-flow form: tracked NAV is invested holdings only, so a buy moves money into that basket
+// and a sale moves it out, and both have to be visible to the return and reconciliation math
+// or the NAV step they cause is read as performance. See BASKET_FLOW_TYPES in
+// portfolioAnalytics.js.
+const ACTIVITY_TYPES = [
+  'realized_gain', 'dividend', 'fee', 'deposit', 'withdrawal',
+  'external_contribution', 'stock_purchase', 'sale_proceeds',
+]
+
 function marketDate(iso = new Date().toISOString()) {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -15,17 +25,27 @@ export function usePortfolioTracking() {
   const [activities, setActivities] = useState([])
   const [rebalances, setRebalances] = useState([])
   const [trackingState, setTrackingState] = useState(null)
+  // Whether the tracking document has actually been read yet, which is not the same question
+  // as whether it holds anything. Before this, a null trackingState meant both "still
+  // loading" and "nothing stored", and the one-time Fidelity baseline sync read that as
+  // "never synced" and re-applied the whole Aug 25 export on any page load where the
+  // positions listener answered first -- resurrecting sold holdings. Consumers that gate on
+  // stored tracking state must wait for this.
+  const [trackingLoaded, setTrackingLoaded] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (!currentUser) {
       setSnapshots([]); setActivities([]); setRebalances([]); setTrackingState(null); setError('')
+      setTrackingLoaded(false)
       return undefined
     }
+    setTrackingLoaded(false)
     const userId = currentUser.uid
     const stopState = onSnapshot(doc(db, 'portfolios', userId, 'tracking', 'state'), (snapshot) => {
       setTrackingState(snapshot.exists() ? snapshot.data() : null)
-    }, (reason) => setError(reason.message))
+      setTrackingLoaded(true)
+    }, (reason) => { setError(reason.message); setTrackingLoaded(true) })
     const stopSnapshots = onSnapshot(collection(db, 'portfolios', userId, 'intradaySnapshots'), (snapshot) => {
       setSnapshots(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })).sort((a, b) => String(a.recordedAt).localeCompare(String(b.recordedAt))))
     }, (reason) => setError(reason.message))
@@ -50,7 +70,11 @@ export function usePortfolioTracking() {
     setTrackingState((current) => ({ ...current, trackingStartedAt: startedAt }))
   }
 
-  const recordSnapshot = async ({ value, coveragePct, source, unrealizedGain, recordedAt = new Date().toISOString() }) => {
+  // `prices` is the per-ticker detail behind the account total, stored in the same shape a
+  // brokerage export's observation uses (referenceIntradaySnapshot). It is what lets the
+  // account's own price history, rather than a stale export stamped on a position document,
+  // be the fallback a holding is marked at -- see latestRecordedPrices in portfolioPosition.js.
+  const recordSnapshot = async ({ value, coveragePct, source, unrealizedGain, prices, recordedAt = new Date().toISOString() }) => {
     if (!currentUser || !Number.isFinite(Number(value))) return { success: false, error: 'A Firebase connection and portfolio value are required.' }
     try {
       await ensureTrackingStarted()
@@ -61,6 +85,7 @@ export function usePortfolioTracking() {
         // (portfolioReconciliationBridge, src/lib/portfolioAnalytics.js) has an unrealized-gain
         // figure at the exact instant each snapshot was taken, not just today's live one.
         ...(Number.isFinite(Number(unrealizedGain)) ? { unrealizedGain: Number(unrealizedGain) } : {}),
+        ...(Array.isArray(prices) && prices.length ? { prices, positionCount: prices.length } : {}),
         recordedAt, marketDate: marketDate(recordedAt),
       }, { merge: true })
       return { success: true }
@@ -72,7 +97,7 @@ export function usePortfolioTracking() {
 
   const recordActivity = async ({ type, amount, effectiveDate, note = '' }) => {
     const numericAmount = Number(amount)
-    if (!currentUser || !['realized_gain', 'dividend', 'fee', 'deposit', 'withdrawal'].includes(type) || !Number.isFinite(numericAmount)) return { success: false, error: 'Choose a supported activity type and enter a valid amount.' }
+    if (!currentUser || !ACTIVITY_TYPES.includes(type) || !Number.isFinite(numericAmount)) return { success: false, error: 'Choose a supported activity type and enter a valid amount.' }
     try {
       await ensureTrackingStarted()
       const recordedAt = new Date().toISOString()
@@ -119,7 +144,7 @@ export function usePortfolioTracking() {
   }
 
   return {
-    snapshots, activities, rebalances, trackingState: effectiveTrackingState, error,
+    snapshots, activities, rebalances, trackingState: effectiveTrackingState, trackingLoaded, error,
     recordSnapshot, recordActivity, setLedgerComplete, recordRebalance,
   }
 }

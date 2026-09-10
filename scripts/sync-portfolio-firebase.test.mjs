@@ -44,10 +44,13 @@ group('sync-portfolio-firebase arguments', () => {
     expect(parseArguments(['--uid', 'x', '--report', '-']).report).toBe('-')
   })
 
-  // Dry run is the default because this import deletes holdings absent from the export.
-  it('does not commit unless asked', () => {
-    expect(parseArguments(['--uid', 'x'])).toMatchObject({ uid: 'x', commit: false })
+  // Dry run is the default, and a plain commit only seeds -- overwriting and deleting takes a
+  // second, explicit opt-in, because the stored portfolio is the record and the export is not.
+  it('does not commit unless asked, and does not overwrite unless asked twice', () => {
+    expect(parseArguments(['--uid', 'x'])).toMatchObject({ uid: 'x', commit: false, authoritative: false })
     expect(parseArguments(['--uid', 'x', '--commit']).commit).toBe(true)
+    expect(parseArguments(['--uid', 'x', '--commit']).authoritative).toBe(false)
+    expect(parseArguments(['--uid', 'x', '--commit', '--authoritative']).authoritative).toBe(true)
   })
 })
 

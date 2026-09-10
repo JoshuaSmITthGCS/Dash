@@ -25,31 +25,33 @@
 //   npm run portfolio:sync -- --email you@example.com --report portfolio-check.md
 //   npm run portfolio:sync -- --uid abc123 --commit          # admin credentials only
 //
-// Dry run is the DEFAULT and prints the full plan. Nothing is written until --commit,
-// because this import is authoritative: a holding absent from the export is deleted.
+// Dry run is the DEFAULT and prints the full plan. Nothing is written until --commit, and a
+// plain --commit only SEEDS: the export is a photograph of Aug 25 and the stored portfolio is
+// the record, so it adds holdings the account has never been given and fills blank purchase
+// dates, but never restates or deletes. --authoritative opts into the old behaviour, where a
+// holding absent from the export is deleted.
 //
 // Requires FIREBASE_SERVICE_ACCOUNT_JSON (see .env.example) -- the same service-account
 // credential netlify/functions/alert-push.mjs uses. It bypasses firestore.rules by design,
 // so it is a server-side secret and must never be given a VITE_ prefix.
 
 import { writeFile } from 'node:fs/promises'
-import { createInterface } from 'node:readline'
 import { pathToFileURL } from 'node:url'
-import { cert, getApps, initializeApp } from 'firebase-admin/app'
-import { getAuth } from 'firebase-admin/auth'
-import { getFirestore } from 'firebase-admin/firestore'
-import { initializeApp as initializeClientApp } from 'firebase/app'
-import { getAuth as getClientAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth'
 import {
-  collection as clientCollection,
-  doc as clientDoc,
-  getDocs as clientGetDocs,
-  getFirestore as getClientFirestore,
-  terminate as terminateClient,
-  writeBatch as clientWriteBatch,
-} from 'firebase/firestore'
+  BATCH_LIMIT,
+  connectPortfolioBackend,
+  step,
+  withTimeout,
+} from './lib/portfolio-firestore-backend.mjs'
+
+// Re-exported for scripts/sync-portfolio-firebase.test.mjs, which predates the shared backend
+// module and tests this utility directly rather than through connectPortfolioBackend.
+export { withTimeout }
 import {
   planReferencePortfolioSync,
+  referenceSyncMerges,
+  seededTickersAfter,
+  seededTickersFromTrackingState,
   referenceIntradaySnapshot,
   referenceSyncDrift,
   referenceSyncRecord,
@@ -62,42 +64,12 @@ import {
   REFERENCE_PORTFOLIO_VERSION,
 } from '../src/lib/referencePortfolio.js'
 
-// Firestore caps a batch at 500 writes. 46 holdings plus the snapshot and tracking documents
-// is far below it, but a plan is only bounded by what the account already holds.
-const BATCH_LIMIT = 500
-
-// Every network call is bounded and announced before it starts. firebase-admin retries a
-// blocked connection with long backoff and prints nothing while it does, so an unreachable
-// Google endpoint -- a proxy, a VPN, an offline machine -- otherwise looks like the script
-// silently froze, with no way to tell which step it froze on.
-const NETWORK_TIMEOUT_MS = 30_000
-
-const step = (message) => process.stdout.write(`${message}\n`)
-
-export function withTimeout(promise, what, ms = NETWORK_TIMEOUT_MS) {
-  let timer
-  const limit = new Promise((_, reject) => {
-    timer = setTimeout(
-      () => reject(new Error(
-        `${what} did not respond within ${ms / 1000}s.\n`
-        + '  This step talks to Google. A proxy, VPN, or offline machine blocks it silently.\n'
-        + '  Check connectivity, then re-run — nothing has been written.',
-      )),
-      ms,
-    )
-    timer.unref?.()
-  })
-  return Promise.race([promise, limit]).finally(() => clearTimeout(timer))
-}
-
-// Both SDKs hold a connection open, which can keep the process alive after the work is done.
-// Closing explicitly means a finished run actually returns to the shell.
-
 export function parseArguments(argv) {
-  const options = { commit: false, email: null, uid: null, report: null }
+  const options = { commit: false, authoritative: false, email: null, uid: null, report: null }
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index]
     if (argument === '--commit') options.commit = true
+    else if (argument === '--authoritative') options.authoritative = true
     else if (argument === '--help' || argument === '-h') options.help = true
     else if (argument === '--email') options.email = argv[index += 1]
     else if (argument === '--uid') options.uid = argv[index += 1]
@@ -114,158 +86,6 @@ export function parseArguments(argv) {
     throw new Error('--report needs a file path, or - for stdout.')
   }
   return options
-}
-
-function adminCredential() {
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
-  if (!raw) return null
-  let credential
-  try { credential = JSON.parse(raw) } catch { throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON.') }
-  const missing = ['project_id', 'client_email', 'private_key'].filter((field) => !credential[field])
-  if (missing.length) {
-    throw new Error(`FIREBASE_SERVICE_ACCOUNT_JSON is missing ${missing.join(', ')}. `
-      + 'Use the whole downloaded service-account key file, not a fragment of it.')
-  }
-  return credential
-}
-
-function clientConfig() {
-  const config = {
-    apiKey: process.env.VITE_FIREBASE_API_KEY,
-    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.VITE_FIREBASE_APP_ID,
-  }
-  return config.apiKey && config.projectId ? config : null
-}
-
-/** Reads a secret without echoing it, so it never lands in a terminal scrollback. */
-function promptPassword(question) {
-  if (!process.stdin.isTTY) {
-    return Promise.reject(new Error(
-      'No terminal to prompt for a password on. Set PORTFOLIO_SYNC_PASSWORD instead, '
-      + 'or configure FIREBASE_SERVICE_ACCOUNT_JSON to use admin credentials.',
-    ))
-  }
-  return new Promise((resolve) => {
-    const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true })
-    rl._writeToOutput = (chunk) => { if (chunk.includes(question)) rl.output.write(question) }
-    rl.question(question, (answer) => {
-      rl.close()
-      process.stdout.write('\n')
-      resolve(answer)
-    })
-  })
-}
-
-/**
- * One interface over the two credential paths, so the plan/report/commit logic below never
- * branches on which is in use and behaves identically either way.
- */
-async function connect(options) {
-  const credential = adminCredential()
-  if (credential) {
-    step(`Admin credentials loaded for project ${credential.project_id}.`)
-    const app = getApps().length ? getApps()[0] : initializeApp({ credential: cert(credential) })
-    const db = getFirestore(app)
-    let uid = options.uid
-    if (!uid) {
-      step(`Resolving ${options.email} via Firebase Auth…`)
-      try {
-        uid = (await withTimeout(getAuth(app).getUserByEmail(options.email), 'Firebase Auth')).uid
-      } catch (error) {
-        if (error.code === 'auth/user-not-found') {
-          throw new Error(`No Firebase user has the email ${options.email}. `
-            + 'Sign in to the app once with it, or pass --uid instead.')
-        }
-        throw error
-      }
-    }
-    return {
-      mode: 'admin',
-      uid,
-      readPositions: () => withTimeout(
-        db.collection('portfolios').doc(uid).collection('positions').get(), 'Firestore read',
-      ).then((snapshot) => snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
-      commit: (apply) => {
-        const batch = db.batch()
-        apply({
-          positionDoc: (id) => db.collection('portfolios').doc(uid).collection('positions').doc(id),
-          snapshotDoc: (id) => db.collection('portfolios').doc(uid).collection('intradaySnapshots').doc(id),
-          trackingDoc: () => db.collection('portfolios').doc(uid).collection('tracking').doc('state'),
-          set: (ref, data, merge) => batch.set(ref, data, merge ? { merge: true } : {}),
-          delete: (ref) => batch.delete(ref),
-        })
-        return withTimeout(batch.commit(), 'Firestore write')
-      },
-      close: async () => {
-        try { await db.terminate?.() } catch { /* best effort */ }
-      },
-    }
-  }
-
-  const config = clientConfig()
-  if (!config) {
-    throw new Error(
-      'No Firebase credentials found.\n'
-      + '  Sign-in mode needs VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID in .env.local\n'
-      + '  (the same values `npm run dev` uses). Admin mode needs FIREBASE_SERVICE_ACCOUNT_JSON.',
-    )
-  }
-  if (options.uid) {
-    throw new Error('--uid needs admin credentials. Sign-in mode can only sync the account it '
-      + 'signs in as, so pass --email instead.')
-  }
-
-  const password = process.env.PORTFOLIO_SYNC_PASSWORD
-    || await promptPassword(`Password for ${options.email}: `)
-  if (!password) throw new Error('No password given, so there is nothing to sign in with.')
-
-  step(`Signing in as ${options.email} on project ${config.projectId}…`)
-  const app = initializeClientApp(config, 'portfolio-sync-cli')
-  const auth = getClientAuth(app)
-  let user
-  try {
-    user = (await withTimeout(signInWithEmailAndPassword(auth, options.email, password), 'Firebase sign-in')).user
-  } catch (error) {
-    const friendly = {
-      'auth/invalid-credential': 'Email or password not accepted.',
-      'auth/wrong-password': 'Wrong password.',
-      'auth/user-not-found': `No account for ${options.email}.`,
-      'auth/too-many-requests': 'Too many attempts; Firebase has throttled this account briefly.',
-      'auth/network-request-failed': 'Could not reach Firebase. Check connectivity, proxy, or VPN.',
-      'auth/invalid-email': `${options.email} is not a valid email address.`,
-      'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
-        'VITE_FIREBASE_API_KEY in .env.local is not a valid key for this project.',
-    }[error.code]
-    throw new Error(friendly || error.message)
-  }
-  const db = getClientFirestore(app)
-  const uid = user.uid
-  return {
-    mode: 'sign-in',
-    uid,
-    readPositions: () => withTimeout(
-      clientGetDocs(clientCollection(db, 'portfolios', uid, 'positions')), 'Firestore read',
-    ).then((snapshot) => snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
-    commit: (apply) => {
-      const batch = clientWriteBatch(db)
-      apply({
-        positionDoc: (id) => clientDoc(db, 'portfolios', uid, 'positions', id),
-        snapshotDoc: (id) => clientDoc(db, 'portfolios', uid, 'intradaySnapshots', id),
-        trackingDoc: () => clientDoc(db, 'portfolios', uid, 'tracking', 'state'),
-        set: (ref, data, merge) => batch.set(ref, data, merge ? { merge: true } : {}),
-        delete: (ref) => batch.delete(ref),
-      })
-      return withTimeout(batch.commit(), 'Firestore write')
-    },
-    close: async () => {
-      try { await signOut(auth) } catch { /* best effort */ }
-      try { await terminateClient(db) } catch { /* best effort */ }
-    },
-  }
 }
 
 const money = (value) => `$${value.toFixed(2)}`
@@ -427,6 +247,10 @@ export async function main() {
   --email <address>   account to sync, resolved to a uid via Firebase Auth
   --uid <id>          account to sync, by uid
   --commit            actually write (default is a dry run that writes nothing)
+  --authoritative     let the export overwrite and delete stored holdings. Off by default:
+                      the export is a photograph of Aug 25 and Firestore is the record, so a
+                      plain run only adds holdings the account has never been given. The
+                      report always shows full drift either way.
   --report <path>     write a verification report (.md or .json; - for stdout)
   --help              this message
 
@@ -440,7 +264,7 @@ Reference baseline: ${REFERENCE_PORTFOLIO_VERSION} (${REFERENCE_PORTFOLIO.length
   }
 
   step(`sync-portfolio-firebase · baseline ${REFERENCE_PORTFOLIO_VERSION} · ${REFERENCE_PORTFOLIO.length} holdings`)
-  const backend = await connect(options)
+  const backend = await connectPortfolioBackend(options)
   try {
     return await run(options, backend)
   } finally {
@@ -457,18 +281,48 @@ async function run(options, backend) {
   const existing = await backend.readPositions()
   console.log(`Currently stored: ${existing.length} position${existing.length === 1 ? '' : 's'}`)
 
-  const operations = planReferencePortfolioSync(existing)
+  // Tickers the account has sold out of since the export was taken. The export still lists
+  // them -- it is a photograph of Aug 25 -- and re-adding them here would undo a recorded
+  // sale, the same way the in-app sync used to. Same ledger the app writes.
+  const closedTickers = (await backend.readClosedTickers?.()) || []
+  if (closedTickers.length) {
+    console.log(`Sold since the export, left alone: ${closedTickers.join(', ')}`)
+  }
+
+  // Two plans, on purpose. `drift` answers "how does this account differ from the Aug 25
+  // statement", which is the report's whole job and stays worth seeing. `operations` is what
+  // would actually be written, and unless --authoritative is passed that is seeding only:
+  // additions the account has never been given, plus purchase-date backfills. Firestore is
+  // the record; the statement is history.
+  const seededTickers = seededTickersFromTrackingState(await backend.readTrackingState?.())
+  const drift = planReferencePortfolioSync(existing, undefined, { closedTickers })
+  const operations = options.authoritative
+    ? drift
+    : planReferencePortfolioSync(existing, undefined, { closedTickers, seededTickers, mode: 'seed' })
   const counts = summarizeReferenceSync(operations)
   const snapshot = referenceIntradaySnapshot()
   const writes = operations.length + 2
 
-  console.log(`Plan: ${counts.added} added · ${counts.updated} updated · ${counts.removed} removed\n`)
+  console.log(options.authoritative
+    ? `Plan (--authoritative): ${counts.added} added · ${counts.updated} updated · ${counts.removed} removed\n`
+    : `Plan (seed only): ${counts.added} added · ${counts.updated} purchase date(s) filled · nothing overwritten or removed\n`)
   console.log(describe(operations))
+  if (!options.authoritative) {
+    const suppressed = drift.filter((operation) => operation.kind !== 'add'
+      && (operation.kind === 'remove' || referenceSyncDrift(operation).length))
+    if (suppressed.length) {
+      console.log(`\n${suppressed.length} difference(s) from the statement left alone, because `
+        + 'the stored portfolio is the record. Pass --authoritative to overwrite them:')
+      console.log(describe(suppressed))
+    }
+  }
 
-  const invested = REFERENCE_PORTFOLIO.reduce((sum, position) => sum + position.snapshotValue, 0)
-  const cost = REFERENCE_PORTFOLIO.reduce((sum, position) => sum + position.costBasisTotal, 0)
-  const undated = REFERENCE_PORTFOLIO.filter((position) => !position.purchaseDate)
-  console.log(`\nAfter this sync: ${REFERENCE_PORTFOLIO.length} holdings · ${money(cost)} cost · ${money(invested)} value`)
+  const closedSet = new Set(closedTickers.map((ticker) => String(ticker).trim().toUpperCase()))
+  const applied = REFERENCE_PORTFOLIO.filter((position) => !closedSet.has(position.ticker))
+  const invested = applied.reduce((sum, position) => sum + position.snapshotValue, 0)
+  const cost = applied.reduce((sum, position) => sum + position.costBasisTotal, 0)
+  const undated = applied.filter((position) => !position.purchaseDate)
+  console.log(`\nAfter this sync: ${applied.length} holdings · ${money(cost)} cost · ${money(invested)} value`)
   if (undated.length) {
     console.log(`Undated holdings (no buy in the transaction history): ${undated.map((position) => position.ticker).join(', ')}`)
   }
@@ -481,7 +335,7 @@ async function run(options, backend) {
     await emitReport(options, { uid, operations, committed: false })
     console.log('\nDry run — nothing written. Re-run with --commit to apply.')
     if (counts.removed) {
-      console.log(`Note: --commit deletes ${counts.removed} stored holding${counts.removed === 1 ? '' : 's'} absent from the export.`)
+      console.log(`Note: --commit --authoritative deletes ${counts.removed} stored holding${counts.removed === 1 ? '' : 's'} absent from the export.`)
     }
     return
   }
@@ -495,10 +349,10 @@ async function run(options, backend) {
         batch.delete(positionRef)
         return
       }
-      batch.set(positionRef, referenceSyncRecord(operation, importedAt), operation.kind === 'update')
+      batch.set(positionRef, referenceSyncRecord(operation, importedAt), referenceSyncMerges(operation))
     })
     batch.set(batch.snapshotDoc(snapshot.id), snapshot.document, true)
-    batch.set(batch.trackingDoc(), referenceTrackingState(importedAt), true)
+    batch.set(batch.trackingDoc(), referenceTrackingState(importedAt, seededTickersAfter(operations, seededTickers)), true)
   })
 
   console.log(`\nCommitted ${writes} writes at ${importedAt}.`)

@@ -3,6 +3,13 @@
  * "should I have just bought the index?" – the same dollars, invested the same day, in the S&P 500.
  */
 
+import { BASKET_FLOW_TYPES, BASKET_OUTFLOW_TYPES } from './portfolioAnalytics.js'
+
+// Money leaving the invested basket, either out of the brokerage entirely or out of the
+// holdings into its cash by selling. Both have to be removed from a return interval, or the
+// NAV drop they cause is charted as performance.
+const OUTFLOW_TYPES = new Set(BASKET_OUTFLOW_TYPES)
+
 /** Last benchmark close at or before a date. Null when the date predates the charted window. */
 export function benchmarkCloseOn(history, date) {
   const dates = history?.dates || []
@@ -37,7 +44,7 @@ export function actualRecordedValueSeries(snapshots = [], transactions = []) {
   const endDate = rows.at(-1)[0]
   const settledFlows = transactions.filter((row) => {
     const date = row.effectiveDate || row.date
-    return ['deposit', 'external_contribution', 'withdrawal'].includes(row.type)
+    return BASKET_FLOW_TYPES.includes(row.type)
       && date >= startDate
       && date <= endDate
       && !['pending', 'processing'].includes(row.status)
@@ -286,7 +293,7 @@ export function currentHoldingsPerformanceSeriesForPeriod(
   }
 }
 
-const EXTERNAL_FLOW_TYPES = new Set(['deposit', 'external_contribution', 'withdrawal'])
+const EXTERNAL_FLOW_TYPES = new Set(BASKET_FLOW_TYPES)
 
 function settledPerformanceFlows(transactions = []) {
   return transactions.flatMap((row) => {
@@ -309,7 +316,7 @@ function settledPerformanceFlows(transactions = []) {
     if (!Number.isFinite(timestamp)) return []
     return [{
       timestamp,
-      amount: row.type === 'withdrawal' ? -Math.abs(amount) : Math.abs(amount),
+      amount: OUTFLOW_TYPES.has(row.type) ? -Math.abs(amount) : Math.abs(amount),
     }]
   }).sort((left, right) => left.timestamp - right.timestamp)
 }

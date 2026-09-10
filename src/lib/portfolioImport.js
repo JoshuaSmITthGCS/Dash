@@ -157,7 +157,9 @@ export function parsePortfolioImport(text) {
  */
 export function planPortfolioImport(existing = [], parsed, mode = 'replace') {
   if (!parsed?.ok) return []
-  const operations = planReferencePortfolioSync(existing, parsed.positions)
+  // Reconcile, not seed: the user just handed over this file and means it to be the account's
+  // new state, unlike the built-in Aug 25 snapshot, which is history the record outranks.
+  const operations = planReferencePortfolioSync(existing, parsed.positions, { mode: 'reconcile' })
   return mode === 'merge' ? operations.filter((operation) => operation.kind !== 'remove') : operations
 }
 

@@ -12,7 +12,10 @@ import {
   portfolioGrowthSeries,
   portfolioVsBenchmark,
 } from '../../lib/portfolioPerformance'
-import { buildPortfolioPriceData, mergePortfolioQuotes, mergePositionSnapshots } from '../../lib/portfolioPosition'
+import {
+  buildPortfolioPriceData, latestRecordedPrices, mergePortfolioQuotes, mergePositionSnapshots,
+  mergeRecordedPrices,
+} from '../../lib/portfolioPosition'
 import { buildRatingContext, researchRating } from '../../lib/researchRating.js'
 import {
   BENCHMARKS,
@@ -68,10 +71,20 @@ export function sliceSeriesBefore(series, cutoffDate) {
 }
 
 /**
- * Resolves the price each holding is marked at, preferring a live quote refresh over the
- * published research snapshot when it is genuinely newer.
+ * Resolves the price each holding is marked at. Newest source wins, in this order:
+ *
+ *   1. a live quote refresh, when it is newer than the published research,
+ *   2. the account's own most recent recorded observation (`intradaySnapshots` in Firestore),
+ *   3. the published research price,
+ *   4. the brokerage-export price stamped on the position document when it was seeded.
+ *
+ * (4) is a seed value and nothing more. It is what a holding is marked at before this account
+ * has ever priced it, and any recorded observation supersedes it — including the dated
+ * observation an updated brokerage export writes. That is the whole point of ordering it this
+ * way: refreshing the export moves prices forward by adding to the account's price history,
+ * never by rewriting what is stored against a position.
  */
-export function buildPriceModel({ data, positions, quotes }) {
+export function buildPriceModel({ data, positions, quotes, recordedSnapshots = [] }) {
   const research = data?.research || []
   const portfolioCoverage = data?.portfolio_coverage || []
   const screenUniverse = data?.screen_universe || []
@@ -83,10 +96,15 @@ export function buildPriceModel({ data, positions, quotes }) {
     positions,
     data?.generated_at,
   )
+  const recordedPriceData = mergeRecordedPrices(
+    publishedPriceData,
+    latestRecordedPrices(recordedSnapshots),
+    data?.generated_at,
+  )
   const quoteRefreshIsNewest = quotes.fetchedAt
     && new Date(quotes.fetchedAt) >= new Date(data?.generated_at || 0)
   return {
-    priceData: mergePortfolioQuotes(publishedPriceData, quoteRefreshIsNewest ? quotes.quotes : {}),
+    priceData: mergePortfolioQuotes(recordedPriceData, quoteRefreshIsNewest ? quotes.quotes : {}),
     pricesUpdatedAt: quoteRefreshIsNewest ? quotes.fetchedAt : data?.generated_at,
     // Tagged the same way mergePortfolioQuotes tags a holding's live quote, since this is the
     // raw Netlify-function payload rather than something already run through that merge.
@@ -133,6 +151,8 @@ export function buildHoldingsModel({ data, positions, priceData, etfData }) {
       trendPct: recentReturn(trendValues),
       quoteSource: current?.portfolioQuote
         ? 'Portfolio price refresh'
+        : current?.recordedPrice
+        ? `Recorded ${String(current.recordedAt || '').slice(0, 10)}`
         : current?.price ? 'Research refresh' : pos.snapshotPrice ? pos.snapshotSource : null,
       priceInfo: current,
       recommendation,

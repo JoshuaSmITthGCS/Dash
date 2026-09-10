@@ -1,25 +1,42 @@
 import { act, renderHook } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
-import { usePortfolioForms } from './usePortfolioForms.js'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { isEmptyAccount, usePortfolioForms } from './usePortfolioForms.js'
+import { REFERENCE_PORTFOLIO, REFERENCE_PORTFOLIO_VERSION } from '../../lib/referencePortfolio.js'
 
-function setup({ positions = [], portfolioOverrides = {}, trackingOverrides = {} } = {}) {
+// The manual "add missing holdings" button confirms before writing (see handleReferenceSync).
+// Default to "yes" so every test not specifically about the confirmation dialog reaches the
+// code it means to exercise; tests that care about cancellation override this per-test.
+let confirmSpy
+beforeEach(() => { confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true) })
+afterEach(() => { confirmSpy.mockRestore() })
+
+function setup({ positions = [], portfolioOverrides = {}, trackingOverrides = {}, preview = true } = {}) {
   const portfolio = {
     addPosition: vi.fn().mockResolvedValue({ success: true }),
     removePosition: vi.fn().mockResolvedValue({ success: true }),
     updatePosition: vi.fn().mockResolvedValue({ success: true }),
+    recordClosedPosition: vi.fn().mockResolvedValue({ success: true }),
+    clearClosedPosition: vi.fn().mockResolvedValue({ success: true }),
+    closedPositions: [],
+    closedTickers: [],
     syncReferencePortfolio: vi.fn().mockResolvedValue({ success: true }),
+    recordReferenceObservation: vi.fn().mockResolvedValue({ success: true }),
     syncState: { connected: false },
     ...portfolioOverrides,
   }
   const tracking = {
     trackingState: {},
+    activities: [],
     recordActivity: vi.fn().mockResolvedValue({ success: true }),
     recordRebalance: vi.fn().mockResolvedValue({ success: true }),
     ...trackingOverrides,
   }
-  const { result } = renderHook(() => usePortfolioForms({ portfolio, tracking, previewPortfolio: true, positions }))
+  const { result } = renderHook(() => usePortfolioForms({ portfolio, tracking, previewPortfolio: preview, positions }))
   return { result, portfolio, tracking }
 }
+
+// Every REFERENCE_PORTFOLIO ticker, for tests that need an account already fully seeded.
+const ALL_REFERENCE_TICKERS = REFERENCE_PORTFOLIO.map((position) => position.ticker)
 
 describe('usePortfolioForms rebalance capture (B2/turnover)', () => {
   it('records a rebalance event when a position is added', async () => {
@@ -129,7 +146,7 @@ describe('FIFO cross-lot sell (B3)', () => {
     act(() => { result.current.setLotSellForm({ shares: '15', price: '150', saleDate: '2026-04-01' }) })
     await act(async () => { await result.current.saveLotSell() })
 
-    expect(portfolio.removePosition).toHaveBeenCalledWith('lot-a')
+    expect(portfolio.removePosition).toHaveBeenCalledWith('lot-a', { sale: true })
     // costBasisTotal/snapshotValue are restated because the remaining quantity changed;
     // this lot carries no snapshot price, so there is no snapshot value left to reprice.
     expect(portfolio.updatePosition).toHaveBeenCalledWith('lot-b', {
@@ -237,5 +254,317 @@ describe('usePortfolioForms snapshot restatement on quantity writes', () => {
     const [, updates] = portfolio.updatePosition.mock.calls[0]
     expect(updates.snapshotValue).toBeNull()
     expect(updates.costBasisTotal).toBe(80)
+  })
+})
+
+describe('a completed exit is recorded so no baseline sync re-adds it', () => {
+  it('marks the ticker closed when the last share of the only lot is sold', async () => {
+    const existing = [{ id: 'lulu', ticker: 'LULU', shares: 1, costBasis: 117.94, currentPrice: 130 }]
+    const { result, portfolio } = setup({ positions: existing })
+    act(() => { result.current.startSell(existing[0]) })
+    act(() => { result.current.setSellForm({ shares: '1', price: '130', saleDate: '2026-09-02' }) })
+    await act(async () => { await result.current.saveSell(existing[0]) })
+    expect(portfolio.removePosition).toHaveBeenCalledWith('lulu', { sale: true })
+    expect(portfolio.recordClosedPosition).toHaveBeenCalledWith('LULU', expect.objectContaining({
+      saleDate: '2026-09-02', shares: 1, price: 130,
+    }))
+  })
+
+  it('does not mark the ticker closed while another lot of it is still open', async () => {
+    const existing = [
+      { id: 'lot-a', ticker: 'LULU', shares: 1, costBasis: 117.94, purchaseDate: '2026-07-30' },
+      { id: 'lot-b', ticker: 'LULU', shares: 2, costBasis: 121, purchaseDate: '2026-08-30' },
+    ]
+    const { result, portfolio } = setup({ positions: existing })
+    act(() => { result.current.startSell(existing[0]) })
+    act(() => { result.current.setSellForm({ shares: '1', price: '130', saleDate: '2026-09-02' }) })
+    await act(async () => { await result.current.saveSell(existing[0]) })
+    expect(portfolio.recordClosedPosition).not.toHaveBeenCalled()
+  })
+
+  it('marks the ticker closed when a cross-lot sale empties every lot', async () => {
+    const existing = [
+      { id: 'lot-a', ticker: 'LULU', shares: 1, costBasis: 100, purchaseDate: '2026-07-30' },
+      { id: 'lot-b', ticker: 'LULU', shares: 2, costBasis: 120, purchaseDate: '2026-08-30' },
+    ]
+    const { result, portfolio } = setup({ positions: existing })
+    act(() => { result.current.startLotSell('LULU') })
+    act(() => { result.current.setLotSellForm({ shares: '3', price: '130', saleDate: '2026-09-02' }) })
+    await act(async () => { await result.current.saveLotSell() })
+    expect(portfolio.recordClosedPosition).toHaveBeenCalledWith('LULU', expect.objectContaining({ saleDate: '2026-09-02' }))
+  })
+})
+
+describe('submitTrade (the sticky trade bar)', () => {
+  const held = [
+    { id: 'lot-a', ticker: 'LULU', shares: 1, costBasis: 100, purchaseDate: '2026-07-30' },
+    { id: 'lot-b', ticker: 'LULU', shares: 2, costBasis: 130, purchaseDate: '2026-08-30' },
+  ]
+
+  it('sells FIFO across lots, books the realized gain on the date given, and closes the ticker', async () => {
+    const { result, portfolio, tracking } = setup({ positions: held })
+    let outcome
+    await act(async () => {
+      outcome = await result.current.submitTrade({ side: 'sell', ticker: 'lulu', shares: '3', price: '140', date: '2026-09-02' })
+    })
+    expect(outcome.success).toBe(true)
+    expect(portfolio.removePosition).toHaveBeenCalledWith('lot-a', { sale: true })
+    expect(portfolio.removePosition).toHaveBeenCalledWith('lot-b', { sale: true })
+    // (140-100)*1 + (140-130)*2 = 60
+    expect(tracking.recordActivity).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'realized_gain', amount: 60, effectiveDate: '2026-09-02',
+    }))
+    expect(portfolio.recordClosedPosition).toHaveBeenCalledWith('LULU', expect.objectContaining({ saleDate: '2026-09-02' }))
+  })
+
+  it('refuses to sell more shares than are held, without touching any position', async () => {
+    const { result, portfolio } = setup({ positions: held })
+    let outcome
+    await act(async () => {
+      outcome = await result.current.submitTrade({ side: 'sell', ticker: 'LULU', shares: '9', price: '140', date: '2026-09-02' })
+    })
+    expect(outcome.success).toBe(false)
+    expect(portfolio.updatePosition).not.toHaveBeenCalled()
+    expect(portfolio.removePosition).not.toHaveBeenCalled()
+  })
+
+  it('buys as a new lot dated when the buy actually happened', async () => {
+    const { result, portfolio } = setup({ positions: [] })
+    await act(async () => {
+      await result.current.submitTrade({ side: 'buy', ticker: 'lulu', shares: '2', price: '150', date: '2026-09-08' })
+    })
+    expect(portfolio.addPosition).toHaveBeenCalledWith('LULU', 2, 150, '2026-09-08', 'share')
+  })
+
+  it('rejects a zero or missing quantity before writing anything', async () => {
+    const { result, portfolio } = setup({ positions: held })
+    let outcome
+    await act(async () => {
+      outcome = await result.current.submitTrade({ side: 'buy', ticker: 'LULU', shares: '', price: '150', date: '2026-09-08' })
+    })
+    expect(outcome.success).toBe(false)
+    expect(portfolio.addPosition).not.toHaveBeenCalled()
+  })
+})
+
+describe('isEmptyAccount', () => {
+  it('is true with no positions, no activities, and no tracking start date', () => {
+    expect(isEmptyAccount([], { activities: [], trackingState: {} })).toBe(true)
+    expect(isEmptyAccount([], null)).toBe(true)
+  })
+
+  it('is false the moment any position is held', () => {
+    expect(isEmptyAccount([{ ticker: 'AAPL', shares: 1 }], { activities: [] })).toBe(false)
+  })
+
+  it('is false once any activity has been recorded, even with zero positions', () => {
+    expect(isEmptyAccount([], { activities: [{ type: 'deposit' }] })).toBe(false)
+  })
+
+  it('is false once tracking has a start date, even with zero positions and no activities', () => {
+    expect(isEmptyAccount([], { activities: [], trackingState: { trackingStartedAt: '2026-01-01' } })).toBe(false)
+  })
+})
+
+describe('the one-time Fidelity baseline refresh', () => {
+  const connected = { syncState: { connected: true } }
+  const held = [{ id: 'aaa', ticker: 'AAA', shares: 1, costBasis: 10 }]
+
+  it('waits for the tracking document to load before deciding the account has never synced', async () => {
+    const { portfolio } = setup({
+      portfolioOverrides: connected,
+      trackingOverrides: { trackingState: null, trackingLoaded: false },
+      preview: false,
+    })
+    expect(portfolio.syncReferencePortfolio).not.toHaveBeenCalled()
+    expect(portfolio.recordReferenceObservation).not.toHaveBeenCalled()
+  })
+
+  it('does not re-apply the baseline once the loaded tracking state says this version was applied', async () => {
+    const { portfolio } = setup({
+      portfolioOverrides: connected,
+      trackingOverrides: { trackingState: { referencePortfolioVersion: REFERENCE_PORTFOLIO_VERSION }, trackingLoaded: true },
+      preview: false,
+    })
+    expect(portfolio.syncReferencePortfolio).not.toHaveBeenCalled()
+    expect(portfolio.recordReferenceObservation).not.toHaveBeenCalled()
+  })
+
+  it('seeds an empty account (no positions, no activity, no tracking start date)', async () => {
+    const { portfolio } = setup({
+      portfolioOverrides: connected,
+      trackingOverrides: { trackingState: null, trackingLoaded: true },
+      preview: false,
+    })
+    expect(portfolio.syncReferencePortfolio).toHaveBeenCalledTimes(1)
+    expect(portfolio.recordReferenceObservation).not.toHaveBeenCalled()
+  })
+
+  // This is the WP1 guarantee: once an account holds anything, a version bump can never reach
+  // the position-writing code path automatically, no matter what the seeded/closed ticker
+  // ledgers believe. Only a price observation is recorded.
+  it('never seeds a non-empty account — records a price observation only', async () => {
+    const { portfolio } = setup({
+      positions: held,
+      portfolioOverrides: connected,
+      trackingOverrides: { trackingState: null, trackingLoaded: true },
+      preview: false,
+    })
+    expect(portfolio.recordReferenceObservation).toHaveBeenCalledTimes(1)
+    expect(portfolio.syncReferencePortfolio).not.toHaveBeenCalled()
+  })
+
+  it('also treats an account with recorded activity (but zero current positions) as non-empty', async () => {
+    const { portfolio } = setup({
+      positions: [],
+      portfolioOverrides: connected,
+      trackingOverrides: { trackingState: null, trackingLoaded: true, activities: [{ type: 'realized_gain', amount: 10 }] },
+      preview: false,
+    })
+    expect(portfolio.recordReferenceObservation).toHaveBeenCalledTimes(1)
+    expect(portfolio.syncReferencePortfolio).not.toHaveBeenCalled()
+  })
+
+  it('surfaces an error from the observation-only path without retrying silently forever', async () => {
+    const { result } = setup({
+      positions: held,
+      portfolioOverrides: { ...connected, recordReferenceObservation: vi.fn().mockResolvedValue({ success: false, error: 'offline' }) },
+      trackingOverrides: { trackingState: null, trackingLoaded: true },
+      preview: false,
+    })
+    await act(async () => {}) // flush the effect's promise
+    expect(result.current.syncMessage).toContain('offline')
+  })
+})
+
+describe('a sale does not invalidate the cash-flow ledger confirmation', () => {
+  it('marks the removal as a sale when a sale closes the lot', async () => {
+    const existing = [{ id: 'aaa', ticker: 'AAA', shares: 2, costBasis: 20, currentPrice: 25 }]
+    const { result, portfolio } = setup({ positions: existing })
+    act(() => { result.current.startSell(existing[0]) })
+    act(() => { result.current.setSellForm({ shares: '2', price: '25', saleDate: '2026-04-01' }) })
+    await act(async () => { await result.current.saveSell(existing[0]) })
+    expect(portfolio.removePosition).toHaveBeenCalledWith('aaa', { sale: true })
+  })
+
+  it('leaves a bare Remove as a removal, which is not a sale', async () => {
+    const existing = [{ id: 'aaa', ticker: 'AAA', shares: 2, costBasis: 20 }]
+    const { result, portfolio } = setup({ positions: existing })
+    await act(async () => { await result.current.handleRemove('aaa') })
+    expect(portfolio.removePosition).toHaveBeenCalledWith('aaa')
+  })
+})
+
+describe('the manual "add missing holdings" button', () => {
+  it('passes the seeded-once ledger through, so nothing already delivered comes back', async () => {
+    const { result, portfolio } = setup({
+      trackingOverrides: { trackingState: { referencePortfolioSeeded: ['LULU', 'MU'] }, trackingLoaded: true },
+      portfolioOverrides: {
+        syncReferencePortfolio: vi.fn().mockResolvedValue({ success: true, added: 0, updated: 0, removed: 0 }),
+      },
+    })
+    await act(async () => { await result.current.handleReferenceSync() })
+    expect(portfolio.syncReferencePortfolio).toHaveBeenCalledWith({ seededTickers: ['LULU', 'MU'] })
+  })
+
+  it('says plainly that nothing changed, without even asking to confirm, when the account already holds the whole export', async () => {
+    const { result } = setup({
+      trackingOverrides: { trackingState: { referencePortfolioSeeded: ALL_REFERENCE_TICKERS }, trackingLoaded: true },
+      portfolioOverrides: {
+        syncReferencePortfolio: vi.fn().mockResolvedValue({ success: true, added: 0, updated: 0, removed: 0 }),
+      },
+    })
+    await act(async () => { await result.current.handleReferenceSync() })
+    expect(result.current.syncMessage).toContain('Your cloud portfolio is the record')
+    expect(confirmSpy).not.toHaveBeenCalled()
+  })
+
+  it('asks for confirmation before writing anything, naming what will be added', async () => {
+    const { result } = setup({
+      portfolioOverrides: {
+        syncReferencePortfolio: vi.fn().mockResolvedValue({ success: true, added: 2, updated: 1, removed: 0 }),
+      },
+    })
+    await act(async () => { await result.current.handleReferenceSync() })
+    expect(confirmSpy).toHaveBeenCalledTimes(1)
+    expect(confirmSpy.mock.calls[0][0]).toMatch(/add \d+ holding/)
+  })
+
+  it('writes nothing when the confirmation is declined', async () => {
+    confirmSpy.mockReturnValue(false)
+    const { result, portfolio } = setup({
+      portfolioOverrides: {
+        syncReferencePortfolio: vi.fn().mockResolvedValue({ success: true, added: 2, updated: 1, removed: 0 }),
+      },
+    })
+    await act(async () => { await result.current.handleReferenceSync() })
+    expect(portfolio.syncReferencePortfolio).not.toHaveBeenCalled()
+  })
+
+  it('reports what it added without implying anything was overwritten', async () => {
+    const { result } = setup({
+      portfolioOverrides: {
+        syncReferencePortfolio: vi.fn().mockResolvedValue({ success: true, added: 2, updated: 1, removed: 0 }),
+      },
+    })
+    await act(async () => { await result.current.handleReferenceSync() })
+    expect(result.current.syncMessage).toContain('2 holdings added')
+    expect(result.current.syncMessage).toContain('Nothing already in your portfolio was changed')
+  })
+})
+
+describe('a sale books where the money went, not only what it earned', () => {
+  it('records proceeds alongside the realized gain on a single-lot sale', async () => {
+    const existing = [{ id: 'aaa', ticker: 'AAA', shares: 4, costBasis: 20, currentPrice: 25 }]
+    const { result, tracking } = setup({ positions: existing })
+    act(() => { result.current.startSell(existing[0]) })
+    act(() => { result.current.setSellForm({ shares: '4', price: '25', saleDate: '2026-04-01' }) })
+    await act(async () => { await result.current.saveSell(existing[0]) })
+
+    expect(tracking.recordActivity).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'realized_gain', amount: 20, effectiveDate: '2026-04-01',
+    }))
+    expect(tracking.recordActivity).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'sale_proceeds', amount: 100, effectiveDate: '2026-04-01',
+    }))
+  })
+
+  it('records the full proceeds of a cross-lot sale, not just the gain', async () => {
+    const twoLots = [
+      { id: 'lot-a', ticker: 'AAA', shares: 10, costBasis: 100, purchaseDate: '2026-01-01' },
+      { id: 'lot-b', ticker: 'AAA', shares: 8, costBasis: 120, purchaseDate: '2026-02-01' },
+    ]
+    const { result, tracking } = setup({ positions: twoLots })
+    act(() => { result.current.startLotSell('AAA') })
+    act(() => { result.current.setLotSellForm({ shares: '15', price: '150', saleDate: '2026-04-01' }) })
+    await act(async () => { await result.current.saveLotSell() })
+
+    expect(tracking.recordActivity).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'sale_proceeds', amount: 2250, effectiveDate: '2026-04-01',
+    }))
+  })
+
+  it('records proceeds for a sale entered through the trade bar too', async () => {
+    const held = [{ id: 'lot-a', ticker: 'LULU', shares: 1, costBasis: 100, purchaseDate: '2026-07-30' }]
+    const { result, tracking } = setup({ positions: held })
+    await act(async () => {
+      await result.current.submitTrade({ side: 'sell', ticker: 'LULU', shares: '1', price: '130', date: '2026-09-02' })
+    })
+    expect(tracking.recordActivity).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'sale_proceeds', amount: 130, effectiveDate: '2026-09-02',
+    }))
+    expect(tracking.recordActivity).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'realized_gain', amount: 30, effectiveDate: '2026-09-02',
+    }))
+  })
+
+  it('books the proceeds on the day the sale happened, not the day it was entered', async () => {
+    const held = [{ id: 'lot-a', ticker: 'LULU', shares: 1, costBasis: 100, purchaseDate: '2026-07-30' }]
+    const { result, tracking } = setup({ positions: held })
+    await act(async () => {
+      await result.current.submitTrade({ side: 'sell', ticker: 'LULU', shares: '1', price: '130', date: '2026-09-02' })
+    })
+    const proceeds = tracking.recordActivity.mock.calls.map(([row]) => row).find((row) => row.type === 'sale_proceeds')
+    expect(proceeds.effectiveDate).toBe('2026-09-02')
   })
 })

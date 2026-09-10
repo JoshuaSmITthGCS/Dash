@@ -1,0 +1,822 @@
+{
+  "source": "Fidelity Activity & Orders \u2192 History, account Z32641125, past 90 days, plus pre-window buys from the Aug 25 export",
+  "window": {
+    "from": "2026-06-30",
+    "to": "2026-09-04"
+  },
+  "rules": [
+    "Money-market lines (FZFXX, SPAXX dividends, reinvestments, sweeps/exchanges) are excluded: tracked NAV is invested holdings only.",
+    "cashAfter is Fidelity\u2019s running cash balance after the line, kept only as a verification field; Dash does not track cash.",
+    "Multi-fill buys are separate events here; the Aug 25 export collapsed them into one lot per ticker with the shared trade date. Either representation is acceptable for the ledger; the per-lot cost totals are identical.",
+    "priorPurchases carry the export\u2019s cost and date for holdings bought before this window. BSX and VOO have no known acquisition date.",
+    "Most `buy` events before Sep 2 have no `shares` field: Fidelity's activity log gives the dollar amount per fill but not always the share count, and several tickers were bought across multiple same-day fills at slightly different prices (see e.g. SIGI, HIG, MCY) with no reliable way to split the shares between fills from this data alone. Only LULU's and NTNX's sell events (added after the fact) and TSM's buy carry verified share counts, confirmed against the Sep 9 Positions page. This file's `events` are therefore only reliable for validating dollar totals/dates against REFERENCE_PORTFOLIO's cost basis (already done -- see docs/PLAN-TRADE-LEDGER.md) and as a WP3 backfill audit trail, NOT for share-by-share position replay before Aug 25. scripts/rebuild-portfolio-snapshots.mjs and scripts/reconcile-portfolio-activity.mjs both use fidelity-activity-since-seed.json instead, whose every event has a verified share count."
+  ],
+  "totals": {
+    "deposits": 5600,
+    "stockDividends": 3.29,
+    "realizedGain": 43.94,
+    "realizedBreakdown": {
+      "DFNS": 22.35,
+      "LULU": -15.54,
+      "NTNX": 37.13
+    }
+  },
+  "events": [
+    {
+      "kind": "dividend",
+      "ticker": "VOO",
+      "date": "2026-06-30",
+      "fidelity": "DIVIDEND RECEIVED VANGUARD INDEX FUNDS S&P 500 ETF USD (VOO) (Cash)",
+      "cashAfter": 86.68,
+      "amount": 0.29
+    },
+    {
+      "kind": "deposit",
+      "date": "2026-07-23",
+      "fidelity": "Electronic Funds Transfer Received (Cash)",
+      "cashAfter": 1786.68,
+      "amount": 1700
+    },
+    {
+      "kind": "buy",
+      "ticker": "AGO",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT ASSURED GUARANTY LTD COM USD0.01 (AGO) (Cash)",
+      "cashAfter": 1736.72,
+      "cost": 49.96
+    },
+    {
+      "kind": "buy",
+      "ticker": "ACN",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT ACCENTURE PLC (ACN) (Cash)",
+      "cashAfter": 1686.72,
+      "cost": 50
+    },
+    {
+      "kind": "buy",
+      "ticker": "ADBE",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT ADOBE INC COM (ADBE) (Cash)",
+      "cashAfter": 1636.79,
+      "cost": 49.93
+    },
+    {
+      "kind": "buy",
+      "ticker": "AMAT",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT APPLIED MATERIALS INC COM USD0.01 (AMAT) (Cash)",
+      "cashAfter": 1587.22,
+      "cost": 49.57
+    },
+    {
+      "kind": "buy",
+      "ticker": "BAC",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT BANK AMERICA CORP COM (BAC) (Cash)",
+      "cashAfter": 1537.27,
+      "cost": 49.95
+    },
+    {
+      "kind": "buy",
+      "ticker": "CI",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT THE CIGNA GROUP COM (CI) (Cash)",
+      "cashAfter": 1437.41,
+      "cost": 99.86
+    },
+    {
+      "kind": "buy",
+      "ticker": "COP",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT CONOCOPHILLIPS COM (COP) (Cash)",
+      "cashAfter": 1387.46,
+      "cost": 49.95
+    },
+    {
+      "kind": "buy",
+      "ticker": "DECK",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT DECKERS OUTDOOR CORP (DECK) (Cash)",
+      "cashAfter": 1287.54,
+      "cost": 99.92
+    },
+    {
+      "kind": "buy",
+      "ticker": "EOG",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT EOG RESOURCES INC (EOG) (Cash)",
+      "cashAfter": 1233.75,
+      "cost": 53.79
+    },
+    {
+      "kind": "buy",
+      "ticker": "EOG",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT EOG RESOURCES INC (EOG) (Cash)",
+      "cashAfter": 1087.59,
+      "cost": 146.16
+    },
+    {
+      "kind": "buy",
+      "ticker": "META",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT META PLATFORMS INC CLASS A COMMON STOCK (META) (Cash)",
+      "cashAfter": 887.78,
+      "cost": 199.81
+    },
+    {
+      "kind": "buy",
+      "ticker": "INTU",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT INTUIT INC (INTU) (Cash)",
+      "cashAfter": 872.14,
+      "cost": 15.64
+    },
+    {
+      "kind": "buy",
+      "ticker": "INTU",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT INTUIT INC (INTU) (Cash)",
+      "cashAfter": 587.79,
+      "cost": 284.35
+    },
+    {
+      "kind": "buy",
+      "ticker": "MSFT",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT MICROSOFT CORP (MSFT) (Cash)",
+      "cashAfter": 549.82,
+      "cost": 37.97
+    },
+    {
+      "kind": "buy",
+      "ticker": "MU",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT MICRON TECHNOLOGY INC COM (MU) (Cash)",
+      "cashAfter": 450.52,
+      "cost": 99.3
+    },
+    {
+      "kind": "buy",
+      "ticker": "OXY",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT OCCIDENTAL PETE CORP COM (OXY) (Cash)",
+      "cashAfter": 400.57,
+      "cost": 49.95
+    },
+    {
+      "kind": "buy",
+      "ticker": "QCOM",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT QUALCOMM INC (QCOM) (Cash)",
+      "cashAfter": 372.38,
+      "cost": 28.19
+    },
+    {
+      "kind": "buy",
+      "ticker": "QCOM",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT QUALCOMM INC (QCOM) (Cash)",
+      "cashAfter": 200.58,
+      "cost": 171.8
+    },
+    {
+      "kind": "buy",
+      "ticker": "SCHW",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT SCHWAB CHARLES CORP COM (SCHW) (Cash)",
+      "cashAfter": 102.58,
+      "cost": 98
+    },
+    {
+      "kind": "buy",
+      "ticker": "SCHW",
+      "date": "2026-07-23",
+      "fidelity": "YOU BOUGHT SCHWAB CHARLES CORP COM (SCHW) (Cash)",
+      "cashAfter": 0.6,
+      "cost": 101.98
+    },
+    {
+      "kind": "deposit",
+      "date": "2026-07-30",
+      "fidelity": "Electronic Funds Transfer Received (Cash)",
+      "cashAfter": 200.6,
+      "amount": 200
+    },
+    {
+      "kind": "buy",
+      "ticker": "LULU",
+      "date": "2026-07-30",
+      "fidelity": "YOU BOUGHT LULULEMON ATHLETICA INC COM USD0.005 (LULU) (Cash)",
+      "cashAfter": 82.66,
+      "cost": 117.94
+    },
+    {
+      "kind": "buy",
+      "ticker": "DXCM",
+      "date": "2026-07-31",
+      "fidelity": "YOU BOUGHT DEXCOM INC (DXCM) (Cash)",
+      "cashAfter": 2.73,
+      "cost": 79.93
+    },
+    {
+      "kind": "deposit",
+      "date": "2026-08-03",
+      "fidelity": "Electronic Funds Transfer Received (Cash)",
+      "cashAfter": 402.92,
+      "amount": 400
+    },
+    {
+      "kind": "sell",
+      "ticker": "DFNS",
+      "date": "2026-08-03",
+      "fidelity": "YOU SOLD T3 DEFENSE INC COM NEW (DFNS) (Cash)",
+      "cashAfter": 789.92,
+      "proceeds": 387
+    },
+    {
+      "kind": "sell",
+      "ticker": "DFNS",
+      "date": "2026-08-03",
+      "fidelity": "YOU SOLD T3 DEFENSE INC COM NEW (DFNS) (Cash)",
+      "cashAfter": 827.31,
+      "proceeds": 37.39
+    },
+    {
+      "kind": "sell",
+      "ticker": "DFNS",
+      "date": "2026-08-03",
+      "fidelity": "YOU SOLD T3 DEFENSE INC COM NEW (DFNS) (Cash)",
+      "cashAfter": 847.26,
+      "proceeds": 19.95
+    },
+    {
+      "kind": "sell",
+      "ticker": "DFNS",
+      "date": "2026-08-03",
+      "fidelity": "YOU SOLD T3 DEFENSE INC COM NEW (DFNS) (Cash)",
+      "cashAfter": 867.25,
+      "proceeds": 19.99
+    },
+    {
+      "kind": "sell",
+      "ticker": "DFNS",
+      "date": "2026-08-03",
+      "fidelity": "YOU SOLD T3 DEFENSE INC COM NEW (DFNS) (Cash)",
+      "cashAfter": 882.25,
+      "proceeds": 15
+    },
+    {
+      "kind": "sell",
+      "ticker": "DFNS",
+      "date": "2026-08-03",
+      "fidelity": "YOU SOLD T3 DEFENSE INC COM NEW (DFNS) (Cash)",
+      "cashAfter": 894.23,
+      "proceeds": 11.98
+    },
+    {
+      "kind": "buy",
+      "ticker": "DFNS",
+      "date": "2026-08-03",
+      "fidelity": "YOU BOUGHT T3 DEFENSE INC COM NEW (DFNS) (Cash)",
+      "cashAfter": 853.81,
+      "cost": 40.42
+    },
+    {
+      "kind": "buy",
+      "ticker": "DFNS",
+      "date": "2026-08-03",
+      "fidelity": "YOU BOUGHT T3 DEFENSE INC COM NEW (DFNS) (Cash)",
+      "cashAfter": 791.03,
+      "cost": 62.78
+    },
+    {
+      "kind": "buy",
+      "ticker": "DFNS",
+      "date": "2026-08-03",
+      "fidelity": "YOU BOUGHT T3 DEFENSE INC COM NEW (DFNS) (Cash)",
+      "cashAfter": 584.84,
+      "cost": 206.19
+    },
+    {
+      "kind": "buy",
+      "ticker": "DFNS",
+      "date": "2026-08-03",
+      "fidelity": "YOU BOUGHT T3 DEFENSE INC COM NEW (DFNS) (Cash)",
+      "cashAfter": 425.27,
+      "cost": 159.57
+    },
+    {
+      "kind": "deposit",
+      "date": "2026-08-04",
+      "fidelity": "Electronic Funds Transfer Received (Cash)",
+      "cashAfter": null,
+      "amount": 100
+    },
+    {
+      "kind": "buy",
+      "ticker": "CRUS",
+      "date": "2026-08-04",
+      "fidelity": "YOU BOUGHT CIRRUS LOGIC INC (CRUS) (Cash)",
+      "cashAfter": null,
+      "cost": 44.81
+    },
+    {
+      "kind": "buy",
+      "ticker": "CRUS",
+      "date": "2026-08-04",
+      "fidelity": "YOU BOUGHT CIRRUS LOGIC INC (CRUS) (Cash)",
+      "cashAfter": null,
+      "cost": 130.16
+    },
+    {
+      "kind": "buy",
+      "ticker": "CCK",
+      "date": "2026-08-04",
+      "fidelity": "YOU BOUGHT EX-DIV DATE 08/06/26RECORD DATE 08/06/26PAYABLE DTE 08/20/26 CROWN HLDGS INC COM (CCK) (Cash)",
+      "cashAfter": null,
+      "cost": 99.96
+    },
+    {
+      "kind": "buy",
+      "ticker": "EXPE",
+      "date": "2026-08-04",
+      "fidelity": "YOU BOUGHT EXPEDIA GROUP INC (EXPE) (Cash)",
+      "cashAfter": null,
+      "cost": 49.95
+    },
+    {
+      "kind": "buy",
+      "ticker": "VGT",
+      "date": "2026-08-04",
+      "fidelity": "YOU BOUGHT VANGUARD WORLD FD INF TECH ETF (VGT) (Cash)",
+      "cashAfter": null,
+      "cost": 81.78
+    },
+    {
+      "kind": "buy",
+      "ticker": "VGT",
+      "date": "2026-08-04",
+      "fidelity": "YOU BOUGHT VANGUARD WORLD FD INF TECH ETF (VGT) (Cash)",
+      "cashAfter": null,
+      "cost": 118.19
+    },
+    {
+      "kind": "deposit",
+      "date": "2026-08-05",
+      "fidelity": "Electronic Funds Transfer Received (Cash)",
+      "cashAfter": 200.42,
+      "amount": 200
+    },
+    {
+      "kind": "buy",
+      "ticker": "ACGL",
+      "date": "2026-08-05",
+      "fidelity": "YOU BOUGHT ARCH CAPITAL GROUP COM STK USD0.01 (ACGL) (Cash)",
+      "cashAfter": 199.53,
+      "cost": 0.89
+    },
+    {
+      "kind": "buy",
+      "ticker": "ACGL",
+      "date": "2026-08-05",
+      "fidelity": "YOU BOUGHT ARCH CAPITAL GROUP COM STK USD0.01 (ACGL) (Cash)",
+      "cashAfter": 100.46,
+      "cost": 99.07
+    },
+    {
+      "kind": "buy",
+      "ticker": "GMED",
+      "date": "2026-08-05",
+      "fidelity": "YOU BOUGHT GLOBUS MEDICAL INC (GMED) (Cash)",
+      "cashAfter": 81.18,
+      "cost": 19.28
+    },
+    {
+      "kind": "buy",
+      "ticker": "GMED",
+      "date": "2026-08-05",
+      "fidelity": "YOU BOUGHT GLOBUS MEDICAL INC (GMED) (Cash)",
+      "cashAfter": 0.5,
+      "cost": 80.68
+    },
+    {
+      "kind": "buy",
+      "ticker": "DINO",
+      "date": "2026-08-05",
+      "fidelity": "YOU BOUGHT EX-DIV DATE 08/11/26RECORD DATE 08/11/26PAYABLE DTE 09/02/26 HF SINCLAIR CORP COM (DINO) (Cash)",
+      "cashAfter": -13.66,
+      "cost": 14.16
+    },
+    {
+      "kind": "buy",
+      "ticker": "DINO",
+      "date": "2026-08-05",
+      "fidelity": "YOU BOUGHT EX-DIV DATE 08/11/26RECORD DATE 08/11/26PAYABLE DTE 09/02/26 HF SINCLAIR CORP COM (DINO) (Cash)",
+      "cashAfter": -99.49,
+      "cost": 85.83
+    },
+    {
+      "kind": "deposit",
+      "date": "2026-08-06",
+      "fidelity": "Electronic Funds Transfer Received (Cash)",
+      "cashAfter": 0.51,
+      "amount": 100
+    },
+    {
+      "kind": "buy",
+      "ticker": "FTDR",
+      "date": "2026-08-07",
+      "fidelity": "YOU BOUGHT FRONTDOOR INC COM (FTDR) (Cash)",
+      "cashAfter": -49.44,
+      "cost": 49.95
+    },
+    {
+      "kind": "buy",
+      "ticker": "THG",
+      "date": "2026-08-07",
+      "fidelity": "YOU BOUGHT HANOVER INSURANCE GROUP INC (THG) (Cash)",
+      "cashAfter": -249.32,
+      "cost": 199.88
+    },
+    {
+      "kind": "buy",
+      "ticker": "HIG",
+      "date": "2026-08-07",
+      "fidelity": "YOU BOUGHT THE HARTFORD INSURANCE GROUP, INC. C... (HIG) (Cash)",
+      "cashAfter": -305.83,
+      "cost": 56.51
+    },
+    {
+      "kind": "buy",
+      "ticker": "HIG",
+      "date": "2026-08-07",
+      "fidelity": "YOU BOUGHT THE HARTFORD INSURANCE GROUP, INC. C... (HIG) (Cash)",
+      "cashAfter": -449.29,
+      "cost": 143.46
+    },
+    {
+      "kind": "buy",
+      "ticker": "MCY",
+      "date": "2026-08-07",
+      "fidelity": "YOU BOUGHT MERCURY GENERAL CORP (MCY) (Cash)",
+      "cashAfter": -540.66,
+      "cost": 91.37
+    },
+    {
+      "kind": "buy",
+      "ticker": "MCY",
+      "date": "2026-08-07",
+      "fidelity": "YOU BOUGHT MERCURY GENERAL CORP (MCY) (Cash)",
+      "cashAfter": -649.22,
+      "cost": 108.56
+    },
+    {
+      "kind": "buy",
+      "ticker": "NEM",
+      "date": "2026-08-07",
+      "fidelity": "YOU BOUGHT NEWMONT CORP COM ISIN #US6516391066 ... (NEM) (Cash)",
+      "cashAfter": -749.21,
+      "cost": 99.99
+    },
+    {
+      "kind": "buy",
+      "ticker": "NUE",
+      "date": "2026-08-07",
+      "fidelity": "YOU BOUGHT NUCOR CORP COM USD0.40 (NUE) (Cash)",
+      "cashAfter": -799.04,
+      "cost": 49.83
+    },
+    {
+      "kind": "buy",
+      "ticker": "SIGI",
+      "date": "2026-08-07",
+      "fidelity": "YOU BOUGHT SELECTIVE INSURANCE GROUP INC (SIGI) (Cash)",
+      "cashAfter": -806.26,
+      "cost": 7.22
+    },
+    {
+      "kind": "buy",
+      "ticker": "SIGI",
+      "date": "2026-08-07",
+      "fidelity": "YOU BOUGHT SELECTIVE INSURANCE GROUP INC (SIGI) (Cash)",
+      "cashAfter": -998.96,
+      "cost": 192.7
+    },
+    {
+      "kind": "deposit",
+      "date": "2026-08-10",
+      "fidelity": "Electronic Funds Transfer Received (Cash)",
+      "cashAfter": 1.04,
+      "amount": 1000
+    },
+    {
+      "kind": "deposit",
+      "date": "2026-08-12",
+      "fidelity": "Electronic Funds Transfer Received (Cash)",
+      "cashAfter": 501.04,
+      "amount": 500
+    },
+    {
+      "kind": "buy",
+      "ticker": "RNR",
+      "date": "2026-08-14",
+      "fidelity": "YOU BOUGHT RENAISSANCERE HLDGS LTD COM (RNR) (Cash)",
+      "cashAfter": 401.24,
+      "cost": 99.8
+    },
+    {
+      "kind": "buy",
+      "ticker": "MGY",
+      "date": "2026-08-14",
+      "fidelity": "YOU BOUGHT MAGNOLIA OIL &GAS CORP CL A (MGY) (Cash)",
+      "cashAfter": 379.82,
+      "cost": 21.42
+    },
+    {
+      "kind": "buy",
+      "ticker": "MGY",
+      "date": "2026-08-14",
+      "fidelity": "YOU BOUGHT MAGNOLIA OIL &GAS CORP CL A (MGY) (Cash)",
+      "cashAfter": 301.26,
+      "cost": 78.56
+    },
+    {
+      "kind": "buy",
+      "ticker": "SYF",
+      "date": "2026-08-14",
+      "fidelity": "YOU BOUGHT SYNCHRONY FINANCIAL COM (SYF) (Cash)",
+      "cashAfter": 281.71,
+      "cost": 19.55
+    },
+    {
+      "kind": "buy",
+      "ticker": "SYF",
+      "date": "2026-08-14",
+      "fidelity": "YOU BOUGHT SYNCHRONY FINANCIAL COM (SYF) (Cash)",
+      "cashAfter": 201.31,
+      "cost": 80.4
+    },
+    {
+      "kind": "buy",
+      "ticker": "TRV",
+      "date": "2026-08-14",
+      "fidelity": "YOU BOUGHT TRAVELERS COMPANIES INC COM STK NPV (TRV) (Cash)",
+      "cashAfter": 1.65,
+      "cost": 199.66
+    },
+    {
+      "kind": "dividend",
+      "ticker": "CCK",
+      "date": "2026-08-20",
+      "fidelity": "DIVIDEND RECEIVED CROWN HLDGS INC COM (CCK) (Cash)",
+      "cashAfter": 1.94,
+      "amount": 0.29
+    },
+    {
+      "kind": "deposit",
+      "date": "2026-08-21",
+      "fidelity": "Electronic Funds Transfer Received (Cash)",
+      "cashAfter": 1001.94,
+      "amount": 1000
+    },
+    {
+      "kind": "buy",
+      "ticker": "ETN",
+      "date": "2026-08-21",
+      "fidelity": "YOU BOUGHT EATON CORPORATION PLC (ETN) (Cash)",
+      "cashAfter": 801.96,
+      "cost": 199.98
+    },
+    {
+      "kind": "buy",
+      "ticker": "AMZN",
+      "date": "2026-08-21",
+      "fidelity": "YOU BOUGHT AMAZON.COM INC (AMZN) (Cash)",
+      "cashAfter": 702.17,
+      "cost": 99.79
+    },
+    {
+      "kind": "buy",
+      "ticker": "AMP",
+      "date": "2026-08-21",
+      "fidelity": "YOU BOUGHT AMERIPRISE FINANCIAL INC COM USD0.01 (AMP) (Cash)",
+      "cashAfter": 602.43,
+      "cost": 99.74
+    },
+    {
+      "kind": "buy",
+      "ticker": "DELL",
+      "date": "2026-08-21",
+      "fidelity": "YOU BOUGHT DELL TECHNOLOGIES INC CL C (DELL) (Cash)",
+      "cashAfter": 502.43,
+      "cost": 100
+    },
+    {
+      "kind": "buy",
+      "ticker": "MPC",
+      "date": "2026-08-21",
+      "fidelity": "YOU BOUGHT MARATHON PETROLEUM CORP COM USD0.01 (MPC) (Cash)",
+      "cashAfter": 402.53,
+      "cost": 99.9
+    },
+    {
+      "kind": "buy",
+      "ticker": "THC",
+      "date": "2026-08-21",
+      "fidelity": "YOU BOUGHT TENET HEALTHCARE CORP (THC) (Cash)",
+      "cashAfter": 202.57,
+      "cost": 199.96
+    },
+    {
+      "kind": "buy",
+      "ticker": "TWLO",
+      "date": "2026-08-21",
+      "fidelity": "YOU BOUGHT TWILIO INC CL A (TWLO) (Cash)",
+      "cashAfter": 2.68,
+      "cost": 199.89
+    },
+    {
+      "kind": "dividend",
+      "ticker": "SCHW",
+      "date": "2026-08-28",
+      "fidelity": "DIVIDEND RECEIVED SCHWAB CHARLES CORP COM (SCHW) (Cash)",
+      "cashAfter": 3.31,
+      "amount": 0.63
+    },
+    {
+      "kind": "deposit",
+      "date": "2026-09-01",
+      "fidelity": "Electronic Funds Transfer Received (Cash)",
+      "cashAfter": 403.55,
+      "amount": 400
+    },
+    {
+      "kind": "dividend",
+      "ticker": "COP",
+      "date": "2026-09-01",
+      "fidelity": "DIVIDEND RECEIVED CONOCOPHILLIPS COM (COP) (Cash)",
+      "cashAfter": 403.9,
+      "amount": 0.35
+    },
+    {
+      "kind": "dividend",
+      "ticker": "SIGI",
+      "date": "2026-09-01",
+      "fidelity": "DIVIDEND RECEIVED SELECTIVE INSURANCE GROUP INC (SIGI) (Cash)",
+      "cashAfter": 404.79,
+      "amount": 0.89
+    },
+    {
+      "kind": "buy",
+      "ticker": "TSM",
+      "date": "2026-09-02",
+      "fidelity": "YOU BOUGHT TAIWAN SEMICONDUCTOR MANUFACTURING S... (TSM) (Margin)",
+      "cashAfter": 205.12,
+      "cost": 199.67
+    },
+    {
+      "kind": "dividend",
+      "ticker": "DINO",
+      "date": "2026-09-02",
+      "fidelity": "DIVIDEND RECEIVED HF SINCLAIR CORP COM (DINO) (Cash)",
+      "cashAfter": 205.73,
+      "amount": 0.61
+    },
+    {
+      "kind": "sell",
+      "ticker": "LULU",
+      "date": "2026-09-03",
+      "fidelity": "YOU SOLD LULULEMON ATHLETICA INC COM USD0.005 (LULU) (Cash)",
+      "cashAfter": 308.13,
+      "proceeds": 102.4
+    },
+    {
+      "kind": "dividend",
+      "ticker": "AGO",
+      "date": "2026-09-03",
+      "fidelity": "DIVIDEND RECEIVED ASSURED GUARANTY LTD COM USD0.01 (AGO) (Cash)",
+      "cashAfter": 308.36,
+      "amount": 0.23
+    },
+    {
+      "kind": "sell",
+      "ticker": "NTNX",
+      "date": "2026-09-04",
+      "fidelity": "YOU SOLD NUTANIX INC CL A (NTNX) (Cash)",
+      "cashAfter": 376.22,
+      "proceeds": 67.86,
+      "shares": 1
+    },
+    {
+      "kind": "sell",
+      "ticker": "NTNX",
+      "date": "2026-09-04",
+      "fidelity": "YOU SOLD NUTANIX INC CL A (NTNX) (Cash)",
+      "cashAfter": 395.48,
+      "proceeds": 19.26,
+      "shares": 0.284
+    }
+  ],
+  "priorPurchases": [
+    {
+      "kind": "buy",
+      "ticker": "BSX",
+      "date": null,
+      "shares": 1.466,
+      "cost": 99.97,
+      "source": "Aug 25 export (purchase predates the 90-day activity window)",
+      "needsReview": "acquisition date unknown; predates supplied history"
+    },
+    {
+      "kind": "buy",
+      "ticker": "NTNX",
+      "date": "2026-03-12",
+      "shares": 1.284,
+      "cost": 49.99,
+      "source": "Aug 25 export (purchase predates the 90-day activity window)"
+    },
+    {
+      "kind": "buy",
+      "ticker": "VOO",
+      "date": null,
+      "shares": 0.146,
+      "cost": 92.47,
+      "source": "Aug 25 export (purchase predates the 90-day activity window)",
+      "needsReview": "acquisition date unknown; predates supplied history"
+    }
+  ],
+  "excluded": [
+    {
+      "date": "2026-06-30",
+      "fidelity": "DIVIDEND RECEIVED FIDELITY GOVERNMENT MONEY MARKET (SPAXX) (Cash)",
+      "cashAfter": 86.39,
+      "amount": 0.23,
+      "reason": "money market"
+    },
+    {
+      "date": "2026-06-30",
+      "fidelity": "REINVESTMENT FIDELITY GOVERNMENT MONEY MARKET (SPAXX) (Cash)",
+      "cashAfter": 86.39,
+      "amount": -0.23,
+      "reason": "money market"
+    },
+    {
+      "date": "2026-07-31",
+      "fidelity": "DIVIDEND RECEIVED FIDELITY GOVERNMENT MONEY MARKET (SPAXX) (Cash)",
+      "cashAfter": 2.92,
+      "amount": 0.19,
+      "reason": "money market"
+    },
+    {
+      "date": "2026-07-31",
+      "fidelity": "REINVESTMENT FIDELITY GOVERNMENT MONEY MARKET (SPAXX) (Cash)",
+      "cashAfter": 2.92,
+      "amount": -0.19,
+      "reason": "money market"
+    },
+    {
+      "date": "2026-08-04",
+      "fidelity": "TRANSFERRED FROM SPAXX TO FZFXX FIDELITY GOVERNMENT MONEY MARKET (SPAXX) (Cash)",
+      "cashAfter": null,
+      "amount": -425.27,
+      "reason": "money market"
+    },
+    {
+      "date": "2026-08-04",
+      "fidelity": "EXCHANGED TO FZFXX FIDELITY TREASURY MONEY MARKET FUND (FZFXX) (Cash)",
+      "cashAfter": null,
+      "amount": null,
+      "reason": "money market"
+    },
+    {
+      "date": "2026-08-04",
+      "fidelity": "TRANSFERRED TO FZFXX IS LIQUID FIDELITY TREASURY MONEY MARKET FUND (FZFXX) (Cash)",
+      "cashAfter": null,
+      "amount": 425.27,
+      "reason": "money market"
+    },
+    {
+      "date": "2026-08-31",
+      "fidelity": "DIVIDEND RECEIVED FIDELITY GOVERNMENT MONEY MARKET (SPAXX) (Cash)",
+      "cashAfter": 3.36,
+      "amount": 0.05,
+      "reason": "money market"
+    },
+    {
+      "date": "2026-08-31",
+      "fidelity": "DIVIDEND RECEIVED FIDELITY TREASURY MONEY MARKET FUND (FZFXX) (Cash)",
+      "cashAfter": 3.55,
+      "amount": 0.19,
+      "reason": "money market"
+    },
+    {
+      "date": "2026-08-31",
+      "fidelity": "REINVESTMENT FIDELITY TREASURY MONEY MARKET FUND (FZFXX) (Cash)",
+      "cashAfter": 3.55,
+      "amount": -0.19,
+      "reason": "money market"
+    }
+  ]
+}

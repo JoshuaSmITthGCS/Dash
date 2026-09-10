@@ -18,6 +18,7 @@ import PullToRefreshIndicator from '../components/PullToRefreshIndicator.jsx'
 import ImportHoldings from './portfolio/ImportHoldings.jsx'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
+import { REFERENCE_PORTFOLIO_LABEL } from '../lib/referencePortfolio.js'
 import { currentHoldingsSeries } from '../lib/portfolioAnalytics.js'
 import StockTickerTape from '../components/StockTickerTape.jsx'
 import modelSettings from '../../pipeline/config/settings.json'
@@ -95,7 +96,11 @@ export default function Portfolio({ view = 'summary' }) {
   })
   const forms = usePortfolioForms({ portfolio, tracking, previewPortfolio, positions })
 
-  const { priceData, pricesUpdatedAt, benchmarkQuote } = buildPriceModel({ data, positions, quotes: portfolioQuotes })
+  // tracking.snapshots is the account's own recorded price history, and it outranks the
+  // brokerage-export price seeded onto a position document — see buildPriceModel.
+  const { priceData, pricesUpdatedAt, benchmarkQuote } = buildPriceModel({
+    data, positions, quotes: portfolioQuotes, recordedSnapshots: tracking.snapshots,
+  })
   const holdings = buildHoldingsModel({ data, positions, priceData, etfData })
   const benchmarks = buildBenchmarkModel({
     data,
@@ -179,7 +184,10 @@ export default function Portfolio({ view = 'summary' }) {
               </div>
               <button className="secondary-button" onClick={refresh.requestRefresh} disabled={refresh.refreshing}><Icon name="sync" size={17} className={refresh.refreshing && refresh.activeMode === 'data' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'data' ? 'Refreshing all data…' : 'Refresh all research'}</button>
               <button className="secondary-button" onClick={refresh.requestReanalyze} disabled={refresh.refreshing}><Icon name="research" size={17} className={refresh.refreshing && refresh.activeMode === 'rescore' ? 'refresh-spin' : ''} />{refresh.refreshing && refresh.activeMode === 'rescore' ? 'Reanalyzing…' : 'Reanalyze portfolio'}</button>
-              <button className="secondary-button" onClick={forms.handleReferenceSync}>Reapply Aug 25 Fidelity snapshot</button>
+              <button className="secondary-button" onClick={forms.handleReferenceSync}
+                title={`Adds holdings from the ${REFERENCE_PORTFOLIO_LABEL} Fidelity export that this account has never been given, and records that export's prices as a dated observation. It cannot change or remove anything already in your portfolio.`}>
+                Add missing holdings from {REFERENCE_PORTFOLIO_LABEL} snapshot
+              </button>
               <button className="secondary-button" onClick={exportPortfolio}><Icon name="download" size={17} />Export portfolio</button>
               <ImportHoldings positions={positions} applyPortfolioImport={applyPortfolioImport}
                 onDone={forms.setSyncMessage} />
@@ -195,6 +203,7 @@ export default function Portfolio({ view = 'summary' }) {
           priceData={priceData}
           holdingsSeriesFull={holdingsSeriesFull}
           trackingSnapshots={tracking.snapshots}
+          trackingActivities={tracking.activities}
           quotesRefreshing={portfolioQuotes.refreshing}
           summaryPeriod={summaryPeriod}
           onSummaryPeriodChange={setSummaryPeriod}
@@ -247,10 +256,26 @@ export default function Portfolio({ view = 'summary' }) {
           recommendationOverride={selectedStock.recommendation}
           stopLoss={selectedStock.stopLoss}
           position={selectedStock.shares
-            ? { shares: selectedStock.shares, price: selectedStock.currentPrice, purchaseDate: selectedStock.purchaseDate }
+            ? {
+              // Every lot of the ticker, not just the row that was tapped: the trade bar
+              // sells the holding FIFO across lots, and guidance ("trim 3 shares") reads
+              // wrong if it is scoped to one of several lots of the same company.
+              shares: positions
+                .filter((row) => String(row.ticker || '').toUpperCase() === String(selectedStock.ticker || '').toUpperCase())
+                .reduce((sum, row) => sum + (Number(row.shares) || 0), 0) || selectedStock.shares,
+              price: selectedStock.currentPrice,
+              purchaseDate: selectedStock.purchaseDate,
+            }
             : null}
           benchmarkHistory={holdings.benchmarkHistory}
           onClose={() => setSelectedStock(null)}
+          // Sizes are summed across every lot of the ticker, because the trade bar sells the
+          // ticker (FIFO across lots), not the one row that happened to be tapped.
+          trade={previewPortfolio ? null : {
+            onSubmit: forms.submitTrade,
+            closed: forms.closedPositions.some((row) => row.ticker === String(selectedStock.ticker || '').toUpperCase()),
+            onReopen: forms.reopenClosedPosition,
+          }}
         />
       )}
     </>
