@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 116,
+  "refreshes_observed": 117,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -19195,6 +19195,141 @@
           ],
           "score_delta": -0.7,
           "confidence_delta": 0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-09T22:22:44.219124+00:00",
+      "current_refresh": "advisor-2026-09-10T16:16:51.451468+00:00",
+      "shared_tickers": 894,
+      "rank_turnover": {
+        "top_40": 0.225,
+        "top_100": 0.225
+      },
+      "tickers_with_availability_driven_change": 31,
+      "tickers_with_availability_driven_change_pct": 0.035,
+      "mean_abs_score_delta": 0.93,
+      "mean_abs_confidence_delta": 0.002,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "RLI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 11.4,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "GMED",
+          "metrics_with_value_change": [
+            "capex_to_depreciation",
+            "ev_to_ebit",
+            "net_buyback_yield"
+          ],
+          "metrics_with_availability_change": [
+            "net_debt_to_ebitda"
+          ],
+          "score_delta": 8.9,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "BXP",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "altman_z",
+            "debt_to_equity",
+            "earnings_growth",
+            "forward_pe",
+            "peg",
+            "price_to_tangible_book",
+            "profit_margin",
+            "return_on_equity",
+            "return_on_invested_capital",
+            "revenue_growth"
+          ],
+          "score_delta": 7.9,
+          "confidence_delta": 0.12
+        },
+        {
+          "ticker": "MRNA",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "interest_coverage"
+          ],
+          "score_delta": -5.7,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "ELS",
+          "metrics_with_value_change": [
+            "cash_conversion",
+            "ev_to_fcf"
+          ],
+          "metrics_with_availability_change": [
+            "capex_to_depreciation",
+            "fcf_growth_3y"
+          ],
+          "score_delta": -4.2,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "SNOW",
+          "metrics_with_value_change": [
+            "net_buyback_yield"
+          ],
+          "metrics_with_availability_change": [
+            "return_on_invested_capital"
+          ],
+          "score_delta": -3.2,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "WRB",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 3.0,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "CMC",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -2.2,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "DCI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 1.8,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "PCAR",
+          "metrics_with_value_change": [
+            "gross_profits_to_assets"
+          ],
+          "metrics_with_availability_change": [
+            "altman_z",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "interest_coverage",
+            "operating_margin_trend",
+            "return_on_invested_capital"
+          ],
+          "score_delta": -1.8,
+          "confidence_delta": 0.15
         }
       ]
     }
