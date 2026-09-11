@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-09-10T22:12:57.969000+00:00",
+  "generated_at": "2026-09-11T16:54:19.861080+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before options_pit_store began recording - this module never reconstructs a recommendation or a settle price for a date it did not observe"
   },
-  "snapshot_dates_recorded": 8,
-  "positions_recorded": 229,
-  "positions_resolved": 12,
+  "snapshot_dates_recorded": 9,
+  "positions_recorded": 270,
+  "positions_resolved": 121,
   "metrics": {
     "short_term_trades_score": {
       "requires_live_sample": true,
@@ -24,7 +24,7 @@
   },
   "attribution_by_mechanism": {
     "buy": {
-      "eligible_periods": 0,
+      "eligible_periods": 1,
       "minimum_icir_periods": 24,
       "status": "accumulating",
       "composite": {
@@ -37,7 +37,7 @@
       "metrics": {
         "iv_value": {
           "weight": 0.25,
-          "own_eligible_periods": 0,
+          "own_eligible_periods": 1,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -45,7 +45,7 @@
         },
         "liquidity": {
           "weight": 0.35,
-          "own_eligible_periods": 0,
+          "own_eligible_periods": 1,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -53,7 +53,7 @@
         },
         "trend_strength": {
           "weight": 0.25,
-          "own_eligible_periods": 0,
+          "own_eligible_periods": 1,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -69,7 +69,7 @@
         },
         "research_confidence": {
           "weight": 0.07,
-          "own_eligible_periods": 0,
+          "own_eligible_periods": 1,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -78,7 +78,7 @@
       }
     },
     "sell_call": {
-      "eligible_periods": 0,
+      "eligible_periods": 1,
       "minimum_icir_periods": 24,
       "status": "accumulating",
       "composite": {
@@ -91,7 +91,7 @@
       "metrics": {
         "expected_value_pct": {
           "weight": 0.38,
-          "own_eligible_periods": 0,
+          "own_eligible_periods": 1,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -99,7 +99,7 @@
         },
         "liquidity": {
           "weight": 0.25,
-          "own_eligible_periods": 0,
+          "own_eligible_periods": 1,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -107,7 +107,7 @@
         },
         "cushion": {
           "weight": 0.21,
-          "own_eligible_periods": 0,
+          "own_eligible_periods": 1,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -123,7 +123,7 @@
         },
         "research_confidence": {
           "weight": 0.1,
-          "own_eligible_periods": 0,
+          "own_eligible_periods": 1,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -132,7 +132,7 @@
       }
     },
     "sell_put": {
-      "eligible_periods": 0,
+      "eligible_periods": 1,
       "minimum_icir_periods": 24,
       "status": "accumulating",
       "composite": {
@@ -145,7 +145,7 @@
       "metrics": {
         "expected_value_pct": {
           "weight": 0.33,
-          "own_eligible_periods": 0,
+          "own_eligible_periods": 1,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -153,7 +153,7 @@
         },
         "probability_otm": {
           "weight": 0.25,
-          "own_eligible_periods": 0,
+          "own_eligible_periods": 1,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -161,7 +161,7 @@
         },
         "liquidity": {
           "weight": 0.25,
-          "own_eligible_periods": 0,
+          "own_eligible_periods": 1,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -177,7 +177,7 @@
         },
         "research_confidence": {
           "weight": 0.1,
-          "own_eligible_periods": 0,
+          "own_eligible_periods": 1,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -189,8 +189,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "d660583878d8933697781b07d042e168f5343350",
+    "git_commit_sha": "197ad26815bb77626e9bdd8c68b9e78b339d7d35",
     "config_hash": "93b5358baa5b0d3269738d19deb6465cf3c2c839b12f2bdc0b3a9fec96a48da4",
-    "generated_at": "2026-09-10T22:12:57.969000+00:00"
+    "generated_at": "2026-09-11T16:54:19.861080+00:00"
   }
 }
