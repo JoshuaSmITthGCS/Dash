@@ -23,6 +23,7 @@ from common import LOG
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STORE_DIR = os.path.join(HERE, "swing_pit_store")
+FIRST_SEEN_FILENAME = "first_top10.json"
 
 
 def build_rows(results, *, recorded_at=None):
@@ -81,3 +82,48 @@ def load_snapshot(date_str, store_dir=None):
         return []
     with open(path) as handle:
         return [json.loads(line) for line in handle if line.strip()]
+
+
+def _first_seen_path(store_dir=None):
+    return os.path.join(store_dir or STORE_DIR, FIRST_SEEN_FILENAME)
+
+
+def load_first_seen(store_dir=None):
+    """Ticker -> {date_predicted, tier, price_at_prediction} for every name that has ever
+    ranked top 10 in a horizon tier. Written once per ticker and never overwritten after -
+    the "date predicted" this backs is the first time it happened, not the most recent.
+    """
+    path = _first_seen_path(store_dir)
+    if not os.path.exists(path):
+        return {}
+    with open(path) as handle:
+        return json.load(handle)
+
+
+def update_first_seen(tier_results, *, recorded_at=None, store_dir=None, top_n=10):
+    """Record, for every ticker ranking ``top_n`` today in any tier, the first time that ever
+    happened - never today's, if one is already on file.
+
+    ``tier_results`` is ``{tier: published_rows}`` for every horizon tier, already ranked.
+    This reads and rewrites ``first_top10.json`` rather than scanning the daily jsonl
+    snapshots ``append_snapshot`` writes: the fact this needs is "was this ticker ever top_n
+    before", which a small running file answers in O(new entrants) per run instead of
+    rescanning years of per-ticker history every time the screen refreshes.
+    """
+    recorded_at = recorded_at or datetime.now(timezone.utc)
+    existing = load_first_seen(store_dir)
+    changed = False
+    for tier, rows in (tier_results or {}).items():
+        for row in rows or []:
+            ticker, rank, price = row.get("ticker"), row.get("rank"), row.get("price")
+            if not ticker or rank is None or rank > top_n or not price or ticker in existing:
+                continue
+            existing[ticker] = {"date_predicted": recorded_at.date().isoformat(),
+                                "tier": tier, "price_at_prediction": price}
+            changed = True
+    if changed:
+        store_dir = store_dir or STORE_DIR
+        os.makedirs(store_dir, exist_ok=True)
+        with open(_first_seen_path(store_dir), "w") as handle:
+            json.dump(existing, handle, sort_keys=True, indent=2)
+    return existing

@@ -55,5 +55,47 @@ class AppendAndLoadTests(unittest.TestCase):
             self.assertEqual(len(sps.load_snapshot("2026-01-01", tmp)), 1)
 
 
+TOP_ROW = {"ticker": "A", "rank": 3, "price": 100.0}
+OUTSIDE_TOP_ROW = {"ticker": "B", "rank": 11, "price": 50.0}
+
+
+class FirstSeenTests(unittest.TestCase):
+    def test_a_ticker_ranking_top_n_is_recorded_with_todays_date_tier_and_price(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            recorded = datetime(2026, 1, 1, tzinfo=timezone.utc)
+            seen = sps.update_first_seen({"S": [TOP_ROW]}, recorded_at=recorded, store_dir=tmp)
+            self.assertEqual(seen["A"], {"date_predicted": "2026-01-01", "tier": "S",
+                                         "price_at_prediction": 100.0})
+            self.assertEqual(sps.load_first_seen(tmp), seen)
+
+    def test_a_ticker_ranking_outside_top_n_is_never_recorded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            seen = sps.update_first_seen({"S": [OUTSIDE_TOP_ROW]}, store_dir=tmp)
+            self.assertEqual(seen, {})
+            self.assertEqual(sps.load_first_seen(tmp), {})
+
+    def test_a_ticker_already_on_file_keeps_its_original_date_tier_and_price(self):
+        """The whole point: date_predicted is the first time, never the most recent."""
+        with tempfile.TemporaryDirectory() as tmp:
+            first = datetime(2026, 1, 1, tzinfo=timezone.utc)
+            later = datetime(2026, 2, 1, tzinfo=timezone.utc)
+            sps.update_first_seen({"S": [TOP_ROW]}, recorded_at=first, store_dir=tmp)
+            seen = sps.update_first_seen({"F": [{"ticker": "A", "rank": 1, "price": 250.0}]},
+                                         recorded_at=later, store_dir=tmp)
+            self.assertEqual(seen["A"], {"date_predicted": "2026-01-01", "tier": "S",
+                                         "price_at_prediction": 100.0})
+
+    def test_a_ticker_seen_top_n_in_any_tier_counts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            seen = sps.update_first_seen(
+                {"F": [OUTSIDE_TOP_ROW], "M": [], "S": [TOP_ROW]}, store_dir=tmp)
+            self.assertIn("A", seen)
+            self.assertNotIn("B", seen)
+
+    def test_load_first_seen_on_an_empty_store_is_an_empty_mapping(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(sps.load_first_seen(tmp), {})
+
+
 if __name__ == "__main__":
     unittest.main()

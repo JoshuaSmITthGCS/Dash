@@ -572,3 +572,57 @@ def test_the_upside_note_names_which_term_sets_the_scale():
     assert "no out-of-sample record" in note
     assert "it is not alpha" in note
     assert "optimistic" in note
+
+
+# ---------------------------------------------------------------------------
+# Valuation-based upside: a different construction from the technical one above
+# ---------------------------------------------------------------------------
+
+def test_valuation_upside_scales_the_analyst_target_gap_to_the_tiers_own_holding_window():
+    row = {"analyst_target_upside": 20.0, "analyst_count": 10}
+    fast, fast_basis = tiers.valuation_predicted_upside(row, "F")
+    slow, slow_basis = tiers.valuation_predicted_upside(row, "S")
+    assert fast_basis == slow_basis == "analyst_consensus_target_horizon_scaled"
+    # Same ~12-month target gap, but the fast book's 3-session window sees only a sliver of it.
+    assert 0 < fast < slow
+    expected_slow = ((1.20) ** (65 / 252) - 1) * 100
+    assert slow == pytest.approx(expected_slow, abs=1e-3)
+
+
+def test_valuation_upside_is_none_without_a_tier():
+    """The legacy composite book has no single holding window to scale against."""
+    row = {"analyst_target_upside": 20.0, "analyst_count": 10}
+    assert tiers.valuation_predicted_upside(row, None) == (None, "not_applicable_no_tier")
+
+
+def test_valuation_upside_needs_at_least_three_analysts():
+    row = {"analyst_target_upside": 20.0, "analyst_count": 2}
+    assert tiers.valuation_predicted_upside(row, "S") == (None, "insufficient_analyst_coverage")
+    row = {"analyst_target_upside": 20.0, "analyst_count": None}
+    assert tiers.valuation_predicted_upside(row, "S") == (None, "insufficient_analyst_coverage")
+
+
+def test_valuation_upside_is_none_without_an_analyst_target():
+    row = {"analyst_target_upside": None, "analyst_count": 10}
+    assert tiers.valuation_predicted_upside(row, "S") == (None, "insufficient_analyst_coverage")
+
+
+def test_valuation_upside_handles_a_downside_target_without_erroring():
+    row = {"analyst_target_upside": -30.0, "analyst_count": 10}
+    scaled, basis = tiers.valuation_predicted_upside(row, "M")
+    assert basis == "analyst_consensus_target_horizon_scaled"
+    assert scaled < 0
+
+
+def test_the_valuation_upside_note_distinguishes_it_from_the_technical_one():
+    note = tiers.VALUATION_UPSIDE_NOTE.lower()
+    assert "analyst consensus target" in note
+    assert "assumption, not a measurement" in note
+    assert "out-of-sample" in note
+
+
+def test_the_track_record_note_states_the_no_backfill_start_date():
+    note = tiers.TRACK_RECORD_NOTE.lower()
+    assert "2026-09-12" in note
+    assert "not backfilled" in note
+    assert "never moved once" in note

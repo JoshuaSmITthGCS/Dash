@@ -250,6 +250,18 @@ function SwingRecipe({ manifest, data, searchParams, setParam }) {
     ...(tier ? [
       { key: 'upside', label: 'Upside', cell: (row) => upside(row.economics_predicted_upside_pct) },
       { key: 'net_edge', label: 'Net edge (bps)', cell: (row) => bps(row.economics_net_edge_bps) },
+      // A different construction from Upside above: the analyst-consensus-target gap,
+      // compounded down to this tier's own hold rather than priced off past travel.
+      { key: 'valuation_upside', label: 'Vs. target', cell: (row) => row.valuation?.predicted_upside_pct == null
+        ? <NotResolvable title="Fewer than 3 analysts cover this name." />
+        : upside(row.valuation.predicted_upside_pct) },
+      // date_predicted is the first date this ticker ever ranked top 10 in any of the three
+      // tiers, and never moves once set. Never backfilled - see swing_tiers.TRACK_RECORD_NOTE.
+      { key: 'track_record', label: 'Since flagged', cell: (row) => !row.track_record?.date_predicted
+        ? <NotResolvable title="Not ranked top 10 in any tier since tracking began." />
+        : <span title={`First ranked top 10 (${row.track_record.predicted_in_tier}) on ${row.track_record.date_predicted} at $${row.track_record.price_at_prediction}.`}>
+            {upside(row.track_record.upside_since_prediction_pct)} since {row.track_record.date_predicted}
+          </span> },
     ] : []),
     { key: 'sector', label: 'Sector', cell: (row) => row.sector || '–' },
     ...(cols === 'full' ? legs.map(([key, label]) => ({
