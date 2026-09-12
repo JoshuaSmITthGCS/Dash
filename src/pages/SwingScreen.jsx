@@ -55,6 +55,13 @@ const millions = (value) => value == null ? '–' : `$${(Number(value) / 1e6).to
 const bps = (value) => value == null ? '–' : `${value > 0 ? '+' : ''}${Number(value).toFixed(1)}`
 const upside = (value) => value == null ? '–' : `${value > 0 ? '+' : ''}${Number(value).toFixed(2)}%`
 
+// track_record.predicted_in_tier is usually one of the three current tiers, but a sighting
+// backfilled from before the tier split (see swing_tiers.TRACK_RECORD_NOTE) carries "legacy"
+// instead, since it predates F/M/S and should never read as one of them.
+const trackRecordTierLabel = (tiers, code) => code === 'legacy'
+  ? 'the single-book composite, before the tier split'
+  : tiers?.[code]?.label || code
+
 // Trend is descriptive, so it is toned by where the price sits rather than by whether that is
 // good news. "At 52-week low" is not a sell and "At 52-week high" is not a buy: the score
 // column is where the opinion lives, and colouring these as verdicts would quietly turn a
@@ -632,8 +639,9 @@ export default function SwingScreen() {
           + 'three swing books, recorded the day it happened and never moved once set. The '
           + 'return shown is the plain price move from that day’s close to today’s — the '
           + 'market’s return over the period, not a claim this model produced it. Tracking '
-          + 'started 2026-09-12 and is not backfilled: “–” means never top 10 since then, not '
-          + 'never at all.',
+          + 'started 2026-09-12; the ~1.5 weeks before that are backfilled from the real, '
+          + 'already-published log of the single-book composite the tiers replaced (shown as '
+          + '“legacy”). “–” means never top 10 since that log began, not never at all.',
         sortValue: (row) => row.track_record?.upside_since_prediction_pct,
         cell: (row) => {
           const record = row.track_record
@@ -642,8 +650,8 @@ export default function SwingScreen() {
           }
           return (
             <span className="mono swing-upside"
-              title={`First ranked top 10 (${record.predicted_in_tier || tier.tier}) on ${record.date_predicted} `
-                + `at $${record.price_at_prediction}.`}>
+              title={`First ranked top 10 (${trackRecordTierLabel(tiers, record.predicted_in_tier || tier.tier)}) `
+                + `on ${record.date_predicted} at $${record.price_at_prediction}.`}>
               <Move pct={record.upside_since_prediction_pct} />
               <span className="swing-upside-range">since {record.date_predicted}</span>
             </span>

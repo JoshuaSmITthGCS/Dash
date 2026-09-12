@@ -395,6 +395,30 @@ describe('SwingScreen horizon tiers', () => {
     const cell = within(row).getByTitle('Not ranked top 10 in any tier since tracking began.')
     expect(cell).toHaveTextContent('–')
   })
+
+  it('labels a backfilled pre-tier-split sighting as the legacy composite, not a tier code', () => {
+    useData.mockReturnValue({
+      data: tieredPayload({
+        tiers: {
+          ...tieredPayload().tiers,
+          S: {
+            ...tieredPayload().tiers.S,
+            results: [tierRow('SLOW', {
+              rank: 1,
+              track_record: { date_predicted: '2026-09-02', predicted_in_tier: 'legacy',
+                price_at_prediction: 100, upside_since_prediction_pct: 5.0 },
+            })],
+          },
+        },
+      }),
+      loading: false, error: null,
+    })
+    renderScreen()
+    const row = screen.getByText('SLOW').closest('tr')
+    expect(within(row).getByTitle(
+      'First ranked top 10 (the single-book composite, before the tier split) on 2026-09-02 at $100.',
+    )).toBeVisible()
+  })
 })
 
 describe('SwingScreen sorting', () => {

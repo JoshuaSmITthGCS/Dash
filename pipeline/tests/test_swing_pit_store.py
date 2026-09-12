@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import tempfile
@@ -95,6 +96,65 @@ class FirstSeenTests(unittest.TestCase):
     def test_load_first_seen_on_an_empty_store_is_an_empty_mapping(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.assertEqual(sps.load_first_seen(tmp), {})
+
+
+def _seed_day(store_dir, date, rows):
+    """Write a daily composite snapshot directly, bypassing append_snapshot, so a test can
+    control exactly which tickers/scores/prices land on which date."""
+    with open(os.path.join(store_dir, f"{date}.jsonl"), "w") as handle:
+        for row in rows:
+            handle.write(json.dumps(row) + "\n")
+
+
+class LegacyBackfillTests(unittest.TestCase):
+    """The honest, bounded backfill: real pre-launch composite log, never the days after."""
+
+    def test_a_ticker_top_ranked_before_the_cutoff_is_backfilled_as_legacy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _seed_day(tmp, "2026-09-02", [{"ticker": "AMZN", "composite_z": 1.3, "price": 254.98}])
+            seen = sps.update_first_seen({}, store_dir=tmp)
+            self.assertEqual(seen["AMZN"], {"date_predicted": "2026-09-02", "tier": "legacy",
+                                            "price_at_prediction": 254.98})
+
+    def test_only_the_days_top_n_by_composite_z_qualify(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            rows = [{"ticker": f"T{i}", "composite_z": float(i), "price": 10.0} for i in range(15)]
+            _seed_day(tmp, "2026-09-02", rows)
+            seen = sps.update_first_seen({}, store_dir=tmp, top_n=10)
+            # T14 down to T5 are the top 10 by composite_z; T4 and below are not.
+            self.assertIn("T14", seen)
+            self.assertIn("T5", seen)
+            self.assertNotIn("T4", seen)
+
+    def test_the_earliest_pre_cutoff_date_wins_across_multiple_qualifying_days(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _seed_day(tmp, "2026-09-02", [{"ticker": "A", "composite_z": 1.0, "price": 50.0}])
+            _seed_day(tmp, "2026-09-05", [{"ticker": "A", "composite_z": 2.0, "price": 60.0}])
+            seen = sps.update_first_seen({}, store_dir=tmp)
+            self.assertEqual(seen["A"]["date_predicted"], "2026-09-02")
+            self.assertEqual(seen["A"]["price_at_prediction"], 50.0)
+
+    def test_a_snapshot_dated_on_or_after_the_cutoff_is_never_treated_as_legacy(self):
+        """The bounded window that keeps append_snapshot's own ongoing daily log from quietly
+        turning into a second, competing first-seen tracker forever after launch."""
+        with tempfile.TemporaryDirectory() as tmp:
+            _seed_day(tmp, sps.LEGACY_BACKFILL_CUTOFF,
+                     [{"ticker": "LATE", "composite_z": 5.0, "price": 10.0}])
+            seen = sps.update_first_seen({}, store_dir=tmp)
+            self.assertNotIn("LATE", seen)
+
+    def test_a_legacy_backfilled_date_is_never_overwritten_by_a_later_live_tier_sighting(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _seed_day(tmp, "2026-09-02", [{"ticker": "A", "composite_z": 1.0, "price": 50.0}])
+            recorded = datetime(2026, 9, 12, tzinfo=timezone.utc)
+            seen = sps.update_first_seen({"S": [{"ticker": "A", "rank": 1, "price": 90.0}]},
+                                         recorded_at=recorded, store_dir=tmp)
+            self.assertEqual(seen["A"], {"date_predicted": "2026-09-02", "tier": "legacy",
+                                         "price_at_prediction": 50.0})
+
+    def test_no_jsonl_history_backfills_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(sps.update_first_seen({}, store_dir=tmp), {})
 
 
 if __name__ == "__main__":

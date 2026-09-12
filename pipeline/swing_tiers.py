@@ -293,9 +293,13 @@ TRACK_RECORD_NOTE = (
     "set - a later re-entry after dropping out of the top 10 does not reset it. upside_since_"
     "prediction_pct is the plain price return from that day's close to today's: the market's "
     "return over the period, not a claim this model produced it, and it includes whatever the "
-    "broader market did over that stretch. Tracking started 2026-09-12 and is not backfilled: "
-    "a name with no date_predicted has simply not ranked top 10 in any tier since tracking "
-    "began, not that it never has.")
+    "broader market did over that stretch. Tracking started 2026-09-12. The roughly 1.5 weeks "
+    "before that are backfilled from swing_pit_store's own pre-existing daily log of the "
+    "single-book composite the three tiers replaced - real, already-published composite scores "
+    "and prices, not reconstructed ones - and carry predicted_in_tier: \"legacy\" rather than "
+    "F/M/S, since they predate the tier split. Nothing earlier than that log exists, so a name "
+    "with no date_predicted has simply not ranked top 10 since the log began, not that it "
+    "never has.")
 
 
 def valuation_predicted_upside(row, tier):

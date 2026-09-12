@@ -621,8 +621,9 @@ def test_the_valuation_upside_note_distinguishes_it_from_the_technical_one():
     assert "out-of-sample" in note
 
 
-def test_the_track_record_note_states_the_no_backfill_start_date():
+def test_the_track_record_note_states_the_start_date_and_the_bounded_backfill():
     note = tiers.TRACK_RECORD_NOTE.lower()
     assert "2026-09-12" in note
-    assert "not backfilled" in note
     assert "never moved once" in note
+    assert "legacy" in note
+    assert "not reconstructed" in note

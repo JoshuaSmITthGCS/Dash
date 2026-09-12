@@ -87,6 +87,12 @@ const upside = (value) => value == null ? '–' : `${value > 0 ? '+' : ''}${Numb
 const number = (value, digits = 1) => value == null ? '–' : Number(value).toFixed(digits)
 const money = (value) => value == null ? '–' : `$${Number(value).toFixed(2)}`
 const dollars = (value) => value == null ? '–' : `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+// track_record.predicted_in_tier is usually one of the three current tiers, but a sighting
+// backfilled from before the tier split carries "legacy" instead of F/M/S, since it predates
+// them - see swing_tiers.TRACK_RECORD_NOTE.
+const trackRecordTierLabel = (tiers, code) => code === 'legacy'
+  ? 'the single-book composite, before the tier split'
+  : tiers?.[code]?.label || code
 const pctFrac = (value, digits = 1) => value == null ? '–' : `${(value * 100).toFixed(digits)}%`
 const compactMoney = (value) => {
   if (value == null) return '–'
@@ -256,10 +262,11 @@ function SwingRecipe({ manifest, data, searchParams, setParam }) {
         ? <NotResolvable title="Fewer than 3 analysts cover this name." />
         : upside(row.valuation.predicted_upside_pct) },
       // date_predicted is the first date this ticker ever ranked top 10 in any of the three
-      // tiers, and never moves once set. Never backfilled - see swing_tiers.TRACK_RECORD_NOTE.
+      // tiers, and never moves once set. The ~1.5 weeks before launch are backfilled from the
+      // real pre-existing composite log (tier: "legacy") - see swing_tiers.TRACK_RECORD_NOTE.
       { key: 'track_record', label: 'Since flagged', cell: (row) => !row.track_record?.date_predicted
         ? <NotResolvable title="Not ranked top 10 in any tier since tracking began." />
-        : <span title={`First ranked top 10 (${row.track_record.predicted_in_tier}) on ${row.track_record.date_predicted} at $${row.track_record.price_at_prediction}.`}>
+        : <span title={`First ranked top 10 (${trackRecordTierLabel(tiers, row.track_record.predicted_in_tier)}) on ${row.track_record.date_predicted} at $${row.track_record.price_at_prediction}.`}>
             {upside(row.track_record.upside_since_prediction_pct)} since {row.track_record.date_predicted}
           </span> },
     ] : []),
