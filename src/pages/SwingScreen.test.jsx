@@ -818,3 +818,56 @@ describe('SwingScreen verdict and upside agree', () => {
     expect(suppressedRow.textContent).toMatch(/AAA/)
   })
 })
+
+// Below the mobile breakpoint DataTable swaps the whole <table> for a per-row card built from
+// a separate, hand-curated `mobile.fields` list (see DataTable.jsx) - a column added to
+// `columns` does not automatically reach it. These tests exist because "Vs. target" and
+// "Since flagged" were briefly desktop-only for exactly that reason.
+function setViewport(matches) {
+  window.matchMedia = vi.fn().mockImplementation((query) => ({
+    matches, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn(),
+  }))
+}
+
+describe('SwingScreen mobile cards', () => {
+  beforeEach(() => setViewport(true))
+
+  const mobileTierRow = () => tierRow('SLOW', {
+    rank: 1, economics_predicted_upside_pct: 0.135, economics_net_edge_bps: 13.5,
+    valuation: { predicted_upside_pct: 6.62, basis: 'analyst_consensus_target_horizon_scaled' },
+    track_record: { date_predicted: '2026-09-02', predicted_in_tier: 'legacy',
+      price_at_prediction: 100, upside_since_prediction_pct: 12.5 },
+  })
+
+  const mobilePayload = () => tieredPayload({
+    tiers: { ...tieredPayload().tiers, S: { ...tieredPayload().tiers.S, results: [mobileTierRow()] } },
+  })
+
+  it('shows Upside, Vs. target and Since flagged on the visual mobile card', () => {
+    usePreferences.mockReturnValue({ preferences: { mobileResearchView: 'visual' } })
+    useData.mockReturnValue({ data: mobilePayload(), loading: false, error: null })
+    renderScreen()
+    expect(screen.queryByRole('table')).toBeNull()
+    expect(screen.getByText('+0.14%')).toBeInTheDocument()   // Upside
+    expect(screen.getByText('+6.62%')).toBeInTheDocument()   // Vs. target
+    expect(screen.getByText('+12.50% since 2026-09-02')).toBeInTheDocument()  // Since flagged
+  })
+
+  it('shows the same three fields on the detailed mobile card', () => {
+    usePreferences.mockReturnValue({ preferences: { mobileResearchView: 'detailed' } })
+    useData.mockReturnValue({ data: mobilePayload(), loading: false, error: null })
+    renderScreen()
+    expect(screen.queryByRole('table')).toBeNull()
+    expect(screen.getByText('+0.14%')).toBeInTheDocument()
+    expect(screen.getByText('+6.62%')).toBeInTheDocument()
+    expect(screen.getByText('+12.50% since 2026-09-02')).toBeInTheDocument()
+  })
+
+  it('does not show the tier-only economics fields on the legacy single-book card', () => {
+    usePreferences.mockReturnValue({ preferences: { mobileResearchView: 'visual' } })
+    useData.mockReturnValue({ data: payload({ results: [row()] }), loading: false, error: null })
+    renderScreen()
+    expect(screen.queryByText('Vs. target')).toBeNull()
+    expect(screen.queryByText('Since flagged')).toBeNull()
+  })
+})

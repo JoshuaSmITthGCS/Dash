@@ -819,6 +819,24 @@ export default function SwingScreen() {
   const shown = view === 'full' ? columns : columns.filter((column) => !column.full)
   const rows = filtered
 
+  // The mobile card view (DataTable's `mobile.fields`) is a separate, hand-curated list from
+  // `columns` above, not a narrower version of it - a column added up there does not
+  // automatically reach a phone. These are the tier-only economics fields, shared by both the
+  // 'visual' and 'detailed' card variants below so the two stay in sync.
+  const mobileUpsideFields = tier ? [
+    { label: 'Upside', value: (row) => upside(row.economics_predicted_upside_pct) },
+    { label: 'Net edge (bps)', value: (row) => bps(row.economics_net_edge_bps) },
+    {
+      label: 'Vs. target',
+      value: (row) => row.valuation?.predicted_upside_pct == null ? '–' : upside(row.valuation.predicted_upside_pct),
+    },
+    {
+      label: 'Since flagged',
+      value: (row) => !row.track_record?.date_predicted ? '–'
+        : `${upside(row.track_record.upside_since_prediction_pct)} since ${row.track_record.date_predicted}`,
+    },
+  ] : []
+
   return <>
     <ScreenNavigation />
     <div className="page-head">
@@ -955,14 +973,14 @@ export default function SwingScreen() {
               ...legs.map(([key, label]) => ({
                 label, value: (row) => row.legs?.[key]?.applied ? z(row.legs[key].z) : '–',
               })),
-              ...(tier ? [{ label: 'Net edge (bps)', value: (row) => bps(row.economics_net_edge_bps) }] : []),
+              ...mobileUpsideFields,
               { label: 'Signal coverage', value: (row) => pct((row.coverage || 0) * 100) },
               { label: 'Short interest', value: (row) => shortInterestLabel(row) },
               { label: 'Flags', value: (row) => (row.reason_codes || []).join(', ') || 'None' },
             ] : [
               { label: 'Composite', value: (row) => z(row.composite_z) },
               { label: 'Percentile', value: (row) => row.percentile == null ? '–' : row.percentile.toFixed(0) },
-              ...(tier ? [{ label: 'Net edge (bps)', value: (row) => bps(row.economics_net_edge_bps) }] : []),
+              ...mobileUpsideFields,
               { label: 'Signal coverage', value: (row) => pct((row.coverage || 0) * 100) },
               { label: 'Flags', value: (row) => (row.reason_codes || []).join(', ') || 'None' },
             ],
