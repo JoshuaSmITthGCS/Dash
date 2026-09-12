@@ -105,6 +105,21 @@ more depth.
 - **The 4 technical indicators' cross-sectional correlation has not been measured** — chosen
   for economic-family diversity, not verified independence (`feature_registry.json`
   `correlation_dedup_policy`).
+- **The swing screen's per-name track record and valuation upside are unvalidated additions to
+  a screen that is itself unvalidated.** `screens/swing.json`'s `track_record.date_predicted`
+  is the first date a name has ever ranked top 10 in any of the three horizon tiers, tracked
+  prospectively starting 2026-09-12 with no backfill — a name with no `date_predicted` has
+  simply not ranked top 10 since tracking began, not that it never has.
+  `upside_since_prediction_pct` is a plain realized price return from that date, which includes
+  whatever the broader market did over the period and is not a claim of the model's skill.
+  `valuation.predicted_upside_pct` is a separate, valuation-based figure — the gap to the
+  analyst consensus target compounded to the tier's own holding window on an assumed constant
+  rate of approach — and disagrees by design with the screen's technical
+  `economics.predicted_upside_pct`, which is priced off the name's own past travel instead.
+  Both are descriptive fields, not scoring inputs, and neither has been checked against
+  realized outcomes by this repository's own IC/deflated-Sharpe validation process
+  (`docs/VALIDATION-METHODOLOGY.md`) — the swing screen as a whole remains on the prospective
+  freeze clock starting 2026-09-01 (`pipeline/validation/harness_freeze.json`).
 
 ## Portfolio attribution
 

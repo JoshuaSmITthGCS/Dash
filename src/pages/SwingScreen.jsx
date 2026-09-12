@@ -55,6 +55,13 @@ const millions = (value) => value == null ? '–' : `$${(Number(value) / 1e6).to
 const bps = (value) => value == null ? '–' : `${value > 0 ? '+' : ''}${Number(value).toFixed(1)}`
 const upside = (value) => value == null ? '–' : `${value > 0 ? '+' : ''}${Number(value).toFixed(2)}%`
 
+// track_record.predicted_in_tier is usually one of the three current tiers, but a sighting
+// backfilled from before the tier split (see swing_tiers.TRACK_RECORD_NOTE) carries "legacy"
+// instead, since it predates F/M/S and should never read as one of them.
+const trackRecordTierLabel = (tiers, code) => code === 'legacy'
+  ? 'the single-book composite, before the tier split'
+  : tiers?.[code]?.label || code
+
 // Trend is descriptive, so it is toned by where the price sits rather than by whether that is
 // good news. "At 52-week low" is not a sell and "At 52-week high" is not a buy: the score
 // column is where the opinion lives, and colouring these as verdicts would quietly turn a
@@ -598,6 +605,58 @@ export default function SwingScreen() {
             {row.economics_round_trip_bps == null ? '–' : row.economics_round_trip_bps.toFixed(1)}
           </span>
         ),
+      },
+      {
+        key: 'valuation_upside', label: 'Vs. target', numeric: true, defaultSortDir: 'desc',
+        hint: 'A different construction from Upside beside it: the gap between price and the '
+          + 'analyst consensus target (a ~12-month figure), compounded down to this tier’s own '
+          + `holding window (${tier.target_hold_sessions} sessions) on the assumption of a `
+          + 'constant rate of approach — an assumption, not a measurement. Needs at least 3 '
+          + 'analysts covering the name; “–” otherwise. A valuation view, not a technical one, '
+          + 'and it can disagree with Upside.',
+        sortValue: (row) => row.valuation?.predicted_upside_pct,
+        cell: (row) => {
+          const valuation = row.valuation
+          if (!valuation || valuation.predicted_upside_pct == null) {
+            return <span className="mono swing-upside" title="Fewer than 3 analysts cover this name.">–</span>
+          }
+          return (
+            <span className="mono swing-upside"
+              title={`Analyst consensus target ${valuation.analyst_consensus_target == null ? '–' : `$${valuation.analyst_consensus_target}`} `
+                + `implies ${upside(valuation.source_upside_pct)} over a conventional 12-month `
+                + `(${valuation.source_horizon_sessions}-session) horizon from ${valuation.analyst_count} analysts, `
+                + `compounded to this tier’s ${valuation.target_horizon_sessions}-session hold.`}>
+              <span className={valuation.predicted_upside_pct > 0 ? 'up' : 'down'}>
+                {upside(valuation.predicted_upside_pct)}
+              </span>
+            </span>
+          )
+        },
+      },
+      {
+        key: 'track_record', label: 'Since flagged', defaultSortDir: 'desc',
+        hint: 'date_predicted is the first date this name ever ranked top 10 in any of the '
+          + 'three swing books, recorded the day it happened and never moved once set. The '
+          + 'return shown is the plain price move from that day’s close to today’s — the '
+          + 'market’s return over the period, not a claim this model produced it. Tracking '
+          + 'started 2026-09-12; the ~1.5 weeks before that are backfilled from the real, '
+          + 'already-published log of the single-book composite the tiers replaced (shown as '
+          + '“legacy”). “–” means never top 10 since that log began, not never at all.',
+        sortValue: (row) => row.track_record?.upside_since_prediction_pct,
+        cell: (row) => {
+          const record = row.track_record
+          if (!record || !record.date_predicted) {
+            return <span className="mono swing-upside" title="Not ranked top 10 in any tier since tracking began.">–</span>
+          }
+          return (
+            <span className="mono swing-upside"
+              title={`First ranked top 10 (${trackRecordTierLabel(tiers, record.predicted_in_tier || tier.tier)}) `
+                + `on ${record.date_predicted} at $${record.price_at_prediction}.`}>
+              <Move pct={record.upside_since_prediction_pct} />
+              <span className="swing-upside-range">since {record.date_predicted}</span>
+            </span>
+          )
+        },
       },
     ] : []),
     {

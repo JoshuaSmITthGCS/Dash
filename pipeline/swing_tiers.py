@@ -264,6 +264,64 @@ UPSIDE_NOTE = (
     "forecast, the windows overlap heavily, and this model has no out-of-sample record.")
 
 
+# Analyst price targets are conventionally read as a ~12-month view - Value Line,
+# Refinitiv/IBES and the sell-side houses that feed them all label their number a "12-month
+# target" even though no single analyst discloses the path their estimate assumes. 252 is that
+# horizon in trading sessions, and it is what valuation_predicted_upside scales against.
+ANALYST_TARGET_HORIZON_SESSIONS = 252
+
+# Same floor advisor_engine.py's expectations_modifier already gates the score's own use of
+# analyst revisions on, so a name too thin on coverage to move the composite does not get a
+# valuation upside published either.
+MIN_ANALYST_COUNT_FOR_VALUATION = 3
+
+VALUATION_UPSIDE_NOTE = (
+    "valuation.predicted_upside_pct is a different construction from economics.predicted_"
+    "upside_pct above it: that one is priced off this name's own past travel over a window "
+    "this tier's length, this one off the gap between price and the analyst consensus target, "
+    "published at a conventional ~12-month (252-session) horizon, compounded down to this "
+    "tier's own holding window on the assumption of a constant rate of approach to the target "
+    "- an assumption, not a measurement, since no analyst discloses the path their number "
+    "assumes. Published only when at least 3 analysts cover the name, the same floor the "
+    "composite score itself requires before letting analyst revisions move it. This is a "
+    "valuation view and will often disagree with the technical one beside it. Neither has an "
+    "out-of-sample record in this system.")
+
+TRACK_RECORD_NOTE = (
+    "track_record.date_predicted is the first UTC date this ticker ever ranked in a tier's top "
+    "10 across any of the three swing books, recorded the day it happened and never moved once "
+    "set - a later re-entry after dropping out of the top 10 does not reset it. upside_since_"
+    "prediction_pct is the plain price return from that day's close to today's: the market's "
+    "return over the period, not a claim this model produced it, and it includes whatever the "
+    "broader market did over that stretch. Tracking started 2026-09-12. The roughly 1.5 weeks "
+    "before that are backfilled from swing_pit_store's own pre-existing daily log of the "
+    "single-book composite the three tiers replaced - real, already-published composite scores "
+    "and prices, not reconstructed ones - and carry predicted_in_tier: \"legacy\" rather than "
+    "F/M/S, since they predate the tier split. Nothing earlier than that log exists, so a name "
+    "with no date_predicted has simply not ranked top 10 since the log began, not that it "
+    "never has.")
+
+
+def valuation_predicted_upside(row, tier):
+    """This row's analyst-consensus-target upside, compounded down to ``tier``'s own holding
+    window. Returns ``(pct_or_None, basis)`` - see VALUATION_UPSIDE_NOTE for what the number
+    does and does not claim. ``tier`` is the short code ("F"/"M"/"S"); None (the legacy
+    composite book, which has no single holding window) always publishes ``None``.
+    """
+    if not tier:
+        return None, "not_applicable_no_tier"
+    target_upside = row.get("analyst_target_upside")
+    analyst_count = row.get("analyst_count")
+    if target_upside is None or not analyst_count or analyst_count < MIN_ANALYST_COUNT_FOR_VALUATION:
+        return None, "insufficient_analyst_coverage"
+    base = 1 + target_upside / 100
+    if base <= 0:
+        return None, "insufficient_analyst_coverage"
+    hold = tier_spec(tier)["target_hold_sessions"]
+    scaled = (base ** (hold / ANALYST_TARGET_HORIZON_SESSIONS) - 1) * 100
+    return round(scaled, 3), "analyst_consensus_target_horizon_scaled"
+
+
 def alpha_scale(scored, config, tier, alpha_bps_per_month=ASSUMED_GROSS_ALPHA_BPS_PER_MONTH):
     """Basis points of assumed alpha per unit of composite score.
 

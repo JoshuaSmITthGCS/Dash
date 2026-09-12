@@ -23,6 +23,17 @@ from common import LOG
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STORE_DIR = os.path.join(HERE, "swing_pit_store")
+FIRST_SEEN_FILENAME = "first_top10.json"
+
+# The date the track-record feature shipped. Daily snapshots dated before this already existed
+# as this module's own composite/leg log, from the single-book composite the horizon tiers
+# replaced - real, previously-published numbers, not reconstructed ones - so they seed
+# first_top10.json once, tagged "legacy" so a sighting there is never confused with a sighting
+# in one of the three current tiers. A fixed constant rather than "before today": append_snapshot
+# keeps writing a new dated file every day after launch too, and without a fixed cutoff this
+# backfill would silently re-scope itself to "every day so far" forever instead of the ~1.5
+# weeks of real history that predates the feature.
+LEGACY_BACKFILL_CUTOFF = "2026-09-12"
 
 
 def build_rows(results, *, recorded_at=None):
@@ -81,3 +92,79 @@ def load_snapshot(date_str, store_dir=None):
         return []
     with open(path) as handle:
         return [json.loads(line) for line in handle if line.strip()]
+
+
+def _first_seen_path(store_dir=None):
+    return os.path.join(store_dir or STORE_DIR, FIRST_SEEN_FILENAME)
+
+
+def load_first_seen(store_dir=None):
+    """Ticker -> {date_predicted, tier, price_at_prediction} for every name that has ever
+    ranked top 10 in a horizon tier, or (``tier: "legacy"``) in the pre-launch single-book
+    composite - see LEGACY_BACKFILL_CUTOFF. Written once per ticker and never overwritten
+    after - the "date predicted" this backs is the first time it happened, not the most recent.
+    """
+    path = _first_seen_path(store_dir)
+    if not os.path.exists(path):
+        return {}
+    with open(path) as handle:
+        return json.load(handle)
+
+
+def _legacy_backfill(store_dir=None, top_n=10):
+    """First-seen entries recoverable from the daily composite log dated before this feature
+    shipped (see LEGACY_BACKFILL_CUTOFF) - the single-book composite's real, already-published
+    composite_z and price, sorted into that day's top ``top_n``. A ticker's earliest qualifying
+    date wins, the same rule the live per-tier path uses.
+    """
+    backfilled = {}
+    for date in snapshot_dates(store_dir):
+        if date >= LEGACY_BACKFILL_CUTOFF:
+            break
+        ranked = sorted(
+            (row for row in load_snapshot(date, store_dir)
+             if row.get("ticker") and row.get("composite_z") is not None and row.get("price")),
+            key=lambda row: row["composite_z"], reverse=True)
+        for row in ranked[:top_n]:
+            ticker = row["ticker"]
+            if ticker not in backfilled:
+                backfilled[ticker] = {"date_predicted": date, "tier": "legacy",
+                                      "price_at_prediction": row["price"]}
+    return backfilled
+
+
+def update_first_seen(tier_results, *, recorded_at=None, store_dir=None, top_n=10):
+    """Record, for every ticker ranking ``top_n`` today in any tier, the first time that ever
+    happened - never today's, if one is already on file.
+
+    ``tier_results`` is ``{tier: published_rows}`` for every horizon tier, already ranked. On
+    the first call this also seeds the ~1.5 weeks of real history already on file from before
+    this feature shipped (see _legacy_backfill) - never re-derived after that, since it is
+    already on file and a later legacy-tagged date must never overwrite an earlier one.
+
+    This reads and rewrites ``first_top10.json`` rather than scanning the daily jsonl
+    snapshots ``append_snapshot`` writes on every call: the fact this needs is "was this
+    ticker ever top_n before", which a small running file answers in O(new entrants) per run
+    instead of rescanning years of per-ticker history every time the screen refreshes.
+    """
+    recorded_at = recorded_at or datetime.now(timezone.utc)
+    existing = load_first_seen(store_dir)
+    changed = False
+    for ticker, entry in _legacy_backfill(store_dir, top_n).items():
+        if ticker not in existing:
+            existing[ticker] = entry
+            changed = True
+    for tier, rows in (tier_results or {}).items():
+        for row in rows or []:
+            ticker, rank, price = row.get("ticker"), row.get("rank"), row.get("price")
+            if not ticker or rank is None or rank > top_n or not price or ticker in existing:
+                continue
+            existing[ticker] = {"date_predicted": recorded_at.date().isoformat(),
+                                "tier": tier, "price_at_prediction": price}
+            changed = True
+    if changed:
+        store_dir = store_dir or STORE_DIR
+        os.makedirs(store_dir, exist_ok=True)
+        with open(_first_seen_path(store_dir), "w") as handle:
+            json.dump(existing, handle, sort_keys=True, indent=2)
+    return existing

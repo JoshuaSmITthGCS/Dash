@@ -300,6 +300,125 @@ describe('SwingScreen horizon tiers', () => {
     openMethod()
     expect(screen.getByText(/640 names are ranked but held out today/)).toBeVisible()
   })
+
+  it('publishes a valuation-based upside beside the technical one, scaled to the tier', () => {
+    useData.mockReturnValue({
+      data: tieredPayload({
+        tiers: {
+          ...tieredPayload().tiers,
+          S: {
+            ...tieredPayload().tiers.S,
+            results: [tierRow('SLOW', {
+              rank: 1, economics_predicted_upside_pct: 0.135,
+              valuation: {
+                predicted_upside_pct: 6.62, basis: 'analyst_consensus_target_horizon_scaled',
+                source_upside_pct: 28.22, source_horizon_sessions: 252,
+                target_horizon_sessions: 65, analyst_count: 48, analyst_consensus_target: 418.29,
+              },
+            })],
+          },
+        },
+      }),
+      loading: false, error: null,
+    })
+    renderScreen()
+    expect(screen.getByRole('columnheader', { name: 'Vs. target' })).toBeVisible()
+    expect(screen.getByText('+6.62%')).toBeVisible()
+  })
+
+  it('shows a dash on the valuation column when analyst coverage is too thin', () => {
+    useData.mockReturnValue({
+      data: tieredPayload({
+        tiers: {
+          ...tieredPayload().tiers,
+          S: {
+            ...tieredPayload().tiers.S,
+            results: [tierRow('SLOW', {
+              rank: 1,
+              valuation: { predicted_upside_pct: null, basis: 'insufficient_analyst_coverage' },
+            })],
+          },
+        },
+      }),
+      loading: false, error: null,
+    })
+    renderScreen()
+    expect(screen.getByRole('columnheader', { name: 'Vs. target' })).toBeVisible()
+    const row = screen.getByText('SLOW').closest('tr')
+    expect(within(row).getByTitle('Fewer than 3 analysts cover this name.')).toHaveTextContent('–')
+  })
+
+  it('publishes the date a name first ranked top 10 and its return since', () => {
+    useData.mockReturnValue({
+      data: tieredPayload({
+        tiers: {
+          ...tieredPayload().tiers,
+          S: {
+            ...tieredPayload().tiers.S,
+            results: [tierRow('SLOW', {
+              rank: 1,
+              track_record: {
+                date_predicted: '2026-09-01', predicted_in_tier: 'S',
+                price_at_prediction: 100, upside_since_prediction_pct: 12.5,
+              },
+            })],
+          },
+        },
+      }),
+      loading: false, error: null,
+    })
+    renderScreen()
+    expect(screen.getByRole('columnheader', { name: 'Since flagged' })).toBeVisible()
+    expect(screen.getByText('+12.5%')).toBeVisible()
+    expect(screen.getByText('since 2026-09-01')).toBeVisible()
+  })
+
+  it('shows a dash under Since flagged for a name never ranked top 10', () => {
+    useData.mockReturnValue({
+      data: tieredPayload({
+        tiers: {
+          ...tieredPayload().tiers,
+          S: {
+            ...tieredPayload().tiers.S,
+            results: [tierRow('SLOW', {
+              rank: 1,
+              track_record: { date_predicted: null, predicted_in_tier: null,
+                price_at_prediction: null, upside_since_prediction_pct: null },
+            })],
+          },
+        },
+      }),
+      loading: false, error: null,
+    })
+    renderScreen()
+    const row = screen.getByText('SLOW').closest('tr')
+    const cell = within(row).getByTitle('Not ranked top 10 in any tier since tracking began.')
+    expect(cell).toHaveTextContent('–')
+  })
+
+  it('labels a backfilled pre-tier-split sighting as the legacy composite, not a tier code', () => {
+    useData.mockReturnValue({
+      data: tieredPayload({
+        tiers: {
+          ...tieredPayload().tiers,
+          S: {
+            ...tieredPayload().tiers.S,
+            results: [tierRow('SLOW', {
+              rank: 1,
+              track_record: { date_predicted: '2026-09-02', predicted_in_tier: 'legacy',
+                price_at_prediction: 100, upside_since_prediction_pct: 5.0 },
+            })],
+          },
+        },
+      }),
+      loading: false, error: null,
+    })
+    renderScreen()
+    const row = screen.getByText('SLOW').closest('tr')
+    expect(within(row).getByTitle(
+      'First ranked top 10 (the single-book composite, before the tier split) on 2026-09-02 at $100.',
+    )).toBeVisible()
+  })
 })
 
 describe('SwingScreen sorting', () => {

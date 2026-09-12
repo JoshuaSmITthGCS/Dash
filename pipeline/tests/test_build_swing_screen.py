@@ -2,6 +2,7 @@ from datetime import date, timedelta
 
 import build_swing_screen as module
 import swing_signals
+import swing_tiers as tiers
 
 
 def sessions_from(start, count):
@@ -762,6 +763,7 @@ def test_run_publishes_ranked_rows_with_their_evidence(monkeypatch, tmp_path):
     recorded = {}
     monkeypatch.setattr(module.swing_pit_store, "append_snapshot",
                         lambda results, **kwargs: recorded.__setitem__("results", results))
+    monkeypatch.setattr(module.swing_pit_store, "update_first_seen", lambda *a, **k: {})
 
     result = module.run()
 
@@ -808,6 +810,125 @@ def test_run_publishes_an_unavailable_file_rather_than_nothing(monkeypatch):
     assert result["status"] == "unavailable"
     assert result["reason_code"] == "INSUFFICIENT_PRICE_HISTORY"
     assert result["results"] == []
+
+
+# ---------------------------------------------------------------------------
+# Track record (date_predicted / upside_since_prediction_pct) and valuation upside
+# ---------------------------------------------------------------------------
+
+def test_track_record_for_with_no_sighting_returns_all_none_fields():
+    assert module.track_record_for({"price": 120.0}, None) == {
+        "date_predicted": None, "predicted_in_tier": None,
+        "price_at_prediction": None, "upside_since_prediction_pct": None}
+
+
+def test_track_record_for_computes_the_plain_return_since_first_sighting():
+    seen = {"date_predicted": "2026-08-01", "tier": "S", "price_at_prediction": 100.0}
+    record = module.track_record_for({"price": 110.0}, seen)
+    assert record == {"date_predicted": "2026-08-01", "predicted_in_tier": "S",
+                      "price_at_prediction": 100.0, "upside_since_prediction_pct": 10.0}
+
+
+def test_track_record_for_is_none_without_a_current_price():
+    seen = {"date_predicted": "2026-08-01", "tier": "S", "price_at_prediction": 100.0}
+    assert module.track_record_for({"price": None}, seen)["upside_since_prediction_pct"] is None
+
+
+def _row_for_to_result(**overrides):
+    row = {"ticker": "AAA", "name": "AAA Inc", "eligibility": True, "current_membership": True,
+           "percentile": 90.0, "score": 1.2, "score_zero_filled": 1.0, "price": 100.0,
+           "leg_scores": {}, "leg_contributions": {}, "reason_codes": [], "factors": {},
+           "economics": {}}
+    row.update(overrides)
+    return row
+
+
+def test_to_result_publishes_a_valuation_block_scaled_to_the_tier():
+    row = _row_for_to_result(tier="S", tier_id="swing-tier-S", analyst_target_upside=20.0,
+                             analyst_count=10, analyst_consensus_target=120.0)
+    published = module.to_result(1, row, {"pead_drift": .3, "announcement_return": .25,
+                                          "high_52w_proximity": .25, "analyst_revision": .2})
+    valuation = published["valuation"]
+    assert valuation["basis"] == "analyst_consensus_target_horizon_scaled"
+    assert valuation["predicted_upside_pct"] is not None
+    assert valuation["source_upside_pct"] == 20.0
+    assert valuation["source_horizon_sessions"] == 252
+    assert valuation["target_horizon_sessions"] == 65
+    assert valuation["analyst_count"] == 10
+    assert valuation["analyst_consensus_target"] == 120.0
+
+
+def test_to_result_valuation_is_null_for_the_legacy_composite_row():
+    """The legacy single-book row carries no ``tier``, so it has no one holding window to
+    scale a valuation upside against."""
+    row = _row_for_to_result(analyst_target_upside=20.0, analyst_count=10)
+    published = module.to_result(1, row)
+    assert published["valuation"] == {
+        "predicted_upside_pct": None, "basis": "not_applicable_no_tier",
+        "source_upside_pct": 20.0, "source_horizon_sessions": 252,
+        "target_horizon_sessions": None, "analyst_count": 10,
+        "analyst_consensus_target": None}
+
+
+def test_run_wires_track_record_and_valuation_onto_every_tier_row(monkeypatch, tmp_path):
+    # Local import: test_swing_tiers imports from this module at its own top level, so an
+    # eager module-level import here would deadlock the two test files on each other.
+    from test_swing_tiers import tier_universe
+
+    # The 8-name fixture other run() tests use never resolves announcement_return without a
+    # SUE anchor, so every tier book comes back empty and there is nothing to check a track
+    # record against. tier_universe's 300-name cross-section bakes its event triggers into the
+    # price series directly, which is what makes swing_tiers.py's own book-level tests non-empty.
+    universe, entries, sues = tier_universe(300)
+    for row in universe:
+        row["analyst_target_upside"], row["analyst_count"] = 15.0, 8
+    precomputed_rows = module.build_rows(
+        universe, entry_for=entries_for(entries), observations={}, as_of="2026-08-13",
+        sue_resolver=lambda ticker, *_: sues.get(ticker))
+
+    monkeypatch.setattr(module, "universe_rows", lambda: universe)
+    # run() calls build_rows(universe) with no sue_resolver override, so it can never see the
+    # fixture's SUE data (a real def-time-bound default argument, not a patchable global look-
+    # up). Swap the whole function for one returning the rows already built with SUE supplied,
+    # which is the only thing run() actually threads through untouched.
+    monkeypatch.setattr(module, "build_rows", lambda universe: precomputed_rows)
+    monkeypatch.setattr(module, "load_json", lambda name: None)
+    monkeypatch.setattr(module, "save_json", lambda name, payload: None)
+    monkeypatch.setattr(module.swing_pit_store, "append_snapshot", lambda *a, **k: None)
+    # A tmp_dir first-seen store, never the real pipeline/swing_pit_store/first_top10.json -
+    # a test must not leave a footprint in the repo it ran in.
+    monkeypatch.setattr(module.swing_pit_store, "STORE_DIR", str(tmp_path))
+
+    result = module.run()
+
+    today = result["generated_at"][:10]
+    seen_any_top_ten = False
+    for tier in result["tier_order"]:
+        for row in result["tiers"][tier]["results"]:
+            record = row["track_record"]
+            assert set(record) == {"date_predicted", "predicted_in_tier",
+                                   "price_at_prediction", "upside_since_prediction_pct"}
+            if row["rank"] <= 10:
+                seen_any_top_ten = True
+                # Day one: first sighting is today, at today's own price, so the realized
+                # return since is exactly zero. predicted_in_tier need not equal this row's own
+                # tier - a name ranking top 10 in two tiers at once is first-seen credit to
+                # whichever tier's book was checked first, and that is the same first_seen
+                # entry regardless of which tier's row is asking.
+                assert record["date_predicted"] == today
+                assert record["predicted_in_tier"] in result["tier_order"]
+                assert record["upside_since_prediction_pct"] == 0.0
+            assert "valuation" in row
+            assert row["valuation"]["target_horizon_sessions"] == tiers.tier_spec(tier)["target_hold_sessions"]
+    assert seen_any_top_ten, "fixture published nothing top-10 across any tier to check against"
+    # A second run the same tick must not move date_predicted for a name already on file.
+    monkeypatch.setattr(module, "load_json",
+                        lambda name: result if name == "screens/swing.json" else None)
+    again = module.run()
+    for tier in again["tier_order"]:
+        for row in again["tiers"][tier]["results"]:
+            if row["track_record"]["date_predicted"] is not None:
+                assert row["track_record"]["date_predicted"] == today
 
 
 def test_publishable_keeps_suppressed_names_visible_in_the_head():

@@ -30,12 +30,13 @@ from swing_signals import (BASELINE_VARIANT, CONTEXT_NOTE, CONTEXT_SIGNAL_EVIDEN
                            legs_resolved_distribution, pead_anchor_diagnostic, sector_cap_log,
                            sector_relative_strength, TREND_NOTE, TREND_STATES, swing_factors,
                            swing_scores, trailing_dollar_volume, universe_daily_returns)
-from swing_tiers import (ALPHA_NOTE, ANNOUNCEMENT_EVIDENCE, ASSUMED_GROSS_ALPHA_BPS_PER_MONTH,
-                         DECAY_CAPTURE, DECAY_CAPTURE_NOTE, DEFAULT_BOOK_DOLLARS, TIER_ORDER,
-                         TIER_SPECS, UPSIDE_NOTE, score_tier, tier_config, tier_evidence,
-                         tier_spec, tier_summary)
+from swing_tiers import (ALPHA_NOTE, ANALYST_TARGET_HORIZON_SESSIONS, ANNOUNCEMENT_EVIDENCE,
+                         ASSUMED_GROSS_ALPHA_BPS_PER_MONTH, DECAY_CAPTURE, DECAY_CAPTURE_NOTE,
+                         DEFAULT_BOOK_DOLLARS, TIER_ORDER, TIER_SPECS, TRACK_RECORD_NOTE,
+                         UPSIDE_NOTE, VALUATION_UPSIDE_NOTE, score_tier, tier_config,
+                         tier_evidence, tier_spec, tier_summary, valuation_predicted_upside)
 
-SCHEMA_VERSION = "1.3.0"
+SCHEMA_VERSION = "1.4.0"
 MODEL_VERSION = "swing-v1.1.0"
 CONFIG_VERSION = "screens-v2.0.0"
 OUTPUT = "screens/swing.json"
@@ -138,6 +139,11 @@ def build_rows(universe, entry_for=None, observations=None, as_of=None, sue_reso
             "data_coverage": row.get("data_coverage"),
             "short_percent_of_float": row.get("short_percent_of_float") or observed.get("short_percent_of_float"),
             "days_to_cover": row.get("days_to_cover") or observed.get("days_to_cover"),
+            # Carried through only for valuation_predicted_upside - the analyst-consensus-target
+            # arithmetic already computed once in fundamentals_extended.py, not recomputed here.
+            "analyst_target_upside": row.get("analyst_target_upside"),
+            "analyst_count": row.get("analyst_count"),
+            "analyst_consensus_target": row.get("analyst_consensus_target"),
             "factors": swing_factors(row, closes=closes, volumes=volumes, sue=sue,
                                      market_returns=market_returns,
                                      forward_horizons=FORWARD_HORIZONS,
@@ -174,12 +180,25 @@ def to_result(rank, row, weights=None):
     legs = row.get("leg_scores") or {}
     contributions = row.get("leg_contributions") or {}
     economics = row.get("economics") or {}
+    tier = row.get("tier")
+    valuation_upside, valuation_basis = valuation_predicted_upside(row, tier)
     return {
         **({"tier": row["tier"], "tier_id": row.get("tier_id")} if row.get("tier") else {}),
         # The cost arithmetic, per row, so a name can be sorted on whether it survives being
         # traded rather than only on where it ranks. net_edge_bps below zero means one round
         # trip costs more than the tier assumes the name earns over its whole holding period.
         **({f"economics_{key}": value for key, value in economics.items()} if economics else {}),
+        # A valuation view of upside, separate from economics_predicted_upside_pct above (which
+        # is priced off this name's own past travel). See swing_tiers.VALUATION_UPSIDE_NOTE.
+        "valuation": {
+            "predicted_upside_pct": valuation_upside,
+            "basis": valuation_basis,
+            "source_upside_pct": _rounded(row.get("analyst_target_upside"), 2),
+            "source_horizon_sessions": ANALYST_TARGET_HORIZON_SESSIONS,
+            "target_horizon_sessions": tier_spec(tier)["target_hold_sessions"] if tier else None,
+            "analyst_count": row.get("analyst_count"),
+            "analyst_consensus_target": _rounded(row.get("analyst_consensus_target"), 2),
+        },
         "rank": rank, "ticker": row["ticker"], "name": row.get("name"),
         "sector": row.get("sector"),
         "peer_group": row.get("peer_group_label") or row.get("peer_group"),
@@ -242,6 +261,25 @@ def to_result(rank, row, weights=None):
     }
 
 
+def track_record_for(row, seen):
+    """This row's top-10 history: when it (or another tier's book) first ranked it top 10, and
+    its plain price return since. ``seen`` is ``swing_pit_store.load_first_seen()``'s entry for
+    this ticker, or ``None`` if it has never ranked top 10. See swing_tiers.TRACK_RECORD_NOTE
+    for what these fields do and do not claim.
+    """
+    if not seen or not row.get("price"):
+        return {"date_predicted": None, "predicted_in_tier": None,
+                "price_at_prediction": None, "upside_since_prediction_pct": None}
+    entry_price = seen.get("price_at_prediction")
+    return {
+        "date_predicted": seen.get("date_predicted"),
+        "predicted_in_tier": seen.get("tier"),
+        "price_at_prediction": entry_price,
+        "upside_since_prediction_pct": (round((row["price"] / entry_price - 1) * 100, 2)
+                                        if entry_price else None),
+    }
+
+
 def tier_book(rows, tier, previous, book_dollars=DEFAULT_BOOK_DOLLARS):
     """One horizon tier: its ranked rows, its economics and the evidence behind its legs."""
     spec = tier_spec(tier)
@@ -286,7 +324,9 @@ def payload(results, scored, generated_at, tiers=None, regime_gate=None):
             "gross_bps_per_month": ASSUMED_GROSS_ALPHA_BPS_PER_MONTH,
             "note": ALPHA_NOTE,
             "upside_note": UPSIDE_NOTE,
+            "valuation_upside_note": VALUATION_UPSIDE_NOTE,
         },
+        "track_record_note": TRACK_RECORD_NOTE,
         "trend_states": TREND_STATES,
         "trend_note": TREND_NOTE,
         "contraction_note": CONTRACTION_NOTE,
@@ -367,7 +407,8 @@ def unavailable(reason_code, generated_at):
 
 
 def run():
-    generated_at = datetime.now(timezone.utc).isoformat()
+    generated_dt = datetime.now(timezone.utc)
+    generated_at = generated_dt.isoformat()
     universe = universe_rows()
     if not universe:
         LOG.warn("Swing screen: no scored universe to rank, skipping")
@@ -384,6 +425,19 @@ def run():
     results = [to_result(rank + 1, row) for rank, row in enumerate(publishable(scored))]
     previous = previous_tier_members(existing)
     tiers = {tier: tier_book(rows, tier, previous) for tier in TIER_ORDER}
+    # First top-10 sighting, across all three tiers, then the plain price return since. See
+    # swing_pit_store.update_first_seen and swing_tiers.TRACK_RECORD_NOTE. Guarded the same way
+    # as the append_snapshot call below: a store failure degrades the new fields to None rather
+    # than sinking the whole screen.
+    try:
+        first_seen = swing_pit_store.update_first_seen(
+            {tier: tiers[tier]["results"] for tier in TIER_ORDER}, recorded_at=generated_dt)
+    except Exception as exc:  # noqa: BLE001
+        LOG.warn(f"swing_pit_store first-seen update failed ({type(exc).__name__}): {exc}")
+        first_seen = {}
+    for tier in TIER_ORDER:
+        for tier_row in tiers[tier]["results"]:
+            tier_row["track_record"] = track_record_for(tier_row, first_seen.get(tier_row["ticker"]))
     advisor = load_json("advisor.json") or {}
     macro_regime = (advisor.get("market") or {}).get("macro", {}).get("regime") or {}
     market_regime_gate = compute_market_regime_gate(universe, macro_regime)
