@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import PoliticalTrading from './PoliticalTrading'
 import { useData } from '../lib/useData'
@@ -193,8 +193,9 @@ describe('PoliticalTrading page', () => {
     const badge = screen.getAllByText('Strong').find((element) => element.closest('summary'))
     expect(badge).toBeVisible()
     fireEvent.click(badge.closest('summary'))
-    expect(screen.getByText('83% beat S&P')).toBeVisible()
-    expect(screen.getByText(/avg alpha \+8.4pp.*12 priced buys.*high confidence/)).toBeVisible()
+    const detail = within(badge.closest('details'))
+    expect(detail.getByText('83% beat S&P')).toBeVisible()
+    expect(detail.getByText(/avg alpha \+8.4pp.*12 priced buys.*high confidence/)).toBeVisible()
   })
 
   it('labels a filer with no priced buys yet as having no track record, not a false zero', () => {
@@ -403,6 +404,64 @@ describe('PoliticalTrading page', () => {
     render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
 
     expect(screen.queryByText('Top 10 unusual stocks')).not.toBeInTheDocument()
+  })
+
+  it('leads with the top picks panel: the most recent buy from each highest-ranked filer', () => {
+    useData.mockReturnValue({
+      data: {
+        results: [
+          trade({ representative: 'Top Trader', symbol: 'NVDA', transaction_date: '2026-08-01',
+            excess_return_vs_spy_pct: 12.4 }),
+          trade({ representative: 'Top Trader', symbol: 'OLD', transaction_date: '2026-01-01' }),
+          trade({ representative: 'Second Trader', symbol: 'AAPL', transaction_date: '2026-07-15' }),
+          trade({ representative: 'Second Trader', symbol: 'SOLD', transaction_type: 'Sale (Full)' }),
+          trade({ representative: 'Exec Trader', chamber: 'executive', symbol: 'MSFT' }),
+        ],
+        politician_performance: {
+          leaderboard: [
+            { politician: 'Top Trader', rank: 1, performance_score: 0.9, win_rate: 0.8,
+              avg_alpha_pct: 20, n_priced_buys: 10, confidence: 'high' },
+            { politician: 'Second Trader', rank: 2, performance_score: 0.7, win_rate: 0.6,
+              avg_alpha_pct: 5, n_priced_buys: 6, confidence: 'medium' },
+            { politician: 'Exec Trader', rank: 3, performance_score: 0.5, win_rate: 0.5,
+              avg_alpha_pct: 3, n_priced_buys: 4, confidence: 'low' },
+          ],
+        },
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
+
+    const panel = screen.getByLabelText('Top 10 picks from high-alpha traders')
+    expect(panel).toHaveTextContent(/most recently disclosed buy/i)
+    expect(panel).toHaveTextContent('NVDA')
+    expect(panel).not.toHaveTextContent('OLD') // older buy from the same trader is dropped
+    expect(panel).toHaveTextContent('AAPL')
+    expect(panel).not.toHaveTextContent('SOLD') // a sale is not a pick
+    expect(panel).not.toHaveTextContent('MSFT') // executive-branch filer excluded
+
+    // Renders before the leaderboard panel further down the page.
+    const headings = screen.getAllByRole('heading', { level: 2 }).map((el) => el.textContent)
+    expect(headings.indexOf('Top 10 picks from high-alpha traders'))
+      .toBeLessThan(headings.indexOf('Most profitable politicians'))
+  })
+
+  it('omits the top picks panel when no leaderboard filer has a disclosed buy', () => {
+    useData.mockReturnValue({
+      data: {
+        results: [trade({ representative: 'Jane Doe', transaction_type: 'Sale (Full)' })],
+        politician_performance: {
+          leaderboard: [{ politician: 'Jane Doe', rank: 1, performance_score: 0.9,
+            win_rate: 0.8, avg_alpha_pct: 20, n_priced_buys: 10, confidence: 'high' }],
+        },
+      },
+      loading: false, error: null,
+    })
+
+    render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
+
+    expect(screen.queryByText('Top 10 picks from high-alpha traders')).not.toBeInTheDocument()
   })
 })
 

@@ -180,6 +180,88 @@ function LeaderboardPanel({ performance, source }) {
   )
 }
 
+function activityLookup(activity) {
+  const byPolitician = new Map()
+  ;(activity || []).forEach((profile) => byPolitician.set(profile.politician, profile))
+  return byPolitician
+}
+
+// Cross-references two rankings that already exist independently: politician_performance's
+// leaderboard (who is highest-ranked by shrunk win rate and alpha vs. S&P over their priced
+// disclosed buys) and the raw disclosure feed (what they actually bought). For each of the
+// highest-ranked Congress/Senate filers in turn, this takes their single most recently
+// disclosed stock buy, until ten distinct filers have contributed one. Executive-branch
+// filers (the President, agency heads) are excluded - "congress and senate traders" only.
+// A pick of a person's track record, not a claim about the stock; display-only, same as
+// every other panel here.
+export function buildTopPicks(leaderboard, results, activity, limit = 10) {
+  if (!leaderboard?.length || !results?.length) return []
+  const activityByName = activityLookup(activity)
+  const ranked = [...leaderboard].sort((left, right) => (left.rank ?? Infinity) - (right.rank ?? Infinity))
+  const picks = []
+  for (const entry of ranked) {
+    if (picks.length >= limit) break
+    const profile = activityByName.get(entry.politician)
+    const names = new Set([entry.politician, ...(profile?.name_variants || [])])
+    const buys = results
+      .filter((row) => names.has(row.representative) && row.transaction_type === 'Purchase'
+        && row.chamber !== 'executive' && row.symbol)
+      .sort((left, right) => (right.transaction_date || '').localeCompare(left.transaction_date || ''))
+    if (!buys.length) continue
+    picks.push({ ...buys[0], performance: entry })
+  }
+  return picks
+}
+
+// The headline panel: ten most recently disclosed buys, one per highest-ranked filer, so the
+// page leads with "what the most profitable traders are actually buying" rather than making a
+// reader dig for it below the full leaderboard and disclosure table.
+function TopPicksPanel({ picks }) {
+  if (!picks?.length) return null
+  return (
+    <div className="card political-signals top-picks-panel" aria-label="Top 10 picks from high-alpha traders">
+      <div className="political-signals-head">
+        <h2 className="political-signals-title">Top 10 picks from high-alpha traders</h2>
+        <span className="political-signals-note">
+          {`The most recently disclosed buy from each of the top ${picks.length} Congress and Senate filers, ranked by shrunk win rate and alpha vs. the S&P over their priced disclosed buys – a pick of a person's track record, not a claim about the stock. Not a score, not advice.`}
+        </span>
+      </div>
+      <DataTable
+        rows={picks}
+        getKey={(row, index) => `${row.representative}-${row.symbol}-${index}`}
+        columns={[
+          { key: 'rank', label: '#', cell: (row) => <span className="mono">{row.performance.rank}</span> },
+          { key: 'politician', label: 'Trader', cell: (row) => (
+            <details className="trade-identity-reveal">
+              <summary><b>{row.representative}</b></summary>
+              <span>
+                <b>{`${Math.round(row.performance.win_rate * 100)}% beat S&P`}</b>
+                <small>{`avg alpha ${pct(row.performance.avg_alpha_pct)} · ${row.performance.n_priced_buys} priced buy${row.performance.n_priced_buys === 1 ? '' : 's'} · ${row.performance.confidence} confidence`}</small>
+              </span>
+            </details>) },
+          { key: 'symbol', label: 'Stock', cell: (row) => (
+            <details className="trade-identity-reveal">
+              <summary><b className="mono">{row.symbol}</b></summary>
+              <span><b>{row.asset_description || 'Issuer unavailable'}</b></span>
+            </details>) },
+          { key: 'chamber', label: 'Chamber', cell: (row) => <span className="mono">{row.chamber}</span> },
+          { key: 'amount', label: 'Size', numeric: true, cell: (row) => <span className="mono">{row.amount || '–'}</span> },
+          { key: 'transaction_date', label: 'Bought', cell: (row) => <span className="mono">{row.transaction_date || '–'}</span> },
+          { key: 'excess_return_vs_spy_pct', label: 'Vs S&P since', numeric: true,
+            cell: (row) => row.excess_return_vs_spy_pct != null
+              ? <Move pct={row.excess_return_vs_spy_pct} />
+              : <span className="mono faint-cell">–</span> },
+        ]}
+        mobile={{
+          titleColumn: 'symbol',
+          title: (row) => row.symbol,
+          subtitle: (row) => `${row.representative} · ${row.transaction_date || 'date unavailable'}`,
+        }}
+      />
+    </div>
+  )
+}
+
 // political_tracking.activity_profiles(): who discloses the most, over the FULL accumulated
 // store rather than the published window. Deliberately a different ranking from
 // LeaderboardPanel above - "whose feed is worth watching at all" and "who has actually been
@@ -440,6 +522,9 @@ export default function PoliticalTrading() {
   const rows = data?.results || []
   const summary = data?.summary
   const lookupPerformance = useMemo(() => performanceLookup(data), [data])
+  const topPicks = useMemo(
+    () => buildTopPicks(data?.politician_performance?.leaderboard, rows, data?.politician_activity),
+    [data, rows])
 
   // The filer picker lists whoever actually appears in this window, most-disclosed first -
   // a roster of all 500-odd members would be mostly empty options.
@@ -534,6 +619,7 @@ export default function PoliticalTrading() {
         </div>
       )}
 
+      <TopPicksPanel picks={topPicks} />
       <LeaderboardPanel performance={data?.politician_performance}
         source={data?.politician_performance?.external_source} />
       <ActivityPanel profiles={data?.politician_activity} tracking={data?.tracking}
