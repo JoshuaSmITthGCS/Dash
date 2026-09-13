@@ -189,33 +189,38 @@ function activityLookup(activity) {
 // Cross-references two rankings that already exist independently: politician_performance's
 // leaderboard (who is highest-ranked by shrunk win rate and alpha vs. S&P over their priced
 // disclosed buys) and the raw disclosure feed (what they actually bought). For each of the
-// highest-ranked Congress/Senate filers in turn, this takes their single most recently
-// disclosed stock buy, until ten distinct filers have contributed one. Executive-branch
-// filers (the President, agency heads) are excluded - "congress and senate traders" only.
-// A pick of a person's track record, not a claim about the stock; display-only, same as
-// every other panel here.
+// highest-ranked Congress/Senate filers in turn, this takes their single largest disclosed
+// stock buy (by the reported amount range's upper bound, so a $1M+ position outranks a
+// several-thousand-dollar one even if it's older) - falling through to their next-largest
+// buy when the biggest one duplicates a ticker already picked, so all ten stocks are
+// distinct. Executive-branch filers (the President, agency heads) are excluded - "congress
+// and senate traders" only. A pick of a person's track record, not a claim about the stock;
+// display-only, same as every other panel here.
 export function buildTopPicks(leaderboard, results, activity, limit = 10) {
   if (!leaderboard?.length || !results?.length) return []
   const activityByName = activityLookup(activity)
   const ranked = [...leaderboard].sort((left, right) => (left.rank ?? Infinity) - (right.rank ?? Infinity))
   const picks = []
+  const usedTickers = new Set()
   for (const entry of ranked) {
     if (picks.length >= limit) break
     const profile = activityByName.get(entry.politician)
     const names = new Set([entry.politician, ...(profile?.name_variants || [])])
     const buys = results
       .filter((row) => names.has(row.representative) && row.transaction_type === 'Purchase'
-        && row.chamber !== 'executive' && row.symbol)
-      .sort((left, right) => (right.transaction_date || '').localeCompare(left.transaction_date || ''))
+        && row.chamber !== 'executive' && row.symbol && !usedTickers.has(row.symbol))
+      .sort((left, right) => (right.amount_upper ?? 0) - (left.amount_upper ?? 0)
+        || (right.transaction_date || '').localeCompare(left.transaction_date || ''))
     if (!buys.length) continue
+    usedTickers.add(buys[0].symbol)
     picks.push({ ...buys[0], performance: entry })
   }
   return picks
 }
 
-// The headline panel: ten most recently disclosed buys, one per highest-ranked filer, so the
-// page leads with "what the most profitable traders are actually buying" rather than making a
-// reader dig for it below the full leaderboard and disclosure table.
+// The headline panel: ten distinct stocks, each the largest disclosed buy from a different
+// highest-ranked filer, so the page leads with "what the most profitable traders are actually
+// buying" rather than making a reader dig for it below the full leaderboard and disclosure table.
 function TopPicksPanel({ picks }) {
   if (!picks?.length) return null
   return (
@@ -223,7 +228,7 @@ function TopPicksPanel({ picks }) {
       <div className="political-signals-head">
         <h2 className="political-signals-title">Top 10 picks from high-alpha traders</h2>
         <span className="political-signals-note">
-          {`The most recently disclosed buy from each of the top ${picks.length} Congress and Senate filers, ranked by shrunk win rate and alpha vs. the S&P over their priced disclosed buys – a pick of a person's track record, not a claim about the stock. Not a score, not advice.`}
+          {`The single largest disclosed buy from each of the top ${picks.length} Congress and Senate filers, ranked by shrunk win rate and alpha vs. the S&P over their priced disclosed buys – ten distinct stocks, one per filer, falling through to their next-largest buy when the biggest one repeats a ticker already picked. A pick of a person's track record, not a claim about the stock. Not a score, not advice.`}
         </span>
       </div>
       <DataTable
