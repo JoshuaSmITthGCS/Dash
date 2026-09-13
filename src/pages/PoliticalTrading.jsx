@@ -186,16 +186,28 @@ function activityLookup(activity) {
   return byPolitician
 }
 
+// Blends disclosed size with the pipeline's own already-computed novelty flags, log-scaled so
+// a flag is worth roughly a 10x-ish size jump rather than being swamped by the multi-order-of-
+// magnitude spread between a $1,001 filing and a $25M one. NOVEL_TICKER (this filer has never
+// disclosed this stock before) counts more than RARE_TRADER (this filer rarely files at all),
+// since the former is about the stock and the latter about the person.
+function tradeScore(row) {
+  const size = row.amount_upper || row.amount_lower || 0
+  const magnitude = size > 0 ? Math.log10(size) : 0
+  const flags = row.flags || []
+  const noveltyBonus = (flags.includes('NOVEL_TICKER') ? 1.5 : 0) + (flags.includes('RARE_TRADER') ? 1 : 0)
+  return magnitude + noveltyBonus
+}
+
 // Cross-references two rankings that already exist independently: politician_performance's
 // leaderboard (who is highest-ranked by shrunk win rate and alpha vs. S&P over their priced
 // disclosed buys) and the raw disclosure feed (what they actually bought). For each of the
-// highest-ranked Congress/Senate filers in turn, this takes their single largest disclosed
-// stock buy (by the reported amount range's upper bound, so a $1M+ position outranks a
-// several-thousand-dollar one even if it's older) - falling through to their next-largest
-// buy when the biggest one duplicates a ticker already picked, so all ten stocks are
-// distinct. Executive-branch filers (the President, agency heads) are excluded - "congress
-// and senate traders" only. A pick of a person's track record, not a claim about the stock;
-// display-only, same as every other panel here.
+// highest-ranked Congress/Senate filers in turn, this takes their highest-scoring disclosed
+// stock buy - a blend of disclosed size and novelty (see tradeScore above), not size alone -
+// falling through to their next-best buy when the top one duplicates a ticker already picked,
+// so all ten stocks are distinct. Executive-branch filers (the President, agency heads) are
+// excluded - "congress and senate traders" only. A pick of a person's track record, not a
+// claim about the stock; display-only, same as every other panel here.
 export function buildTopPicks(leaderboard, results, activity, limit = 10) {
   if (!leaderboard?.length || !results?.length) return []
   const activityByName = activityLookup(activity)
@@ -209,7 +221,7 @@ export function buildTopPicks(leaderboard, results, activity, limit = 10) {
     const buys = results
       .filter((row) => names.has(row.representative) && row.transaction_type === 'Purchase'
         && row.chamber !== 'executive' && row.symbol && !usedTickers.has(row.symbol))
-      .sort((left, right) => (right.amount_upper ?? 0) - (left.amount_upper ?? 0)
+      .sort((left, right) => tradeScore(right) - tradeScore(left)
         || (right.transaction_date || '').localeCompare(left.transaction_date || ''))
     if (!buys.length) continue
     usedTickers.add(buys[0].symbol)
@@ -218,9 +230,10 @@ export function buildTopPicks(leaderboard, results, activity, limit = 10) {
   return picks
 }
 
-// The headline panel: ten distinct stocks, each the largest disclosed buy from a different
-// highest-ranked filer, so the page leads with "what the most profitable traders are actually
-// buying" rather than making a reader dig for it below the full leaderboard and disclosure table.
+// The headline panel: ten distinct stocks, each the highest-scoring disclosed buy (size blended
+// with novelty, see tradeScore) from a different highest-ranked filer, so the page leads with
+// "what the most profitable traders are actually buying" rather than making a reader dig for it
+// below the full leaderboard and disclosure table.
 function TopPicksPanel({ picks }) {
   if (!picks?.length) return null
   return (
@@ -228,7 +241,7 @@ function TopPicksPanel({ picks }) {
       <div className="political-signals-head">
         <h2 className="political-signals-title">Top 10 picks from high-alpha traders</h2>
         <span className="political-signals-note">
-          {`The single largest disclosed buy from each of the top ${picks.length} Congress and Senate filers, ranked by shrunk win rate and alpha vs. the S&P over their priced disclosed buys – ten distinct stocks, one per filer, falling through to their next-largest buy when the biggest one repeats a ticker already picked. A pick of a person's track record, not a claim about the stock. Not a score, not advice.`}
+          {`One disclosed buy from each of the top ${picks.length} Congress and Senate filers, ranked by shrunk win rate and alpha vs. the S&P over their priced disclosed buys – ten distinct stocks, one per filer. Within each filer's own buys, this picks the one blending disclosed size with novelty (a stock they haven't disclosed before, or a filer who rarely discloses at all) rather than size alone, falling through to their next-best buy when the top one repeats a ticker already picked. A pick of a person's track record, not a claim about the stock. Not a score, not advice.`}
         </span>
       </div>
       <DataTable
@@ -252,6 +265,7 @@ function TopPicksPanel({ picks }) {
           { key: 'chamber', label: 'Chamber', cell: (row) => <span className="mono">{row.chamber}</span> },
           { key: 'amount', label: 'Size', numeric: true, cell: (row) => <span className="mono">{row.amount || '–'}</span> },
           { key: 'transaction_date', label: 'Bought', cell: (row) => <span className="mono">{row.transaction_date || '–'}</span> },
+          { key: 'flags', label: 'Flags', sortable: false, cell: (row) => <FlagChips flags={row.flags} /> },
           { key: 'excess_return_vs_spy_pct', label: 'Vs S&P since', numeric: true,
             cell: (row) => row.excess_return_vs_spy_pct != null
               ? <Move pct={row.excess_return_vs_spy_pct} />
