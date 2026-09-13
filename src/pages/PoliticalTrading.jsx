@@ -186,54 +186,79 @@ function activityLookup(activity) {
   return byPolitician
 }
 
-// Blends disclosed size with the pipeline's own already-computed novelty flags, log-scaled so
-// a flag is worth roughly a 10x-ish size jump rather than being swamped by the multi-order-of-
-// magnitude spread between a $1,001 filing and a $25M one. NOVEL_TICKER (this filer has never
-// disclosed this stock before) counts more than RARE_TRADER (this filer rarely files at all),
-// since the former is about the stock and the latter about the person.
-function tradeScore(row) {
+// A buy this old is stale - "recently disclosed" stops meaning anything if the trade itself
+// happened the better part of a year ago. A buy that has already run up hard against the S&P
+// is stale in a different way: whatever the filer front-ran (or got lucky on) has already
+// played out in the price, so surfacing it now would be pointing at a chart after the move
+// happened, not before it. Both are hard cutoffs, not just deprioritized.
+const PICK_MAX_AGE_DAYS = 90
+const PICK_ALREADY_SPIKED_PCT = 20
+
+function daysSince(dateStr, referenceDate) {
+  if (!dateStr) return Infinity
+  const diff = referenceDate.getTime() - new Date(dateStr).getTime()
+  return diff / (1000 * 60 * 60 * 24)
+}
+
+// Blends four things that each independently argue a buy is worth surfacing now, all log- or
+// 0-1-scaled so none swamps the others: disclosed size, the pipeline's own novelty flags
+// (NOVEL_TICKER - this filer has never disclosed this stock before - counts more than
+// RARE_TRADER - this filer rarely files at all, since the former is about the stock), how
+// alpha-ranked the filer is, and freshness within the recency window (a buy disclosed
+// yesterday outscores one from 89 days ago even though both cleared the same cutoff).
+function tradeScore(row, referenceDate, performance) {
   const size = row.amount_upper || row.amount_lower || 0
   const magnitude = size > 0 ? Math.log10(size) : 0
   const flags = row.flags || []
   const noveltyBonus = (flags.includes('NOVEL_TICKER') ? 1.5 : 0) + (flags.includes('RARE_TRADER') ? 1 : 0)
-  return magnitude + noveltyBonus
+  const traderBonus = (performance?.performance_score || 0) * 2
+  const age = daysSince(row.transaction_date, referenceDate)
+  const freshnessBonus = Math.max(0, (PICK_MAX_AGE_DAYS - age) / PICK_MAX_AGE_DAYS) * 2
+  return magnitude + noveltyBonus + traderBonus + freshnessBonus
 }
 
-// Cross-references two rankings that already exist independently: politician_performance's
-// leaderboard (who is highest-ranked by shrunk win rate and alpha vs. S&P over their priced
-// disclosed buys) and the raw disclosure feed (what they actually bought). For each of the
-// highest-ranked Congress/Senate filers in turn, this takes their highest-scoring disclosed
-// stock buy - a blend of disclosed size and novelty (see tradeScore above), not size alone -
-// falling through to their next-best buy when the top one duplicates a ticker already picked,
-// so all ten stocks are distinct. Executive-branch filers (the President, agency heads) are
-// excluded - "congress and senate traders" only. A pick of a person's track record, not a
-// claim about the stock; display-only, same as every other panel here.
-export function buildTopPicks(leaderboard, results, activity, limit = 10) {
+// The stock is the focal point, not the filer: this pools every recent, not-yet-spiked buy
+// from a ranked high-alpha Congress/Senate filer, keeps only the highest-scoring buy per
+// ticker (so a stock two good filers both bought consolidates to one row instead of
+// crowding the list), and returns the top-scoring distinct tickers. "Recent" and
+// "not-yet-spiked" are hard filters (see the constants above) - a trade from months ago, or
+// one that already beat the S&P by a lot since purchase, has already played out and is
+// excluded outright rather than merely ranked lower. Executive-branch filers (the President,
+// agency heads) are excluded - "congress and senate traders" only. A pick of a stock a
+// tracked filer bought recently, not a claim it will move; display-only, same as every other
+// panel here.
+export function buildTopPicks(leaderboard, results, activity, limit = 10, referenceDate = new Date()) {
   if (!leaderboard?.length || !results?.length) return []
   const activityByName = activityLookup(activity)
-  const ranked = [...leaderboard].sort((left, right) => (left.rank ?? Infinity) - (right.rank ?? Infinity))
-  const picks = []
-  const usedTickers = new Set()
-  for (const entry of ranked) {
-    if (picks.length >= limit) break
+  const performanceByName = new Map()
+  leaderboard.forEach((entry) => {
+    performanceByName.set(entry.politician, entry)
     const profile = activityByName.get(entry.politician)
-    const names = new Set([entry.politician, ...(profile?.name_variants || [])])
-    const buys = results
-      .filter((row) => names.has(row.representative) && row.transaction_type === 'Purchase'
-        && row.chamber !== 'executive' && row.symbol && !usedTickers.has(row.symbol))
-      .sort((left, right) => tradeScore(right) - tradeScore(left)
-        || (right.transaction_date || '').localeCompare(left.transaction_date || ''))
-    if (!buys.length) continue
-    usedTickers.add(buys[0].symbol)
-    picks.push({ ...buys[0], performance: entry })
-  }
-  return picks
+    ;(profile?.name_variants || []).forEach((variant) => performanceByName.set(variant, entry))
+  })
+
+  const bestByTicker = new Map()
+  results.forEach((row) => {
+    if (row.transaction_type !== 'Purchase' || row.chamber === 'executive' || !row.symbol) return
+    const performance = performanceByName.get(row.representative)
+    if (!performance) return
+    if (daysSince(row.transaction_date, referenceDate) > PICK_MAX_AGE_DAYS) return
+    if (row.excess_return_vs_spy_pct != null && row.excess_return_vs_spy_pct > PICK_ALREADY_SPIKED_PCT) return
+    const score = tradeScore(row, referenceDate, performance)
+    const existing = bestByTicker.get(row.symbol)
+    if (!existing || score > existing.score) {
+      bestByTicker.set(row.symbol, { ...row, performance, score })
+    }
+  })
+
+  return [...bestByTicker.values()]
+    .sort((left, right) => right.score - left.score)
+    .slice(0, limit)
 }
 
-// The headline panel: ten distinct stocks, each the highest-scoring disclosed buy (size blended
-// with novelty, see tradeScore) from a different highest-ranked filer, so the page leads with
-// "what the most profitable traders are actually buying" rather than making a reader dig for it
-// below the full leaderboard and disclosure table.
+// The headline panel: distinct stocks that a ranked high-alpha filer bought recently and that
+// haven't already run away from the market, so the page leads with names still worth a look
+// rather than a victory lap on a move that already happened.
 function TopPicksPanel({ picks }) {
   if (!picks?.length) return null
   return (
@@ -241,20 +266,20 @@ function TopPicksPanel({ picks }) {
       <div className="political-signals-head">
         <h2 className="political-signals-title">Top 10 picks from high-alpha traders</h2>
         <span className="political-signals-note">
-          {`One disclosed buy from each of the top ${picks.length} Congress and Senate filers, ranked by shrunk win rate and alpha vs. the S&P over their priced disclosed buys – ten distinct stocks, one per filer. Within each filer's own buys, this picks the one blending disclosed size with novelty (a stock they haven't disclosed before, or a filer who rarely discloses at all) rather than size alone, falling through to their next-best buy when the top one repeats a ticker already picked. A pick of a person's track record, not a claim about the stock. Not a score, not advice.`}
+          {`Distinct stocks a ranked Congress or Senate filer bought in the trailing ${PICK_MAX_AGE_DAYS} days, ranked by a blend of disclosed size, novelty (a stock the filer hasn't disclosed before, or a filer who rarely files at all), and how alpha-ranked that filer is – the highest-scoring buy stands in when more than one tracked filer bought the same ticker. Excludes anything already up more than ${PICK_ALREADY_SPIKED_PCT}pp against the S&P since purchase, since that move has already happened, and anything older than ${PICK_MAX_AGE_DAYS} days, since it's no longer fresh. A pick of a stock a tracked filer bought recently, not a claim it will move. Not a score, not advice.`}
         </span>
       </div>
       <DataTable
         rows={picks}
-        getKey={(row, index) => `${row.representative}-${row.symbol}-${index}`}
+        getKey={(row, index) => `${row.symbol}-${index}`}
         columns={[
-          { key: 'rank', label: '#', cell: (row) => <span className="mono">{row.performance.rank}</span> },
+          { key: 'rank', label: '#', cell: (row, index) => <span className="mono">{index + 1}</span> },
           { key: 'politician', label: 'Trader', cell: (row) => (
             <details className="trade-identity-reveal">
               <summary><b>{row.representative}</b></summary>
               <span>
                 <b>{`${Math.round(row.performance.win_rate * 100)}% beat S&P`}</b>
-                <small>{`avg alpha ${pct(row.performance.avg_alpha_pct)} · ${row.performance.n_priced_buys} priced buy${row.performance.n_priced_buys === 1 ? '' : 's'} · ${row.performance.confidence} confidence`}</small>
+                <small>{`avg alpha ${pct(row.performance.avg_alpha_pct)} · #${row.performance.rank} on the leaderboard · ${row.performance.confidence} confidence`}</small>
               </span>
             </details>) },
           { key: 'symbol', label: 'Stock', cell: (row) => (
@@ -542,7 +567,8 @@ export default function PoliticalTrading() {
   const summary = data?.summary
   const lookupPerformance = useMemo(() => performanceLookup(data), [data])
   const topPicks = useMemo(
-    () => buildTopPicks(data?.politician_performance?.leaderboard, rows, data?.politician_activity),
+    () => buildTopPicks(data?.politician_performance?.leaderboard, rows, data?.politician_activity,
+      10, data?.generated_at ? new Date(data.generated_at) : new Date()),
     [data, rows])
 
   // The filer picker lists whoever actually appears in this window, most-disclosed first -

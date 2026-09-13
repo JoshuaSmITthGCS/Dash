@@ -406,17 +406,25 @@ describe('PoliticalTrading page', () => {
     expect(screen.queryByText('Top 10 unusual stocks')).not.toBeInTheDocument()
   })
 
-  it('leads with the top picks panel: a size/novelty blend, not size alone, per highest-ranked filer', () => {
+  it('leads with the top picks panel: recent, not-already-spiked buys from ranked filers', () => {
     useData.mockReturnValue({
       data: {
+        generated_at: '2026-09-01T00:00:00Z',
         results: [
-          // Top Trader's biggest buy is the small, recent one is a decoy - size wins over recency.
-          trade({ representative: 'Top Trader', symbol: 'SMALL', transaction_date: '2026-08-01',
-            amount_upper: 15000, excess_return_vs_spy_pct: 12.4 }),
-          trade({ representative: 'Top Trader', symbol: 'BIG', transaction_date: '2026-01-01', amount_upper: 5000000 }),
-          trade({ representative: 'Second Trader', symbol: 'AAPL', transaction_date: '2026-07-15', amount_upper: 50000 }),
-          trade({ representative: 'Second Trader', symbol: 'SOLD', transaction_type: 'Sale (Full)', amount_upper: 5000000 }),
-          trade({ representative: 'Exec Trader', chamber: 'executive', symbol: 'MSFT', amount_upper: 5000000 }),
+          trade({ representative: 'Top Trader', symbol: 'FRESH', transaction_date: '2026-08-25',
+            amount_upper: 5000000, excess_return_vs_spy_pct: 8 }),
+          // Bought over 90 days before generated_at - stale, excluded no matter how large.
+          trade({ representative: 'Top Trader', symbol: 'STALE', transaction_date: '2025-12-01',
+            amount_upper: 25000000, excess_return_vs_spy_pct: 5 }),
+          // Already run up hard against the S&P since purchase - the move already happened.
+          trade({ representative: 'Second Trader', symbol: 'SPIKED', transaction_date: '2026-08-20',
+            amount_upper: 1000000, excess_return_vs_spy_pct: 45 }),
+          trade({ representative: 'Second Trader', symbol: 'AAPL', transaction_date: '2026-08-15',
+            amount_upper: 50000, excess_return_vs_spy_pct: 3 }),
+          trade({ representative: 'Second Trader', symbol: 'SOLD', transaction_type: 'Sale (Full)',
+            transaction_date: '2026-08-15', amount_upper: 5000000 }),
+          trade({ representative: 'Exec Trader', chamber: 'executive', symbol: 'MSFT',
+            transaction_date: '2026-08-15', amount_upper: 5000000 }),
         ],
         politician_performance: {
           leaderboard: [
@@ -435,9 +443,11 @@ describe('PoliticalTrading page', () => {
     render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
 
     const panel = screen.getByLabelText('Top 10 picks from high-alpha traders')
-    expect(panel).toHaveTextContent(/blending disclosed size with novelty/i)
-    expect(panel).toHaveTextContent('BIG')
-    expect(panel).not.toHaveTextContent('SMALL') // smaller, unflagged buy from the same trader loses on score
+    expect(panel).toHaveTextContent(/trailing 90 days/i)
+    expect(panel).toHaveTextContent(/20pp against the S&P/i)
+    expect(panel).toHaveTextContent('FRESH')
+    expect(panel).not.toHaveTextContent('STALE') // older than the recency window, however large
+    expect(panel).not.toHaveTextContent('SPIKED') // already up too much since purchase
     expect(panel).toHaveTextContent('AAPL')
     expect(panel).not.toHaveTextContent('SOLD') // a sale is not a pick
     expect(panel).not.toHaveTextContent('MSFT') // executive-branch filer excluded
@@ -448,20 +458,23 @@ describe('PoliticalTrading page', () => {
       .toBeLessThan(headings.indexOf('Most profitable politicians'))
   })
 
-  it('never repeats a ticker: a lower-ranked filer falls through to their next-best buy', () => {
+  it('consolidates a ticker to one row: the highest-scoring buy wins, not the higher-ranked filer', () => {
     useData.mockReturnValue({
       data: {
+        generated_at: '2026-09-01T00:00:00Z',
         results: [
-          trade({ representative: 'Top Trader', symbol: 'NVDA', transaction_date: '2026-08-01', amount_upper: 5000000 }),
-          // Second Trader's best-scoring buy duplicates NVDA, already claimed by the higher-ranked filer.
-          trade({ representative: 'Second Trader', symbol: 'NVDA', transaction_date: '2026-07-01', amount_upper: 1000000 }),
-          trade({ representative: 'Second Trader', symbol: 'AMD', transaction_date: '2026-06-01', amount_upper: 50000 }),
+          // Top Trader is the higher-ranked filer, but this buy is small, unflagged, and older.
+          trade({ representative: 'Top Trader', symbol: 'NVDA', transaction_date: '2026-08-01', amount_upper: 15000 }),
+          // Second Trader's buy is bigger, novel, and fresher - it should win the NVDA row.
+          trade({ representative: 'Second Trader', symbol: 'NVDA', transaction_date: '2026-08-25',
+            amount_upper: 5000000, flags: ['NOVEL_TICKER', 'RARE_TRADER'] }),
+          trade({ representative: 'Second Trader', symbol: 'AMD', transaction_date: '2026-08-20', amount_upper: 50000 }),
         ],
         politician_performance: {
           leaderboard: [
             { politician: 'Top Trader', rank: 1, performance_score: 0.9, win_rate: 0.8,
               avg_alpha_pct: 20, n_priced_buys: 10, confidence: 'high' },
-            { politician: 'Second Trader', rank: 2, performance_score: 0.7, win_rate: 0.6,
+            { politician: 'Second Trader', rank: 2, performance_score: 0.5, win_rate: 0.6,
               avg_alpha_pct: 5, n_priced_buys: 6, confidence: 'medium' },
           ],
         },
@@ -472,19 +485,21 @@ describe('PoliticalTrading page', () => {
     render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
 
     const panel = screen.getByLabelText('Top 10 picks from high-alpha traders')
-    expect(panel).toHaveTextContent('Top Trader')
-    expect(panel).toHaveTextContent('Second Trader')
     expect(within(panel).getAllByText('NVDA').length).toBe(1)
+    expect(panel).toHaveTextContent('Second Trader')
+    expect(panel).not.toHaveTextContent('Top Trader') // its only candidate buy lost the NVDA row
     expect(panel).toHaveTextContent('AMD')
   })
 
-  it('lets a smaller but novel buy outscore a bigger, routine one', () => {
+  it('ranks a smaller but novel buy above a bigger, routine one', () => {
     useData.mockReturnValue({
       data: {
+        generated_at: '2026-09-01T00:00:00Z',
         results: [
-          trade({ representative: 'Top Trader', symbol: 'ROUTINE', amount_upper: 100000, flags: [] }),
-          trade({ representative: 'Top Trader', symbol: 'NOVEL', amount_upper: 15000,
-            flags: ['NOVEL_TICKER', 'RARE_TRADER'] }),
+          trade({ representative: 'Top Trader', symbol: 'ROUTINE', transaction_date: '2026-08-25',
+            amount_upper: 100000, flags: [] }),
+          trade({ representative: 'Top Trader', symbol: 'NOVEL', transaction_date: '2026-08-25',
+            amount_upper: 15000, flags: ['NOVEL_TICKER', 'RARE_TRADER'] }),
         ],
         politician_performance: {
           leaderboard: [{ politician: 'Top Trader', rank: 1, performance_score: 0.9,
@@ -497,8 +512,9 @@ describe('PoliticalTrading page', () => {
     render(<MemoryRouter><PoliticalTrading /></MemoryRouter>)
 
     const panel = screen.getByLabelText('Top 10 picks from high-alpha traders')
-    expect(panel).toHaveTextContent('NOVEL')
-    expect(panel).not.toHaveTextContent('ROUTINE')
+    const rows = within(panel).getAllByRole('row').filter((row) => /NOVEL|ROUTINE/.test(row.textContent))
+    expect(rows[0]).toHaveTextContent('NOVEL')
+    expect(rows[1]).toHaveTextContent('ROUTINE')
   })
 
   it('omits the top picks panel when no leaderboard filer has a disclosed buy', () => {
