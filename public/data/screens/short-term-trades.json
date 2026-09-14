@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "model_version": "short-term-trades-v1.0.0",
   "config_version": "screens-v1.0.0",
-  "generated_at": "2026-09-14T21:19:24.388687+00:00",
+  "generated_at": "2026-09-14T22:57:30.218409+00:00",
   "status": "success",
   "window": {
     "min_days_to_expiration": 1,
@@ -19,7 +19,7 @@
       "sector": "Technology",
       "peer_group": "Saas",
       "percentile": 100.0,
-      "score": 1.2412,
+      "score": 1.2498,
       "structural_score": 75.0,
       "data_coverage": 0.88,
       "price": 257.7099914550781,
@@ -50,11 +50,11 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "iv_value": 1.1125705535592796,
-        "liquidity": 1.0009438737153622,
-        "trend_strength": 2.2231895437980893,
+        "iv_value": 1.1121452338536668,
+        "liquidity": 1.032759214834658,
+        "trend_strength": 2.2022883919609524,
         "news_sentiment": null,
-        "research_confidence": 0.813493878768142
+        "research_confidence": 0.8526031157789238
       }
     },
     {
@@ -65,8 +65,8 @@
       "sector": "Industrials",
       "peer_group": "Aerospace Defense",
       "percentile": 100.0,
-      "score": 1.1787,
-      "structural_score": 38.0,
+      "score": 1.1883,
+      "structural_score": 41.0,
       "data_coverage": 0.7,
       "price": 62.95009994506836,
       "trend_20d": -0.2156,
@@ -97,15 +97,15 @@
         "downside_cushion_pct": 0.0154,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
-        "research_confidence": -8.4
+        "research_confidence": -6.3
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": 1.9271193671304387,
-        "liquidity": 0.9499304304058367,
-        "cushion": 1.993567465607695,
+        "expected_value_pct": 1.9017846951516557,
+        "liquidity": 0.9933236661111586,
+        "cushion": 1.9747568830037459,
         "news_sentiment": null,
-        "research_confidence": -2.0977537362405108
+        "research_confidence": -1.9743743994988265
       }
     },
     {
@@ -116,9 +116,9 @@
       "sector": "Financial Services",
       "peer_group": "Large banks",
       "percentile": 100.0,
-      "score": 0.76,
-      "structural_score": 82.6,
-      "data_coverage": 0.71,
+      "score": 0.7498,
+      "structural_score": 82.2,
+      "data_coverage": 0.7,
       "price": 62.150001525878906,
       "trend_20d": -0.0363,
       "expiration": "2026-09-18",
@@ -147,16 +147,16 @@
         "probability_otm": 0.7438,
         "probability_assigned": 0.2562,
         "suggested_position_pct": 0.02,
-        "news_sentiment": 0.0475,
-        "research_confidence": 23.146
+        "news_sentiment": null,
+        "research_confidence": 22.54
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": 2.172116851057611,
-        "probability_otm": -0.9244978595056227,
-        "liquidity": 0.8994556186262166,
-        "news_sentiment": 0,
-        "research_confidence": 0.49494519161153766
+        "expected_value_pct": 2.145488517290988,
+        "probability_otm": -0.8955397259691011,
+        "liquidity": 0.8734664220580597,
+        "news_sentiment": null,
+        "research_confidence": 0.4728986754379485
       }
     },
     {
@@ -166,8 +166,8 @@
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Semiconductor",
-      "percentile": 97.56,
-      "score": 1.1643,
+      "percentile": 97.5,
+      "score": 1.1684,
       "structural_score": 75.2,
       "data_coverage": 0.89,
       "price": 180.25,
@@ -203,11 +203,11 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": 1.3452605347818394,
-        "liquidity": 1.082235964977334,
-        "cushion": 1.5394894755488913,
+        "expected_value_pct": 1.3266033932998569,
+        "liquidity": 1.1270897598908942,
+        "cushion": 1.5258453090534188,
         "news_sentiment": null,
-        "research_confidence": 0.5927725414447914
+        "research_confidence": 0.6206221315299163
       }
     },
     {
@@ -217,8 +217,8 @@
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Saas",
-      "percentile": 95.12,
-      "score": 1.0411,
+      "percentile": 95.0,
+      "score": 1.0334,
       "structural_score": 49.3,
       "data_coverage": 0.82,
       "price": 31.09000015258789,
@@ -254,11 +254,11 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": 1.751682944072983,
-        "liquidity": 0.3883313468489936,
-        "cushion": 1.999452473802853,
+        "expected_value_pct": 1.7283616162252622,
+        "liquidity": 0.425524927222559,
+        "cushion": 1.980574932654769,
         "news_sentiment": null,
-        "research_confidence": -1.4147363932677213
+        "research_confidence": -1.4571455587625912
       }
     },
     {
@@ -268,8 +268,8 @@
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Technology",
-      "percentile": 93.94,
-      "score": 0.3941,
+      "percentile": 93.75,
+      "score": 0.3869,
       "structural_score": 66.1,
       "data_coverage": 0.85,
       "price": 542.380126953125,
@@ -305,11 +305,11 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": 0.39089341175007464,
-        "probability_otm": 0.38279479432685765,
-        "liquidity": 0.7851754357717384,
+        "expected_value_pct": 0.3607309069395445,
+        "probability_otm": 0.41133718178414896,
+        "liquidity": 0.760184347255557,
         "news_sentiment": null,
-        "research_confidence": -0.2686828853798972
+        "research_confidence": -0.2505251905334717
       }
     },
     {
@@ -319,8 +319,8 @@
       "eligibility": true,
       "sector": "Consumer Cyclical",
       "peer_group": "Retail Apparel",
-      "percentile": 93.55,
-      "score": 0.6651,
+      "percentile": 93.33,
+      "score": 0.6699,
       "structural_score": 73.1,
       "data_coverage": 0.89,
       "price": 101.08000183105469,
@@ -351,170 +351,22 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "iv_value": 1.1125705535592796,
-        "liquidity": 0.4927876682440323,
-        "trend_strength": 1.2310229810456743,
+        "iv_value": 1.1121452338536668,
+        "liquidity": 0.5243392166579147,
+        "trend_strength": 1.2026274257632443,
         "news_sentiment": null,
-        "research_confidence": -1.332893338736246
+        "research_confidence": -1.3186675439551472
       }
     },
     {
       "rank": 8,
-      "ticker": "NBIS",
-      "strategy": "sell_call",
-      "eligibility": true,
-      "sector": "Communication Services",
-      "peer_group": "Interactive Media Platform",
-      "percentile": 92.68,
-      "score": 0.9123,
-      "structural_score": 41.2,
-      "data_coverage": 0.76,
-      "price": 213.48980712890625,
-      "trend_20d": -0.2312,
-      "expiration": "2026-09-18",
-      "days_to_expiration": 4,
-      "capital_required": 21348.980712890625,
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "call",
-          "strike": 225.0,
-          "bid": 3.3,
-          "ask": 3.45,
-          "mid": 3.375,
-          "spread_pct": 0.0444,
-          "implied_volatility": 0.8083515258789062,
-          "open_interest": 716,
-          "delta": 0.2816
-        }
-      ],
-      "metrics": {
-        "premium": 3.375,
-        "breakeven": 210.1148,
-        "annualized_yield": 1.4425,
-        "expected_value_pct": 0.0308,
-        "max_return_if_assigned_pct": 0.0697,
-        "probability_assigned": 0.2816,
-        "downside_cushion_pct": 0.0158,
-        "suggested_position_pct": 0.02,
-        "news_sentiment": null,
-        "research_confidence": -6.688
-      },
-      "reason_codes": [],
-      "standardized_factors": {
-        "expected_value_pct": 1.9271193671304387,
-        "liquidity": -0.18027245873002715,
-        "cushion": 1.999452473802853,
-        "news_sentiment": null,
-        "research_confidence": -1.9483382377522134
-      }
-    },
-    {
-      "rank": 9,
-      "ticker": "FSLR",
-      "strategy": "sell_put",
-      "eligibility": true,
-      "sector": "Technology",
-      "peer_group": "Technology",
-      "percentile": 90.91,
-      "score": 0.361,
-      "structural_score": 78.4,
-      "data_coverage": 0.87,
-      "price": 208.5,
-      "trend_20d": -0.0756,
-      "expiration": "2026-09-18",
-      "days_to_expiration": 4,
-      "capital_required": 19500.0,
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "put",
-          "strike": 195.0,
-          "bid": 1.0,
-          "ask": 1.07,
-          "mid": 1.035,
-          "spread_pct": 0.0676,
-          "implied_volatility": 0.51758294921875,
-          "open_interest": 2934,
-          "delta": -0.1034
-        }
-      ],
-      "metrics": {
-        "premium": 1.035,
-        "collateral": 19500.0,
-        "effective_cost_basis": 193.965,
-        "annualized_yield": 0.4843,
-        "expected_value_pct": 0.013,
-        "probability_otm": 0.8865,
-        "probability_assigned": 0.1135,
-        "suggested_position_pct": 0.02,
-        "news_sentiment": null,
-        "research_confidence": 24.708
-      },
-      "reason_codes": [],
-      "standardized_factors": {
-        "expected_value_pct": 0.03483430691714535,
-        "probability_otm": 0.3400067441956607,
-        "liquidity": 0.8097221259853908,
-        "news_sentiment": null,
-        "research_confidence": 0.6210192912057275
-      }
-    },
-    {
-      "rank": 10,
-      "ticker": "ASTS",
-      "strategy": "buy_put",
-      "eligibility": true,
-      "sector": "Technology",
-      "peer_group": "Networking Equipment",
-      "percentile": 90.32,
-      "score": 0.646,
-      "structural_score": 32.5,
-      "data_coverage": 0.65,
-      "price": 60.52000045776367,
-      "trend_20d": -0.1474,
-      "expiration": "2026-09-18",
-      "days_to_expiration": 4,
-      "capital_required": 555.0,
-      "legs": [
-        {
-          "action": "buy",
-          "option_type": "put",
-          "strike": 65.0,
-          "bid": 5.45,
-          "ask": 5.65,
-          "mid": 5.55,
-          "spread_pct": 0.036,
-          "implied_volatility": 0.75586181640625,
-          "open_interest": 3827
-        }
-      ],
-      "metrics": {
-        "implied_volatility": 0.75586181640625,
-        "realized_volatility_20d": 0.7709,
-        "implied_realized_vol_ratio": 0.9805,
-        "moneyness": 0.074,
-        "news_sentiment": null,
-        "research_confidence": 11.375
-      },
-      "reason_codes": [],
-      "standardized_factors": {
-        "iv_value": 0.5112773201690706,
-        "liquidity": 0.6284920050661463,
-        "trend_strength": 1.115194592282994,
-        "news_sentiment": null,
-        "research_confidence": 0.27764096432033725
-      }
-    },
-    {
-      "rank": 11,
       "ticker": "UEC",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Energy",
       "peer_group": "Commodity producers",
-      "percentile": 90.24,
-      "score": 0.9002,
+      "percentile": 92.5,
+      "score": 0.9032,
       "structural_score": 35.0,
       "data_coverage": 0.64,
       "price": 10.149999618530273,
@@ -550,11 +402,159 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": 1.9271193671304387,
-        "liquidity": -0.16872864226914092,
-        "cushion": 1.999452473802853,
+        "expected_value_pct": 1.9017846951516557,
+        "liquidity": -0.13768460884599337,
+        "cushion": 1.980574932654769,
         "news_sentiment": null,
-        "research_confidence": -2.0977537362405108
+        "research_confidence": -2.009422389405508
+      }
+    },
+    {
+      "rank": 9,
+      "ticker": "FSLR",
+      "strategy": "sell_put",
+      "eligibility": true,
+      "sector": "Technology",
+      "peer_group": "Technology",
+      "percentile": 90.62,
+      "score": 0.3546,
+      "structural_score": 78.4,
+      "data_coverage": 0.87,
+      "price": 208.5,
+      "trend_20d": -0.0756,
+      "expiration": "2026-09-18",
+      "days_to_expiration": 4,
+      "capital_required": 19500.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 195.0,
+          "bid": 1.0,
+          "ask": 1.07,
+          "mid": 1.035,
+          "spread_pct": 0.0676,
+          "implied_volatility": 0.51758294921875,
+          "open_interest": 2934,
+          "delta": -0.1034
+        }
+      ],
+      "metrics": {
+        "premium": 1.035,
+        "collateral": 19500.0,
+        "effective_cost_basis": 193.965,
+        "annualized_yield": 0.4843,
+        "expected_value_pct": 0.013,
+        "probability_otm": 0.8865,
+        "probability_assigned": 0.1135,
+        "suggested_position_pct": 0.02,
+        "news_sentiment": null,
+        "research_confidence": 24.708
+      },
+      "reason_codes": [],
+      "standardized_factors": {
+        "expected_value_pct": 0.0039653361178737185,
+        "probability_otm": 0.36856273913711235,
+        "liquidity": 0.7845166499127701,
+        "news_sentiment": null,
+        "research_confidence": 0.6500170200371628
+      }
+    },
+    {
+      "rank": 10,
+      "ticker": "ASTS",
+      "strategy": "buy_put",
+      "eligibility": true,
+      "sector": "Technology",
+      "peer_group": "Networking Equipment",
+      "percentile": 90.0,
+      "score": 0.6538,
+      "structural_score": 32.5,
+      "data_coverage": 0.65,
+      "price": 60.52000045776367,
+      "trend_20d": -0.1474,
+      "expiration": "2026-09-18",
+      "days_to_expiration": 4,
+      "capital_required": 555.0,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "strike": 65.0,
+          "bid": 5.45,
+          "ask": 5.65,
+          "mid": 5.55,
+          "spread_pct": 0.036,
+          "implied_volatility": 0.75586181640625,
+          "open_interest": 3827
+        }
+      ],
+      "metrics": {
+        "implied_volatility": 0.75586181640625,
+        "realized_volatility_20d": 0.7709,
+        "implied_realized_vol_ratio": 0.9805,
+        "moneyness": 0.074,
+        "news_sentiment": null,
+        "research_confidence": 11.375
+      },
+      "reason_codes": [],
+      "standardized_factors": {
+        "iv_value": 0.5182949057613486,
+        "liquidity": 0.6601139999564491,
+        "trend_strength": 1.0859241187072104,
+        "news_sentiment": null,
+        "research_confidence": 0.31053796481967877
+      }
+    },
+    {
+      "rank": 11,
+      "ticker": "NBIS",
+      "strategy": "sell_call",
+      "eligibility": true,
+      "sector": "Communication Services",
+      "peer_group": "Interactive Media Platform",
+      "percentile": 90.0,
+      "score": 0.9003,
+      "structural_score": 41.2,
+      "data_coverage": 0.76,
+      "price": 213.48980712890625,
+      "trend_20d": -0.2312,
+      "expiration": "2026-09-18",
+      "days_to_expiration": 4,
+      "capital_required": 21348.980712890625,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "call",
+          "strike": 225.0,
+          "bid": 3.3,
+          "ask": 3.45,
+          "mid": 3.375,
+          "spread_pct": 0.0444,
+          "implied_volatility": 0.8083515258789062,
+          "open_interest": 716,
+          "delta": 0.2816
+        }
+      ],
+      "metrics": {
+        "premium": 3.375,
+        "breakeven": 210.1148,
+        "annualized_yield": 1.4425,
+        "expected_value_pct": 0.0308,
+        "max_return_if_assigned_pct": 0.0697,
+        "probability_assigned": 0.2816,
+        "downside_cushion_pct": 0.0158,
+        "suggested_position_pct": 0.02,
+        "news_sentiment": null,
+        "research_confidence": -6.688
+      },
+      "reason_codes": [],
+      "standardized_factors": {
+        "expected_value_pct": 1.9017846951516557,
+        "liquidity": -0.14935586084829341,
+        "cushion": 1.980574932654769,
+        "news_sentiment": null,
+        "research_confidence": -2.009422389405508
       }
     },
     {
@@ -564,8 +564,8 @@
       "eligibility": true,
       "sector": "Financial Services",
       "peer_group": "Payment processors & networks",
-      "percentile": 87.1,
-      "score": 0.5638,
+      "percentile": 86.67,
+      "score": 0.5675,
       "structural_score": 76.0,
       "data_coverage": 0.86,
       "price": 54.26499938964844,
@@ -596,11 +596,11 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "iv_value": 1.1125705535592796,
-        "liquidity": 0.6226955363250356,
-        "trend_strength": 0.6695639002990577,
+        "iv_value": 1.1121452338536668,
+        "liquidity": 0.6543145221678162,
+        "trend_strength": 0.6369273223626635,
         "news_sentiment": null,
-        "research_confidence": -1.4237235598111166
+        "research_confidence": -1.4105507756612745
       }
     },
     {
@@ -610,8 +610,8 @@
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Saas",
-      "percentile": 85.37,
-      "score": 0.7495,
+      "percentile": 85.0,
+      "score": 0.7526,
       "structural_score": 73.0,
       "data_coverage": 0.86,
       "price": 21.559999465942383,
@@ -647,11 +647,11 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": 1.2675005534898154,
-        "liquidity": 0.26225153639641796,
-        "cushion": 0.791257314859779,
+        "expected_value_pct": 1.2497358013944686,
+        "liquidity": 0.2980532851378008,
+        "cushion": 0.7861263966883759,
         "news_sentiment": null,
-        "research_confidence": 0.36166726107270475
+        "research_confidence": 0.3814286334039027
       }
     },
     {
@@ -661,8 +661,8 @@
       "eligibility": true,
       "sector": "Consumer Cyclical",
       "peer_group": "Restaurants",
-      "percentile": 83.87,
-      "score": 0.5382,
+      "percentile": 83.33,
+      "score": 0.5456,
       "structural_score": 65.2,
       "data_coverage": 0.89,
       "price": 37.064998626708984,
@@ -693,11 +693,11 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "iv_value": 0.28035976103679167,
-        "liquidity": 0.9388143685452797,
-        "trend_strength": 0.45004243547401834,
+        "iv_value": 0.29023568167892755,
+        "liquidity": 0.9705974571601717,
+        "trend_strength": 0.415747685932106,
         "news_sentiment": null,
-        "research_confidence": 0.38622367724326667
+        "research_confidence": 0.42037949611523223
       }
     },
     {
@@ -707,9 +707,9 @@
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Saas",
-      "percentile": 81.82,
-      "score": 0.2992,
-      "structural_score": 83.6,
+      "percentile": 81.25,
+      "score": 0.2971,
+      "structural_score": 84.2,
       "data_coverage": 0.88,
       "price": 264.1400146484375,
       "trend_20d": 0.0005,
@@ -740,77 +740,26 @@
         "probability_assigned": 0.1233,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
-        "research_confidence": 29.568
+        "research_confidence": 30.096
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -0.2996416725030367,
-        "probability_otm": 0.25319748621612553,
-        "liquidity": 0.9337865579711407,
+        "expected_value_pct": -0.33117428565916435,
+        "probability_otm": 0.2817810882955352,
+        "liquidity": 0.9074975195044485,
         "news_sentiment": null,
-        "research_confidence": 1.0132856958329726
+        "research_confidence": 1.0901985886259837
       }
     },
     {
       "rank": 16,
-      "ticker": "BMY",
-      "strategy": "sell_call",
-      "eligibility": true,
-      "sector": "Healthcare",
-      "peer_group": "Large Cap Pharma",
-      "percentile": 80.49,
-      "score": 0.4397,
-      "structural_score": 83.3,
-      "data_coverage": 0.89,
-      "price": 64.1500015258789,
-      "trend_20d": 0.005,
-      "expiration": "2026-09-18",
-      "days_to_expiration": 4,
-      "capital_required": 6415.000152587891,
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "call",
-          "strike": 65.0,
-          "bid": 0.37,
-          "ask": 0.41,
-          "mid": 0.39,
-          "spread_pct": 0.1026,
-          "implied_volatility": 0.25830819824218754,
-          "open_interest": 10463,
-          "delta": 0.318
-        }
-      ],
-      "metrics": {
-        "premium": 0.39,
-        "breakeven": 63.76,
-        "annualized_yield": 0.5548,
-        "expected_value_pct": 0.01,
-        "max_return_if_assigned_pct": 0.0193,
-        "probability_assigned": 0.318,
-        "downside_cushion_pct": 0.0061,
-        "suggested_position_pct": 0.02,
-        "news_sentiment": null,
-        "research_confidence": 29.637
-      },
-      "reason_codes": [],
-      "standardized_factors": {
-        "expected_value_pct": -0.136753021679678,
-        "liquidity": 1.3398094350778684,
-        "cushion": 0.1644897579379309,
-        "news_sentiment": null,
-        "research_confidence": 1.221940957684357
-      }
-    },
-    {
-      "rank": 17,
       "ticker": "META",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Communication Services",
       "peer_group": "Interactive Media Platform",
-      "percentile": 78.05,
-      "score": 0.4362,
+      "percentile": 80.0,
+      "score": 0.4292,
       "structural_score": 66.2,
       "data_coverage": 0.88,
       "price": 664.6199951171875,
@@ -846,68 +795,22 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": 1.2517422289676925,
-        "liquidity": -1.7890562652900328,
-        "cushion": 1.999452473802853,
+        "expected_value_pct": 1.2341583226148607,
+        "liquidity": -1.7758994989251426,
+        "cushion": 1.980574932654769,
         "news_sentiment": null,
-        "research_confidence": -0.12044209269444225
+        "research_confidence": -0.11755357341184397
       }
     },
     {
-      "rank": 18,
-      "ticker": "DVN",
-      "strategy": "buy_call",
-      "eligibility": true,
-      "sector": "Energy",
-      "peer_group": "Commodity producers",
-      "percentile": 77.42,
-      "score": 0.4441,
-      "structural_score": 83.4,
-      "data_coverage": 0.89,
-      "price": 50.26499938964844,
-      "trend_20d": 0.0963,
-      "expiration": "2026-09-18",
-      "days_to_expiration": 4,
-      "capital_required": 62.5,
-      "legs": [
-        {
-          "action": "buy",
-          "option_type": "call",
-          "strike": 50.0,
-          "bid": 0.58,
-          "ask": 0.67,
-          "mid": 0.625,
-          "spread_pct": 0.144,
-          "implied_volatility": 0.34278000976562495,
-          "open_interest": 8435
-        }
-      ],
-      "metrics": {
-        "implied_volatility": 0.34278000976562495,
-        "realized_volatility_20d": 0.2394,
-        "implied_realized_vol_ratio": 1.432,
-        "moneyness": -0.0053,
-        "news_sentiment": null,
-        "research_confidence": 29.726
-      },
-      "reason_codes": [],
-      "standardized_factors": {
-        "iv_value": -0.24718837656694667,
-        "liquidity": 1.0009438737153622,
-        "trend_strength": 0.28556260990294163,
-        "news_sentiment": null,
-        "research_confidence": 1.2031409015468475
-      }
-    },
-    {
-      "rank": 19,
+      "rank": 17,
       "ticker": "AAOI",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Networking Equipment",
-      "percentile": 75.61,
-      "score": 0.4248,
+      "percentile": 77.5,
+      "score": 0.423,
       "structural_score": 49.1,
       "data_coverage": 0.7,
       "price": 98.13999938964844,
@@ -943,68 +846,68 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": 1.3220716971128452,
-        "liquidity": 0.19754664244614975,
-        "cushion": 0.07131341760021857,
+        "expected_value_pct": 1.3036806754560015,
+        "liquidity": 0.23263409507752314,
+        "cushion": 0.07437388907868568,
         "news_sentiment": null,
-        "research_confidence": -1.419623816115469
+        "research_confidence": -1.4622040315326275
       }
     },
     {
-      "rank": 20,
-      "ticker": "AAPL",
+      "rank": 18,
+      "ticker": "DVN",
       "strategy": "buy_call",
       "eligibility": true,
-      "sector": "Technology",
-      "peer_group": "Technology",
-      "percentile": 70.97,
-      "score": 0.3942,
-      "structural_score": 69.1,
+      "sector": "Energy",
+      "peer_group": "Commodity producers",
+      "percentile": 76.67,
+      "score": 0.4536,
+      "structural_score": 83.4,
       "data_coverage": 0.89,
-      "price": 334.55499267578125,
-      "trend_20d": 0.0936,
-      "expiration": "2026-09-21",
-      "days_to_expiration": 7,
-      "capital_required": 1425.0,
+      "price": 50.26499938964844,
+      "trend_20d": 0.0963,
+      "expiration": "2026-09-18",
+      "days_to_expiration": 4,
+      "capital_required": 62.5,
       "legs": [
         {
           "action": "buy",
           "option_type": "call",
-          "strike": 320.0,
-          "bid": 14.0,
-          "ask": 14.5,
-          "mid": 14.25,
-          "spread_pct": 0.0351,
-          "implied_volatility": 0.29761444580078117,
-          "open_interest": 4925
+          "strike": 50.0,
+          "bid": 0.58,
+          "ask": 0.67,
+          "mid": 0.625,
+          "spread_pct": 0.144,
+          "implied_volatility": 0.34278000976562495,
+          "open_interest": 8435
         }
       ],
       "metrics": {
-        "implied_volatility": 0.29761444580078117,
-        "realized_volatility_20d": 0.2375,
-        "implied_realized_vol_ratio": 1.2529,
-        "moneyness": -0.0435,
+        "implied_volatility": 0.34278000976562495,
+        "realized_volatility_20d": 0.2394,
+        "implied_realized_vol_ratio": 1.432,
+        "moneyness": -0.0053,
         "news_sentiment": null,
-        "research_confidence": 16.999
+        "research_confidence": 29.726
       },
       "reason_codes": [],
       "standardized_factors": {
-        "iv_value": 0.05366475972155272,
-        "liquidity": 0.8033722055909206,
-        "trend_strength": 0.24129578632882523,
+        "iv_value": -0.23078237939937754,
+        "liquidity": 1.032759214834658,
+        "trend_strength": 0.2500254498447733,
         "news_sentiment": null,
-        "research_confidence": 0.5612773681654621
+        "research_confidence": 1.2467673846082066
       }
     },
     {
-      "rank": 21,
+      "rank": 19,
       "ticker": "OXY",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Energy",
       "peer_group": "Commodity producers",
-      "percentile": 70.73,
-      "score": 0.2973,
+      "percentile": 72.5,
+      "score": 0.3087,
       "structural_score": 70.7,
       "data_coverage": 0.87,
       "price": 62.05500030517578,
@@ -1040,22 +943,68 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -0.05712758084968154,
-        "liquidity": 1.3398094350778684,
-        "cushion": -0.17439134620704133,
+        "expected_value_pct": -0.059690630620996714,
+        "liquidity": 1.3783464946273876,
+        "cushion": -0.16853529097984643,
         "news_sentiment": null,
-        "research_confidence": 0.20710251351267284
+        "research_confidence": 0.22145443205149756
       }
     },
     {
-      "rank": 22,
+      "rank": 20,
+      "ticker": "AAPL",
+      "strategy": "buy_call",
+      "eligibility": true,
+      "sector": "Technology",
+      "peer_group": "Technology",
+      "percentile": 70.0,
+      "score": 0.402,
+      "structural_score": 69.1,
+      "data_coverage": 0.89,
+      "price": 334.55499267578125,
+      "trend_20d": 0.0936,
+      "expiration": "2026-09-21",
+      "days_to_expiration": 7,
+      "capital_required": 1425.0,
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "call",
+          "strike": 320.0,
+          "bid": 14.0,
+          "ask": 14.5,
+          "mid": 14.25,
+          "spread_pct": 0.0351,
+          "implied_volatility": 0.29761444580078117,
+          "open_interest": 4925
+        }
+      ],
+      "metrics": {
+        "implied_volatility": 0.29761444580078117,
+        "realized_volatility_20d": 0.2375,
+        "implied_realized_vol_ratio": 1.2529,
+        "moneyness": -0.0435,
+        "news_sentiment": null,
+        "research_confidence": 16.999
+      },
+      "reason_codes": [],
+      "standardized_factors": {
+        "iv_value": 0.06634674790710895,
+        "liquidity": 0.835084983828397,
+        "trend_strength": 0.20542425354780913,
+        "news_sentiment": null,
+        "research_confidence": 0.597462615078012
+      }
+    },
+    {
+      "rank": 21,
       "ticker": "MU",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Semiconductor",
-      "percentile": 68.29,
-      "score": 0.2573,
+      "percentile": 67.5,
+      "score": 0.2505,
       "structural_score": 61.7,
       "data_coverage": 0.85,
       "price": 925.1444702148438,
@@ -1091,22 +1040,22 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": 1.4370106144546801,
-        "liquidity": -1.7890562652900328,
-        "cushion": 0.9910840779023288,
+        "expected_value_pct": 1.417300530366969,
+        "liquidity": -1.7758994989251426,
+        "cushion": 0.9836795674624386,
         "news_sentiment": null,
-        "research_confidence": -0.4966863765630467
+        "research_confidence": -0.5069656468337637
       }
     },
     {
-      "rank": 23,
+      "rank": 22,
       "ticker": "NEM",
       "strategy": "buy_call",
       "eligibility": true,
       "sector": "Basic Materials",
       "peer_group": "Commodity producers",
-      "percentile": 64.52,
-      "score": 0.3455,
+      "percentile": 63.33,
+      "score": 0.3527,
       "structural_score": 86.9,
       "data_coverage": 0.89,
       "price": 123.47699737548828,
@@ -1137,22 +1086,22 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "iv_value": 0.4095849715840156,
-        "liquidity": 0.8039420131544562,
-        "trend_strength": -0.48999673991913617,
+        "iv_value": 0.4178613215827566,
+        "liquidity": 0.835655087188928,
+        "trend_strength": -0.5313921448341073,
         "news_sentiment": null,
-        "research_confidence": 1.2031409015468475
+        "research_confidence": 1.2656440063357284
       }
     },
     {
-      "rank": 24,
+      "rank": 23,
       "ticker": "TDC",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Saas",
-      "percentile": 58.54,
-      "score": 0.1625,
+      "percentile": 60.0,
+      "score": 0.1626,
       "structural_score": 75.6,
       "data_coverage": 0.89,
       "price": 28.690000534057617,
@@ -1188,73 +1137,22 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": 0.8073224443100632,
-        "liquidity": -1.6856671541316468,
-        "cushion": 1.0226319900875085,
+        "expected_value_pct": 0.7948387899435326,
+        "liquidity": -1.6713690453518455,
+        "cushion": 1.0148685332875862,
         "news_sentiment": null,
-        "research_confidence": 0.623842586691189
+        "research_confidence": 0.6527795655680049
       }
     },
     {
-      "rank": 25,
-      "ticker": "C",
-      "strategy": "sell_put",
-      "eligibility": true,
-      "sector": "Financial Services",
-      "peer_group": "Banks",
-      "percentile": 54.55,
-      "score": 0.1717,
-      "structural_score": 76.3,
-      "data_coverage": 0.65,
-      "price": 136.11000061035156,
-      "trend_20d": -0.0231,
-      "expiration": "2026-09-18",
-      "days_to_expiration": 4,
-      "capital_required": 13000.0,
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "put",
-          "strike": 130.0,
-          "bid": 0.28,
-          "ask": 0.34,
-          "mid": 0.31,
-          "spread_pct": 0.1935,
-          "implied_volatility": 0.34717449707031245,
-          "open_interest": 5906,
-          "delta": -0.0999
-        }
-      ],
-      "metrics": {
-        "premium": 0.31,
-        "collateral": 13000.0,
-        "effective_cost_basis": 129.69,
-        "annualized_yield": 0.2176,
-        "expected_value_pct": 0.0072,
-        "probability_otm": 0.8935,
-        "probability_assigned": 0.1065,
-        "suggested_position_pct": 0.02,
-        "news_sentiment": null,
-        "research_confidence": 17.095
-      },
-      "reason_codes": [],
-      "standardized_factors": {
-        "expected_value_pct": -0.6063538427038696,
-        "probability_otm": 0.4019930284070672,
-        "liquidity": 1.0827023832909302,
-        "news_sentiment": null,
-        "research_confidence": 0.006549303875022572
-      }
-    },
-    {
-      "rank": 26,
+      "rank": 24,
       "ticker": "TSM",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Semiconductor",
-      "percentile": 53.66,
-      "score": 0.0452,
+      "percentile": 55.0,
+      "score": 0.0698,
       "structural_score": 96.6,
       "data_coverage": 0.89,
       "price": 420.635009765625,
@@ -1290,32 +1188,83 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -0.6758880104132524,
-        "liquidity": 1.330749288979598,
-        "cushion": -0.7314464655317374,
+        "expected_value_pct": -0.6713500394405038,
+        "liquidity": 1.3783464946273876,
+        "cushion": -0.7192523393017706,
         "news_sentiment": null,
-        "research_confidence": 1.2297084689959572
+        "research_confidence": 1.3132715815413476
       }
     },
     {
-      "rank": 27,
-      "ticker": "UPS",
+      "rank": 25,
+      "ticker": "C",
       "strategy": "sell_put",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Banks",
+      "percentile": 53.12,
+      "score": 0.1715,
+      "structural_score": 77.8,
+      "data_coverage": 0.65,
+      "price": 136.11000061035156,
+      "trend_20d": -0.0231,
+      "expiration": "2026-09-18",
+      "days_to_expiration": 4,
+      "capital_required": 13000.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 130.0,
+          "bid": 0.28,
+          "ask": 0.34,
+          "mid": 0.31,
+          "spread_pct": 0.1935,
+          "implied_volatility": 0.34717449707031245,
+          "open_interest": 5906,
+          "delta": -0.0999
+        }
+      ],
+      "metrics": {
+        "premium": 0.31,
+        "collateral": 13000.0,
+        "effective_cost_basis": 129.69,
+        "annualized_yield": 0.2176,
+        "expected_value_pct": 0.0072,
+        "probability_otm": 0.8935,
+        "probability_assigned": 0.1065,
+        "suggested_position_pct": 0.02,
+        "news_sentiment": null,
+        "research_confidence": 18.07
+      },
+      "reason_codes": [],
+      "standardized_factors": {
+        "expected_value_pct": -0.6384950113319369,
+        "probability_otm": 0.4305293104291879,
+        "liquidity": 1.0551127336368415,
+        "news_sentiment": null,
+        "research_confidence": 0.10771463468218946
+      }
+    },
+    {
+      "rank": 26,
+      "ticker": "UPS",
+      "strategy": "buy_put",
       "eligibility": true,
       "sector": "Industrials",
       "peer_group": "Air Freight Logistics",
-      "percentile": 45.45,
-      "score": -0.0516,
-      "structural_score": 73.4,
+      "percentile": 46.67,
+      "score": -0.0779,
+      "structural_score": 70.4,
       "data_coverage": 0.89,
       "price": 101.96499633789062,
       "trend_20d": -0.0243,
       "expiration": "2026-09-18",
       "days_to_expiration": 4,
-      "capital_required": 10000.0,
+      "capital_required": 33.5,
       "legs": [
         {
-          "action": "sell",
+          "action": "buy",
           "option_type": "put",
           "strike": 100.0,
           "bid": 0.31,
@@ -1323,42 +1272,37 @@
           "mid": 0.335,
           "spread_pct": 0.1493,
           "implied_volatility": 0.256843369140625,
-          "open_interest": 5898,
-          "delta": -0.2305
+          "open_interest": 5898
         }
       ],
       "metrics": {
-        "premium": 0.335,
-        "collateral": 10000.0,
-        "effective_cost_basis": 99.665,
-        "annualized_yield": 0.3057,
-        "expected_value_pct": 0.0079,
-        "probability_otm": 0.7612,
-        "probability_assigned": 0.2388,
-        "suggested_position_pct": 0.02,
+        "implied_volatility": 0.256843369140625,
+        "realized_volatility_20d": 0.1867,
+        "implied_realized_vol_ratio": 1.3757,
+        "moneyness": -0.0193,
         "news_sentiment": null,
-        "research_confidence": 20.826
+        "research_confidence": -18.156
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -0.5370560218468038,
-        "probability_otm": -0.7703492024330205,
-        "liquidity": 1.1496096382230307,
+        "iv_value": -0.13730868949112593,
+        "liquidity": 0.7782100031187179,
+        "trend_strength": -0.9289296195845221,
         "news_sentiment": null,
-        "research_confidence": 0.30769044701581616
+        "research_confidence": -1.196071538519377
       }
     },
     {
-      "rank": 28,
+      "rank": 27,
       "ticker": "AMAT",
       "strategy": "sell_put",
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Semiconductor Capital Equipment",
-      "percentile": 39.39,
-      "score": -0.1342,
-      "structural_score": 71.1,
-      "data_coverage": 0.89,
+      "percentile": 37.5,
+      "score": -0.1302,
+      "structural_score": 72.2,
+      "data_coverage": 0.9,
       "price": 428.71990966796875,
       "trend_20d": -0.1547,
       "expiration": "2026-09-18",
@@ -1387,28 +1331,28 @@
         "probability_otm": 0.997,
         "probability_assigned": 0.003,
         "suggested_position_pct": 0.02,
-        "news_sentiment": null,
-        "research_confidence": 18.779
+        "news_sentiment": 0.0789,
+        "research_confidence": 19.98
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -1.303368559304236,
-        "probability_otm": 1.2809518645429587,
-        "liquidity": -0.15409606979997847,
-        "news_sentiment": null,
-        "research_confidence": 0.1424704202108829
+        "expected_value_pct": -1.3368926926823872,
+        "probability_otm": 1.309208619491431,
+        "liquidity": -0.17088368480670685,
+        "news_sentiment": 0,
+        "research_confidence": 0.2637552427008698
       }
     },
     {
-      "rank": 29,
+      "rank": 28,
       "ticker": "BSX",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Healthcare",
       "peer_group": "Medical device companies",
-      "percentile": 29.27,
-      "score": -0.3789,
-      "structural_score": 74.0,
+      "percentile": 30.0,
+      "score": -0.3727,
+      "structural_score": 73.9,
       "data_coverage": 0.89,
       "price": 44.599998474121094,
       "trend_20d": -0.1395,
@@ -1439,28 +1383,28 @@
         "downside_cushion_pct": 0.0045,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
-        "research_confidence": 21.36
+        "research_confidence": 21.271
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -0.08842220980255645,
-        "liquidity": -1.4565241044120871,
-        "cushion": -0.14825242137034117,
+        "expected_value_pct": -0.09062611603664045,
+        "liquidity": -1.4396964189796113,
+        "cushion": -0.1426937700369512,
         "news_sentiment": null,
-        "research_confidence": 0.499562405705596
+        "research_confidence": 0.5161104709061257
       }
     },
     {
-      "rank": 30,
+      "rank": 29,
       "ticker": "WDC",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Technology",
-      "percentile": 26.83,
-      "score": -0.4286,
-      "structural_score": 70.7,
-      "data_coverage": 0.88,
+      "percentile": 27.5,
+      "score": -0.4158,
+      "structural_score": 70.2,
+      "data_coverage": 0.89,
       "price": 430.29998779296875,
       "trend_20d": -0.1543,
       "expiration": "2026-09-18",
@@ -1490,26 +1434,26 @@
         "downside_cushion_pct": 0.001,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
-        "research_confidence": 18.216
+        "research_confidence": 17.978
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -0.7905328383825775,
-        "liquidity": 0.0880493819447823,
-        "cushion": -0.8223835199363101,
+        "expected_value_pct": -0.7846791800085127,
+        "liquidity": 0.1219280625272759,
+        "cushion": -0.8091547285760813,
         "news_sentiment": null,
-        "research_confidence": 0.22516852296774129
+        "research_confidence": 0.21865420605379854
       }
     },
     {
-      "rank": 31,
+      "rank": 30,
       "ticker": "AVGO",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Semiconductor",
-      "percentile": 24.39,
-      "score": -0.4617,
+      "percentile": 25.0,
+      "score": -0.452,
       "structural_score": 63.6,
       "data_coverage": 0.89,
       "price": 346.8800048828125,
@@ -1545,22 +1489,22 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -0.4495755630763279,
-        "liquidity": -0.46926166804821157,
-        "cushion": -0.6798209226128886,
+        "expected_value_pct": -0.44763479985377885,
+        "liquidity": -0.44153530595002366,
+        "cushion": -0.6682141823438891,
         "news_sentiment": null,
-        "research_confidence": -0.3082587707007603
+        "research_confidence": -0.3119434555746766
       }
     },
     {
-      "rank": 32,
+      "rank": 31,
       "ticker": "INTU",
       "strategy": "sell_put",
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Saas",
-      "percentile": 24.24,
-      "score": -0.3442,
+      "percentile": 25.0,
+      "score": -0.3469,
       "structural_score": 79.1,
       "data_coverage": 0.88,
       "price": 337.8399963378906,
@@ -1596,22 +1540,22 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -1.2246751554571154,
-        "probability_otm": 1.2713774288370152,
-        "liquidity": -1.3092136536828445,
+        "expected_value_pct": -1.2580431512373182,
+        "probability_otm": 1.2996372286538982,
+        "liquidity": -1.3159126239862304,
         "news_sentiment": null,
-        "research_confidence": 0.69366121798855
+        "research_confidence": 0.7235440081087912
       }
     },
     {
-      "rank": 33,
+      "rank": 32,
       "ticker": "FISV",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": null,
       "peer_group": "Unclassified",
-      "percentile": 19.51,
-      "score": -0.5517,
+      "percentile": 20.0,
+      "score": -0.5464,
       "structural_score": 66.0,
       "data_coverage": 0.76,
       "price": 52.72999954223633,
@@ -1647,23 +1591,23 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -0.15640230361213273,
-        "liquidity": -1.453080598898782,
-        "cushion": -0.4697049543555062,
+        "expected_value_pct": -0.15782605644069644,
+        "liquidity": -1.4362148996091961,
+        "cushion": -0.4604888750452389,
         "news_sentiment": null,
-        "research_confidence": -0.30337134785301234
+        "research_confidence": -0.30688498280464016
       }
     },
     {
-      "rank": 34,
+      "rank": 33,
       "ticker": "VTRS",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Healthcare",
       "peer_group": "Other Pre Profit",
-      "percentile": 17.07,
-      "score": -0.5719,
-      "structural_score": 50.7,
+      "percentile": 17.5,
+      "score": -0.5469,
+      "structural_score": 53.7,
       "data_coverage": 0.82,
       "price": 16.725000381469727,
       "trend_20d": 0.0305,
@@ -1694,26 +1638,26 @@
         "downside_cushion_pct": 0.0045,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
-        "research_confidence": 0.574
+        "research_confidence": 3.034
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -0.35885783013044115,
-        "liquidity": -1.0919378533020994,
-        "cushion": -0.14825247150078216,
+        "expected_value_pct": -0.35795816209227155,
+        "liquidity": -1.0710853943937415,
+        "cushion": -0.1426938195970172,
         "news_sentiment": null,
-        "research_confidence": -1.314544224888886
+        "research_confidence": -1.1312353845788081
       }
     },
     {
-      "rank": 35,
+      "rank": 34,
       "ticker": "AMKR",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Semiconductor Capital Equipment",
-      "percentile": 14.63,
-      "score": -0.6204,
+      "percentile": 12.5,
+      "score": -0.6199,
       "structural_score": 52.5,
       "data_coverage": 0.89,
       "price": 48.14500045776367,
@@ -1749,23 +1693,23 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": 0.098028543115099,
-        "liquidity": -1.7270564451087445,
-        "cushion": -0.5183959480587913,
+        "expected_value_pct": 0.09368489005662864,
+        "liquidity": -1.7132152447285414,
+        "cushion": -0.508625871550435,
         "news_sentiment": null,
-        "research_confidence": -1.1704525262883139
+        "research_confidence": -1.2043122501316577
       }
     },
     {
-      "rank": 36,
+      "rank": 35,
       "ticker": "VRT",
       "strategy": "sell_put",
       "eligibility": true,
       "sector": "Industrials",
       "peer_group": "Electrical Equipment",
-      "percentile": 12.12,
-      "score": -0.4599,
-      "structural_score": 63.4,
+      "percentile": 12.5,
+      "score": -0.4427,
+      "structural_score": 66.3,
       "data_coverage": 0.89,
       "price": 238.21499633789062,
       "trend_20d": -0.1893,
@@ -1796,26 +1740,26 @@
         "probability_assigned": 0.0073,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
-        "research_confidence": 11.926
+        "research_confidence": 14.507
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -1.2171889496067883,
-        "probability_otm": 1.2809518645429587,
-        "liquidity": -1.3496220087532003,
+        "expected_value_pct": -1.250542091814238,
+        "probability_otm": 1.309208619491431,
+        "liquidity": -1.355968057810265,
         "news_sentiment": null,
-        "research_confidence": -0.41065749561432613
+        "research_confidence": -0.18337054142805004
       }
     },
     {
-      "rank": 37,
+      "rank": 36,
       "ticker": "CEG",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Utilities",
       "peer_group": "Independent Power Producer",
-      "percentile": 9.76,
-      "score": -0.6735,
+      "percentile": 10.0,
+      "score": -0.662,
       "structural_score": 53.7,
       "data_coverage": 0.85,
       "price": 266.1499938964844,
@@ -1851,22 +1795,22 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -1.0327285278979472,
-        "liquidity": 0.06650502866522161,
-        "cushion": -0.8985024928010114,
+        "expected_value_pct": -1.0240953824506955,
+        "liquidity": 0.10014587487691648,
+        "cushion": -0.8844076337251507,
         "news_sentiment": null,
-        "research_confidence": -1.0901591509324529
+        "research_confidence": -1.1212087689096286
       }
     },
     {
-      "rank": 38,
+      "rank": 37,
       "ticker": "SCHW",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Financial Services",
       "peer_group": "Capital Markets",
-      "percentile": 7.32,
-      "score": -0.7233,
+      "percentile": 5.0,
+      "score": -0.7078,
       "structural_score": 74.9,
       "data_coverage": 0.78,
       "price": 107.86000061035156,
@@ -1902,22 +1846,22 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -1.135088039912948,
-        "liquidity": -0.5032128045053106,
-        "cushion": -0.9485490861066515,
+        "expected_value_pct": -1.125280195853047,
+        "liquidity": -0.4758612388594644,
+        "cushion": -0.9338848060689969,
         "news_sentiment": null,
-        "research_confidence": 0.33042266501031564
+        "research_confidence": 0.3490905396240266
       }
     },
     {
-      "rank": 39,
+      "rank": 38,
       "ticker": "DECK",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Consumer Cyclical",
       "peer_group": "Retail Apparel",
-      "percentile": 2.44,
-      "score": -0.8854,
+      "percentile": 2.5,
+      "score": -0.8722,
       "structural_score": 80.3,
       "data_coverage": 0.89,
       "price": 79.44999694824219,
@@ -1953,22 +1897,22 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -0.9819384322203989,
-        "liquidity": -1.7890562652900328,
-        "cushion": -0.7806495760690256,
+        "expected_value_pct": -0.9738881642581435,
+        "liquidity": -1.7758994989251426,
+        "cushion": -0.7678956258695374,
         "news_sentiment": null,
-        "research_confidence": 0.9889156183363695
+        "research_confidence": 1.0306294155155558
       }
     },
     {
-      "rank": 40,
+      "rank": 39,
       "ticker": "AMZN",
       "strategy": "sell_call",
       "eligibility": true,
       "sector": "Consumer Cyclical",
       "peer_group": "Ecommerce Retail",
       "percentile": 0.0,
-      "score": -0.9171,
+      "score": -0.9059,
       "structural_score": 67.2,
       "data_coverage": 0.87,
       "price": 254.75999450683594,
@@ -2004,18 +1948,18 @@
       },
       "reason_codes": [],
       "standardized_factors": {
-        "expected_value_pct": -1.0094045130460996,
-        "liquidity": -1.3317377021087846,
-        "cushion": -0.9273692199043351,
+        "expected_value_pct": -1.0010390387448753,
+        "liquidity": -1.3135324633521994,
+        "cushion": -0.9129459205006658,
         "news_sentiment": null,
-        "research_confidence": -0.05865110383362759
+        "research_confidence": -0.053600024819239186
       }
     }
   ],
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "006185bb3993b851e9d802d5c055d2f9ff437aea",
+    "git_commit_sha": "10a3ea6600b70ea79384bc91b5b99f212c2a7266",
     "config_hash": "93b5358baa5b0d3269738d19deb6465cf3c2c839b12f2bdc0b3a9fec96a48da4",
-    "generated_at": "2026-09-14T21:19:24.388687+00:00"
+    "generated_at": "2026-09-14T22:57:30.218409+00:00"
   }
 }
