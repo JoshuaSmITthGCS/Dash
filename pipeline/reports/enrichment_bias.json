@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-12T22:22:23.592968+00:00",
+  "generated_at": "2026-09-14T18:41:36.540482+00:00",
   "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
   "coverage_by_collection": {
     "research": {
@@ -15,7 +15,7 @@
           "total": 40
         },
         "financial_health": {
-          "scored": 33,
+          "scored": 32,
           "total": 40
         },
         "growth": {
@@ -45,7 +45,7 @@
           "total": 854
         },
         "financial_health": {
-          "scored": 814,
+          "scored": 815,
           "total": 854
         },
         "growth": {
@@ -69,30 +69,35 @@
     "score": {
       "enriched": {
         "n": 890,
-        "mean": 63.81,
-        "median": 64.95,
-        "stdev": 11.91
+        "mean": 63.74,
+        "median": 65.0,
+        "stdev": 11.88
       },
       "non_enriched": {
         "n": 4,
-        "mean": 66.92,
-        "median": 70.85,
-        "stdev": 8.54
+        "mean": 66.9,
+        "median": 70.8,
+        "stdev": 8.61
       }
     },
     "sector_distribution": {
       "enriched": {
-        "Technology": 155,
+        "Technology": 154,
         "Industrials": 146,
-        "Financial Services": 123,
-        "Consumer Cyclical": 113,
-        "Healthcare": 101,
+        "Financial Services": 122,
+        "Consumer Cyclical": 112,
+        "Healthcare": 100,
         "Consumer Defensive": 56,
         "Real Estate": 52,
         "Energy": 41,
-        "Basic Materials": 39,
+        "Basic Materials": 38,
         "Utilities": 37,
         "Communication Services": 26,
+        "TECHNOLOGY": 1,
+        "HEALTHCARE": 1,
+        "BASIC MATERIALS": 1,
+        "CONSUMER CYCLICAL": 1,
+        "FINANCIAL SERVICES": 1,
         "Unknown": 1
       },
       "non_enriched": {

@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 123,
+  "refreshes_observed": 124,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -19589,6 +19589,30 @@
           ],
           "score_delta": 1.3,
           "confidence_delta": 0.04
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-12T22:12:38.823700+00:00",
+      "current_refresh": "advisor-2026-09-14T18:32:22.052629+00:00",
+      "shared_tickers": 894,
+      "rank_turnover": {
+        "top_40": 0.05,
+        "top_100": 0.05
+      },
+      "tickers_with_availability_driven_change": 1,
+      "tickers_with_availability_driven_change_pct": 0.001,
+      "mean_abs_score_delta": 0.41,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "NEM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -1.1,
+          "confidence_delta": 0.02
         }
       ]
     }
