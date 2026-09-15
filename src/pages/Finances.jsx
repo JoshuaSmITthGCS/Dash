@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useData } from '../lib/useData'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances'
+import { usePortfolioQuotes } from '../lib/usePortfolioQuotes'
+import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import { Loading } from '../components/Bits'
 import { summarizeBudget, splitAmount } from '../lib/financeSplit'
 import { ACCOUNT_TYPES, getAnnualLimit, accountTypeLabel } from '../lib/retirementLimits'
@@ -13,6 +15,7 @@ import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
 import ProjectionPanel from '../components/ProjectionPanel.jsx'
 import Icon from '../components/Icons.jsx'
 import { fidelityProjectionBaseline } from '../lib/referenceCashFlows.js'
+import { buildHoldingsModel, buildPriceModel } from './portfolio/portfolioModels.js'
 
 const money = (value, digits = 0) =>
   value == null ? '–' : `$${Number(value).toLocaleString('en-US', { maximumFractionDigits: digits })}`
@@ -23,19 +26,9 @@ const TABS = [
   { key: 'retirement', label: 'Retirement' },
 ]
 
-/** Sums held-position value against live research prices, falling back to cost basis when a price isn't available. */
-function currentPortfolioValue(positions, data) {
-  const priceData = Object.fromEntries(
-    [...(data?.research || []), ...(data?.portfolio_coverage || [])]
-      .filter((row) => row.ticker && row.price != null)
-      .map((row) => [String(row.ticker).trim().toUpperCase(), row])
-  )
-  return positions.reduce((sum, pos) => {
-    const ticker = String(pos.ticker || '').trim().toUpperCase()
-    const currentPrice = priceData[ticker]?.price ?? pos.snapshotPrice ?? pos.costBasis ?? 0
-    return sum + (pos.shares || 0) * currentPrice
-  }, 0)
-}
+// Sector/asset-class breakdown isn't needed here, only the priced total -- an empty ETF
+// list keeps buildHoldingsModel's allocation work from running for nothing.
+const NO_ETF_DATA = { etfs: [] }
 
 export default function Finances() {
   const { data } = useData('report.json')
@@ -43,6 +36,8 @@ export default function Finances() {
   const { positions } = useFirebasePortfolio()
   const { preferences } = usePreferences()
   const finances = useFirebaseFinances()
+  const tracking = usePortfolioTracking()
+  const portfolioQuotes = usePortfolioQuotes(positions.map((position) => position.ticker))
   const [tab, setTab] = useState('budget')
   const [budgetForm, setBudgetForm] = useState({ name: '', amount: '', type: 'expense' })
   const [poolForm, setPoolForm] = useState({ name: '', percent: '' })
@@ -58,7 +53,17 @@ export default function Finances() {
   const maximumRetirementAge = Math.max(projectionConfig.lever_ranges.retirement_age.maximum, minimumRetirementAge)
   const retirementAge = Math.min(maximumRetirementAge, Math.max(minimumRetirementAge, finances.settings.retireAge))
 
-  const portfolioValue = useMemo(() => currentPortfolioValue(positions, data), [positions, data])
+  // Same price resolution the Portfolio page uses: a live quote refresh outranks the account's
+  // last recorded observation, which outranks published research, which outranks the seed price
+  // stamped on a position when it was added. Recomputing prices from published research alone
+  // (as this used to) ignored live quotes entirely and could leave "current savings" well behind
+  // what the Portfolio page shows for the same holdings.
+  const { priceData } = useMemo(() => buildPriceModel({
+    data, positions, quotes: portfolioQuotes, recordedSnapshots: tracking.snapshots,
+  }), [data, positions, portfolioQuotes, tracking.snapshots])
+  const portfolioValue = useMemo(() => buildHoldingsModel({
+    data, positions, priceData, etfData: NO_ETF_DATA,
+  }).portfolioStats.totalValue, [data, positions, priceData])
   const budgetSummary = useMemo(() => summarizeBudget(finances.budgetItems), [finances.budgetItems])
   const totalPoolBalance = finances.pools.reduce((sum, pool) => sum + (pool.balance || 0), 0)
   const accounts = finances.accounts || []

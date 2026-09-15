@@ -117,27 +117,27 @@ export default function Planning() {
   const wholeHistoryAnnualReturnPct = currentHoldingsPeriod
     ? annualizeReturnPct(currentHoldingsPeriod.returnPct, currentHoldingsPeriod.startDate, currentHoldingsPeriod.endDate)
     : null
-  // The raw calibrated/whole-history figure is only as reliable as the sample behind it --
-  // early on that's a handful of weeks of daily observations, so a short hot streak can
-  // annualize to a triple-digit number the way a 40-observation sample can print 43%+ with
-  // an information ratio that isn't yet statistically meaningful (see the live risk profile's
-  // own sample-size warning). Capping the live-tracked target at a conservative ceiling keeps
-  // the plan from compounding that noise for decades; it never raises a genuinely low return,
-  // only clips an unreliable high one.
-  const liveStrategyReturnCapPct = projectionConfig.annual_return_target.live_tracking_maximum_pct
-  const rawLiveStrategyAnnualReturnPct = calibration.riskProfile?.available
+  const liveStrategyAnnualReturnPct = calibration.riskProfile?.available
     ? calibration.riskProfile.annualReturn * 100
     : wholeHistoryAnnualReturnPct
-  const liveStrategyAnnualReturnPct = rawLiveStrategyAnnualReturnPct == null
-    ? null
-    : Math.min(rawLiveStrategyAnnualReturnPct, liveStrategyReturnCapPct)
   const liveStrategyReturnWindow = calibration.riskProfile?.available
     ? { startDate: calibration.riskProfile.startDate, endDate: calibration.riskProfile.endDate }
     : currentHoldingsPeriod
   const liveTargetActive = useLiveStrategyReturn && liveStrategyAnnualReturnPct != null
+  // The manual lever shouldn't let the plan assume a return far beyond what the account is
+  // actually doing, so its ceiling is your current-holdings return plus a fixed headroom --
+  // not a flat number. returnTargetRange's own ceiling still applies underneath it. This never
+  // clips the live-tracked figure itself: current + headroom is always >= current.
+  const annualReturnHeadroomPct = projectionConfig.annual_return_target.headroom_above_current_pct
+  const planningMaximumPct = liveStrategyAnnualReturnPct == null
+    ? returnTargetRange.maximumPct
+    : Math.min(returnTargetRange.maximumPct, Math.max(returnTargetRange.minimumPct, liveStrategyAnnualReturnPct + annualReturnHeadroomPct))
+  const planningTargetRange = { ...returnTargetRange, maximumPct: planningMaximumPct }
   const effectiveAnnualReturnTargetPct = liveTargetActive
-    ? normalizeAnnualReturnTarget(liveStrategyAnnualReturnPct, source)
-    : committed?.annualReturnTargetPct
+    ? Math.min(liveStrategyAnnualReturnPct, planningMaximumPct)
+    : committed
+      ? Math.min(Math.max(committed.annualReturnTargetPct, planningTargetRange.minimumPct), planningMaximumPct)
+      : null
 
   useEffect(() => {
     if (finances.loading) return
@@ -243,8 +243,8 @@ export default function Planning() {
     <section className="planning-baseline" aria-labelledby="planning-baseline-title">
       <div><span className="eyebrow">Dotted median target</span><h2 id="planning-baseline-title">{formatAnnualReturnTarget(effectiveAnnualReturnTargetPct)} annual</h2></div>
       <p>{liveTargetActive
-        ? `Your current-holdings return, annualized from ${liveStrategyReturnWindow.startDate} to ${liveStrategyReturnWindow.endDate}${calibration.riskProfile?.available ? ' -- the same window and calculation behind your Sharpe, Sortino, and Calmar ratios' : ''}${rawLiveStrategyAnnualReturnPct > liveStrategyReturnCapPct ? `. The raw figure annualizes to ${formatAnnualReturnTarget(rawLiveStrategyAnnualReturnPct)} but is capped here at ${formatAnnualReturnTarget(liveStrategyReturnCapPct)} -- too short a track record to plan decades on` : ''}. Cash transfers are not part of this series. This is a planning assumption, not a forecast.`
-        : returnTargetRange.evidence ? `Your ${returnTargetRange.evidence.lowerPct.toFixed(2)}% year-to-date return and ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one-year return set the evidence range. Move the slider to choose the annual target. This is a planning assumption, not a forecast.` : `Move the slider to choose the annual target. Historical monthly volatility and return ordering determine the shaded estimates around it. This is a planning assumption, not a forecast.`}</p>
+        ? `Your current-holdings return, annualized from ${liveStrategyReturnWindow.startDate} to ${liveStrategyReturnWindow.endDate}${calibration.riskProfile?.available ? ' -- the same window and calculation behind your Sharpe, Sortino, and Calmar ratios' : ''}. Cash transfers are not part of this series. This is a planning assumption, not a forecast.`
+        : returnTargetRange.evidence ? `Your ${returnTargetRange.evidence.lowerPct.toFixed(2)}% year-to-date return and ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one-year return set the evidence range. Move the slider to choose the annual target.${planningMaximumPct < returnTargetRange.maximumPct ? ` Capped at ${formatAnnualReturnTarget(planningMaximumPct)}, ${annualReturnHeadroomPct} points above your current-holdings return.` : ''} This is a planning assumption, not a forecast.` : `Move the slider to choose the annual target. Historical monthly volatility and return ordering determine the shaded estimates around it.${planningMaximumPct < returnTargetRange.maximumPct ? ` Capped at ${formatAnnualReturnTarget(planningMaximumPct)}, ${annualReturnHeadroomPct} points above your current-holdings return.` : ''} This is a planning assumption, not a forecast.`}</p>
       <label className="planning-inline-note">
         <input type="checkbox" checked={useLiveStrategyReturn} disabled={liveStrategyAnnualReturnPct == null} onChange={(e) => setUseLiveStrategyReturn(e.target.checked)} />
         Track my current-holdings return{liveStrategyAnnualReturnPct == null ? ' -- unavailable until there are at least two dated market values' : ''}
@@ -286,7 +286,7 @@ export default function Planning() {
     </section>
 
     <section className="planning-levers"><header><span className="eyebrow">Live levers</span><h2>Change the plan, then release to resimulate</h2></header>
-      <label><span>Annual return target <strong>{formatAnnualReturnTarget(liveTargetActive ? effectiveAnnualReturnTargetPct : draft.annualReturnTargetPct)}</strong></span><input type="range" disabled={liveTargetActive} min={returnTargetRange.minimumPct} max={returnTargetRange.maximumPct} step={returnTargetRange.stepPct} value={liveTargetActive ? effectiveAnnualReturnTargetPct : draft.annualReturnTargetPct} onChange={(event) => setDraft({ ...draft, annualReturnTargetPct: Number(event.target.value) })} onPointerUp={() => commitLever('annualReturnTargetPct')} onKeyUp={() => commitLever('annualReturnTargetPct')} /><small>{liveTargetActive ? 'Following your current-holdings return -- turn off tracking above to set a custom target. ' : `Dotted median target. ${returnTargetRange.evidence ? `${returnTargetRange.evidence.lowerPct.toFixed(2)}% year to date to ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one year. ` : ''}${delta('annualReturnTargetPct')}`}</small></label>
+      <label><span>Annual return target <strong>{formatAnnualReturnTarget(liveTargetActive ? effectiveAnnualReturnTargetPct : Math.min(draft.annualReturnTargetPct, planningMaximumPct))}</strong></span><input type="range" disabled={liveTargetActive} min={planningTargetRange.minimumPct} max={planningMaximumPct} step={planningTargetRange.stepPct} value={liveTargetActive ? effectiveAnnualReturnTargetPct : Math.min(draft.annualReturnTargetPct, planningMaximumPct)} onChange={(event) => setDraft({ ...draft, annualReturnTargetPct: Number(event.target.value) })} onPointerUp={() => commitLever('annualReturnTargetPct')} onKeyUp={() => commitLever('annualReturnTargetPct')} /><small>{liveTargetActive ? 'Following your current-holdings return -- turn off tracking above to set a custom target. ' : `Dotted median target. ${returnTargetRange.evidence ? `${returnTargetRange.evidence.lowerPct.toFixed(2)}% year to date to ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one year. ` : ''}${planningMaximumPct < returnTargetRange.maximumPct ? `Capped ${annualReturnHeadroomPct} points above your current-holdings return. ` : ''}${delta('annualReturnTargetPct')}`}</small></label>
       <label><span>Monthly contribution <strong>{money(draft.monthlyContribution)}</strong></span><input type="range" min={projectionConfig.lever_ranges.monthly_contribution.minimum} max={projectionConfig.lever_ranges.monthly_contribution.maximum} step={projectionConfig.lever_ranges.monthly_contribution.step} value={draft.monthlyContribution} onChange={(event) => setDraft({ ...draft, monthlyContribution: Number(event.target.value) })} onPointerUp={() => commitLever('monthlyContribution')} onKeyUp={() => commitLever('monthlyContribution')} /><small>{delta('monthlyContribution')}</small></label>
       <label><span>Target retirement age <strong>{draft.retirementAge}</strong></span><input type="range" min={minimumRetirementAge} max={maximumRetirementAge} step={projectionConfig.lever_ranges.retirement_age.step} value={draft.retirementAge} onChange={(event) => setDraft({ ...draft, retirementAge: Number(event.target.value) })} onPointerUp={() => commitLever('retirementAge')} onKeyUp={() => commitLever('retirementAge')} /><small>Available from age {minimumRetirementAge}. {delta('retirementAge')}</small></label>
       <label><span>Annual retirement withdrawal <strong>{money(draft.annualWithdrawal)}</strong></span><input type="range" min={projectionConfig.lever_ranges.annual_withdrawal.minimum} max={projectionConfig.lever_ranges.annual_withdrawal.maximum} step={projectionConfig.lever_ranges.annual_withdrawal.step} value={draft.annualWithdrawal} onChange={(event) => setDraft({ ...draft, annualWithdrawal: Number(event.target.value) })} onPointerUp={() => commitLever('annualWithdrawal')} onKeyUp={() => commitLever('annualWithdrawal')} /><small>In today's dollars. {delta('annualWithdrawal')}</small></label>

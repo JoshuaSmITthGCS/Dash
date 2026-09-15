@@ -3,11 +3,15 @@ import Finances from './Finances'
 import { useData } from '../lib/useData'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances'
+import { usePortfolioQuotes } from '../lib/usePortfolioQuotes'
+import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 
 vi.mock('../lib/useData', () => ({ useData: vi.fn() }))
 vi.mock('../lib/useFirebasePortfolio', () => ({ useFirebasePortfolio: vi.fn() }))
 vi.mock('../lib/useFirebaseFinances', () => ({ useFirebaseFinances: vi.fn() }))
+vi.mock('../lib/usePortfolioQuotes', () => ({ usePortfolioQuotes: vi.fn() }))
+vi.mock('../lib/usePortfolioTracking.js', () => ({ usePortfolioTracking: vi.fn() }))
 vi.mock('../lib/PreferencesContext.jsx', () => ({ usePreferences: vi.fn() }))
 
 describe('Finances page', () => {
@@ -26,6 +30,8 @@ describe('Finances page', () => {
       : { data: { research: [], portfolio_coverage: [] } })
     usePreferences.mockReturnValue({ preferences: { defaultBenchmark: 'SPY' } })
     useFirebasePortfolio.mockReturnValue({ positions: [{ ticker: 'AAPL', shares: 10, costBasis: 100 }] })
+    usePortfolioQuotes.mockReturnValue({ quotes: {}, fetchedAt: null, refreshing: false, message: '', error: '', requestRefresh: vi.fn() })
+    usePortfolioTracking.mockReturnValue({ snapshots: [], activities: [] })
     useFirebaseFinances.mockReturnValue({
       settings: {
         currentAge: 30, retireAge: 65, retirementEndAge: 95, inflationPct: 2.5,
