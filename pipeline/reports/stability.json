@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 126,
+  "refreshes_observed": 127,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -19708,6 +19708,121 @@
             "price_to_book"
           ],
           "score_delta": -0.5,
+          "confidence_delta": 0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-14T22:56:47.853163+00:00",
+      "current_refresh": "advisor-2026-09-15T16:47:53.127163+00:00",
+      "shared_tickers": 894,
+      "rank_turnover": {
+        "top_40": 0.25,
+        "top_100": 0.25
+      },
+      "tickers_with_availability_driven_change": 11,
+      "tickers_with_availability_driven_change_pct": 0.012,
+      "mean_abs_score_delta": 0.96,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "AZO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -2.2,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "DCI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -1.7,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "ITT",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -0.7,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "VNO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -0.7,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "ZTS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -0.7,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "WEN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -0.6,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "OZK",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth"
+          ],
+          "score_delta": 0.4,
+          "confidence_delta": 0.07
+        },
+        {
+          "ticker": "AXON",
+          "metrics_with_value_change": [
+            "price_to_book"
+          ],
+          "metrics_with_availability_change": [
+            "ev_to_fcf"
+          ],
+          "score_delta": -0.3,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "MSM",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 0.3,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "W",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 0.1,
           "confidence_delta": 0.01
         }
       ]
