@@ -95,6 +95,24 @@ def to_result(rank, row):
     }
 
 
+def track_record_for(row, seen):
+    """This row's current top-10 streak: when it entered (never reset by rank moving around
+    inside the top 10), and its plain price return since. Dropped entirely - not just left
+    unrenewed - the moment a ticker falls out of the top 10, unlike swing's permanent record;
+    see momentum_pit_store.update_first_seen.
+    """
+    if not seen or not row.get("price"):
+        return {"date_predicted": None, "price_at_prediction": None,
+                "upside_since_prediction_pct": None}
+    entry_price = seen.get("price_at_prediction")
+    return {
+        "date_predicted": seen.get("date_predicted"),
+        "price_at_prediction": entry_price,
+        "upside_since_prediction_pct": (round((row["price"] / entry_price - 1) * 100, 2)
+                                        if entry_price else None),
+    }
+
+
 def run():
     payload = load_json("advisor.json") or {}
     universe = [*payload.get("research", []), *payload.get("portfolio_coverage", [])]
@@ -107,7 +125,8 @@ def run():
         yf = None
 
     rows = build_rows(universe, yf)
-    generated_at = datetime.now(timezone.utc).isoformat()
+    generated_dt = datetime.now(timezone.utc)
+    generated_at = generated_dt.isoformat()
     if not rows:
         result = {
             "schema_version": "1.0.0", "model_version": "momentum-v2.0.0",
@@ -120,6 +139,16 @@ def run():
     scored = momentum_scores(rows, current_members=previous_members(load_json("screens/momentum.json")),
                              config={"minimum_history_sessions": MINIMUM_HISTORY_SESSIONS})
     results = [to_result(rank + 1, row) for rank, row in enumerate(scored)]
+    # Current top-10 membership streak: entry dropped the instant a ticker falls out of the
+    # top 10, so this is "how has this name done since it entered the CURRENT top 10", not an
+    # all-time first-sighting record. See momentum_pit_store.update_first_seen.
+    try:
+        first_seen = momentum_pit_store.update_first_seen(results, recorded_at=generated_dt)
+    except Exception as exc:  # noqa: BLE001
+        LOG.warn(f"momentum_pit_store first-seen update failed ({type(exc).__name__}): {exc}")
+        first_seen = {}
+    for row in results:
+        row["track_record"] = track_record_for(row, first_seen.get(row["ticker"]))
     result = {
         "schema_version": "1.0.0", "model_version": "momentum-v2.0.0",
         "config_version": "screens-v2.0.0", "generated_at": generated_at,

@@ -69,6 +69,7 @@ def test_run_publishes_scored_results(monkeypatch):
     recorded = {}
     monkeypatch.setattr(module.momentum_pit_store, "append_snapshot",
                         lambda results, **kwargs: recorded.__setitem__("results", results))
+    monkeypatch.setattr(module.momentum_pit_store, "update_first_seen", lambda *a, **k: {})
 
     result = module.run()
 
@@ -78,11 +79,45 @@ def test_run_publishes_scored_results(monkeypatch):
     assert len(result["results"]) == 6
     ranks = [row["rank"] for row in result["results"]]
     assert ranks == sorted(ranks)
+    assert all("track_record" in row for row in result["results"])
     # Model Risk Register #8 / docs/AUDIT-ROADMAP.md item 27: this screen's calendar
     # month-end momentum_12_1 and the champion's fixed-trading-day-offset momentum_12_1
     # can diverge, and that divergence must be disclosed, not silent.
     assert "calendar month-end" in result["coverage_note"]
     assert "risk_metrics.py" in result["coverage_note"]
+
+
+def test_run_wires_a_real_track_record_and_evicts_on_the_next_run(monkeypatch, tmp_path):
+    tickers = ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF"]
+    universe = [
+        {"ticker": ticker, "sector": "Technology", "market_cap": (index + 1) * 1e9,
+         "score": 20.0 + index * 10, "confidence": 0.5 + index * 0.05}
+        for index, ticker in enumerate(tickers)
+    ]
+    per_ticker = {row["ticker"]: fake_history(drift=0.1 * (index + 1)) for index, row in enumerate(universe)}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
+    monkeypatch.setattr(module, "load_json", lambda name: {"advisor.json": {"research": universe}}.get(name))
+    monkeypatch.setattr(module, "save_json", lambda name, payload: None)
+    monkeypatch.setattr(module.momentum_pit_store, "append_snapshot", lambda *a, **k: None)
+    monkeypatch.setattr(module.momentum_pit_store, "STORE_DIR", str(tmp_path))
+
+    first = module.run()
+    today = first["generated_at"][:10]
+    ranked_top = [row for row in first["results"] if row["rank"] <= 10]
+    assert ranked_top, "fixture published nothing top-10 to check against"
+    for row in ranked_top:
+        assert row["track_record"]["date_predicted"] == today
+        assert row["track_record"]["upside_since_prediction_pct"] == 0.0
+
+    # A ticker missing from the next run's universe entirely falls out of the ranking, which
+    # must evict its entry rather than leave it stranded.
+    monkeypatch.setattr(module, "load_json",
+                        lambda name: {"advisor.json": {"research": universe[1:]}}.get(name))
+    second = module.run()
+    survivors = {row["ticker"] for row in second["results"]}
+    assert "AAA" not in survivors
+    stored = module.momentum_pit_store.load_first_seen(str(tmp_path))
+    assert "AAA" not in stored
 
 
 def test_run_reports_unavailable_with_no_universe(monkeypatch):

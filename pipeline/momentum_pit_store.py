@@ -20,6 +20,7 @@ from common import LOG
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STORE_DIR = os.path.join(HERE, "momentum_pit_store")
+FIRST_SEEN_FILENAME = "top10.json"
 
 
 def build_rows(results, *, recorded_at=None):
@@ -75,3 +76,47 @@ def load_snapshot(date_str, store_dir=None):
         return []
     with open(path) as handle:
         return [json.loads(line) for line in handle if line.strip()]
+
+
+def _first_seen_path(store_dir=None):
+    return os.path.join(store_dir or STORE_DIR, FIRST_SEEN_FILENAME)
+
+
+def load_first_seen(store_dir=None):
+    """Ticker -> {date_predicted, price_at_prediction} for every name currently in the
+    momentum screen's top 10."""
+    path = _first_seen_path(store_dir)
+    if not os.path.exists(path):
+        return {}
+    with open(path) as handle:
+        return json.load(handle)
+
+
+def update_first_seen(results, *, recorded_at=None, store_dir=None, top_n=10):
+    """Eviction-based top-10 membership, unlike swing_pit_store's permanent record: an entry
+    is kept while a ticker's rank stays <= ``top_n`` (rank moving around within the top 10 is
+    fine and does not reset it), and removed the moment it falls outside ``top_n``. Re-entering
+    later starts a fresh clock rather than resuming the old one - "how has this name done since
+    it entered the CURRENT top 10", not an all-time first-sighting record.
+    """
+    recorded_at = recorded_at or datetime.now(timezone.utc)
+    existing = load_first_seen(store_dir)
+    current = {row["ticker"]: row for row in (results or [])
+              if row.get("ticker") and row.get("rank") is not None
+              and row["rank"] <= top_n and row.get("price")}
+    changed = False
+    for ticker in [*existing]:
+        if ticker not in current:
+            del existing[ticker]
+            changed = True
+    for ticker, row in current.items():
+        if ticker not in existing:
+            existing[ticker] = {"date_predicted": recorded_at.date().isoformat(),
+                                "price_at_prediction": row["price"]}
+            changed = True
+    if changed:
+        store_dir = store_dir or STORE_DIR
+        os.makedirs(store_dir, exist_ok=True)
+        with open(_first_seen_path(store_dir), "w") as handle:
+            json.dump(existing, handle, sort_keys=True, indent=2)
+    return existing

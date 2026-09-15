@@ -29,6 +29,25 @@ function formatMetric(value, format) {
   }
 }
 
+// Only these three strategies (plus the standalone Options/buy screen) are actually produced
+// by build_options_strategies.py, the only options build script this pipeline's workflow
+// runs on a live schedule - protective-put/collar/vertical-spread/advanced-strategies are
+// each gated behind an ENABLE_* flag nothing currently sets, so they never get a fresh
+// track_record and the column is left off rather than showing "–" on every row forever.
+const TRACK_RECORD_STRATEGY_IDS = new Set(['covered-call', 'cash-secured-put', 'short-term-trades'])
+
+// track_record is dropped the instant a position falls out of its screen's top 10 - the
+// terms were snapshotted the day it entered, then marked with Black-Scholes off realized
+// volatility each run since, not a live re-quote of the same contract(s) - see
+// options_track_record.py's own docstring for why the two can disagree even with the
+// underlying unmoved.
+function pnlSince(row) {
+  const record = row.track_record
+  if (!record?.date_predicted) return null
+  const value = record.pnl_pct_of_capital
+  return `${value == null ? '–' : `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`} since ${record.date_predicted}`
+}
+
 function legsSummary(legs) {
   return (legs || []).map((leg) => `${leg.action === 'buy' ? 'Buy' : 'Sell'} ${leg.option_type} ${money(leg.strike)}`).join(' · ')
 }
@@ -84,7 +103,7 @@ function reasonsFor(row) {
   return reasons
 }
 
-function StrategyCard({ row, config, onOpen }) {
+function StrategyCard({ row, config, onOpen, hasTrackRecord }) {
   const [showTicket, setShowTicket] = useState(false)
   const confidencePct = row.confidence != null ? Math.round(row.confidence * 100) : null
   const metrics = config.metricsConfig(row)
@@ -127,6 +146,9 @@ function StrategyCard({ row, config, onOpen }) {
     <dl className="research-card-metrics">
       <div><dt>Underlying</dt><dd>{money(row.price)}</dd></div>
       {metrics.map(([key, label, format]) => <div key={key}><dt>{label}</dt><dd>{formatMetric((row.metrics || {})[key], format)}</dd></div>)}
+      {hasTrackRecord && (
+        <div><dt>Since flagged</dt><dd title="Not currently in this screen's top 10.">{pnlSince(row) || '–'}</dd></div>
+      )}
     </dl>
     <button className="primary-button compact" onClick={() => onOpen(row)}>Full research <Icon name="arrow" size={17} /></button>
   </article>
@@ -134,6 +156,7 @@ function StrategyCard({ row, config, onOpen }) {
 
 export default function StrategyScreen({ id }) {
   const config = STRATEGY_SCREENS[id]
+  const hasTrackRecord = TRACK_RECORD_STRATEGY_IDS.has(id)
   const { data, loading, error } = useData(config.file)
   const { data: report } = useData('report.json')
   const [strategyFilter, setStrategyFilter] = useState('all')
@@ -206,11 +229,14 @@ export default function StrategyScreen({ id }) {
               cell: (row) => <span className="mono">{dollars(row.capital_required)}</span> },
             { key: 'score', label: 'Score', numeric: true,
               cell: (row) => <span className="mono score-cell">{number(row.score, 2)}</span> },
+            hasTrackRecord && { key: 'since_flagged', label: 'Since flagged', numeric: true,
+              sortValue: (row) => row.track_record?.pnl_pct_of_capital,
+              cell: (row) => <span className="mono" title="Not currently in this screen's top 10.">{pnlSince(row) || '–'}</span> },
             { key: 'open', label: <span className="sr-only">Open</span>, sortable: false,
               cell: (row) => <button className="icon-button" onClick={() => openResearch(row)}
                 aria-label={`Open ${row.ticker} research`}><Icon name="chevron" /></button> },
           ].filter(Boolean)}
-          mobile={{ estimateSize: 360, renderItem: (row) => <StrategyCard row={row} config={config} onOpen={openResearch} /> }}
+          mobile={{ estimateSize: 360, renderItem: (row) => <StrategyCard row={row} config={config} onOpen={openResearch} hasTrackRecord={hasTrackRecord} /> }}
         />
       )}
       <p className="disclaimer">
@@ -219,6 +245,14 @@ export default function StrategyScreen({ id }) {
         and open interest are snapshots from the last pipeline run and move throughout the trading day. Delta and
         probability figures use a Black-Scholes model with the risk-free rate held at 0%, a stated simplification,
         not a quote-derived one.
+        {hasTrackRecord && (
+          <>{' '}"Since flagged" is this position's own modeled P&L as a percent of the capital it required, from
+          the day it first ranked in this screen's top 10 to today — marked with Black-Scholes off realized
+          volatility each day since, not a live re-quote of the same contract(s), so it can disagree with the real
+          market price even on day one. A covered call's P&L includes the stock's own move since entry; a
+          cash-secured put's does not, since its capital is cash collateral rather than shares. The entry is
+          dropped the moment a position falls out of the top 10; a later re-entry starts a fresh clock.</>
+        )}
       </p>
     </>}
     {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={report?.benchmark_history} onClose={() => setSelectedStock(null)} />}

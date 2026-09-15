@@ -450,11 +450,21 @@ function MiniSparkline({ values, label }) {
   )
 }
 
+// report.json's fast_growth_track_record is keyed by ticker within each sub-screen ('breakout'
+// / 'emerging') - {date_predicted, price_at_prediction} for every name currently in that
+// sub-screen's top 10, dropped the moment a name falls out (see growth_track_record.py).
+function sinceFlagged(row, trackRecord) {
+  const entry = trackRecord?.[row.ticker]
+  if (!entry || !row.price || !entry.price_at_prediction) return null
+  return { date: entry.date_predicted, pct: (row.price / entry.price_at_prediction - 1) * 100 }
+}
+
 function FastGrowthRecipe({ manifest, searchParams, setParam }) {
   const { data, loading } = useData('report.json')
   const { openStockDetail } = useStockDetail()
   const sub = searchParams.get('sub') === 'emerging' ? 'emerging' : 'breakout'
   const sector = searchParams.get('sector') || 'all'
+  const trackRecord = data?.fast_growth_track_record?.[sub]
 
   const universe = useMemo(() => [...new Map(
     [...(data?.research || []), ...(data?.screen_universe || [])].map((row) => [row.ticker, row]),
@@ -476,6 +486,10 @@ function FastGrowthRecipe({ manifest, searchParams, setParam }) {
     { key: 'month', label: '20-day return', cell: (row) => upside(row.screen.monthReturn) },
     { key: 'acceleration', label: 'Acceleration', cell: (row) => upside(row.screen.acceleration) },
     { key: 'score', label: 'Score', cell: (row) => number(row.score, 1) },
+    { key: 'sinceFlagged', label: 'Since flagged', cell: (row) => {
+      const since = sinceFlagged(row, trackRecord)
+      return since ? `${upside(since.pct)} since ${since.date}` : <NotResolvable title="Not currently in this screen's top 10." />
+    } },
   ] : [
     { key: 'ticker', label: 'Ticker', cell: (row) => <><button type="button" onClick={() => openStockDetail(row.ticker)}>{row.ticker}</button> {row.name}</> },
     { key: 'sector', label: 'Sector', cell: (row) => row.sector || '–' },
@@ -483,6 +497,10 @@ function FastGrowthRecipe({ manifest, searchParams, setParam }) {
     { key: 'relative', label: 'Relative strength', cell: (row) => upside(row.screen.relativeStrength) },
     { key: 'contracting', label: 'Vol. contracting', cell: (row) => row.screen.volatilityContracting == null ? '–' : row.screen.volatilityContracting ? 'Yes' : 'No' },
     { key: 'score', label: 'Score', cell: (row) => number(row.score, 1) },
+    { key: 'sinceFlagged', label: 'Since flagged', cell: (row) => {
+      const since = sinceFlagged(row, trackRecord)
+      return since ? `${upside(since.pct)} since ${since.date}` : <NotResolvable title="Not currently in this screen's top 10." />
+    } },
   ]
 
   return (
@@ -526,6 +544,10 @@ function FastGrowthRecipe({ manifest, searchParams, setParam }) {
             {filtered.slice(0, 10).map((row) => (
               <article key={row.ticker}>
                 <button type="button" onClick={() => openStockDetail(row.ticker)}>{row.ticker}</button> · score {number(row.score, 1)}
+                {(() => {
+                  const since = sinceFlagged(row, trackRecord)
+                  return since ? <span> · {upside(since.pct)} since {since.date}</span> : null
+                })()}
                 <MiniSparkline values={(row.history?.closes || []).slice(-22)} label={`${row.ticker} one-month daily close trend`} />
               </article>
             ))}
@@ -800,6 +822,16 @@ function GenericRecipe({ manifest, recipe, data, searchParams, setParam }) {
     { key: 'tactical', label: 'Tactical', cell: (row) => number(row.tactical_score) },
     { key: 'confidence', label: 'Confidence', cell: (row) => `${number((row.confidence || 0) * 100)}%` },
     { key: 'warnings', label: 'Warnings', cell: (row) => (row.reason_codes || []).join(', ') || 'None' },
+    // Only momentum.json publishes track_record among this generic family (quality-value,
+    // earnings-timeliness, structural-tactical do not) - see momentum_pit_store.py's
+    // update_first_seen. Unlike swing's permanent record, an entry here is dropped the
+    // instant a ticker falls out of the top 10.
+    ...(recipe === 'momentum' ? [{
+      key: 'since_flagged', label: 'Since flagged',
+      cell: (row) => row.track_record?.date_predicted
+        ? `${upside(row.track_record.upside_since_prediction_pct)} since ${row.track_record.date_predicted}`
+        : <NotResolvable title="Not currently in this screen's top 10." />,
+    }] : []),
   ]
 
   return (
@@ -875,6 +907,9 @@ function GenericRecipe({ manifest, recipe, data, searchParams, setParam }) {
               <article key={row.ticker}>
                 <b>#{row.rank ?? '–'} · {row.ticker}</b>
                 <div>{row.classification || (row.eligibility ? 'Eligible' : 'Ineligible')} · confidence {number((row.confidence || 0) * 100)}%</div>
+                {recipe === 'momentum' && row.track_record?.date_predicted && (
+                  <div>{upside(row.track_record.upside_since_prediction_pct)} since {row.track_record.date_predicted}</div>
+                )}
               </article>
             ))}
           </section>
