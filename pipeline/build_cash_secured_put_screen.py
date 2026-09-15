@@ -172,6 +172,7 @@ def to_result(rank, row):
         "percentile": row.get("percentile"), "score": row.get("score"),
         "structural_score": row.get("structural_score"), "data_coverage": row.get("data_coverage"),
         "price": row.get("price"), "trend_20d": row.get("trend_20d"),
+        "realized_volatility_20d": row.get("realized_volatility_20d"),
         "expiration": row.get("expiration"), "days_to_expiration": row.get("days_to_expiration"),
         "capital_required": row.get("capital_required"),
         "legs": [{"action": "sell", "option_type": "put", "strike": put.get("strike"),

@@ -57,6 +57,7 @@ from bias_report import write_bias_report
 from signal_report import write_signal_report
 from explainability import attach_explainability, attribution_errors, build_score_history
 import growth_pit_store
+import growth_track_record
 import quality_pit_store
 from sec_edgar import SecEdgarClient
 from theme_signals import EdgarThemeSignals, recent_10k_filings
@@ -2834,8 +2835,18 @@ def run():
         "statement_enrichment": max(0, len(contexts) - enriched_count),
         "publication_limit": max(0, len(research) - len(ranked)),
     })
+    report = report_snapshot(payload)
+    # Top-10 membership tracking for the Fast Growth screens (breakout in progress, emerging
+    # growth), against report.json's own published rows so it always matches what the page
+    # itself ranks. Unlike swing's permanent first-seen record, an entry here is dropped the
+    # moment a ticker falls out of the top 10 - see growth_track_record.py's own docstring.
+    try:
+        report["fast_growth_track_record"] = growth_track_record.update(
+            report["research"], recorded_at_date=generated_at[:10])
+    except Exception as exc:  # noqa: BLE001
+        LOG.warn(f"growth_track_record update failed ({type(exc).__name__}): {exc}")
     save_json("advisor.json", payload)
-    save_json("report.json", report_snapshot(payload))
+    save_json("report.json", report)
     save_json("diagnostics.json", diagnostics_payload(payload))
     all_failures = sorted(set(alpha_failures + marketaux_failures + research_failures))
     update_pipeline_status("advisor", status="healthy" if not all_failures else "degraded",

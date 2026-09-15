@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import ResearchScreen from './ResearchScreen'
 import { useData } from '../lib/useData'
@@ -100,5 +100,52 @@ describe('ResearchScreen', () => {
     renderScreen()
 
     expect(screen.queryByText(/No results match these filters/)).toBeNull()
+  })
+})
+
+describe('ResearchScreen track record (momentum and pre-breakout only)', () => {
+  it('shows Since flagged with a real value on the momentum screen', () => {
+    useData.mockReturnValue({
+      data: {
+        status: 'success',
+        results: [row({ track_record: { date_predicted: '2026-09-10', price_at_prediction: 100, upside_since_prediction_pct: 8.5 } })],
+      },
+      loading: false, error: null,
+    })
+    render(<MemoryRouter><ResearchScreen file="screens/momentum.json" title="Momentum" /></MemoryRouter>)
+    expect(screen.getByRole('columnheader', { name: 'Since flagged' })).toBeVisible()
+    expect(screen.getByText('+8.50% since 2026-09-10')).toBeInTheDocument()
+  })
+
+  it('shows a dash when a name is not currently in the top 10', () => {
+    useData.mockReturnValue({
+      data: { status: 'success', results: [row({ track_record: { date_predicted: null } })] },
+      loading: false, error: null,
+    })
+    render(<MemoryRouter><ResearchScreen file="screens/pre-breakout.json" title="Pre-breakout" /></MemoryRouter>)
+    const tableRow = screen.getByText('AAA').closest('tr')
+    expect(within(tableRow).getByTitle("Not currently in this screen's top 10.")).toHaveTextContent('–')
+  })
+
+  it('does not add the column on a screen that publishes no track_record', () => {
+    useData.mockReturnValue({ data: { status: 'success', results: [row()] }, loading: false, error: null })
+    renderScreen() // screens/quality-value.json
+    expect(screen.queryByRole('columnheader', { name: 'Since flagged' })).toBeNull()
+  })
+
+  it('shows the field on the mobile card too', () => {
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
+      matches: true, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn(),
+    }))
+    useData.mockReturnValue({
+      data: {
+        status: 'success',
+        results: [row({ track_record: { date_predicted: '2026-09-10', price_at_prediction: 100, upside_since_prediction_pct: 8.5 } })],
+      },
+      loading: false, error: null,
+    })
+    render(<MemoryRouter><ResearchScreen file="screens/momentum.json" title="Momentum" /></MemoryRouter>)
+    expect(screen.queryByRole('table')).toBeNull()
+    expect(screen.getByText('+8.50% since 2026-09-10')).toBeInTheDocument()
   })
 })

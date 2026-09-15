@@ -19,6 +19,18 @@ const dateLabel = (value) => {
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
+// track_record is dropped the instant a contract falls out of this screen's top 10 - the
+// terms (strike, premium, expiration) were snapshotted the day it entered, then marked with
+// Black-Scholes off realized volatility each run since, not a live re-quote of the same
+// contract - see options_track_record.py's own docstring for why the two can disagree even
+// with the underlying unmoved.
+function pnlSince(row) {
+  const record = row.track_record
+  if (!record?.date_predicted) return null
+  const value = record.pnl_pct_of_capital
+  return `${value == null ? '–' : `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`} since ${record.date_predicted}`
+}
+
 function reasonsFor(row) {
   const reasons = []
   if (row.implied_realized_vol_ratio != null) {
@@ -74,6 +86,7 @@ function OptionIdeaCard({ row, onOpen }) {
       <div><dt>20d trend</dt><dd><Move pct={row.trend_20d} /></dd></div>
       <div><dt>News sentiment tilt</dt><dd>{signed(row.news_sentiment)}</dd></div>
       <div><dt>Research confidence tilt</dt><dd>{signed(row.research_confidence)}</dd></div>
+      <div><dt>Since flagged</dt><dd title="Not currently in this screen's top 10.">{pnlSince(row) || '–'}</dd></div>
     </dl>
     <button className="primary-button compact" onClick={() => onOpen(row)}>Full research <Icon name="arrow" size={17} /></button>
   </article>
@@ -171,6 +184,9 @@ export default function OptionsScreen() {
             { key: 'spread_pct', label: 'Spread', numeric: true, cell: (row) => <span className="mono">{pct(row.spread_pct)}</span> },
             { key: 'open_interest', label: 'Open int.', numeric: true, cell: (row) => <span className="mono">{row.open_interest ?? '\u2013'}</span> },
             { key: 'score', label: 'Score', numeric: true, cell: (row) => <span className="mono score-cell">{number(row.score, 2)}</span> },
+            { key: 'since_flagged', label: 'Since flagged', numeric: true,
+              sortValue: (row) => row.track_record?.pnl_pct_of_capital,
+              cell: (row) => <span className="mono" title="Not currently in this screen's top 10.">{pnlSince(row) || '–'}</span> },
             { key: 'open', label: <span className="sr-only">Open</span>, sortable: false,
               cell: (row) => <button className="icon-button" onClick={() => openResearch(row)}
                 aria-label={`Open ${row.ticker} research`}><Icon name="chevron" /></button> },
@@ -184,6 +200,10 @@ export default function OptionsScreen() {
         and open interest are snapshots from the last pipeline run and move throughout the trading day. Delta and
         probability figures use a Black-Scholes model with the risk-free rate held at 0%, a stated simplification,
         not a quote-derived one.
+        {' '}"Since flagged" is this contract's own modeled P&L as a percent of what it cost, from the day it first
+        ranked in this screen's top 10 to today — marked with Black-Scholes off realized volatility each day since,
+        not a live re-quote of the same contract, so it can disagree with the real market price even on day one. The
+        entry is dropped the moment a contract falls out of the top 10; a later re-entry starts a fresh clock.
       </p>
     </>}
     {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={report?.benchmark_history} onClose={() => setSelectedStock(null)} />}

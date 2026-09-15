@@ -37,6 +37,7 @@ from backtest_common import CONTRACT_FEE, performance_stats, synthetic_chain, wa
 from common import LOG, load_json, save_json
 from fetch_advisor import yahoo_history
 import options_pit_store
+import options_track_record
 from options_common import (MINIMUM_MARKET_CAP, MINIMUM_PRICE, expected_value_pct, expiration_spans_earnings,
                             liquidity_factor, next_earnings_date, probability_above, realized_volatility_20d,
                             research_universe_factors, select_by_target_delta, select_contract,
@@ -329,7 +330,11 @@ def to_result_short_term(rank, strategy, row):
                "bid": call.get("bid"), "ask": call.get("ask"), "mid": call.get("mid"),
                "spread_pct": call.get("spread_pct"), "implied_volatility": call.get("implied_volatility"),
                "open_interest": call.get("open_interest"), "delta": call.get("delta")}
-        metrics = row.get("metrics", {})
+        # realized_volatility_20d rides in from the row rather than the metrics dict
+        # build_sell_call_row builds (that one never carried it) - needed to mark this
+        # position's own leg later without a live option-chain call. See
+        # options_track_record.py.
+        metrics = {**row.get("metrics", {}), "realized_volatility_20d": row.get("realized_volatility_20d")}
         capital_required = row.get("capital_required")
         strategy_tag = "sell_call"
     else:
@@ -338,7 +343,7 @@ def to_result_short_term(rank, strategy, row):
                "bid": put.get("bid"), "ask": put.get("ask"), "mid": put.get("mid"),
                "spread_pct": put.get("spread_pct"), "implied_volatility": put.get("implied_volatility"),
                "open_interest": put.get("open_interest"), "delta": put.get("delta")}
-        metrics = row.get("metrics", {})
+        metrics = {**row.get("metrics", {}), "realized_volatility_20d": row.get("realized_volatility_20d")}
         capital_required = row.get("capital_required")
         strategy_tag = "sell_put"
     return {
@@ -396,6 +401,27 @@ def run(as_of=None):
     sell_call_results = [sell_call_screen.to_result(rank + 1, row) for rank, row in enumerate(scored_sell_call)]
     sell_put_results = [sell_put_screen.to_result(rank + 1, row) for rank, row in enumerate(scored_sell_put)]
 
+    best = select_best_per_ticker(scored_buy, scored_sell_call, scored_sell_put)
+    short_term_results = [to_result_short_term(rank + 1, strategy, row) for rank, (strategy, row) in enumerate(best)]
+
+    # Current top-10 membership streak, per sub-screen: an entry is dropped the instant a
+    # position falls out of that sub-screen's top 10 - "how has this position done since it
+    # entered the CURRENT top 10", not an all-time first-sighting record. Computed before
+    # save_json below so every published file carries it. See options_track_record.py.
+    results_by_sub_screen = {"options": buy_results, "covered_calls": sell_call_results,
+                             "cash_secured_puts": sell_put_results, "short_term_trades": short_term_results}
+    try:
+        first_seen = options_track_record.update_first_seen(
+            results_by_sub_screen, recorded_at_date=generated_at[:10])
+    except Exception as exc:  # noqa: BLE001
+        LOG.warn(f"options_track_record update failed ({type(exc).__name__}): {exc}")
+        first_seen = {sub: {} for sub in options_track_record.SUB_SCREENS}
+    for sub, results in results_by_sub_screen.items():
+        bucket = first_seen.get(sub, {})
+        for row in results:
+            row["track_record"] = options_track_record.track_record_for(
+                bucket.get(row["ticker"]), row.get("price"), row.get("realized_volatility_20d"))
+
     save_json("screens/options.json", {
         "schema_version": "1.0.0", "model_version": FILE_MODEL_VERSIONS["screens/options.json"],
         "config_version": "screens-v1.0.0", "generated_at": generated_at, "status": "success",
@@ -414,8 +440,6 @@ def run(as_of=None):
         "window": WINDOW, "results": sell_put_results,
     })
 
-    best = select_best_per_ticker(scored_buy, scored_sell_call, scored_sell_put)
-    short_term_results = [to_result_short_term(rank + 1, strategy, row) for rank, (strategy, row) in enumerate(best)]
     short_term_payload = {
         "schema_version": "1.0.0", "model_version": FILE_MODEL_VERSIONS["screens/short-term-trades.json"],
         "config_version": "screens-v1.0.0", "generated_at": generated_at,

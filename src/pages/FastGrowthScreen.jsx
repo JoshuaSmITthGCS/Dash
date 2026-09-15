@@ -9,7 +9,26 @@ import Icon from '../components/Icons.jsx'
 import StockDetailModal from '../components/StockDetailModal.jsx'
 import DataTable from '../components/DataTable.jsx'
 
-function BreakoutCard({ row, index, onOpen }) {
+// report.json's fast_growth_track_record is keyed by ticker within each sub-screen ('breakout'
+// / 'emerging') - {date_predicted, price_at_prediction} for every name currently in that
+// sub-screen's top 10, dropped the moment a name falls out (see growth_track_record.py). The
+// return shown is computed here, client-side, against the row's own current price rather than
+// published pre-computed, so it always reflects this exact fetch's price with no staleness.
+function sinceFlagged(row, trackRecord) {
+  const entry = trackRecord?.[row.ticker]
+  if (!entry || !row.price || !entry.price_at_prediction) return null
+  return { date: entry.date_predicted, pct: (row.price / entry.price_at_prediction - 1) * 100 }
+}
+
+function SinceFlaggedCell({ row, trackRecord }) {
+  const since = sinceFlagged(row, trackRecord)
+  if (!since) return <span className="mono" title="Not currently in this screen's top 10.">–</span>
+  return <span className="mono" title={`First ranked top 10 on ${since.date}.`}>
+    <Move pct={since.pct} /> since {since.date}
+  </span>
+}
+
+function BreakoutCard({ row, index, onOpen, trackRecord }) {
   return <article className="research-mobile-card" key={row.ticker}>
     <div className="research-card-head">
       <span className="rank-badge">#{index + 1}</span>
@@ -25,13 +44,14 @@ function BreakoutCard({ row, index, onOpen }) {
       <div><dt>5-day return</dt><dd><Move pct={row.screen.weekReturn} capsule /></dd></div>
       <div><dt>20-day return</dt><dd><Move pct={row.screen.monthReturn} capsule /></dd></div>
       <div><dt>Acceleration</dt><dd><Move pct={row.screen.acceleration} capsule /></dd></div>
+      <div><dt>Since flagged</dt><dd><SinceFlaggedCell row={row} trackRecord={trackRecord} /></dd></div>
     </dl>
     <Sparkline values={(row.history?.closes || []).slice(-22)} label={`${row.ticker} one-month daily close trend`} height={54} className="research-card-spark" />
     <button className="primary-button compact" onClick={() => onOpen(row)}>Full research <Icon name="arrow" size={17} /></button>
   </article>
 }
 
-function EmergingGrowthCard({ row, index, onOpen }) {
+function EmergingGrowthCard({ row, index, onOpen, trackRecord }) {
   return <article className="research-mobile-card" key={row.ticker}>
     <div className="research-card-head">
       <span className="rank-badge">#{index + 1}</span>
@@ -47,6 +67,7 @@ function EmergingGrowthCard({ row, index, onOpen }) {
       <div><dt>Revenue growth</dt><dd><Move pct={row.screen.revenueGrowth != null ? row.screen.revenueGrowth * 100 : null} capsule /></dd></div>
       <div><dt>Relative strength</dt><dd><Move pct={row.screen.relativeStrength} capsule /></dd></div>
       <div><dt>Vol. contracting</dt><dd>{row.screen.volatilityContracting == null ? '–' : row.screen.volatilityContracting ? 'Yes' : 'No'}</dd></div>
+      <div><dt>Since flagged</dt><dd><SinceFlaggedCell row={row} trackRecord={trackRecord} /></dd></div>
     </dl>
     <Sparkline values={(row.history?.closes || []).slice(-22)} label={`${row.ticker} one-month daily close trend`} height={54} className="research-card-spark" />
     <button className="primary-button compact" onClick={() => onOpen(row)}>Full research <Icon name="arrow" size={17} /></button>
@@ -65,6 +86,7 @@ export default function FastGrowthScreen() {
   const breakoutRows = rankBreakoutInProgress(universe, universe.length)
   const emergingRows = rankEmergingGrowth(universe, universe.length)
   const rows = view === 'breakout' ? breakoutRows : emergingRows
+  const trackRecord = data?.fast_growth_track_record?.[view]
   const sectors = [...new Set(rows.map((row) => row.sector).filter(Boolean))].sort()
   const filtered = sector === 'all' ? rows : rows.filter((row) => row.sector === sector)
 
@@ -125,6 +147,9 @@ export default function FastGrowthScreen() {
               sortValue: (row) => row.screen.acceleration, cell: (row) => <Move pct={row.screen.acceleration} /> },
             { key: 'score', label: 'Score', numeric: true,
               cell: (row) => <span className="mono score-cell">{row.score}</span> },
+            { key: 'sinceFlagged', label: 'Since flagged', numeric: true,
+              sortValue: (row) => sinceFlagged(row, trackRecord)?.pct,
+              cell: (row) => <SinceFlaggedCell row={row} trackRecord={trackRecord} /> },
             { key: 'open', label: <span className="sr-only">Open</span>, sortable: false,
               cell: (row) => <button className="icon-button" onClick={() => setSelectedStock(row)}
                 aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button> },
@@ -145,6 +170,9 @@ export default function FastGrowthScreen() {
               cell: (row) => row.screen.volatilityContracting == null ? '\u2013' : row.screen.volatilityContracting ? 'Yes' : 'No' },
             { key: 'score', label: 'Score', numeric: true,
               cell: (row) => <span className="mono score-cell">{row.score}</span> },
+            { key: 'sinceFlagged', label: 'Since flagged', numeric: true,
+              sortValue: (row) => sinceFlagged(row, trackRecord)?.pct,
+              cell: (row) => <SinceFlaggedCell row={row} trackRecord={trackRecord} /> },
             { key: 'open', label: <span className="sr-only">Open</span>, sortable: false,
               cell: (row) => <button className="icon-button" onClick={() => setSelectedStock(row)}
                 aria-label={`Open ${row.name} research`}><Icon name="chevron" /></button> },
@@ -152,8 +180,8 @@ export default function FastGrowthScreen() {
           mobile={{
             estimateSize: 250,
             renderItem: (row, index) => view === 'breakout'
-              ? <BreakoutCard row={row} index={index} onOpen={setSelectedStock} />
-              : <EmergingGrowthCard row={row} index={index} onOpen={setSelectedStock} />,
+              ? <BreakoutCard row={row} index={index} onOpen={setSelectedStock} trackRecord={trackRecord} />
+              : <EmergingGrowthCard row={row} index={index} onOpen={setSelectedStock} trackRecord={trackRecord} />,
           }}
         />
       </>}
@@ -162,6 +190,7 @@ export default function FastGrowthScreen() {
           ? 'A breakout screen flags a change in pace, not a guaranteed continuation - a sharp run can just as easily fade or reverse the following week.'
           : 'An emerging-growth screen flags currently-measurable conditions with no proven predictive track record in this system.'}
         {' '}This is a research screen, not a trade instruction; confirm current price, liquidity, news, and your own risk limits before acting.
+        {' '}"Since flagged" is the plain price return from the day a name first ranked in this screen's current top 10 to today - the market's return over that stretch, not a claim this model produced it. The entry is dropped the moment a name falls out of the top 10 (a re-entry later starts a fresh clock), so "–" means not currently in the top 10, not never flagged.
       </p>
     </>}
     {selectedStock && <StockDetailModal stock={selectedStock} benchmarkHistory={data?.benchmark_history} onClose={() => setSelectedStock(null)} />}

@@ -52,5 +52,50 @@ class AppendAndLoadTests(unittest.TestCase):
             self.assertEqual(len(mps.load_snapshot("2026-01-01", tmp)), 1)
 
 
+TOP_ROW = {"ticker": "A", "rank": 3, "price": 100.0}
+OUTSIDE_TOP_ROW = {"ticker": "B", "rank": 11, "price": 50.0}
+
+
+class FirstSeenTests(unittest.TestCase):
+    """Eviction-based, unlike swing's permanent record - see update_first_seen's docstring."""
+
+    def test_a_ticker_ranking_top_n_is_recorded_with_todays_date_and_price(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            recorded = datetime(2026, 1, 1, tzinfo=timezone.utc)
+            seen = mps.update_first_seen([TOP_ROW], recorded_at=recorded, store_dir=tmp)
+            self.assertEqual(seen["A"], {"date_predicted": "2026-01-01", "price_at_prediction": 100.0})
+            self.assertEqual(mps.load_first_seen(tmp), seen)
+
+    def test_a_ticker_ranking_outside_top_n_is_never_recorded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            seen = mps.update_first_seen([OUTSIDE_TOP_ROW], store_dir=tmp)
+            self.assertEqual(seen, {})
+
+    def test_a_ticker_still_top_n_on_a_later_run_keeps_its_original_date_and_price(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            first = datetime(2026, 1, 1, tzinfo=timezone.utc)
+            later = datetime(2026, 2, 1, tzinfo=timezone.utc)
+            mps.update_first_seen([TOP_ROW], recorded_at=first, store_dir=tmp)
+            seen = mps.update_first_seen([{"ticker": "A", "rank": 1, "price": 250.0}],
+                                         recorded_at=later, store_dir=tmp)
+            self.assertEqual(seen["A"], {"date_predicted": "2026-01-01", "price_at_prediction": 100.0})
+
+    def test_a_ticker_that_falls_out_of_top_n_is_evicted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            mps.update_first_seen([TOP_ROW], store_dir=tmp)
+            seen = mps.update_first_seen([], store_dir=tmp)
+            self.assertEqual(seen, {})
+
+    def test_re_entering_later_starts_a_fresh_clock(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            first = datetime(2026, 1, 1, tzinfo=timezone.utc)
+            later = datetime(2026, 2, 1, tzinfo=timezone.utc)
+            mps.update_first_seen([TOP_ROW], recorded_at=first, store_dir=tmp)
+            mps.update_first_seen([], store_dir=tmp)
+            seen = mps.update_first_seen([{"ticker": "A", "rank": 1, "price": 200.0}],
+                                         recorded_at=later, store_dir=tmp)
+            self.assertEqual(seen["A"], {"date_predicted": "2026-02-01", "price_at_prediction": 200.0})
+
+
 if __name__ == "__main__":
     unittest.main()

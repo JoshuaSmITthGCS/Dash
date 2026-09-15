@@ -42,6 +42,21 @@ export const OPTIONS_NAV = [
 
 const capBucket = (value) => value >= 10e9 ? 'large' : value >= 2e9 ? 'mid' : 'small'
 const number = (value) => value == null ? '–' : Number(value).toFixed(1)
+const upside = (value) => value == null ? '–' : `${value > 0 ? '+' : ''}${Number(value).toFixed(2)}%`
+
+// Only momentum.json and pre-breakout.json currently publish track_record - the other files
+// this same component renders (quality-value, earnings-timeliness, structural-tactical) do
+// not, so this column/field is added only for those two rather than showing "–" everywhere
+// else. Unlike swing's permanent record, an entry here is dropped the instant a ticker falls
+// out of the top 10 - see momentum_pit_store.py / pre_breakout_pit_store.py's
+// update_first_seen.
+const TRACK_RECORD_FILES = new Set(['screens/momentum.json', 'screens/pre-breakout.json'])
+
+function sinceFlaggedText(row) {
+  const record = row.track_record
+  if (!record?.date_predicted) return null
+  return `${upside(record.upside_since_prediction_pct)} since ${record.date_predicted}`
+}
 
 // Structural-vs-tactical is the one screen whose rows carry both axes of the quadrant
 // scatter. Tone follows the model's own classification, not a re-derived threshold.
@@ -79,6 +94,7 @@ export function OptionsNavigation() {
 export default function ResearchScreen({ file, eyebrow, title, description }) {
   const { data, loading, error } = useData(file)
   const { preferences } = usePreferences()
+  const hasTrackRecord = TRACK_RECORD_FILES.has(file)
   const [filters, setFilters] = useState({ sector: 'all', cap: 'all', confidence: 0, liquidity: 0,
     structural: 0, tactical: 0, membership: 'all' })
   // Some published screens have carried the same ticker twice at adjacent ranks with
@@ -156,6 +172,12 @@ export default function ResearchScreen({ file, eyebrow, title, description }) {
             cell: (row) => <span className="mono">{number((row.confidence || 0) * 100)}%</span> },
           { key: 'reason_codes', label: 'Warnings', sortable: false,
             cell: (row) => (row.reason_codes || []).join(', ') || 'None' },
+          ...(hasTrackRecord ? [{
+            key: 'since_flagged', label: 'Since flagged', numeric: true,
+            sortValue: (row) => row.track_record?.upside_since_prediction_pct,
+            cell: (row) => sinceFlaggedText(row)
+              || <span title="Not currently in this screen's top 10.">–</span>,
+          }] : []),
         ]}
         mobile={{
           variant: preferences.mobileResearchView,
@@ -170,10 +192,12 @@ export default function ResearchScreen({ file, eyebrow, title, description }) {
             { label: 'Tactical', value: (row) => number(row.tactical_score) },
             { label: 'Confidence', value: (row) => `${number((row.confidence || 0) * 100)}%` },
             { label: 'Warnings', value: (row) => (row.reason_codes || []).join(', ') || 'None' },
+            ...(hasTrackRecord ? [{ label: 'Since flagged', value: (row) => sinceFlaggedText(row) || '–' }] : []),
           ] : [
             { label: 'Classification', value: (row) => row.classification || (row.eligibility ? 'Eligible' : 'Ineligible') },
             { label: 'Composite', value: (row) => number(row.percentile) },
             { label: 'Confidence', value: (row) => `${number((row.confidence || 0) * 100)}%` },
+            ...(hasTrackRecord ? [{ label: 'Since flagged', value: (row) => sinceFlaggedText(row) || '–' }] : []),
           ],
         }}
       /></>}

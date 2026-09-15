@@ -235,6 +235,8 @@ def test_run_publishes_all_four_files_from_one_fetch_per_ticker(monkeypatch):
     recorded = {}
     monkeypatch.setattr(module.options_pit_store, "append_snapshot",
                         lambda results, **kwargs: recorded.__setitem__("results", results))
+    monkeypatch.setattr(module.options_track_record, "update_first_seen",
+                        lambda *a, **k: {sub: {} for sub in module.options_track_record.SUB_SCREENS})
 
     result = module.run(as_of=TODAY)
 
@@ -243,6 +245,7 @@ def test_run_publishes_all_four_files_from_one_fetch_per_ticker(monkeypatch):
                 "screens/cash-secured-puts.json", "screens/short-term-trades.json"):
         assert saved[name]["status"] == "success"
         assert len(saved[name]["results"]) >= 1
+        assert all("track_record" in row for row in saved[name]["results"])
     assert aaa_ticker.option_chain_calls == 1
     assert bbb_ticker.option_chain_calls == 1
     short_term_ranks = [row["rank"] for row in saved["screens/short-term-trades.json"]["results"]]
@@ -250,6 +253,52 @@ def test_run_publishes_all_four_files_from_one_fetch_per_ticker(monkeypatch):
     for row in saved["screens/short-term-trades.json"]["results"]:
         assert row["strategy"] in {"buy_call", "buy_put", "sell_call", "sell_put"}
     assert recorded["results"] == saved["screens/short-term-trades.json"]["results"]
+
+
+def test_run_wires_a_real_track_record_and_evicts_on_the_next_run(monkeypatch, tmp_path):
+    universe = [universe_entry("AAA"), universe_entry("BBB", market_cap=4e9)]
+    per_ticker = {"AAA": fake_history(drift=0.05), "BBB": fake_history(start_price=90, drift=0.05)}
+    monkeypatch.setattr(module, "yahoo_history", make_yahoo_history(per_ticker))
+    bbb_calls = [contract(90, 2.78, 2.82), contract(92, 1.88, 1.92)]
+    bbb_puts = [contract(88, 1.78, 1.82), contract(90, 2.78, 2.82)]
+    fake_yf = FakeYf({
+        "AAA": FakeTicker(options=[EXPIRATION], chains={EXPIRATION: FakeChain(RICH_CALLS, RICH_PUTS)}),
+        "BBB": FakeTicker(options=[EXPIRATION], chains={EXPIRATION: FakeChain(bbb_calls, bbb_puts)}),
+    })
+    monkeypatch.setitem(sys.modules, "yfinance", fake_yf)
+    monkeypatch.setenv("ENABLE_MULTIDAY_OPTIONS_SCREEN", "1")
+    loaded = {"advisor.json": {"research": universe}}
+    monkeypatch.setattr(module, "load_json", lambda name: loaded.get(name))
+    saved = {}
+    monkeypatch.setattr(module, "save_json", lambda name, payload: saved.__setitem__(name, payload))
+    monkeypatch.setattr(module.options_pit_store, "append_snapshot", lambda *a, **k: None)
+    monkeypatch.setattr(module.options_track_record, "STORE_DIR", str(tmp_path))
+
+    first = module.run(as_of=TODAY)
+    assert first is not None
+    today = saved["screens/options.json"]["generated_at"][:10]
+    any_top_ten = False
+    for name in ("screens/options.json", "screens/covered-calls.json",
+                "screens/cash-secured-puts.json", "screens/short-term-trades.json"):
+        for row in saved[name]["results"]:
+            if row["rank"] <= 10:
+                any_top_ten = True
+                assert row["track_record"]["date_predicted"] == today
+                # Not necessarily zero even on entry day: the mark is Black-Scholes off
+                # realized vol, not a re-quote of the entry's own real quoted mid - see
+                # options_track_record.track_record_for's own docstring. Just needs to be a
+                # real, finite number rather than unpriced.
+                assert isinstance(row["track_record"]["pnl_dollars"], float)
+    assert any_top_ten, "fixture published nothing top-10 across any sub-screen to check against"
+
+    # BBB drops out of the universe entirely on the next run - its positions must be evicted,
+    # not left stranded in the store.
+    monkeypatch.setattr(module, "load_json",
+                        lambda name: {"advisor.json": {"research": [universe_entry("AAA")]}}.get(name))
+    module.run(as_of=TODAY)
+    stored = module.options_track_record.load_first_seen(str(tmp_path))
+    for sub in module.options_track_record.SUB_SCREENS:
+        assert "BBB" not in stored[sub]
 
 
 def test_run_skips_when_flag_not_set(monkeypatch):

@@ -172,6 +172,7 @@ def test_run_publishes_ranked_rows_with_their_evidence(monkeypatch):
     recorded = {}
     monkeypatch.setattr(module.pre_breakout_pit_store, "append_snapshot",
                         lambda results, **kwargs: recorded.__setitem__("results", results))
+    monkeypatch.setattr(module.pre_breakout_pit_store, "update_first_seen", lambda *a, **k: {})
 
     result = module.run()
 
