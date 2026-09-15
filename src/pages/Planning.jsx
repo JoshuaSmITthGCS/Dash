@@ -117,9 +117,20 @@ export default function Planning() {
   const wholeHistoryAnnualReturnPct = currentHoldingsPeriod
     ? annualizeReturnPct(currentHoldingsPeriod.returnPct, currentHoldingsPeriod.startDate, currentHoldingsPeriod.endDate)
     : null
-  const liveStrategyAnnualReturnPct = calibration.riskProfile?.available
+  // The raw calibrated/whole-history figure is only as reliable as the sample behind it --
+  // early on that's a handful of weeks of daily observations, so a short hot streak can
+  // annualize to a triple-digit number the way a 40-observation sample can print 43%+ with
+  // an information ratio that isn't yet statistically meaningful (see the live risk profile's
+  // own sample-size warning). Capping the live-tracked target at a conservative ceiling keeps
+  // the plan from compounding that noise for decades; it never raises a genuinely low return,
+  // only clips an unreliable high one.
+  const liveStrategyReturnCapPct = projectionConfig.annual_return_target.live_tracking_maximum_pct
+  const rawLiveStrategyAnnualReturnPct = calibration.riskProfile?.available
     ? calibration.riskProfile.annualReturn * 100
     : wholeHistoryAnnualReturnPct
+  const liveStrategyAnnualReturnPct = rawLiveStrategyAnnualReturnPct == null
+    ? null
+    : Math.min(rawLiveStrategyAnnualReturnPct, liveStrategyReturnCapPct)
   const liveStrategyReturnWindow = calibration.riskProfile?.available
     ? { startDate: calibration.riskProfile.startDate, endDate: calibration.riskProfile.endDate }
     : currentHoldingsPeriod
@@ -232,7 +243,7 @@ export default function Planning() {
     <section className="planning-baseline" aria-labelledby="planning-baseline-title">
       <div><span className="eyebrow">Dotted median target</span><h2 id="planning-baseline-title">{formatAnnualReturnTarget(effectiveAnnualReturnTargetPct)} annual</h2></div>
       <p>{liveTargetActive
-        ? `Your current-holdings return, annualized from ${liveStrategyReturnWindow.startDate} to ${liveStrategyReturnWindow.endDate}${calibration.riskProfile?.available ? ' -- the same window and calculation behind your Sharpe, Sortino, and Calmar ratios' : ''}. Cash transfers are not part of this series. This is a planning assumption, not a forecast.`
+        ? `Your current-holdings return, annualized from ${liveStrategyReturnWindow.startDate} to ${liveStrategyReturnWindow.endDate}${calibration.riskProfile?.available ? ' -- the same window and calculation behind your Sharpe, Sortino, and Calmar ratios' : ''}${rawLiveStrategyAnnualReturnPct > liveStrategyReturnCapPct ? `. The raw figure annualizes to ${formatAnnualReturnTarget(rawLiveStrategyAnnualReturnPct)} but is capped here at ${formatAnnualReturnTarget(liveStrategyReturnCapPct)} -- too short a track record to plan decades on` : ''}. Cash transfers are not part of this series. This is a planning assumption, not a forecast.`
         : returnTargetRange.evidence ? `Your ${returnTargetRange.evidence.lowerPct.toFixed(2)}% year-to-date return and ${returnTargetRange.evidence.upperPct.toFixed(2)}% trailing one-year return set the evidence range. Move the slider to choose the annual target. This is a planning assumption, not a forecast.` : `Move the slider to choose the annual target. Historical monthly volatility and return ordering determine the shaded estimates around it. This is a planning assumption, not a forecast.`}</p>
       <label className="planning-inline-note">
         <input type="checkbox" checked={useLiveStrategyReturn} disabled={liveStrategyAnnualReturnPct == null} onChange={(e) => setUseLiveStrategyReturn(e.target.checked)} />
