@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 129,
+  "refreshes_observed": 130,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -19911,6 +19911,140 @@
           ],
           "score_delta": -0.7,
           "confidence_delta": -0.04
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-15T22:38:34.841341+00:00",
+      "current_refresh": "advisor-2026-09-16T16:50:46.843096+00:00",
+      "shared_tickers": 894,
+      "rank_turnover": {
+        "top_40": 0.2,
+        "top_100": 0.2
+      },
+      "tickers_with_availability_driven_change": 17,
+      "tickers_with_availability_driven_change_pct": 0.019,
+      "mean_abs_score_delta": 0.89,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "GIS",
+          "metrics_with_value_change": [
+            "debt_to_equity",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "sales_multiple"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": -6.5,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "ELF",
+          "metrics_with_value_change": [
+            "free_cash_flow_yield",
+            "profit_margin",
+            "return_on_equity"
+          ],
+          "metrics_with_availability_change": [
+            "forward_pe",
+            "peg",
+            "price_to_book"
+          ],
+          "score_delta": 3.8,
+          "confidence_delta": 0.0
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -3.7,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "JEF",
+          "metrics_with_value_change": [
+            "profit_margin"
+          ],
+          "metrics_with_availability_change": [
+            "return_on_equity"
+          ],
+          "score_delta": -3.4,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "COKE",
+          "metrics_with_value_change": [
+            "earnings_growth",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "revenue_growth",
+            "sales_multiple"
+          ],
+          "metrics_with_availability_change": [
+            "debt_to_equity"
+          ],
+          "score_delta": -3.0,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "DCI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 1.4,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "LHX",
+          "metrics_with_value_change": [
+            "debt_to_equity",
+            "earnings_growth",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "return_on_equity"
+          ],
+          "score_delta": -1.2,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "FLO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "revenue_growth"
+          ],
+          "score_delta": 0.8,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "WEN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 0.7,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "ZTS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 0.7,
+          "confidence_delta": -0.01
         }
       ]
     }
