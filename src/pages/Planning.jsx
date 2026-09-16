@@ -4,6 +4,7 @@ import { useData } from '../lib/useData.js'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances.js'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
+import { usePortfolioQuotes } from '../lib/usePortfolioQuotes.js'
 import { buildPortfolioPriceData } from '../lib/portfolioPosition.js'
 import { annualizeReturnPct, currentHoldingsSeries, selectPeriod, sliceSeriesFrom } from '../lib/portfolioAnalytics.js'
 import { LIVE_TRACKING_START } from '../lib/liveTrackingAvailability.js'
@@ -16,7 +17,12 @@ import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
 import { fidelityProjectionBaseline } from '../lib/referenceCashFlows.js'
 import ProjectionPanel from '../components/ProjectionPanel.jsx'
 import { Loading } from '../components/Bits.jsx'
+import { buildHoldingsModel, buildPriceModel } from './portfolio/portfolioModels.js'
 import modelSettings from '../../pipeline/config/settings.json'
+
+// Sector/asset-class breakdown isn't needed here, only the priced total -- an empty ETF
+// list keeps buildHoldingsModel's allocation work from running for nothing.
+const NO_ETF_DATA = { etfs: [] }
 
 function defaultGoalDate() {
   const date = new Date()
@@ -52,10 +58,11 @@ export default function Planning() {
   const { data, loading } = useData('report.json')
   const { data: benchmarkReport, loading: benchmarkLoading } = useData('benchmark-report.json')
   const { positions: storedPositions, loading: portfolioLoading } = useFirebasePortfolio()
-  const { activities } = usePortfolioTracking()
+  const { activities, snapshots } = usePortfolioTracking()
   const previewPortfolio = import.meta.env.DEV
     && new window.URLSearchParams(window.location.search).get('portfolioPreview') === '1'
   const positions = previewPortfolio ? modelSettings.interface.mobile_preview_positions : storedPositions
+  const portfolioQuotes = usePortfolioQuotes(positions.map((position) => position.ticker))
   const finances = useFirebaseFinances()
   const { preferences } = usePreferences()
   const [draft, setDraft] = useState(null)
@@ -85,6 +92,15 @@ export default function Planning() {
     const prices = buildPortfolioPriceData(data?.screen_universe || [], data?.portfolio_coverage || [], data?.research || [])
     return currentHoldingsSeries(positions, prices, data?.benchmark_history?.dates || [])
   }, [data, positions])
+  // Same price resolution the Portfolio and Finances pages use: a live quote refresh outranks
+  // the account's last recorded observation, which outranks published research, which outranks
+  // the seed price stamped on a position when it was added.
+  const { priceData: currentSavingsPriceData } = useMemo(() => buildPriceModel({
+    data, positions, quotes: portfolioQuotes, recordedSnapshots: snapshots,
+  }), [data, positions, portfolioQuotes, snapshots])
+  const currentPortfolioValue = useMemo(() => buildHoldingsModel({
+    data, positions, priceData: currentSavingsPriceData, etfData: NO_ETF_DATA,
+  }).portfolioStats.totalValue, [data, positions, currentSavingsPriceData])
   // The Overview panel's Sharpe/Sortino/Calmar/Annualized-return tiles default to the
   // since-live-tracking window (analyticsScope 'since_algorithm'), not the full holdings
   // history. Calibrating off the unsliced portfolioSeries silently diluted the annualized
@@ -261,7 +277,12 @@ export default function Planning() {
           <span>Calmar <strong>{calibration.riskProfile.calmar?.toFixed(2)}</strong></span>
         </div>
         <p>The simulated distribution's mean and volatility are solved algebraically from these ratios, not resampled from your literal daily path. {calibration.calibratedAt ? `Last calibrated ${calibration.calibratedAt.slice(0, 10)} from ${calibration.riskProfile.observations} daily returns through ${calibration.riskProfile.endDate}.` : 'Calibrating now.'} {calibration.stale ? 'A new calibration is due' + (calibration.staleReason ? ` (${calibration.staleReason})` : '') + ' and will run automatically the next time you open this page.' : `Holds steady until your next ${calibration.refreshLabel} or a new deposit, so day-to-day price moves don't reshuffle the plan.`}</p>
-        <button type="button" className="secondary-button compact" onClick={calibration.recalibrate} disabled={calibration.loading}>Recalibrate now</button>
+        <div className="planning-calibration-actions">
+          <button type="button" className="secondary-button compact" onClick={calibration.recalibrate} disabled={calibration.loading}>Recalibrate now</button>
+          <button type="button" className="secondary-button compact" onClick={() => finances.updateSettings({ currentSavings: Math.round(currentPortfolioValue) })}>
+            Sync current savings from portfolio ({money(currentPortfolioValue)})
+          </button>
+        </div>
       </> : <p>{riskProfile.reason || 'At least 20 daily portfolio observations are required before the simulation can calibrate to your own Sharpe, Sortino, and Calmar ratios. Until then, the model falls back to benchmark-derived history.'}</p>}
     </section>
 

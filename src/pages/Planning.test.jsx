@@ -5,6 +5,7 @@ import { useData } from '../lib/useData.js'
 import { useFirebasePortfolio } from '../lib/useFirebasePortfolio.js'
 import { useFirebaseFinances } from '../lib/useFirebaseFinances.js'
 import { usePortfolioTracking } from '../lib/usePortfolioTracking.js'
+import { usePortfolioQuotes } from '../lib/usePortfolioQuotes.js'
 import { usePortfolioMonteCarloCalibration } from '../lib/usePortfolioMonteCarloCalibration.js'
 import { usePreferences } from '../lib/PreferencesContext.jsx'
 import { useProjectionSimulation } from '../lib/useProjectionSimulation.js'
@@ -13,6 +14,7 @@ vi.mock('../lib/useData.js', () => ({ useData: vi.fn() }))
 vi.mock('../lib/useFirebasePortfolio.js', () => ({ useFirebasePortfolio: vi.fn() }))
 vi.mock('../lib/useFirebaseFinances.js', () => ({ useFirebaseFinances: vi.fn() }))
 vi.mock('../lib/usePortfolioTracking.js', () => ({ usePortfolioTracking: vi.fn() }))
+vi.mock('../lib/usePortfolioQuotes.js', () => ({ usePortfolioQuotes: vi.fn() }))
 vi.mock('../lib/usePortfolioMonteCarloCalibration.js', () => ({ usePortfolioMonteCarloCalibration: vi.fn() }))
 vi.mock('../lib/PreferencesContext.jsx', () => ({ usePreferences: vi.fn(), formatPreferenceMoney: (value) => `$${Number(value).toLocaleString()}` }))
 vi.mock('../lib/useProjectionSimulation.js', () => ({ useProjectionSimulation: vi.fn() }))
@@ -33,7 +35,8 @@ describe('Planning hub', () => {
       ? { data: { histories: { SPY: { dates, closes: dates.map((_, index) => 100 + index + Math.sin(index) * 4) } } }, loading: false }
       : { data: { screen_universe: [], portfolio_coverage: [], research: [], benchmark_history: { dates } }, loading: false })
     useFirebasePortfolio.mockReturnValue({ positions: [{ ticker: 'MSFT', shares: 1, snapshotSource: 'User-provided brokerage snapshot' }], loading: false })
-    usePortfolioTracking.mockReturnValue({ activities: [] })
+    usePortfolioTracking.mockReturnValue({ activities: [], snapshots: [] })
+    usePortfolioQuotes.mockReturnValue({ quotes: {}, fetchedAt: null, refreshing: false, message: '', error: '', requestRefresh: vi.fn() })
     usePortfolioMonteCarloCalibration.mockReturnValue({
       riskProfile: { available: false },
       calibratedAt: null,
@@ -139,6 +142,29 @@ describe('Planning hub', () => {
     fireEvent.click(toggle)
     expect(toggle).not.toBeChecked()
     expect(screen.getByRole('slider', { name: /Annual return target/ })).not.toBeDisabled()
+  })
+
+  it('syncs current savings from the portfolio next to the recalibration button', async () => {
+    useData.mockImplementation((file) => file === 'benchmark-report.json'
+      ? { data: { histories: { SPY: { dates, closes: dates.map((_, index) => 100 + index + Math.sin(index) * 4) } } }, loading: false }
+      : { data: { screen_universe: [{ ticker: 'MSFT', price: 200 }], portfolio_coverage: [], research: [], benchmark_history: { dates } }, loading: false })
+    usePortfolioMonteCarloCalibration.mockReturnValue({
+      riskProfile: {
+        available: true, annualReturn: 0.12, sharpe: 1.1, sortino: 1.4, calmar: 0.9,
+        observations: 60, startDate: '2026-06-01', endDate: '2026-08-31',
+      },
+      calibratedAt: '2026-08-31T00:00:00.000Z',
+      stale: false,
+      staleReason: null,
+      refreshLabel: 'Friday 4pm market close',
+      loading: false,
+      recalibrate: vi.fn(),
+    })
+    render(<MemoryRouter><Planning /></MemoryRouter>)
+    const sync = await screen.findByRole('button', { name: /Sync current savings from portfolio/ })
+    expect(screen.getByRole('button', { name: 'Recalibrate now' })).toBeInTheDocument()
+    fireEvent.click(sync)
+    expect(updateSettings).toHaveBeenCalledWith({ currentSavings: 200 })
   })
 
   it('reveals Coast FIRE status only once the setting is switched on', async () => {
