@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-15T17:44:22.441637+00:00",
+  "generated_at": "2026-09-16T17:41:46.471217+00:00",
   "themes": [
     {
       "id": "aerospace_forging_capacity",
@@ -343,60 +343,8 @@
           ],
           "rank_reason": [
             "Ranks #5 of 20 on an opportunity score of 62.2: exposure 81 (45% of that score), business quality 64 (35% of that score), in the most expensive third of its sector (20% of that score)",
-            "It ranks above RTX (62.2) despite losing to it on valuation (the most expensive third against the middle third); exposure and business quality make up the difference",
+            "It ranks above CMI (60.8) despite losing to it on valuation (the most expensive third against the middle third); exposure and business quality make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 85% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
-          ]
-        },
-        {
-          "theme_id": "aerospace_forging_capacity",
-          "theme_exposure_score": 67.4,
-          "confidence": 0.5,
-          "disclosure_backed": false,
-          "eligible": true,
-          "excluded_by": [],
-          "leading_signals_fired": [
-            "backlog_growth",
-            "filing_keyword_density_trend"
-          ],
-          "theme_level_signals_fired": [],
-          "signals": [
-            {
-              "name": "backlog_growth",
-              "score": 87.9,
-              "weight": 0.35,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.2294
-            },
-            {
-              "name": "filing_keyword_density_trend",
-              "score": 59.4,
-              "weight": 0.15,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.0943
-            }
-          ],
-          "signals_answered": 2,
-          "company_signals_answered": 2,
-          "ticker": "RTX",
-          "name": "RTX Corporation",
-          "sector": "Industrials",
-          "industry": "Aerospace & Defense",
-          "role": "root",
-          "candidate_source": "sector_peer",
-          "fundamental_score": 62.5,
-          "valuation_percentile": 50.0,
-          "opportunity_score": 62.2,
-          "research_coverage": 0.88,
-          "statements_available": false,
-          "why": [
-            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
-            "Placed as the root of this chain, selling the product the theme is named for",
-            "Its remaining performance obligation (order backlog) is +23% year over year",
-            "Its latest 10-K devotes 9% more of its language to this theme than the prior year's",
-            "2 of 4 declared signals resolved, carrying 50% of this theme's signal weight",
-            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ]
         },
         {
@@ -602,6 +550,58 @@
             "2 of 4 declared signals resolved, carrying 50% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ]
+        },
+        {
+          "theme_id": "aerospace_forging_capacity",
+          "theme_exposure_score": 56.9,
+          "confidence": 0.5,
+          "disclosure_backed": false,
+          "eligible": true,
+          "excluded_by": [],
+          "leading_signals_fired": [
+            "backlog_growth",
+            "filing_keyword_density_trend"
+          ],
+          "theme_level_signals_fired": [],
+          "signals": [
+            {
+              "name": "backlog_growth",
+              "score": 71.7,
+              "weight": 0.35,
+              "leading": true,
+              "theme_level": false,
+              "raw": 0.1316
+            },
+            {
+              "name": "filing_keyword_density_trend",
+              "score": 56.1,
+              "weight": 0.15,
+              "leading": true,
+              "theme_level": false,
+              "raw": 0.0613
+            }
+          ],
+          "signals_answered": 2,
+          "company_signals_answered": 2,
+          "ticker": "LHX",
+          "name": "L3Harris Technologies, Inc.",
+          "sector": "Industrials",
+          "industry": "Aerospace & Defense",
+          "role": "root",
+          "candidate_source": "sector_peer",
+          "fundamental_score": 64.5,
+          "valuation_percentile": 50.0,
+          "opportunity_score": 58.2,
+          "research_coverage": 0.88,
+          "statements_available": false,
+          "why": [
+            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
+            "Placed as the root of this chain, selling the product the theme is named for",
+            "Its remaining performance obligation (order backlog) is +13% year over year",
+            "Its latest 10-K devotes 6% more of its language to this theme than the prior year's",
+            "2 of 4 declared signals resolved, carrying 50% of this theme's signal weight",
+            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ]
         }
       ],
       "trend": {
@@ -609,15 +609,15 @@
         "members_measured": 20,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 16.65,
-          "relative_strength_20d_median": -11.11,
-          "acceleration_median": 0.48,
+          "relative_strength_median": 19.8,
+          "relative_strength_20d_median": -10.07,
+          "acceleration_median": 0.33,
           "label": "strengthening"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.65,
+          "outperforming_share": 0.75,
           "label": "broad"
         },
         "leadership": {
@@ -628,16 +628,16 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.91
+          "volume_ratio_median": 0.95
         },
         "crowding": {
-          "expensiveness_percentile_median": 66.65,
-          "already_priced": false
+          "expensiveness_percentile_median": 83.3,
+          "already_priced": true
         },
         "maturity": {
           "members_measured": 20,
           "minimum_members": 5,
-          "return_dispersion": 14.85,
+          "return_dispersion": 17.27,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -645,24 +645,24 @@
           {
             "role": "supplier",
             "members": 9,
-            "relative_strength_median": 18.7,
+            "relative_strength_median": 27.7,
             "above_50d_share": null
           },
           {
             "role": "root",
             "members": 11,
-            "relative_strength_median": 14.6,
+            "relative_strength_median": 14.9,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 14.6,
-          "supply_chain_relative_strength": 18.7,
+          "root_relative_strength": 14.9,
+          "supply_chain_relative_strength": 27.7,
           "confirms": true
         },
         "verdict": {
-          "label": "broadening",
-          "summary": "The group is outperforming, most of its members are participating, and it is not yet priced as an expensive third of the market."
+          "label": "strong but already priced",
+          "summary": "The group is outperforming, and its members already trade in the most expensive third of their sectors - the setup thematic products have historically bought at the wrong time."
         }
       },
       "biggest_players": []
@@ -1338,9 +1338,9 @@
         "members_measured": 37,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 52.1,
-          "relative_strength_20d_median": 0.69,
-          "acceleration_median": 0.88,
+          "relative_strength_median": 53.3,
+          "relative_strength_20d_median": 1.09,
+          "acceleration_median": 0.58,
           "label": "strengthening"
         },
         "breadth": {
@@ -1357,7 +1357,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 1.2
+          "volume_ratio_median": 1.23
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -1366,7 +1366,7 @@
         "maturity": {
           "members_measured": 37,
           "minimum_members": 5,
-          "return_dispersion": 25.42,
+          "return_dispersion": 24.92,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -1374,13 +1374,13 @@
           {
             "role": "enabler",
             "members": 11,
-            "relative_strength_median": 64.0,
+            "relative_strength_median": 67.4,
             "above_50d_share": null
           },
           {
             "role": "root",
             "members": 15,
-            "relative_strength_median": 48.0,
+            "relative_strength_median": 47.2,
             "above_50d_share": null
           },
           {
@@ -1391,8 +1391,8 @@
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 48.0,
-          "supply_chain_relative_strength": 53.95,
+          "root_relative_strength": 47.2,
+          "supply_chain_relative_strength": 55.65,
           "confirms": true
         },
         "verdict": {
@@ -2088,15 +2088,15 @@
         "members_measured": 40,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 10.75,
-          "relative_strength_20d_median": -13.07,
-          "acceleration_median": -0.77,
+          "relative_strength_median": 26.65,
+          "relative_strength_20d_median": -7.79,
+          "acceleration_median": -0.65,
           "label": "mixed"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.675,
+          "outperforming_share": 0.925,
           "label": "broad"
         },
         "leadership": {
@@ -2107,16 +2107,16 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.8
+          "volume_ratio_median": 0.78
         },
         "crowding": {
-          "expensiveness_percentile_median": 83.3,
-          "already_priced": true
+          "expensiveness_percentile_median": 50.0,
+          "already_priced": false
         },
         "maturity": {
           "members_measured": 40,
           "minimum_members": 5,
-          "return_dispersion": 26.38,
+          "return_dispersion": 24.0,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -2124,36 +2124,36 @@
           {
             "role": "enabler",
             "members": 4,
-            "relative_strength_median": 41.1,
+            "relative_strength_median": 42.95,
             "above_50d_share": null
           },
           {
             "role": "root",
             "members": 12,
-            "relative_strength_median": 27.75,
-            "above_50d_share": null
-          },
-          {
-            "role": "infrastructure",
-            "members": 14,
-            "relative_strength_median": 10.75,
+            "relative_strength_median": 36.25,
             "above_50d_share": null
           },
           {
             "role": "supplier",
             "members": 10,
-            "relative_strength_median": 0.0,
+            "relative_strength_median": 24.65,
+            "above_50d_share": null
+          },
+          {
+            "role": "infrastructure",
+            "members": 14,
+            "relative_strength_median": 24.35,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 27.75,
-          "supply_chain_relative_strength": 10.75,
+          "root_relative_strength": 36.25,
+          "supply_chain_relative_strength": 24.65,
           "confirms": true
         },
         "verdict": {
           "label": "mixed",
-          "summary": "The group is neither clearly leading nor clearly lagging; members already trade expensively relative to their sectors."
+          "summary": "The group is neither clearly leading nor clearly lagging."
         }
       },
       "biggest_players": []
@@ -2804,15 +2804,15 @@
         "members_measured": 16,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 17.4,
-          "relative_strength_20d_median": -10.86,
-          "acceleration_median": -0.88,
+          "relative_strength_median": 31.25,
+          "relative_strength_20d_median": -6.27,
+          "acceleration_median": -0.86,
           "label": "mixed"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.625,
+          "outperforming_share": 0.875,
           "label": "broad"
         },
         "leadership": {
@@ -2823,7 +2823,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.87
+          "volume_ratio_median": 0.93
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -2832,7 +2832,7 @@
         "maturity": {
           "members_measured": 16,
           "minimum_members": 5,
-          "return_dispersion": 26.94,
+          "return_dispersion": 24.53,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -2840,25 +2840,25 @@
           {
             "role": "supplier",
             "members": 6,
-            "relative_strength_median": 27.95,
+            "relative_strength_median": 35.95,
             "above_50d_share": null
           },
           {
             "role": "infrastructure",
             "members": 6,
-            "relative_strength_median": 24.75,
+            "relative_strength_median": 34.65,
             "above_50d_share": null
           },
           {
             "role": "root",
             "members": 4,
-            "relative_strength_median": 0.0,
+            "relative_strength_median": 11.6,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 0.0,
-          "supply_chain_relative_strength": 26.35,
+          "root_relative_strength": 11.6,
+          "supply_chain_relative_strength": 35.3,
           "confirms": true
         },
         "verdict": {
@@ -3001,7 +3001,7 @@
           ],
           "rank_reason": [
             "Ranks #1 of 74 on an opportunity score of 73.4: exposure 67 (45% of that score), business quality 76 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above PCTY (73.1) despite losing to it on business quality (76 against 81); exposure and valuation make up the difference",
+            "It ranks above PCTY (73.4) despite losing to it on business quality (76 against 82); exposure and valuation make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -3042,9 +3042,9 @@
           "industry": "Software - Application",
           "role": "enabler",
           "candidate_source": "sector_peer",
-          "fundamental_score": 80.6,
+          "fundamental_score": 81.6,
           "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 73.1,
+          "opportunity_score": 73.4,
           "research_coverage": 0.88,
           "statements_available": false,
           "why": [
@@ -3056,8 +3056,8 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #2 of 74 on an opportunity score of 73.1: exposure 63 (45% of that score), business quality 81 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above PNR (71.9) mainly on business quality: 81 against 78",
+            "Ranks #2 of 74 on an opportunity score of 73.4: exposure 63 (45% of that score), business quality 82 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "It ranks above PNR (71.9) mainly on business quality: 82 against 78",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -3225,7 +3225,7 @@
           ],
           "rank_reason": [
             "Ranks #5 of 74 on an opportunity score of 68.8: exposure 57 (45% of that score), business quality 76 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above AGCO (66.4) mainly on exposure: 57 against 53",
+            "It ranks above AGCO (66.2) mainly on exposure: 57 against 53",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -3266,9 +3266,9 @@
           "industry": "Farm & Heavy Construction Machinery",
           "role": null,
           "candidate_source": "sector_peer",
-          "fundamental_score": 74.1,
+          "fundamental_score": 73.4,
           "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 66.4,
+          "opportunity_score": 66.2,
           "research_coverage": 0.89,
           "statements_available": false,
           "why": [
@@ -3514,15 +3514,15 @@
         "members_measured": 74,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 32.3,
-          "relative_strength_20d_median": -5.9,
-          "acceleration_median": 0.63,
+          "relative_strength_median": 38.05,
+          "relative_strength_20d_median": -3.98,
+          "acceleration_median": 0.45,
           "label": "strengthening"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.892,
+          "outperforming_share": 0.959,
           "label": "broad"
         },
         "leadership": {
@@ -3533,7 +3533,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 1.08
+          "volume_ratio_median": 1.1
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -3542,7 +3542,7 @@
         "maturity": {
           "members_measured": 74,
           "minimum_members": 5,
-          "return_dispersion": 30.48,
+          "return_dispersion": 25.6,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -3550,25 +3550,25 @@
           {
             "role": "enabler",
             "members": 32,
-            "relative_strength_median": 57.95,
+            "relative_strength_median": 50.05,
             "above_50d_share": null
           },
           {
             "role": "root",
             "members": 19,
-            "relative_strength_median": 27.4,
+            "relative_strength_median": 33.3,
             "above_50d_share": null
           },
           {
             "role": "supplier",
             "members": 16,
-            "relative_strength_median": 17.8,
+            "relative_strength_median": 32.2,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 27.4,
-          "supply_chain_relative_strength": 37.88,
+          "root_relative_strength": 33.3,
+          "supply_chain_relative_strength": 41.12,
           "confirms": true
         },
         "verdict": {
@@ -4234,15 +4234,15 @@
         "members_measured": 22,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 22.6,
-          "relative_strength_20d_median": -9.14,
-          "acceleration_median": 0.41,
+          "relative_strength_median": 30.65,
+          "relative_strength_20d_median": -6.45,
+          "acceleration_median": 0.15,
           "label": "strengthening"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.818,
+          "outperforming_share": 0.955,
           "label": "broad"
         },
         "leadership": {
@@ -4253,16 +4253,16 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.82
+          "volume_ratio_median": 0.8
         },
         "crowding": {
-          "expensiveness_percentile_median": 83.3,
-          "already_priced": true
+          "expensiveness_percentile_median": 50.0,
+          "already_priced": false
         },
         "maturity": {
           "members_measured": 22,
           "minimum_members": 5,
-          "return_dispersion": 15.95,
+          "return_dispersion": 15.38,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -4270,18 +4270,18 @@
           {
             "role": "root",
             "members": 18,
-            "relative_strength_median": 22.7,
+            "relative_strength_median": 30.65,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 22.7,
+          "root_relative_strength": 30.65,
           "supply_chain_relative_strength": null,
           "confirms": null
         },
         "verdict": {
-          "label": "strong but already priced",
-          "summary": "The group is outperforming, and its members already trade in the most expensive third of their sectors - the setup thematic products have historically bought at the wrong time."
+          "label": "broadening",
+          "summary": "The group is outperforming, most of its members are participating, and it is not yet priced as an expensive third of the market."
         }
       },
       "biggest_players": []
@@ -4488,7 +4488,7 @@
           ],
           "rank_reason": [
             "Ranks #1 of 68 on an opportunity score of 80.0: exposure 85 (45% of that score), business quality 72 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above PCTY (79.6) despite losing to it on business quality (72 against 81); exposure and valuation make up the difference",
+            "It ranks above PCTY (79.9) despite losing to it on business quality (72 against 82); exposure and valuation make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -4539,9 +4539,9 @@
           "industry": "Software - Application",
           "role": "enabler",
           "candidate_source": "sector_peer",
-          "fundamental_score": 80.6,
+          "fundamental_score": 81.6,
           "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 79.6,
+          "opportunity_score": 79.9,
           "research_coverage": 0.88,
           "statements_available": false,
           "why": [
@@ -4553,8 +4553,8 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #2 of 68 on an opportunity score of 79.6: exposure 77 (45% of that score), business quality 81 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above EPAM (79.3) despite losing to it on business quality (81 against 86); exposure and valuation make up the difference",
+            "Ranks #2 of 68 on an opportunity score of 79.9: exposure 77 (45% of that score), business quality 82 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "It ranks above EPAM (79.3) mainly on exposure: 77 against 72",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -4736,7 +4736,7 @@
           ],
           "rank_reason": [
             "Ranks #5 of 68 on an opportunity score of 78.1: exposure 83 (45% of that score), business quality 69 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above G (77.9) despite losing to it on business quality (69 against 86); exposure and valuation make up the difference",
+            "It ranks above G (77.5) despite losing to it on business quality (69 against 85); exposure and valuation make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -4787,9 +4787,9 @@
           "industry": "Information Technology Services",
           "role": "service",
           "candidate_source": "sector_peer",
-          "fundamental_score": 85.5,
+          "fundamental_score": 84.6,
           "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 77.9,
+          "opportunity_score": 77.5,
           "research_coverage": 0.88,
           "statements_available": false,
           "why": [
@@ -5019,15 +5019,15 @@
         "members_measured": 68,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 60.7,
-          "relative_strength_20d_median": 3.58,
-          "acceleration_median": 0.68,
+          "relative_strength_median": 55.9,
+          "relative_strength_20d_median": 1.96,
+          "acceleration_median": 0.59,
           "label": "strengthening"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.956,
+          "outperforming_share": 0.971,
           "label": "broad"
         },
         "leadership": {
@@ -5038,7 +5038,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 1.31
+          "volume_ratio_median": 1.36
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -5047,39 +5047,39 @@
         "maturity": {
           "members_measured": 68,
           "minimum_members": 5,
-          "return_dispersion": 28.91,
+          "return_dispersion": 26.84,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
         "roles": [
           {
-            "role": "service",
-            "members": 14,
-            "relative_strength_median": 69.2,
+            "role": "root",
+            "members": 20,
+            "relative_strength_median": 62.6,
             "above_50d_share": null
           },
           {
-            "role": "root",
-            "members": 20,
-            "relative_strength_median": 65.25,
+            "role": "service",
+            "members": 14,
+            "relative_strength_median": 57.2,
             "above_50d_share": null
           },
           {
             "role": "enabler",
             "members": 30,
-            "relative_strength_median": 59.75,
+            "relative_strength_median": 55.9,
             "above_50d_share": null
           },
           {
             "role": "supplier",
             "members": 4,
-            "relative_strength_median": 41.1,
+            "relative_strength_median": 42.95,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 65.25,
-          "supply_chain_relative_strength": 50.42,
+          "root_relative_strength": 62.6,
+          "supply_chain_relative_strength": 49.42,
           "confirms": true
         },
         "verdict": {
@@ -5696,7 +5696,7 @@
               "weight": 0.2,
               "leading": true,
               "theme_level": false,
-              "raw": 0.7782
+              "raw": 0.9933
             },
             {
               "name": "hyperscaler_capex_growth",
@@ -5709,21 +5709,21 @@
           ],
           "signals_answered": 2,
           "company_signals_answered": 1,
-          "ticker": "STRL",
-          "name": "Sterling Infrastructure, Inc.",
+          "ticker": "FIX",
+          "name": "Comfort Systems USA, Inc.",
           "sector": "Industrials",
           "industry": "Engineering & Construction",
           "role": "infrastructure",
           "candidate_source": "sector_peer",
-          "fundamental_score": 69.0,
+          "fundamental_score": 69.4,
           "valuation_percentile": 83.3,
-          "opportunity_score": 65.7,
-          "research_coverage": 0.87,
+          "opportunity_score": 65.9,
+          "research_coverage": 0.89,
           "statements_available": false,
           "why": [
             "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
             "Placed as infrastructure - what has to be built before the rest of the chain works",
-            "Its remaining performance obligation (order backlog) is +78% year over year",
+            "Its remaining performance obligation (order backlog) is +99% year over year",
             "The theme's named spenders grew capital expenditure +79% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
             "2 of 5 declared signals resolved, carrying 35% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
@@ -5735,15 +5735,15 @@
         "members_measured": 27,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 20.6,
-          "relative_strength_20d_median": -9.81,
-          "acceleration_median": 0.11,
+          "relative_strength_median": 30.5,
+          "relative_strength_20d_median": -6.5,
+          "acceleration_median": 0.04,
           "label": "strengthening"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.889,
+          "outperforming_share": 1.0,
           "label": "broad"
         },
         "leadership": {
@@ -5754,16 +5754,16 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.85
+          "volume_ratio_median": 0.83
         },
         "crowding": {
-          "expensiveness_percentile_median": 83.3,
-          "already_priced": true
+          "expensiveness_percentile_median": 50.0,
+          "already_priced": false
         },
         "maturity": {
           "members_measured": 27,
           "minimum_members": 5,
-          "return_dispersion": 17.01,
+          "return_dispersion": 14.94,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -5771,30 +5771,30 @@
           {
             "role": "root",
             "members": 17,
-            "relative_strength_median": 26.7,
-            "above_50d_share": null
-          },
-          {
-            "role": "infrastructure",
-            "members": 8,
-            "relative_strength_median": 10.75,
+            "relative_strength_median": 33.3,
             "above_50d_share": null
           },
           {
             "role": "supplier",
             "members": 2,
-            "relative_strength_median": 4.6,
+            "relative_strength_median": 25.15,
+            "above_50d_share": null
+          },
+          {
+            "role": "infrastructure",
+            "members": 8,
+            "relative_strength_median": 22.9,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 26.7,
-          "supply_chain_relative_strength": 7.67,
+          "root_relative_strength": 33.3,
+          "supply_chain_relative_strength": 24.02,
           "confirms": true
         },
         "verdict": {
-          "label": "strong but already priced",
-          "summary": "The group is outperforming, and its members already trade in the most expensive third of their sectors - the setup thematic products have historically bought at the wrong time."
+          "label": "broadening",
+          "summary": "The group is outperforming, most of its members are participating, and it is not yet priced as an expensive third of the market."
         }
       },
       "biggest_players": []
@@ -5905,9 +5905,9 @@
           "industry": "Information Technology Services",
           "role": "service",
           "candidate_source": "sector_peer",
-          "fundamental_score": 85.5,
+          "fundamental_score": 84.6,
           "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 77.3,
+          "opportunity_score": 77.0,
           "research_coverage": 0.88,
           "statements_available": false,
           "why": [
@@ -5919,8 +5919,8 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #1 of 36 on an opportunity score of 77.3: exposure 68 (45% of that score), business quality 86 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above CDW (72.6) mainly on business quality: 86 against 72",
+            "Ranks #1 of 36 on an opportunity score of 77.0: exposure 68 (45% of that score), business quality 85 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "It ranks above CDW (72.6) mainly on business quality: 85 against 72",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -6296,67 +6296,6 @@
         },
         {
           "theme_id": "defense_rearmament",
-          "theme_exposure_score": 61.5,
-          "confidence": 0.55,
-          "disclosure_backed": false,
-          "eligible": true,
-          "excluded_by": [],
-          "leading_signals_fired": [
-            "filing_keyword_density_trend",
-            "backlog_growth"
-          ],
-          "theme_level_signals_fired": [],
-          "signals": [
-            {
-              "name": "filing_keyword_density_trend",
-              "score": 72.1,
-              "weight": 0.1,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.221
-            },
-            {
-              "name": "backlog_growth",
-              "score": 87.9,
-              "weight": 0.3,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.2294
-            },
-            {
-              "name": "spender_capex_growth",
-              "score": 41.1,
-              "weight": 0.15,
-              "leading": true,
-              "theme_level": true,
-              "raw": -0.0537
-            }
-          ],
-          "signals_answered": 3,
-          "company_signals_answered": 2,
-          "ticker": "RTX",
-          "name": "RTX Corporation",
-          "sector": "Industrials",
-          "industry": "Aerospace & Defense",
-          "role": "root",
-          "candidate_source": "sector_peer",
-          "fundamental_score": 62.5,
-          "valuation_percentile": 50.0,
-          "opportunity_score": 59.5,
-          "research_coverage": 0.88,
-          "statements_available": false,
-          "why": [
-            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
-            "Placed as the root of this chain, selling the product the theme is named for",
-            "Its latest 10-K devotes 22% more of its language to this theme than the prior year's",
-            "Its remaining performance obligation (order backlog) is +23% year over year",
-            "The theme's named spenders grew capital expenditure -5% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
-            "3 of 4 declared signals resolved, carrying 55% of this theme's signal weight",
-            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
-          ]
-        },
-        {
-          "theme_id": "defense_rearmament",
           "theme_exposure_score": 51.5,
           "confidence": 0.55,
           "disclosure_backed": false,
@@ -6460,10 +6399,10 @@
           "industry": "Aerospace & Defense",
           "role": "root",
           "candidate_source": "sector_peer",
-          "fundamental_score": 65.2,
+          "fundamental_score": 64.5,
           "valuation_percentile": 50.0,
-          "opportunity_score": 57.9,
-          "research_coverage": 0.84,
+          "opportunity_score": 57.7,
+          "research_coverage": 0.88,
           "statements_available": false,
           "why": [
             "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
@@ -6474,6 +6413,57 @@
             "3 of 4 declared signals resolved, carrying 55% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ]
+        },
+        {
+          "theme_id": "defense_rearmament",
+          "theme_exposure_score": 48.6,
+          "confidence": 0.45,
+          "disclosure_backed": false,
+          "eligible": true,
+          "excluded_by": [],
+          "leading_signals_fired": [
+            "backlog_growth"
+          ],
+          "theme_level_signals_fired": [],
+          "signals": [
+            {
+              "name": "backlog_growth",
+              "score": 65.2,
+              "weight": 0.3,
+              "leading": true,
+              "theme_level": false,
+              "raw": 0.092
+            },
+            {
+              "name": "spender_capex_growth",
+              "score": 41.1,
+              "weight": 0.15,
+              "leading": true,
+              "theme_level": true,
+              "raw": -0.0537
+            }
+          ],
+          "signals_answered": 2,
+          "company_signals_answered": 1,
+          "ticker": "KEYS",
+          "name": "Keysight Technologies Inc.",
+          "sector": "Technology",
+          "industry": "Scientific & Technical Instruments",
+          "role": "supplier",
+          "candidate_source": "sector_peer",
+          "fundamental_score": 71.4,
+          "valuation_percentile": 50.0,
+          "opportunity_score": 56.9,
+          "research_coverage": 0.89,
+          "statements_available": false,
+          "why": [
+            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
+            "Placed as a supplier into this chain",
+            "Its remaining performance obligation (order backlog) is +9% year over year",
+            "The theme's named spenders grew capital expenditure -5% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
+            "2 of 4 declared signals resolved, carrying 45% of this theme's signal weight",
+            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ]
         }
       ],
       "trend": {
@@ -6481,15 +6471,15 @@
         "members_measured": 36,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 24.25,
-          "relative_strength_20d_median": -8.58,
-          "acceleration_median": 0.72,
+          "relative_strength_median": 25.55,
+          "relative_strength_20d_median": -8.15,
+          "acceleration_median": 0.43,
           "label": "strengthening"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.778,
+          "outperforming_share": 0.833,
           "label": "broad"
         },
         "leadership": {
@@ -6500,7 +6490,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 1.06
+          "volume_ratio_median": 1.08
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -6509,7 +6499,7 @@
         "maturity": {
           "members_measured": 36,
           "minimum_members": 5,
-          "return_dispersion": 27.23,
+          "return_dispersion": 23.16,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -6517,25 +6507,25 @@
           {
             "role": "service",
             "members": 11,
-            "relative_strength_median": 59.7,
+            "relative_strength_median": 46.3,
             "above_50d_share": null
           },
           {
             "role": "supplier",
             "members": 7,
-            "relative_strength_median": 24.5,
+            "relative_strength_median": 34.2,
             "above_50d_share": null
           },
           {
             "role": "root",
             "members": 18,
-            "relative_strength_median": 13.35,
+            "relative_strength_median": 18.1,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 13.35,
-          "supply_chain_relative_strength": 24.5,
+          "root_relative_strength": 18.1,
+          "supply_chain_relative_strength": 34.2,
           "confirms": true
         },
         "verdict": {
@@ -6654,9 +6644,9 @@
           "industry": "Information Technology Services",
           "role": "enabler",
           "candidate_source": "sector_peer",
-          "fundamental_score": 85.5,
+          "fundamental_score": 84.6,
           "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 80.8,
+          "opportunity_score": 80.5,
           "research_coverage": 0.88,
           "statements_available": false,
           "why": [
@@ -6668,8 +6658,8 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #1 of 64 on an opportunity score of 80.8: exposure 76 (45% of that score), business quality 86 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above PTC (77.9) mainly on business quality: 86 against 81",
+            "Ranks #1 of 64 on an opportunity score of 80.5: exposure 76 (45% of that score), business quality 85 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "It ranks above PTC (77.9) mainly on business quality: 85 against 81",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -6727,7 +6717,73 @@
           ],
           "rank_reason": [
             "Ranks #2 of 64 on an opportunity score of 77.9: exposure 73 (45% of that score), business quality 81 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above ADP (76.1) mainly on business quality: 81 against 76",
+            "It ranks above PCTY (76.4) mainly on exposure: 73 against 69",
+            "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
+          ]
+        },
+        {
+          "theme_id": "digital_payments",
+          "theme_exposure_score": 69.3,
+          "confidence": 0.53,
+          "disclosure_backed": false,
+          "eligible": true,
+          "excluded_by": [],
+          "leading_signals_fired": [
+            "backlog_growth"
+          ],
+          "theme_level_signals_fired": [
+            "spender_capex_growth"
+          ],
+          "signals": [
+            {
+              "name": "filing_keyword_density_trend",
+              "score": 49.1,
+              "weight": 0.1053,
+              "leading": true,
+              "theme_level": false,
+              "raw": -0.009
+            },
+            {
+              "name": "backlog_growth",
+              "score": 100.0,
+              "weight": 0.2105,
+              "leading": true,
+              "theme_level": false,
+              "raw": 0.6178
+            },
+            {
+              "name": "spender_capex_growth",
+              "score": 79.1,
+              "weight": 0.2105,
+              "leading": true,
+              "theme_level": true,
+              "raw": 0.1766
+            }
+          ],
+          "signals_answered": 3,
+          "company_signals_answered": 2,
+          "ticker": "PCTY",
+          "name": "Paylocity Holding Corporation",
+          "sector": "Technology",
+          "industry": "Software - Application",
+          "role": "supplier",
+          "candidate_source": "sector_peer",
+          "fundamental_score": 81.6,
+          "valuation_percentile": 16.700000000000003,
+          "opportunity_score": 76.4,
+          "research_coverage": 0.88,
+          "statements_available": false,
+          "why": [
+            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
+            "Placed as a supplier into this chain",
+            "Its remaining performance obligation (order backlog) is +62% year over year",
+            "The theme's named spenders grew capital expenditure +18% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
+            "3 of 4 declared signals resolved, carrying 53% of this theme's signal weight",
+            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ],
+          "rank_reason": [
+            "Ranks #3 of 64 on an opportunity score of 76.4: exposure 69 (45% of that score), business quality 82 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "It ranks above ADP (76.1) mainly on business quality: 82 against 76",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -6784,74 +6840,8 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #3 of 64 on an opportunity score of 76.1: exposure 73 (45% of that score), business quality 76 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above PCTY (76.1) despite losing to it on business quality (76 against 81); exposure and valuation make up the difference",
-            "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
-          ]
-        },
-        {
-          "theme_id": "digital_payments",
-          "theme_exposure_score": 69.3,
-          "confidence": 0.53,
-          "disclosure_backed": false,
-          "eligible": true,
-          "excluded_by": [],
-          "leading_signals_fired": [
-            "backlog_growth"
-          ],
-          "theme_level_signals_fired": [
-            "spender_capex_growth"
-          ],
-          "signals": [
-            {
-              "name": "filing_keyword_density_trend",
-              "score": 49.1,
-              "weight": 0.1053,
-              "leading": true,
-              "theme_level": false,
-              "raw": -0.009
-            },
-            {
-              "name": "backlog_growth",
-              "score": 100.0,
-              "weight": 0.2105,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.6178
-            },
-            {
-              "name": "spender_capex_growth",
-              "score": 79.1,
-              "weight": 0.2105,
-              "leading": true,
-              "theme_level": true,
-              "raw": 0.1766
-            }
-          ],
-          "signals_answered": 3,
-          "company_signals_answered": 2,
-          "ticker": "PCTY",
-          "name": "Paylocity Holding Corporation",
-          "sector": "Technology",
-          "industry": "Software - Application",
-          "role": "supplier",
-          "candidate_source": "sector_peer",
-          "fundamental_score": 80.6,
-          "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 76.1,
-          "research_coverage": 0.88,
-          "statements_available": false,
-          "why": [
-            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
-            "Placed as a supplier into this chain",
-            "Its remaining performance obligation (order backlog) is +62% year over year",
-            "The theme's named spenders grew capital expenditure +18% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
-            "3 of 4 declared signals resolved, carrying 53% of this theme's signal weight",
-            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
-          ],
-          "rank_reason": [
-            "Ranks #4 of 64 on an opportunity score of 76.1: exposure 69 (45% of that score), business quality 81 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above LDOS (74.0) mainly on exposure: 69 against 64",
+            "Ranks #4 of 64 on an opportunity score of 76.1: exposure 73 (45% of that score), business quality 76 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "It ranks above LDOS (74.0) mainly on exposure: 73 against 64",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -7212,9 +7202,9 @@
         "members_measured": 64,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 61.4,
-          "relative_strength_20d_median": 3.8,
-          "acceleration_median": 0.71,
+          "relative_strength_median": 57.1,
+          "relative_strength_20d_median": 2.37,
+          "acceleration_median": 0.62,
           "label": "strengthening"
         },
         "breadth": {
@@ -7231,7 +7221,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 1.32
+          "volume_ratio_median": 1.38
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -7240,39 +7230,39 @@
         "maturity": {
           "members_measured": 64,
           "minimum_members": 5,
-          "return_dispersion": 27.33,
+          "return_dispersion": 26.04,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
         "roles": [
           {
-            "role": "root",
-            "members": 2,
-            "relative_strength_median": 65.35,
-            "above_50d_share": null
-          },
-          {
             "role": "enabler",
             "members": 31,
-            "relative_strength_median": 61.9,
+            "relative_strength_median": 60.0,
             "above_50d_share": null
           },
           {
             "role": "supplier",
             "members": 30,
-            "relative_strength_median": 59.75,
+            "relative_strength_median": 55.9,
+            "above_50d_share": null
+          },
+          {
+            "role": "root",
+            "members": 2,
+            "relative_strength_median": 54.75,
             "above_50d_share": null
           },
           {
             "role": "service",
             "members": 1,
-            "relative_strength_median": 50.5,
+            "relative_strength_median": 46.3,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 65.35,
-          "supply_chain_relative_strength": 60.83,
+          "root_relative_strength": 54.75,
+          "supply_chain_relative_strength": 57.95,
           "confirms": true
         },
         "verdict": {
@@ -7411,7 +7401,7 @@
           ],
           "rank_reason": [
             "Ranks #1 of 44 on an opportunity score of 81.9: exposure 85 (45% of that score), business quality 78 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above CHRD (77.8) mainly on exposure: 85 against 76",
+            "It ranks above CHRD (78.0) mainly on exposure: 85 against 76",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 87% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -7454,9 +7444,9 @@
           "industry": "Oil & Gas E&P",
           "role": "root",
           "candidate_source": "sector_peer",
-          "fundamental_score": 77.2,
+          "fundamental_score": 77.6,
           "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 77.8,
+          "opportunity_score": 78.0,
           "research_coverage": 0.87,
           "statements_available": false,
           "why": [
@@ -7468,8 +7458,8 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #2 of 44 on an opportunity score of 77.8: exposure 76 (45% of that score), business quality 77 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above DOV (77.5) mainly on business quality: 77 against 76",
+            "Ranks #2 of 44 on an opportunity score of 78.0: exposure 76 (45% of that score), business quality 78 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "It ranks above DOV (77.5) mainly on business quality: 78 against 76",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 87% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -7718,59 +7708,6 @@
         },
         {
           "theme_id": "energy_security",
-          "theme_exposure_score": 85.0,
-          "confidence": 0.45,
-          "disclosure_backed": false,
-          "eligible": true,
-          "excluded_by": [],
-          "leading_signals_fired": [
-            "backlog_growth"
-          ],
-          "theme_level_signals_fired": [
-            "spender_capex_growth"
-          ],
-          "signals": [
-            {
-              "name": "backlog_growth",
-              "score": 100.0,
-              "weight": 0.25,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.5088
-            },
-            {
-              "name": "spender_capex_growth",
-              "score": 100.0,
-              "weight": 0.2,
-              "leading": true,
-              "theme_level": true,
-              "raw": 0.4218
-            }
-          ],
-          "signals_answered": 2,
-          "company_signals_answered": 1,
-          "ticker": "PSX",
-          "name": "Phillips 66",
-          "sector": "Energy",
-          "industry": "Oil & Gas Refining & Marketing",
-          "role": "service",
-          "candidate_source": "sector_peer",
-          "fundamental_score": 70.9,
-          "valuation_percentile": 50.0,
-          "opportunity_score": 73.1,
-          "research_coverage": 0.87,
-          "statements_available": false,
-          "why": [
-            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
-            "Placed as a service provider to this chain",
-            "Its remaining performance obligation (order backlog) is +51% year over year",
-            "The theme's named spenders grew capital expenditure +42% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
-            "2 of 4 declared signals resolved, carrying 45% of this theme's signal weight",
-            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
-          ]
-        },
-        {
-          "theme_id": "energy_security",
           "theme_exposure_score": 74.4,
           "confidence": 0.45,
           "disclosure_backed": false,
@@ -7927,6 +7864,69 @@
             "2 of 4 declared signals resolved, carrying 45% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ]
+        },
+        {
+          "theme_id": "energy_security",
+          "theme_exposure_score": 80.5,
+          "confidence": 0.55,
+          "disclosure_backed": false,
+          "eligible": true,
+          "excluded_by": [],
+          "leading_signals_fired": [
+            "filing_keyword_density_trend",
+            "backlog_growth"
+          ],
+          "theme_level_signals_fired": [
+            "spender_capex_growth"
+          ],
+          "signals": [
+            {
+              "name": "filing_keyword_density_trend",
+              "score": 70.6,
+              "weight": 0.1,
+              "leading": true,
+              "theme_level": false,
+              "raw": 0.2062
+            },
+            {
+              "name": "backlog_growth",
+              "score": 100.0,
+              "weight": 0.25,
+              "leading": true,
+              "theme_level": false,
+              "raw": 0.3889
+            },
+            {
+              "name": "spender_capex_growth",
+              "score": 100.0,
+              "weight": 0.2,
+              "leading": true,
+              "theme_level": true,
+              "raw": 0.4218
+            }
+          ],
+          "signals_answered": 3,
+          "company_signals_answered": 2,
+          "ticker": "DTM",
+          "name": "DT Midstream, Inc.",
+          "sector": "Energy",
+          "industry": "Oil & Gas Midstream",
+          "role": "infrastructure",
+          "candidate_source": "sector_peer",
+          "fundamental_score": 57.0,
+          "valuation_percentile": null,
+          "opportunity_score": 66.2,
+          "research_coverage": 0.87,
+          "statements_available": false,
+          "why": [
+            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
+            "Placed as infrastructure - what has to be built before the rest of the chain works",
+            "Its latest 10-K devotes 21% more of its language to this theme than the prior year's",
+            "Its remaining performance obligation (order backlog) is +39% year over year",
+            "The theme's named spenders grew capital expenditure +42% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
+            "3 of 4 declared signals resolved, carrying 55% of this theme's signal weight",
+            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ]
         }
       ],
       "trend": {
@@ -7934,15 +7934,15 @@
         "members_measured": 44,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 33.9,
-          "relative_strength_20d_median": -5.38,
-          "acceleration_median": 0.37,
+          "relative_strength_median": 34.3,
+          "relative_strength_20d_median": -5.23,
+          "acceleration_median": 0.22,
           "label": "strengthening"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.886,
+          "outperforming_share": 1.0,
           "label": "broad"
         },
         "leadership": {
@@ -7953,7 +7953,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.97
+          "volume_ratio_median": 0.94
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -7962,7 +7962,7 @@
         "maturity": {
           "members_measured": 44,
           "minimum_members": 5,
-          "return_dispersion": 25.88,
+          "return_dispersion": 17.24,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -7970,31 +7970,31 @@
           {
             "role": "service",
             "members": 1,
-            "relative_strength_median": 84.2,
+            "relative_strength_median": 77.8,
             "above_50d_share": null
           },
           {
             "role": "root",
             "members": 9,
-            "relative_strength_median": 63.4,
-            "above_50d_share": null
-          },
-          {
-            "role": "infrastructure",
-            "members": 14,
-            "relative_strength_median": 39.3,
+            "relative_strength_median": 50.4,
             "above_50d_share": null
           },
           {
             "role": "supplier",
             "members": 20,
-            "relative_strength_median": 29.05,
+            "relative_strength_median": 33.75,
+            "above_50d_share": null
+          },
+          {
+            "role": "infrastructure",
+            "members": 14,
+            "relative_strength_median": 33.3,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 63.4,
-          "supply_chain_relative_strength": 34.17,
+          "root_relative_strength": 50.4,
+          "supply_chain_relative_strength": 33.52,
           "confirms": true
         },
         "verdict": {
@@ -8657,15 +8657,15 @@
         "members_measured": 30,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 20.05,
-          "relative_strength_20d_median": -10.0,
-          "acceleration_median": 0.1,
-          "label": "strengthening"
+          "relative_strength_median": 30.8,
+          "relative_strength_20d_median": -6.4,
+          "acceleration_median": -0.08,
+          "label": "mixed"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.867,
+          "outperforming_share": 0.967,
           "label": "broad"
         },
         "leadership": {
@@ -8676,7 +8676,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.86
+          "volume_ratio_median": 0.82
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -8685,38 +8685,38 @@
         "maturity": {
           "members_measured": 30,
           "minimum_members": 5,
-          "return_dispersion": 17.07,
+          "return_dispersion": 16.07,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
         "roles": [
           {
-            "role": "supplier",
-            "members": 18,
-            "relative_strength_median": 24.65,
+            "role": "root",
+            "members": 3,
+            "relative_strength_median": 32.9,
             "above_50d_share": null
           },
           {
-            "role": "root",
-            "members": 3,
-            "relative_strength_median": 16.8,
+            "role": "supplier",
+            "members": 18,
+            "relative_strength_median": 31.6,
             "above_50d_share": null
           },
           {
             "role": "infrastructure",
             "members": 8,
-            "relative_strength_median": 10.75,
+            "relative_strength_median": 22.9,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 16.8,
-          "supply_chain_relative_strength": 17.7,
+          "root_relative_strength": 32.9,
+          "supply_chain_relative_strength": 27.25,
           "confirms": true
         },
         "verdict": {
-          "label": "broadening",
-          "summary": "The group is outperforming, most of its members are participating, and it is not yet priced as an expensive third of the market."
+          "label": "mixed",
+          "summary": "The group is neither clearly leading nor clearly lagging."
         }
       },
       "biggest_players": []
@@ -9208,9 +9208,9 @@
           "industry": "Engineering & Construction",
           "role": "infrastructure",
           "candidate_source": "sector_peer",
-          "fundamental_score": 67.0,
+          "fundamental_score": 69.4,
           "valuation_percentile": 83.3,
-          "opportunity_score": 59.5,
+          "opportunity_score": 60.3,
           "research_coverage": 0.89,
           "statements_available": false,
           "why": [
@@ -9330,15 +9330,15 @@
         "members_measured": 14,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 15.9,
-          "relative_strength_20d_median": -11.36,
-          "acceleration_median": 0.08,
-          "label": "strengthening"
+          "relative_strength_median": 27.45,
+          "relative_strength_20d_median": -7.53,
+          "acceleration_median": -0.27,
+          "label": "mixed"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.857,
+          "outperforming_share": 1.0,
           "label": "broad"
         },
         "leadership": {
@@ -9349,7 +9349,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.86
+          "volume_ratio_median": 0.82
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -9358,7 +9358,7 @@
         "maturity": {
           "members_measured": 14,
           "minimum_members": 5,
-          "return_dispersion": 12.91,
+          "return_dispersion": 11.38,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -9366,30 +9366,30 @@
           {
             "role": "supplier",
             "members": 7,
-            "relative_strength_median": 20.6,
+            "relative_strength_median": 30.2,
             "above_50d_share": null
           },
           {
             "role": "root",
             "members": 1,
-            "relative_strength_median": 16.8,
+            "relative_strength_median": 27.2,
             "above_50d_share": null
           },
           {
             "role": "infrastructure",
             "members": 6,
-            "relative_strength_median": 10.75,
+            "relative_strength_median": 22.9,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 16.8,
-          "supply_chain_relative_strength": 15.68,
+          "root_relative_strength": 27.2,
+          "supply_chain_relative_strength": 26.55,
           "confirms": true
         },
         "verdict": {
-          "label": "broadening",
-          "summary": "The group is outperforming, most of its members are participating, and it is not yet priced as an expensive third of the market."
+          "label": "mixed",
+          "summary": "The group is neither clearly leading nor clearly lagging."
         }
       },
       "biggest_players": []
@@ -10051,15 +10051,15 @@
         "members_measured": 19,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 26.2,
-          "relative_strength_20d_median": -7.95,
-          "acceleration_median": 0.61,
+          "relative_strength_median": 32.9,
+          "relative_strength_20d_median": -5.71,
+          "acceleration_median": 0.47,
           "label": "strengthening"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.842,
+          "outperforming_share": 1.0,
           "label": "broad"
         },
         "leadership": {
@@ -10070,7 +10070,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.87
+          "volume_ratio_median": 0.83
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -10079,7 +10079,7 @@
         "maturity": {
           "members_measured": 19,
           "minimum_members": 5,
-          "return_dispersion": 15.75,
+          "return_dispersion": 14.89,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -10087,25 +10087,25 @@
           {
             "role": "root",
             "members": 2,
-            "relative_strength_median": 31.7,
+            "relative_strength_median": 43.8,
             "above_50d_share": null
           },
           {
             "role": "supplier",
             "members": 15,
-            "relative_strength_median": 26.2,
+            "relative_strength_median": 32.1,
             "above_50d_share": null
           },
           {
             "role": "infrastructure",
             "members": 2,
-            "relative_strength_median": 14.3,
+            "relative_strength_median": 25.4,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 31.7,
-          "supply_chain_relative_strength": 20.25,
+          "root_relative_strength": 43.8,
+          "supply_chain_relative_strength": 28.75,
           "confirms": true
         },
         "verdict": {
@@ -10232,9 +10232,9 @@
           "industry": "Medical Instruments & Supplies",
           "role": "supplier",
           "candidate_source": "sector_peer",
-          "fundamental_score": 70.3,
+          "fundamental_score": 69.9,
           "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 69.8,
+          "opportunity_score": 69.7,
           "research_coverage": 0.89,
           "statements_available": false,
           "why": [
@@ -10246,7 +10246,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #1 of 26 on an opportunity score of 69.8: exposure 64 (45% of that score), business quality 70 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "Ranks #1 of 26 on an opportunity score of 69.7: exposure 64 (45% of that score), business quality 70 (35% of that score), in the cheapest third of its sector (20% of that score)",
             "It ranks above MDT (69.7) despite losing to it on business quality (70 against 74); exposure and valuation make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -10782,9 +10782,9 @@
         "members_measured": 26,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 61.35,
-          "relative_strength_20d_median": 3.79,
-          "acceleration_median": 0.88,
+          "relative_strength_median": 60.55,
+          "relative_strength_20d_median": 3.52,
+          "acceleration_median": 0.51,
           "label": "strengthening"
         },
         "breadth": {
@@ -10801,7 +10801,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 1.16
+          "volume_ratio_median": 1.17
         },
         "crowding": {
           "expensiveness_percentile_median": 83.3,
@@ -10810,7 +10810,7 @@
         "maturity": {
           "members_measured": 26,
           "minimum_members": 5,
-          "return_dispersion": 21.62,
+          "return_dispersion": 20.48,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -10818,19 +10818,19 @@
           {
             "role": "enabler",
             "members": 16,
-            "relative_strength_median": 63.25,
+            "relative_strength_median": 62.85,
             "above_50d_share": null
           },
           {
             "role": "supplier",
             "members": 10,
-            "relative_strength_median": 49.3,
+            "relative_strength_median": 49.35,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
           "root_relative_strength": null,
-          "supply_chain_relative_strength": 56.27,
+          "supply_chain_relative_strength": 56.1,
           "confirms": null
         },
         "verdict": {
@@ -11276,7 +11276,7 @@
           ],
           "rank_reason": [
             "Ranks #4 of 62 on an opportunity score of 65.3: exposure 56 (45% of that score), business quality 67 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above AGCO (64.5) mainly on exposure: 56 against 49",
+            "It ranks above AGCO (64.2) mainly on exposure: 56 against 49",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 87% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -11317,9 +11317,9 @@
           "industry": "Farm & Heavy Construction Machinery",
           "role": "infrastructure",
           "candidate_source": "sector_peer",
-          "fundamental_score": 74.1,
+          "fundamental_score": 73.4,
           "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 64.5,
+          "opportunity_score": 64.2,
           "research_coverage": 0.89,
           "statements_available": false,
           "why": [
@@ -11331,8 +11331,8 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #5 of 62 on an opportunity score of 64.5: exposure 49 (45% of that score), business quality 74 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above AOS (64.1) despite losing to it on business quality (74 against 84); exposure and valuation make up the difference",
+            "Ranks #5 of 62 on an opportunity score of 64.2: exposure 49 (45% of that score), business quality 73 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "It ranks above AOS (64.1) despite losing to it on business quality (73 against 84); exposure and valuation make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -11597,15 +11597,15 @@
         "members_measured": 62,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 21.5,
-          "relative_strength_20d_median": -9.5,
-          "acceleration_median": -0.32,
+          "relative_strength_median": 32.55,
+          "relative_strength_20d_median": -5.82,
+          "acceleration_median": -0.44,
           "label": "mixed"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.823,
+          "outperforming_share": 0.968,
           "label": "broad"
         },
         "leadership": {
@@ -11616,7 +11616,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.87
+          "volume_ratio_median": 0.83
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -11625,7 +11625,7 @@
         "maturity": {
           "members_measured": 62,
           "minimum_members": 5,
-          "return_dispersion": 27.05,
+          "return_dispersion": 23.99,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -11633,31 +11633,31 @@
           {
             "role": "root",
             "members": 14,
-            "relative_strength_median": 27.75,
+            "relative_strength_median": 41.8,
             "above_50d_share": null
           },
           {
             "role": "service",
             "members": 1,
-            "relative_strength_median": 24.5,
-            "above_50d_share": null
-          },
-          {
-            "role": "supplier",
-            "members": 31,
-            "relative_strength_median": 23.5,
+            "relative_strength_median": 33.0,
             "above_50d_share": null
           },
           {
             "role": "infrastructure",
             "members": 14,
-            "relative_strength_median": 19.2,
+            "relative_strength_median": 32.2,
+            "above_50d_share": null
+          },
+          {
+            "role": "supplier",
+            "members": 31,
+            "relative_strength_median": 32.1,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 27.75,
-          "supply_chain_relative_strength": 21.35,
+          "root_relative_strength": 41.8,
+          "supply_chain_relative_strength": 32.15,
           "confirms": true
         },
         "verdict": {
@@ -12236,9 +12236,9 @@
           "industry": "Semiconductors",
           "role": "infrastructure",
           "candidate_source": "sector_peer",
-          "fundamental_score": 51.4,
+          "fundamental_score": 51.1,
           "valuation_percentile": 83.3,
-          "opportunity_score": 38.4,
+          "opportunity_score": 38.3,
           "research_coverage": 0.87,
           "statements_available": false,
           "why": [
@@ -12287,9 +12287,9 @@
           "industry": "Scientific & Technical Instruments",
           "role": "supplier",
           "candidate_source": "sector_peer",
-          "fundamental_score": 81.4,
+          "fundamental_score": 82.3,
           "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 60.0,
+          "opportunity_score": 60.3,
           "research_coverage": 0.89,
           "statements_available": false,
           "why": [
@@ -12309,15 +12309,15 @@
         "members_measured": 26,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 17.4,
-          "relative_strength_20d_median": -10.86,
+          "relative_strength_median": 28.9,
+          "relative_strength_20d_median": -7.04,
           "acceleration_median": -0.76,
           "label": "mixed"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.654,
+          "outperforming_share": 0.846,
           "label": "broad"
         },
         "leadership": {
@@ -12328,7 +12328,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.79
+          "volume_ratio_median": 0.76
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -12337,7 +12337,7 @@
         "maturity": {
           "members_measured": 26,
           "minimum_members": 5,
-          "return_dispersion": 22.67,
+          "return_dispersion": 20.88,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -12345,25 +12345,25 @@
           {
             "role": "infrastructure",
             "members": 9,
-            "relative_strength_median": 20.9,
+            "relative_strength_median": 39.8,
             "above_50d_share": null
           },
           {
             "role": "supplier",
             "members": 13,
-            "relative_strength_median": 18.0,
+            "relative_strength_median": 32.1,
             "above_50d_share": null
           },
           {
             "role": "root",
             "members": 4,
-            "relative_strength_median": 0.0,
+            "relative_strength_median": 9.7,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 0.0,
-          "supply_chain_relative_strength": 19.45,
+          "root_relative_strength": 9.7,
+          "supply_chain_relative_strength": 35.95,
           "confirms": true
         },
         "verdict": {
@@ -12729,9 +12729,9 @@
         "members_measured": 5,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 24.0,
-          "relative_strength_20d_median": -8.67,
-          "acceleration_median": 1.31,
+          "relative_strength_median": 18.8,
+          "relative_strength_20d_median": -10.41,
+          "acceleration_median": 0.94,
           "label": "strengthening"
         },
         "breadth": {
@@ -12748,7 +12748,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 1.13
+          "volume_ratio_median": 1.22
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -12757,7 +12757,7 @@
         "maturity": {
           "members_measured": 5,
           "minimum_members": 5,
-          "return_dispersion": 12.15,
+          "return_dispersion": 9.75,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -12765,19 +12765,19 @@
           {
             "role": "supplier",
             "members": 1,
-            "relative_strength_median": 30.2,
+            "relative_strength_median": 28.4,
             "above_50d_share": null
           },
           {
             "role": "root",
             "members": 4,
-            "relative_strength_median": 19.3,
+            "relative_strength_median": 18.1,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 19.3,
-          "supply_chain_relative_strength": 30.2,
+          "root_relative_strength": 18.1,
+          "supply_chain_relative_strength": 28.4,
           "confirms": true
         },
         "verdict": {
@@ -12906,7 +12906,7 @@
           ],
           "rank_reason": [
             "Ranks #1 of 4 on an opportunity score of 51.9: exposure 38 (45% of that score), business quality 71 (35% of that score), in the middle third of its sector (20% of that score)",
-            "It ranks above LHX (51.1) mainly on business quality: 71 against 65",
+            "It ranks above LHX (50.8) mainly on business quality: 71 against 64",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -12947,10 +12947,10 @@
           "industry": "Aerospace & Defense",
           "role": "root",
           "candidate_source": "sector_peer",
-          "fundamental_score": 65.2,
+          "fundamental_score": 64.5,
           "valuation_percentile": 50.0,
-          "opportunity_score": 51.1,
-          "research_coverage": 0.84,
+          "opportunity_score": 50.8,
+          "research_coverage": 0.88,
           "statements_available": false,
           "why": [
             "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
@@ -12960,9 +12960,9 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #2 of 4 on an opportunity score of 51.1: exposure 41 (45% of that score), business quality 65 (35% of that score), in the middle third of its sector (20% of that score)",
+            "Ranks #2 of 4 on an opportunity score of 50.8: exposure 41 (45% of that score), business quality 64 (35% of that score), in the middle third of its sector (20% of that score)",
             "It ranks above PL (44.2) mainly on valuation: the middle third against the most expensive third",
-            "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 84% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
+            "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
         {
@@ -13465,7 +13465,7 @@
           ],
           "rank_reason": [
             "Ranks #5 of 16 on an opportunity score of 68.2: exposure 58 (45% of that score), business quality 73 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above QRVO (63.6) mainly on exposure: 58 against 42",
+            "It ranks above QRVO (63.4) mainly on exposure: 58 against 42",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -13508,9 +13508,9 @@
           "industry": "Semiconductors",
           "role": "root",
           "candidate_source": "sector_peer",
-          "fundamental_score": 79.8,
+          "fundamental_score": 79.2,
           "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 63.6,
+          "opportunity_score": 63.4,
           "research_coverage": 0.89,
           "statements_available": false,
           "why": [
@@ -13618,9 +13618,9 @@
           "industry": "Electronic Components",
           "role": "supplier",
           "candidate_source": "sector_peer",
-          "fundamental_score": 71.9,
+          "fundamental_score": 70.9,
           "valuation_percentile": 83.3,
-          "opportunity_score": 54.4,
+          "opportunity_score": 54.0,
           "research_coverage": 0.89,
           "statements_available": false,
           "why": [
@@ -13750,15 +13750,15 @@
         "members_measured": 16,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 17.2,
-          "relative_strength_20d_median": -10.93,
-          "acceleration_median": -1.41,
+          "relative_strength_median": 28.9,
+          "relative_strength_20d_median": -7.04,
+          "acceleration_median": -1.33,
           "label": "mixed"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.75,
+          "outperforming_share": 0.875,
           "label": "broad"
         },
         "leadership": {
@@ -13769,7 +13769,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.76
+          "volume_ratio_median": 0.75
         },
         "crowding": {
           "expensiveness_percentile_median": 83.3,
@@ -13778,27 +13778,27 @@
         "maturity": {
           "members_measured": 16,
           "minimum_members": 5,
-          "return_dispersion": 25.25,
+          "return_dispersion": 24.68,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
         "roles": [
           {
-            "role": "root",
-            "members": 10,
-            "relative_strength_median": 18.85,
+            "role": "supplier",
+            "members": 6,
+            "relative_strength_median": 30.6,
             "above_50d_share": null
           },
           {
-            "role": "supplier",
-            "members": 6,
-            "relative_strength_median": 11.55,
+            "role": "root",
+            "members": 10,
+            "relative_strength_median": 26.65,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 18.85,
-          "supply_chain_relative_strength": 11.55,
+          "root_relative_strength": 26.65,
+          "supply_chain_relative_strength": 30.6,
           "confirms": true
         },
         "verdict": {
@@ -14478,9 +14478,9 @@
         "members_measured": 29,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 44.2,
-          "relative_strength_20d_median": -1.92,
-          "acceleration_median": 0.88,
+          "relative_strength_median": 50.2,
+          "relative_strength_20d_median": 0.06,
+          "acceleration_median": 0.58,
           "label": "strengthening"
         },
         "breadth": {
@@ -14497,7 +14497,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 1.15
+          "volume_ratio_median": 1.17
         },
         "crowding": {
           "expensiveness_percentile_median": 83.3,
@@ -14506,7 +14506,7 @@
         "maturity": {
           "members_measured": 29,
           "minimum_members": 5,
-          "return_dispersion": 23.55,
+          "return_dispersion": 22.18,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -14514,19 +14514,19 @@
           {
             "role": "supplier",
             "members": 11,
-            "relative_strength_median": 62.8,
+            "relative_strength_median": 61.0,
             "above_50d_share": null
           },
           {
             "role": "root",
             "members": 18,
-            "relative_strength_median": 44.0,
+            "relative_strength_median": 46.15,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 44.0,
-          "supply_chain_relative_strength": 62.8,
+          "root_relative_strength": 46.15,
+          "supply_chain_relative_strength": 61.0,
           "confirms": true
         },
         "verdict": {
@@ -15111,6 +15111,59 @@
               "weight": 0.2,
               "leading": true,
               "theme_level": false,
+              "raw": 0.9933
+            },
+            {
+              "name": "spender_capex_growth",
+              "score": 62.5,
+              "weight": 0.15,
+              "leading": true,
+              "theme_level": true,
+              "raw": 0.0757
+            }
+          ],
+          "signals_answered": 2,
+          "company_signals_answered": 1,
+          "ticker": "FIX",
+          "name": "Comfort Systems USA, Inc.",
+          "sector": "Industrials",
+          "industry": "Engineering & Construction",
+          "role": "infrastructure",
+          "candidate_source": "sector_peer",
+          "fundamental_score": 69.4,
+          "valuation_percentile": 83.3,
+          "opportunity_score": 59.7,
+          "research_coverage": 0.89,
+          "statements_available": false,
+          "why": [
+            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
+            "Placed as infrastructure - what has to be built before the rest of the chain works",
+            "Its remaining performance obligation (order backlog) is +99% year over year",
+            "The theme's named spenders grew capital expenditure +8% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
+            "2 of 5 declared signals resolved, carrying 35% of this theme's signal weight",
+            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ]
+        },
+        {
+          "theme_id": "water_infrastructure",
+          "theme_exposure_score": 71.3,
+          "confidence": 0.35,
+          "disclosure_backed": false,
+          "eligible": true,
+          "excluded_by": [],
+          "leading_signals_fired": [
+            "backlog_growth"
+          ],
+          "theme_level_signals_fired": [
+            "spender_capex_growth"
+          ],
+          "signals": [
+            {
+              "name": "backlog_growth",
+              "score": 100.0,
+              "weight": 0.2,
+              "leading": true,
+              "theme_level": false,
               "raw": 0.7782
             },
             {
@@ -15143,69 +15196,6 @@
             "2 of 5 declared signals resolved, carrying 35% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ]
-        },
-        {
-          "theme_id": "water_infrastructure",
-          "theme_exposure_score": 58.7,
-          "confidence": 0.45,
-          "disclosure_backed": false,
-          "eligible": true,
-          "excluded_by": [],
-          "leading_signals_fired": [
-            "filing_keyword_density_trend",
-            "backlog_growth"
-          ],
-          "theme_level_signals_fired": [
-            "spender_capex_growth"
-          ],
-          "signals": [
-            {
-              "name": "filing_keyword_density_trend",
-              "score": 55.6,
-              "weight": 0.1,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.0558
-            },
-            {
-              "name": "backlog_growth",
-              "score": 80.7,
-              "weight": 0.2,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.1859
-            },
-            {
-              "name": "spender_capex_growth",
-              "score": 62.5,
-              "weight": 0.15,
-              "leading": true,
-              "theme_level": true,
-              "raw": 0.0757
-            }
-          ],
-          "signals_answered": 3,
-          "company_signals_answered": 2,
-          "ticker": "APG",
-          "name": "APi Group Corporation",
-          "sector": "Industrials",
-          "industry": "Engineering & Construction",
-          "role": "infrastructure",
-          "candidate_source": "sector_peer",
-          "fundamental_score": 64.8,
-          "valuation_percentile": 50.0,
-          "opportunity_score": 59.1,
-          "research_coverage": 0.88,
-          "statements_available": false,
-          "why": [
-            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
-            "Placed as infrastructure - what has to be built before the rest of the chain works",
-            "Its latest 10-K devotes 6% more of its language to this theme than the prior year's",
-            "Its remaining performance obligation (order backlog) is +19% year over year",
-            "The theme's named spenders grew capital expenditure +8% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
-            "3 of 5 declared signals resolved, carrying 45% of this theme's signal weight",
-            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
-          ]
         }
       ],
       "trend": {
@@ -15213,15 +15203,15 @@
         "members_measured": 46,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 27.05,
-          "relative_strength_20d_median": -7.65,
-          "acceleration_median": 0.31,
+          "relative_strength_median": 33.75,
+          "relative_strength_20d_median": -5.42,
+          "acceleration_median": 0.04,
           "label": "strengthening"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.87,
+          "outperforming_share": 1.0,
           "label": "broad"
         },
         "leadership": {
@@ -15241,7 +15231,7 @@
         "maturity": {
           "members_measured": 46,
           "minimum_members": 5,
-          "return_dispersion": 17.61,
+          "return_dispersion": 15.48,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -15249,19 +15239,19 @@
           {
             "role": "supplier",
             "members": 37,
-            "relative_strength_median": 28.3,
+            "relative_strength_median": 34.3,
             "above_50d_share": null
           },
           {
             "role": "infrastructure",
             "members": 8,
-            "relative_strength_median": 10.75,
+            "relative_strength_median": 22.9,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
           "root_relative_strength": null,
-          "supply_chain_relative_strength": 19.52,
+          "supply_chain_relative_strength": 28.6,
           "confirms": null
         },
         "verdict": {
@@ -15331,6 +15321,26 @@
         "role": "root"
       }
     ],
+    "GD": [
+      {
+        "theme_id": "defense_rearmament",
+        "display_name": "Allied Rearmament & Munitions Capacity",
+        "theme_exposure_score": 63.8,
+        "opportunity_score": 64.0,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "root"
+      },
+      {
+        "theme_id": "shipbuilding_naval",
+        "display_name": "Shipbuilding & Naval Capacity",
+        "theme_exposure_score": 84.9,
+        "opportunity_score": 73.5,
+        "eligible": true,
+        "confidence": 0.4,
+        "role": "supplier"
+      }
+    ],
     "LMT": [
       {
         "theme_id": "aerospace_forging_capacity",
@@ -15369,26 +15379,6 @@
         "role": "root"
       }
     ],
-    "GD": [
-      {
-        "theme_id": "defense_rearmament",
-        "display_name": "Allied Rearmament & Munitions Capacity",
-        "theme_exposure_score": 63.8,
-        "opportunity_score": 64.0,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "root"
-      },
-      {
-        "theme_id": "shipbuilding_naval",
-        "display_name": "Shipbuilding & Naval Capacity",
-        "theme_exposure_score": 84.9,
-        "opportunity_score": 73.5,
-        "eligible": true,
-        "confidence": 0.4,
-        "role": "supplier"
-      }
-    ],
     "CW": [
       {
         "theme_id": "aerospace_forging_capacity",
@@ -15418,55 +15408,6 @@
         "role": "root"
       }
     ],
-    "RTX": [
-      {
-        "theme_id": "aerospace_forging_capacity",
-        "display_name": "Aerospace Forging & Casting Capacity",
-        "theme_exposure_score": 67.4,
-        "opportunity_score": 62.2,
-        "eligible": true,
-        "confidence": 0.5,
-        "role": "root"
-      },
-      {
-        "theme_id": "defense_rearmament",
-        "display_name": "Allied Rearmament & Munitions Capacity",
-        "theme_exposure_score": 61.5,
-        "opportunity_score": 59.5,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "root"
-      }
-    ],
-    "LHX": [
-      {
-        "theme_id": "aerospace_forging_capacity",
-        "display_name": "Aerospace Forging & Casting Capacity",
-        "theme_exposure_score": 56.9,
-        "opportunity_score": 58.4,
-        "eligible": true,
-        "confidence": 0.5,
-        "role": "root"
-      },
-      {
-        "theme_id": "defense_rearmament",
-        "display_name": "Allied Rearmament & Munitions Capacity",
-        "theme_exposure_score": 55.8,
-        "opportunity_score": 57.9,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "root"
-      },
-      {
-        "theme_id": "space_satellite",
-        "display_name": "Space & Satellite Infrastructure",
-        "theme_exposure_score": 40.6,
-        "opportunity_score": 51.1,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "root"
-      }
-    ],
     "WWD": [
       {
         "theme_id": "aerospace_forging_capacity",
@@ -15487,12 +15428,61 @@
         "role": "root"
       }
     ],
+    "LHX": [
+      {
+        "theme_id": "aerospace_forging_capacity",
+        "display_name": "Aerospace Forging & Casting Capacity",
+        "theme_exposure_score": 56.9,
+        "opportunity_score": 58.2,
+        "eligible": true,
+        "confidence": 0.5,
+        "role": "root"
+      },
+      {
+        "theme_id": "defense_rearmament",
+        "display_name": "Allied Rearmament & Munitions Capacity",
+        "theme_exposure_score": 55.8,
+        "opportunity_score": 57.7,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "root"
+      },
+      {
+        "theme_id": "space_satellite",
+        "display_name": "Space & Satellite Infrastructure",
+        "theme_exposure_score": 40.6,
+        "opportunity_score": 50.8,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "root"
+      }
+    ],
     "GE": [
       {
         "theme_id": "defense_rearmament",
         "display_name": "Allied Rearmament & Munitions Capacity",
         "theme_exposure_score": 49.8,
         "opportunity_score": 47.3,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "root"
+      }
+    ],
+    "RTX": [
+      {
+        "theme_id": "aerospace_forging_capacity",
+        "display_name": "Aerospace Forging & Casting Capacity",
+        "theme_exposure_score": 67.4,
+        "opportunity_score": 55.0,
+        "eligible": true,
+        "confidence": 0.5,
+        "role": "root"
+      },
+      {
+        "theme_id": "defense_rearmament",
+        "display_name": "Allied Rearmament & Munitions Capacity",
+        "theme_exposure_score": 61.5,
+        "opportunity_score": 52.3,
         "eligible": true,
         "confidence": 0.55,
         "role": "root"
@@ -15594,7 +15584,7 @@
         "theme_id": "aerospace_forging_capacity",
         "display_name": "Aerospace Forging & Casting Capacity",
         "theme_exposure_score": 24.1,
-        "opportunity_score": 28.1,
+        "opportunity_score": 27.8,
         "eligible": true,
         "confidence": 0.5,
         "role": "root"
@@ -15603,7 +15593,7 @@
         "theme_id": "defense_rearmament",
         "display_name": "Allied Rearmament & Munitions Capacity",
         "theme_exposure_score": 13.5,
-        "opportunity_score": 23.4,
+        "opportunity_score": 23.1,
         "eligible": false,
         "confidence": 0.55,
         "role": "root"
@@ -15625,7 +15615,7 @@
         "theme_id": "aerospace_forging_capacity",
         "display_name": "Aerospace Forging & Casting Capacity",
         "theme_exposure_score": 69.9,
-        "opportunity_score": 47.1,
+        "opportunity_score": 47.0,
         "eligible": true,
         "confidence": 0.5,
         "role": "root"
@@ -15727,35 +15717,6 @@
         "role": "supplier"
       }
     ],
-    "RMD": [
-      {
-        "theme_id": "aging_demographics",
-        "display_name": "Aging Demographics & Care Capacity",
-        "theme_exposure_score": 47.6,
-        "opportunity_score": 67.5,
-        "eligible": false,
-        "confidence": 0.35,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "obesity_care_supply_chain",
-        "display_name": "Metabolic Care Supply Chain",
-        "theme_exposure_score": 47.8,
-        "opportunity_score": 67.6,
-        "eligible": false,
-        "confidence": 0.3,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "surgical_robotics",
-        "display_name": "Surgical & Medical Robotics",
-        "theme_exposure_score": 48.9,
-        "opportunity_score": 68.1,
-        "eligible": false,
-        "confidence": 0.35,
-        "role": "root"
-      }
-    ],
     "GEHC": [
       {
         "theme_id": "aging_demographics",
@@ -15830,7 +15791,7 @@
         "theme_id": "aging_demographics",
         "display_name": "Aging Demographics & Care Capacity",
         "theme_exposure_score": 48.8,
-        "opportunity_score": 63.2,
+        "opportunity_score": 63.1,
         "eligible": false,
         "confidence": 0.35,
         "role": "supplier"
@@ -15839,7 +15800,7 @@
         "theme_id": "obesity_care_supply_chain",
         "display_name": "Metabolic Care Supply Chain",
         "theme_exposure_score": 63.5,
-        "opportunity_score": 69.8,
+        "opportunity_score": 69.7,
         "eligible": true,
         "confidence": 0.3,
         "role": "supplier"
@@ -15850,7 +15811,7 @@
         "theme_id": "aging_demographics",
         "display_name": "Aging Demographics & Care Capacity",
         "theme_exposure_score": 48.5,
-        "opportunity_score": 63.1,
+        "opportunity_score": 62.7,
         "eligible": false,
         "confidence": 0.35,
         "role": "root"
@@ -15876,6 +15837,35 @@
         "role": "enabler"
       }
     ],
+    "RMD": [
+      {
+        "theme_id": "aging_demographics",
+        "display_name": "Aging Demographics & Care Capacity",
+        "theme_exposure_score": 47.6,
+        "opportunity_score": 59.8,
+        "eligible": false,
+        "confidence": 0.35,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "obesity_care_supply_chain",
+        "display_name": "Metabolic Care Supply Chain",
+        "theme_exposure_score": 47.8,
+        "opportunity_score": 59.9,
+        "eligible": false,
+        "confidence": 0.3,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "surgical_robotics",
+        "display_name": "Surgical & Medical Robotics",
+        "theme_exposure_score": 48.9,
+        "opportunity_score": 60.4,
+        "eligible": false,
+        "confidence": 0.35,
+        "role": "root"
+      }
+    ],
     "BDX": [
       {
         "theme_id": "aging_demographics",
@@ -15894,17 +15884,6 @@
         "eligible": false,
         "confidence": 0.35,
         "role": "root"
-      }
-    ],
-    "WST": [
-      {
-        "theme_id": "obesity_care_supply_chain",
-        "display_name": "Metabolic Care Supply Chain",
-        "theme_exposure_score": 63.5,
-        "opportunity_score": 54.5,
-        "eligible": true,
-        "confidence": 0.3,
-        "role": "supplier"
       }
     ],
     "MMSI": [
@@ -15927,26 +15906,6 @@
         "role": "root"
       }
     ],
-    "SYK": [
-      {
-        "theme_id": "aging_demographics",
-        "display_name": "Aging Demographics & Care Capacity",
-        "theme_exposure_score": 46.6,
-        "opportunity_score": 54.6,
-        "eligible": false,
-        "confidence": 0.35,
-        "role": "root"
-      },
-      {
-        "theme_id": "surgical_robotics",
-        "display_name": "Surgical & Medical Robotics",
-        "theme_exposure_score": 62.2,
-        "opportunity_score": 61.6,
-        "eligible": true,
-        "confidence": 0.35,
-        "role": "supplier"
-      }
-    ],
     "EW": [
       {
         "theme_id": "aging_demographics",
@@ -15965,6 +15924,37 @@
         "eligible": true,
         "confidence": 0.35,
         "role": "root"
+      }
+    ],
+    "WST": [
+      {
+        "theme_id": "obesity_care_supply_chain",
+        "display_name": "Metabolic Care Supply Chain",
+        "theme_exposure_score": 63.5,
+        "opportunity_score": 54.5,
+        "eligible": true,
+        "confidence": 0.3,
+        "role": "supplier"
+      }
+    ],
+    "SYK": [
+      {
+        "theme_id": "aging_demographics",
+        "display_name": "Aging Demographics & Care Capacity",
+        "theme_exposure_score": 46.6,
+        "opportunity_score": 54.6,
+        "eligible": false,
+        "confidence": 0.35,
+        "role": "root"
+      },
+      {
+        "theme_id": "surgical_robotics",
+        "display_name": "Surgical & Medical Robotics",
+        "theme_exposure_score": 62.2,
+        "opportunity_score": 61.6,
+        "eligible": true,
+        "confidence": 0.35,
+        "role": "supplier"
       }
     ],
     "COO": [
@@ -16292,7 +16282,7 @@
         "theme_id": "ai_infrastructure",
         "display_name": "AI Infrastructure Buildout",
         "theme_exposure_score": 54.7,
-        "opportunity_score": 69.2,
+        "opportunity_score": 69.0,
         "eligible": false,
         "confidence": 0.37,
         "role": "root"
@@ -16301,7 +16291,7 @@
         "theme_id": "ai_optical_interconnect",
         "display_name": "AI Data-Center Optical Interconnect",
         "theme_exposure_score": 42.2,
-        "opportunity_score": 63.6,
+        "opportunity_score": 63.4,
         "eligible": false,
         "confidence": 0.4,
         "role": "supplier"
@@ -16310,7 +16300,7 @@
         "theme_id": "reshoring_industrial_capacity",
         "display_name": "Reshoring & Industrial Capacity",
         "theme_exposure_score": 31.7,
-        "opportunity_score": 58.9,
+        "opportunity_score": 58.6,
         "eligible": false,
         "confidence": 0.35,
         "role": "root"
@@ -16319,7 +16309,7 @@
         "theme_id": "semicap_equipment",
         "display_name": "Semiconductor Cap Equipment & Fab Buildout",
         "theme_exposure_score": 31.5,
-        "opportunity_score": 58.8,
+        "opportunity_score": 58.6,
         "eligible": false,
         "confidence": 0.5,
         "role": "infrastructure"
@@ -16328,7 +16318,7 @@
         "theme_id": "storage_capacity_shortage",
         "display_name": "AI-Driven Storage Capacity Shortage",
         "theme_exposure_score": 42.2,
-        "opportunity_score": 63.6,
+        "opportunity_score": 63.4,
         "eligible": false,
         "confidence": 0.4,
         "role": "root"
@@ -16481,24 +16471,60 @@
         "role": "supplier"
       }
     ],
-    "KLAC": [
+    "HUBB": [
       {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 27.9,
-        "opportunity_score": 39.3,
+        "theme_id": "ai_infrastructure",
+        "display_name": "AI Infrastructure Buildout",
+        "theme_exposure_score": 39.5,
+        "opportunity_score": 51.1,
         "eligible": false,
-        "confidence": 0.3,
+        "confidence": 0.37,
+        "role": "infrastructure"
+      },
+      {
+        "theme_id": "battery_storage",
+        "display_name": "Grid-Scale Battery Storage",
+        "theme_exposure_score": 17.9,
+        "opportunity_score": 41.4,
+        "eligible": false,
+        "confidence": 0.4,
+        "role": "root"
+      },
+      {
+        "theme_id": "data_center_cooling",
+        "display_name": "Data Center Cooling & Thermal Management",
+        "theme_exposure_score": 36.5,
+        "opportunity_score": 49.7,
+        "eligible": false,
+        "confidence": 0.35,
+        "role": "root"
+      },
+      {
+        "theme_id": "grid_electrification",
+        "display_name": "Grid & Electrification Buildout",
+        "theme_exposure_score": 41.0,
+        "opportunity_score": 51.8,
+        "eligible": true,
+        "confidence": 0.45,
         "role": "supplier"
       },
       {
-        "theme_id": "semicap_equipment",
-        "display_name": "Semiconductor Cap Equipment & Fab Buildout",
-        "theme_exposure_score": 36.7,
-        "opportunity_score": 43.2,
-        "eligible": false,
-        "confidence": 0.25,
+        "theme_id": "grid_power_equipment",
+        "display_name": "Grid Power Equipment Backlog",
+        "theme_exposure_score": 17.3,
+        "opportunity_score": 41.1,
+        "eligible": true,
+        "confidence": 0.5,
         "role": "root"
+      },
+      {
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 19.8,
+        "opportunity_score": 42.2,
+        "eligible": false,
+        "confidence": 0.35,
+        "role": null
       }
     ],
     "TXN": [
@@ -16534,6 +16560,26 @@
         "display_name": "AI-Driven Storage Capacity Shortage",
         "theme_exposure_score": 58.1,
         "opportunity_score": 52.8,
+        "eligible": false,
+        "confidence": 0.25,
+        "role": "root"
+      }
+    ],
+    "KLAC": [
+      {
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 27.9,
+        "opportunity_score": 39.0,
+        "eligible": false,
+        "confidence": 0.3,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "semicap_equipment",
+        "display_name": "Semiconductor Cap Equipment & Fab Buildout",
+        "theme_exposure_score": 36.7,
+        "opportunity_score": 43.0,
         "eligible": false,
         "confidence": 0.25,
         "role": "root"
@@ -16635,62 +16681,6 @@
         "role": "root"
       }
     ],
-    "HUBB": [
-      {
-        "theme_id": "ai_infrastructure",
-        "display_name": "AI Infrastructure Buildout",
-        "theme_exposure_score": 39.5,
-        "opportunity_score": 44.4,
-        "eligible": false,
-        "confidence": 0.37,
-        "role": "infrastructure"
-      },
-      {
-        "theme_id": "battery_storage",
-        "display_name": "Grid-Scale Battery Storage",
-        "theme_exposure_score": 17.9,
-        "opportunity_score": 34.7,
-        "eligible": false,
-        "confidence": 0.4,
-        "role": "root"
-      },
-      {
-        "theme_id": "data_center_cooling",
-        "display_name": "Data Center Cooling & Thermal Management",
-        "theme_exposure_score": 36.5,
-        "opportunity_score": 43.1,
-        "eligible": false,
-        "confidence": 0.35,
-        "role": "root"
-      },
-      {
-        "theme_id": "grid_electrification",
-        "display_name": "Grid & Electrification Buildout",
-        "theme_exposure_score": 41.0,
-        "opportunity_score": 45.1,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "grid_power_equipment",
-        "display_name": "Grid Power Equipment Backlog",
-        "theme_exposure_score": 17.3,
-        "opportunity_score": 34.4,
-        "eligible": true,
-        "confidence": 0.5,
-        "role": "root"
-      },
-      {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 19.8,
-        "opportunity_score": 35.6,
-        "eligible": false,
-        "confidence": 0.35,
-        "role": null
-      }
-    ],
     "SWKS": [
       {
         "theme_id": "ai_infrastructure",
@@ -16708,6 +16698,35 @@
         "opportunity_score": 55.4,
         "eligible": false,
         "confidence": 0.3,
+        "role": "root"
+      }
+    ],
+    "ENTG": [
+      {
+        "theme_id": "ai_infrastructure",
+        "display_name": "AI Infrastructure Buildout",
+        "theme_exposure_score": 85.0,
+        "opportunity_score": 61.8,
+        "eligible": true,
+        "confidence": 0.26,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 51.4,
+        "opportunity_score": 46.7,
+        "eligible": true,
+        "confidence": 0.3,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "semicap_equipment",
+        "display_name": "Semiconductor Cap Equipment & Fab Buildout",
+        "theme_exposure_score": 36.8,
+        "opportunity_score": 40.1,
+        "eligible": false,
+        "confidence": 0.25,
         "role": "root"
       }
     ],
@@ -16758,35 +16777,6 @@
         "role": "root"
       }
     ],
-    "ENTG": [
-      {
-        "theme_id": "ai_infrastructure",
-        "display_name": "AI Infrastructure Buildout",
-        "theme_exposure_score": 85.0,
-        "opportunity_score": 61.8,
-        "eligible": true,
-        "confidence": 0.26,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 51.4,
-        "opportunity_score": 46.7,
-        "eligible": true,
-        "confidence": 0.3,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "semicap_equipment",
-        "display_name": "Semiconductor Cap Equipment & Fab Buildout",
-        "theme_exposure_score": 36.8,
-        "opportunity_score": 40.1,
-        "eligible": false,
-        "confidence": 0.25,
-        "role": "root"
-      }
-    ],
     "VSH": [
       {
         "theme_id": "reshoring_industrial_capacity",
@@ -16812,7 +16802,7 @@
         "theme_id": "ai_infrastructure",
         "display_name": "AI Infrastructure Buildout",
         "theme_exposure_score": 85.0,
-        "opportunity_score": 59.9,
+        "opportunity_score": 59.7,
         "eligible": true,
         "confidence": 0.37,
         "role": "infrastructure"
@@ -16821,7 +16811,7 @@
         "theme_id": "battery_storage",
         "display_name": "Grid-Scale Battery Storage",
         "theme_exposure_score": 81.7,
-        "opportunity_score": 58.4,
+        "opportunity_score": 58.2,
         "eligible": true,
         "confidence": 0.4,
         "role": "root"
@@ -16830,7 +16820,7 @@
         "theme_id": "data_center_cooling",
         "display_name": "Data Center Cooling & Thermal Management",
         "theme_exposure_score": 72.0,
-        "opportunity_score": 54.0,
+        "opportunity_score": 53.9,
         "eligible": true,
         "confidence": 0.5,
         "role": "supplier"
@@ -16839,7 +16829,7 @@
         "theme_id": "grid_electrification",
         "display_name": "Grid & Electrification Buildout",
         "theme_exposure_score": 79.0,
-        "opportunity_score": 57.2,
+        "opportunity_score": 57.0,
         "eligible": true,
         "confidence": 0.35,
         "role": "supplier"
@@ -16848,7 +16838,7 @@
         "theme_id": "reshoring_industrial_capacity",
         "display_name": "Reshoring & Industrial Capacity",
         "theme_exposure_score": 56.2,
-        "opportunity_score": 46.9,
+        "opportunity_score": 46.8,
         "eligible": true,
         "confidence": 0.35,
         "role": null
@@ -16880,6 +16870,35 @@
         "opportunity_score": 48.3,
         "eligible": false,
         "confidence": 0.25,
+        "role": "root"
+      }
+    ],
+    "MTSI": [
+      {
+        "theme_id": "ai_infrastructure",
+        "display_name": "AI Infrastructure Buildout",
+        "theme_exposure_score": 71.7,
+        "opportunity_score": 52.4,
+        "eligible": true,
+        "confidence": 0.26,
+        "role": "root"
+      },
+      {
+        "theme_id": "ai_optical_interconnect",
+        "display_name": "AI Data-Center Optical Interconnect",
+        "theme_exposure_score": 83.0,
+        "opportunity_score": 57.5,
+        "eligible": true,
+        "confidence": 0.25,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 51.4,
+        "opportunity_score": 43.2,
+        "eligible": true,
+        "confidence": 0.3,
         "role": "root"
       }
     ],
@@ -16921,35 +16940,6 @@
         "role": "root"
       }
     ],
-    "MTSI": [
-      {
-        "theme_id": "ai_infrastructure",
-        "display_name": "AI Infrastructure Buildout",
-        "theme_exposure_score": 71.7,
-        "opportunity_score": 52.4,
-        "eligible": true,
-        "confidence": 0.26,
-        "role": "root"
-      },
-      {
-        "theme_id": "ai_optical_interconnect",
-        "display_name": "AI Data-Center Optical Interconnect",
-        "theme_exposure_score": 83.0,
-        "opportunity_score": 57.5,
-        "eligible": true,
-        "confidence": 0.25,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 51.4,
-        "opportunity_score": 43.2,
-        "eligible": true,
-        "confidence": 0.3,
-        "role": "root"
-      }
-    ],
     "WOLF": [
       {
         "theme_id": "reshoring_industrial_capacity",
@@ -16984,7 +16974,7 @@
         "theme_id": "ai_infrastructure",
         "display_name": "AI Infrastructure Buildout",
         "theme_exposure_score": 85.0,
-        "opportunity_score": 59.6,
+        "opportunity_score": 59.5,
         "eligible": true,
         "confidence": 0.26,
         "role": "root"
@@ -16993,7 +16983,7 @@
         "theme_id": "reshoring_industrial_capacity",
         "display_name": "Reshoring & Industrial Capacity",
         "theme_exposure_score": 23.0,
-        "opportunity_score": 31.7,
+        "opportunity_score": 31.6,
         "eligible": false,
         "confidence": 0.3,
         "role": "root"
@@ -17002,7 +16992,7 @@
         "theme_id": "semicap_equipment",
         "display_name": "Semiconductor Cap Equipment & Fab Buildout",
         "theme_exposure_score": 38.0,
-        "opportunity_score": 38.4,
+        "opportunity_score": 38.3,
         "eligible": true,
         "confidence": 0.25,
         "role": "infrastructure"
@@ -17011,7 +17001,7 @@
         "theme_id": "storage_capacity_shortage",
         "display_name": "AI-Driven Storage Capacity Shortage",
         "theme_exposure_score": 34.0,
-        "opportunity_score": 36.6,
+        "opportunity_score": 36.5,
         "eligible": false,
         "confidence": 0.25,
         "role": "root"
@@ -17053,7 +17043,7 @@
         "theme_id": "ai_optical_interconnect",
         "display_name": "AI Data-Center Optical Interconnect",
         "theme_exposure_score": 45.3,
-        "opportunity_score": 65.5,
+        "opportunity_score": 65.8,
         "eligible": false,
         "confidence": 0.4,
         "role": "infrastructure"
@@ -17062,7 +17052,7 @@
         "theme_id": "automation_and_robotics",
         "display_name": "Automation & Robotics",
         "theme_exposure_score": 35.2,
-        "opportunity_score": 61.0,
+        "opportunity_score": 61.3,
         "eligible": true,
         "confidence": 0.55,
         "role": "supplier"
@@ -17071,7 +17061,7 @@
         "theme_id": "defense_rearmament",
         "display_name": "Allied Rearmament & Munitions Capacity",
         "theme_exposure_score": 33.0,
-        "opportunity_score": 60.0,
+        "opportunity_score": 60.3,
         "eligible": false,
         "confidence": 0.45,
         "role": "supplier"
@@ -17080,7 +17070,7 @@
         "theme_id": "reshoring_industrial_capacity",
         "display_name": "Reshoring & Industrial Capacity",
         "theme_exposure_score": 33.5,
-        "opportunity_score": 60.2,
+        "opportunity_score": 60.5,
         "eligible": false,
         "confidence": 0.35,
         "role": "supplier"
@@ -17089,7 +17079,7 @@
         "theme_id": "semicap_equipment",
         "display_name": "Semiconductor Cap Equipment & Fab Buildout",
         "theme_exposure_score": 33.0,
-        "opportunity_score": 60.0,
+        "opportunity_score": 60.3,
         "eligible": false,
         "confidence": 0.4,
         "role": "supplier"
@@ -17232,7 +17222,7 @@
         "theme_id": "ai_infrastructure",
         "display_name": "AI Infrastructure Buildout",
         "theme_exposure_score": 66.7,
-        "opportunity_score": 58.5,
+        "opportunity_score": 58.2,
         "eligible": false,
         "confidence": 0.26,
         "role": "supplier"
@@ -17241,7 +17231,7 @@
         "theme_id": "automation_and_robotics",
         "display_name": "Automation & Robotics",
         "theme_exposure_score": 23.3,
-        "opportunity_score": 39.0,
+        "opportunity_score": 38.6,
         "eligible": false,
         "confidence": 0.3,
         "role": "supplier"
@@ -17250,7 +17240,7 @@
         "theme_id": "storage_capacity_shortage",
         "display_name": "AI-Driven Storage Capacity Shortage",
         "theme_exposure_score": 57.5,
-        "opportunity_score": 54.4,
+        "opportunity_score": 54.0,
         "eligible": false,
         "confidence": 0.25,
         "role": "supplier"
@@ -17448,6 +17438,26 @@
         "role": "supplier"
       }
     ],
+    "MKSI": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 37.8,
+        "opportunity_score": 49.7,
+        "eligible": true,
+        "confidence": 0.3,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "semicap_equipment",
+        "display_name": "Semiconductor Cap Equipment & Fab Buildout",
+        "theme_exposure_score": 32.1,
+        "opportunity_score": 47.1,
+        "eligible": false,
+        "confidence": 0.25,
+        "role": "supplier"
+      }
+    ],
     "FTV": [
       {
         "theme_id": "ai_optical_interconnect",
@@ -17492,26 +17502,6 @@
         "opportunity_score": 54.5,
         "eligible": true,
         "confidence": 0.4,
-        "role": "supplier"
-      }
-    ],
-    "MKSI": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 37.8,
-        "opportunity_score": 48.9,
-        "eligible": true,
-        "confidence": 0.3,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "semicap_equipment",
-        "display_name": "Semiconductor Cap Equipment & Fab Buildout",
-        "theme_exposure_score": 32.1,
-        "opportunity_score": 46.3,
-        "eligible": false,
-        "confidence": 0.25,
         "role": "supplier"
       }
     ],
@@ -17864,7 +17854,7 @@
         "theme_id": "automation_and_robotics",
         "display_name": "Automation & Robotics",
         "theme_exposure_score": 53.0,
-        "opportunity_score": 66.4,
+        "opportunity_score": 66.2,
         "eligible": true,
         "confidence": 0.45,
         "role": null
@@ -17873,10 +17863,30 @@
         "theme_id": "reshoring_industrial_capacity",
         "display_name": "Reshoring & Industrial Capacity",
         "theme_exposure_score": 48.6,
-        "opportunity_score": 64.5,
+        "opportunity_score": 64.2,
         "eligible": true,
         "confidence": 0.35,
         "role": "infrastructure"
+      }
+    ],
+    "GGG": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 37.6,
+        "opportunity_score": 54.5,
+        "eligible": true,
+        "confidence": 0.3,
+        "role": "root"
+      },
+      {
+        "theme_id": "water_infrastructure",
+        "display_name": "Water Infrastructure & Treatment",
+        "theme_exposure_score": 31.9,
+        "opportunity_score": 51.9,
+        "eligible": false,
+        "confidence": 0.25,
+        "role": "supplier"
       }
     ],
     "OTIS": [
@@ -17953,23 +17963,23 @@
         "role": "supplier"
       }
     ],
-    "GGG": [
+    "DCI": [
       {
         "theme_id": "automation_and_robotics",
         "display_name": "Automation & Robotics",
-        "theme_exposure_score": 37.6,
-        "opportunity_score": 54.5,
-        "eligible": true,
+        "theme_exposure_score": 36.7,
+        "opportunity_score": 52.6,
+        "eligible": false,
         "confidence": 0.3,
         "role": "root"
       },
       {
-        "theme_id": "water_infrastructure",
-        "display_name": "Water Infrastructure & Treatment",
-        "theme_exposure_score": 31.9,
-        "opportunity_score": 51.9,
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 23.0,
+        "opportunity_score": 46.5,
         "eligible": false,
-        "confidence": 0.25,
+        "confidence": 0.3,
         "role": "supplier"
       }
     ],
@@ -17999,6 +18009,35 @@
         "opportunity_score": 59.0,
         "eligible": true,
         "confidence": 0.55,
+        "role": "supplier"
+      }
+    ],
+    "GTES": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 37.7,
+        "opportunity_score": 58.0,
+        "eligible": true,
+        "confidence": 0.3,
+        "role": "root"
+      },
+      {
+        "theme_id": "data_center_cooling",
+        "display_name": "Data Center Cooling & Thermal Management",
+        "theme_exposure_score": 74.9,
+        "opportunity_score": 74.8,
+        "eligible": true,
+        "confidence": 0.3,
+        "role": "root"
+      },
+      {
+        "theme_id": "water_infrastructure",
+        "display_name": "Water Infrastructure & Treatment",
+        "theme_exposure_score": 37.7,
+        "opportunity_score": 58.0,
+        "eligible": false,
+        "confidence": 0.25,
         "role": "supplier"
       }
     ],
@@ -18091,35 +18130,6 @@
         "opportunity_score": 72.7,
         "eligible": true,
         "confidence": 0.45,
-        "role": "supplier"
-      }
-    ],
-    "GTES": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 37.7,
-        "opportunity_score": 58.0,
-        "eligible": true,
-        "confidence": 0.3,
-        "role": "root"
-      },
-      {
-        "theme_id": "data_center_cooling",
-        "display_name": "Data Center Cooling & Thermal Management",
-        "theme_exposure_score": 74.9,
-        "opportunity_score": 74.8,
-        "eligible": true,
-        "confidence": 0.3,
-        "role": "root"
-      },
-      {
-        "theme_id": "water_infrastructure",
-        "display_name": "Water Infrastructure & Treatment",
-        "theme_exposure_score": 37.7,
-        "opportunity_score": 58.0,
-        "eligible": false,
-        "confidence": 0.25,
         "role": "supplier"
       }
     ],
@@ -18289,26 +18299,6 @@
         "role": "supplier"
       }
     ],
-    "DCI": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 36.7,
-        "opportunity_score": 52.0,
-        "eligible": false,
-        "confidence": 0.3,
-        "role": "root"
-      },
-      {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 23.0,
-        "opportunity_score": 45.8,
-        "eligible": false,
-        "confidence": 0.3,
-        "role": "supplier"
-      }
-    ],
     "RRX": [
       {
         "theme_id": "automation_and_robotics",
@@ -18393,35 +18383,6 @@
         "opportunity_score": 59.2,
         "eligible": false,
         "confidence": 0.55,
-        "role": "supplier"
-      }
-    ],
-    "WTS": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 36.7,
-        "opportunity_score": 43.8,
-        "eligible": false,
-        "confidence": 0.3,
-        "role": "root"
-      },
-      {
-        "theme_id": "data_center_cooling",
-        "display_name": "Data Center Cooling & Thermal Management",
-        "theme_exposure_score": 62.6,
-        "opportunity_score": 55.5,
-        "eligible": false,
-        "confidence": 0.3,
-        "role": "root"
-      },
-      {
-        "theme_id": "water_infrastructure",
-        "display_name": "Water Infrastructure & Treatment",
-        "theme_exposure_score": 31.9,
-        "opportunity_score": 41.6,
-        "eligible": false,
-        "confidence": 0.25,
         "role": "supplier"
       }
     ],
@@ -18514,6 +18475,35 @@
         "opportunity_score": 56.2,
         "eligible": true,
         "confidence": 0.45,
+        "role": "supplier"
+      }
+    ],
+    "WTS": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 36.7,
+        "opportunity_score": 43.8,
+        "eligible": false,
+        "confidence": 0.3,
+        "role": "root"
+      },
+      {
+        "theme_id": "data_center_cooling",
+        "display_name": "Data Center Cooling & Thermal Management",
+        "theme_exposure_score": 62.6,
+        "opportunity_score": 55.5,
+        "eligible": false,
+        "confidence": 0.3,
+        "role": "root"
+      },
+      {
+        "theme_id": "water_infrastructure",
+        "display_name": "Water Infrastructure & Treatment",
+        "theme_exposure_score": 31.9,
+        "opportunity_score": 41.6,
+        "eligible": false,
+        "confidence": 0.25,
         "role": "supplier"
       }
     ],
@@ -18705,80 +18695,6 @@
         "role": "supplier"
       }
     ],
-    "CR": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 51.4,
-        "opportunity_score": 48.3,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "root"
-      },
-      {
-        "theme_id": "battery_storage",
-        "display_name": "Grid-Scale Battery Storage",
-        "theme_exposure_score": 66.4,
-        "opportunity_score": 55.0,
-        "eligible": true,
-        "confidence": 0.4,
-        "role": "root"
-      },
-      {
-        "theme_id": "data_center_cooling",
-        "display_name": "Data Center Cooling & Thermal Management",
-        "theme_exposure_score": 65.7,
-        "opportunity_score": 54.7,
-        "eligible": true,
-        "confidence": 0.5,
-        "role": "root"
-      },
-      {
-        "theme_id": "energy_security",
-        "display_name": "Energy Security & Firm Power",
-        "theme_exposure_score": 73.7,
-        "opportunity_score": 58.3,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "grid_electrification",
-        "display_name": "Grid & Electrification Buildout",
-        "theme_exposure_score": 67.4,
-        "opportunity_score": 55.5,
-        "eligible": true,
-        "confidence": 0.35,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "nuclear_smr",
-        "display_name": "Nuclear Power Restart & SMRs",
-        "theme_exposure_score": 77.3,
-        "opportunity_score": 59.9,
-        "eligible": true,
-        "confidence": 0.4,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 47.4,
-        "opportunity_score": 46.5,
-        "eligible": true,
-        "confidence": 0.35,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "water_infrastructure",
-        "display_name": "Water Infrastructure & Treatment",
-        "theme_exposure_score": 57.0,
-        "opportunity_score": 50.8,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "supplier"
-      }
-    ],
     "XYL": [
       {
         "theme_id": "aerospace_forging_capacity",
@@ -18875,6 +18791,80 @@
         "display_name": "Water Infrastructure & Treatment",
         "theme_exposure_score": 56.4,
         "opportunity_score": 58.3,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "supplier"
+      }
+    ],
+    "CR": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 51.4,
+        "opportunity_score": 48.3,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "root"
+      },
+      {
+        "theme_id": "battery_storage",
+        "display_name": "Grid-Scale Battery Storage",
+        "theme_exposure_score": 66.4,
+        "opportunity_score": 55.0,
+        "eligible": true,
+        "confidence": 0.4,
+        "role": "root"
+      },
+      {
+        "theme_id": "data_center_cooling",
+        "display_name": "Data Center Cooling & Thermal Management",
+        "theme_exposure_score": 65.7,
+        "opportunity_score": 54.7,
+        "eligible": true,
+        "confidence": 0.5,
+        "role": "root"
+      },
+      {
+        "theme_id": "energy_security",
+        "display_name": "Energy Security & Firm Power",
+        "theme_exposure_score": 73.7,
+        "opportunity_score": 58.3,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "grid_electrification",
+        "display_name": "Grid & Electrification Buildout",
+        "theme_exposure_score": 67.4,
+        "opportunity_score": 55.5,
+        "eligible": true,
+        "confidence": 0.35,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "nuclear_smr",
+        "display_name": "Nuclear Power Restart & SMRs",
+        "theme_exposure_score": 77.3,
+        "opportunity_score": 59.9,
+        "eligible": true,
+        "confidence": 0.4,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 47.4,
+        "opportunity_score": 46.5,
+        "eligible": true,
+        "confidence": 0.35,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "water_infrastructure",
+        "display_name": "Water Infrastructure & Treatment",
+        "theme_exposure_score": 57.0,
+        "opportunity_score": 50.8,
         "eligible": true,
         "confidence": 0.45,
         "role": "supplier"
@@ -19086,12 +19076,32 @@
         "role": "infrastructure"
       }
     ],
+    "DE": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 37.7,
+        "opportunity_score": 38.6,
+        "eligible": false,
+        "confidence": 0.45,
+        "role": null
+      },
+      {
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 36.8,
+        "opportunity_score": 38.2,
+        "eligible": false,
+        "confidence": 0.35,
+        "role": "infrastructure"
+      }
+    ],
     "ITT": [
       {
         "theme_id": "aerospace_forging_capacity",
         "display_name": "Aerospace Forging & Casting Capacity",
         "theme_exposure_score": 58.1,
-        "opportunity_score": 50.2,
+        "opportunity_score": 50.5,
         "eligible": true,
         "confidence": 0.5,
         "role": "supplier"
@@ -19100,7 +19110,7 @@
         "theme_id": "automation_and_robotics",
         "display_name": "Automation & Robotics",
         "theme_exposure_score": 45.1,
-        "opportunity_score": 44.4,
+        "opportunity_score": 44.7,
         "eligible": true,
         "confidence": 0.55,
         "role": "root"
@@ -19109,7 +19119,7 @@
         "theme_id": "battery_storage",
         "display_name": "Grid-Scale Battery Storage",
         "theme_exposure_score": 68.4,
-        "opportunity_score": 54.8,
+        "opportunity_score": 55.2,
         "eligible": true,
         "confidence": 0.4,
         "role": "root"
@@ -19118,7 +19128,7 @@
         "theme_id": "data_center_cooling",
         "display_name": "Data Center Cooling & Thermal Management",
         "theme_exposure_score": 75.0,
-        "opportunity_score": 57.8,
+        "opportunity_score": 58.1,
         "eligible": true,
         "confidence": 0.35,
         "role": "root"
@@ -19127,7 +19137,7 @@
         "theme_id": "energy_security",
         "display_name": "Energy Security & Firm Power",
         "theme_exposure_score": 68.1,
-        "opportunity_score": 54.7,
+        "opportunity_score": 55.0,
         "eligible": true,
         "confidence": 0.55,
         "role": "supplier"
@@ -19136,7 +19146,7 @@
         "theme_id": "grid_electrification",
         "display_name": "Grid & Electrification Buildout",
         "theme_exposure_score": 68.9,
-        "opportunity_score": 55.1,
+        "opportunity_score": 55.4,
         "eligible": true,
         "confidence": 0.35,
         "role": "supplier"
@@ -19145,7 +19155,7 @@
         "theme_id": "grid_power_equipment",
         "display_name": "Grid Power Equipment Backlog",
         "theme_exposure_score": 58.1,
-        "opportunity_score": 50.2,
+        "opportunity_score": 50.5,
         "eligible": true,
         "confidence": 0.5,
         "role": "supplier"
@@ -19154,7 +19164,7 @@
         "theme_id": "nuclear_smr",
         "display_name": "Nuclear Power Restart & SMRs",
         "theme_exposure_score": 78.4,
-        "opportunity_score": 59.3,
+        "opportunity_score": 59.7,
         "eligible": true,
         "confidence": 0.4,
         "role": "supplier"
@@ -19163,7 +19173,7 @@
         "theme_id": "reshoring_industrial_capacity",
         "display_name": "Reshoring & Industrial Capacity",
         "theme_exposure_score": 48.6,
-        "opportunity_score": 45.9,
+        "opportunity_score": 46.2,
         "eligible": true,
         "confidence": 0.35,
         "role": "supplier"
@@ -19172,7 +19182,7 @@
         "theme_id": "water_infrastructure",
         "display_name": "Water Infrastructure & Treatment",
         "theme_exposure_score": 61.3,
-        "opportunity_score": 51.6,
+        "opportunity_score": 52.0,
         "eligible": true,
         "confidence": 0.35,
         "role": "supplier"
@@ -19207,32 +19217,12 @@
         "role": "supplier"
       }
     ],
-    "DE": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 37.7,
-        "opportunity_score": 37.5,
-        "eligible": false,
-        "confidence": 0.45,
-        "role": null
-      },
-      {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 36.8,
-        "opportunity_score": 37.1,
-        "eligible": false,
-        "confidence": 0.35,
-        "role": "infrastructure"
-      }
-    ],
     "CNH": [
       {
         "theme_id": "automation_and_robotics",
         "display_name": "Automation & Robotics",
         "theme_exposure_score": 66.8,
-        "opportunity_score": 56.5,
+        "opportunity_score": 56.3,
         "eligible": true,
         "confidence": 0.55,
         "role": null
@@ -19241,7 +19231,7 @@
         "theme_id": "reshoring_industrial_capacity",
         "display_name": "Reshoring & Industrial Capacity",
         "theme_exposure_score": 56.2,
-        "opportunity_score": 51.7,
+        "opportunity_score": 51.5,
         "eligible": true,
         "confidence": 0.35,
         "role": "infrastructure"
@@ -19341,7 +19331,7 @@
         "theme_id": "automation_and_robotics",
         "display_name": "Automation & Robotics",
         "theme_exposure_score": 62.7,
-        "opportunity_score": 73.1,
+        "opportunity_score": 73.4,
         "eligible": true,
         "confidence": 0.45,
         "role": "enabler"
@@ -19350,7 +19340,7 @@
         "theme_id": "cybersecurity",
         "display_name": "Cybersecurity",
         "theme_exposure_score": 77.1,
-        "opportunity_score": 79.6,
+        "opportunity_score": 79.9,
         "eligible": true,
         "confidence": 0.55,
         "role": "enabler"
@@ -19359,7 +19349,7 @@
         "theme_id": "digital_payments",
         "display_name": "Digital Payments & Financial Infrastructure",
         "theme_exposure_score": 69.3,
-        "opportunity_score": 76.1,
+        "opportunity_score": 76.4,
         "eligible": true,
         "confidence": 0.53,
         "role": "supplier"
@@ -19414,17 +19404,6 @@
         "role": "enabler"
       }
     ],
-    "YOU": [
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 61.4,
-        "opportunity_score": 72.3,
-        "eligible": true,
-        "confidence": 0.32,
-        "role": "supplier"
-      }
-    ],
     "PTC": [
       {
         "theme_id": "automation_and_robotics",
@@ -19451,6 +19430,17 @@
         "opportunity_score": 77.9,
         "eligible": true,
         "confidence": 0.42,
+        "role": "supplier"
+      }
+    ],
+    "YOU": [
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 61.4,
+        "opportunity_score": 72.3,
+        "eligible": true,
+        "confidence": 0.32,
         "role": "supplier"
       }
     ],
@@ -19543,41 +19533,12 @@
         "role": "supplier"
       }
     ],
-    "DT": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 55.2,
-        "opportunity_score": 59.5,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 77.5,
-        "opportunity_score": 69.6,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 69.4,
-        "opportunity_score": 65.9,
-        "eligible": true,
-        "confidence": 0.42,
-        "role": "supplier"
-      }
-    ],
     "PATH": [
       {
         "theme_id": "cybersecurity",
         "display_name": "Cybersecurity",
         "theme_exposure_score": 75.9,
-        "opportunity_score": 71.1,
+        "opportunity_score": 71.5,
         "eligible": true,
         "confidence": 0.45,
         "role": "root"
@@ -19586,7 +19547,7 @@
         "theme_id": "digital_payments",
         "display_name": "Digital Payments & Financial Infrastructure",
         "theme_exposure_score": 68.0,
-        "opportunity_score": 67.5,
+        "opportunity_score": 67.9,
         "eligible": true,
         "confidence": 0.42,
         "role": "enabler"
@@ -19597,7 +19558,7 @@
         "theme_id": "automation_and_robotics",
         "display_name": "Automation & Robotics",
         "theme_exposure_score": 37.6,
-        "opportunity_score": 53.8,
+        "opportunity_score": 53.7,
         "eligible": false,
         "confidence": 0.55,
         "role": "enabler"
@@ -19606,7 +19567,7 @@
         "theme_id": "cybersecurity",
         "display_name": "Cybersecurity",
         "theme_exposure_score": 58.9,
-        "opportunity_score": 63.4,
+        "opportunity_score": 63.2,
         "eligible": false,
         "confidence": 0.45,
         "role": "enabler"
@@ -19615,7 +19576,7 @@
         "theme_id": "digital_payments",
         "display_name": "Digital Payments & Financial Infrastructure",
         "theme_exposure_score": 52.6,
-        "opportunity_score": 60.6,
+        "opportunity_score": 60.4,
         "eligible": false,
         "confidence": 0.42,
         "role": "supplier"
@@ -19648,26 +19609,6 @@
         "eligible": true,
         "confidence": 0.42,
         "role": "supplier"
-      }
-    ],
-    "FTNT": [
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 62.4,
-        "opportunity_score": 55.1,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "root"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 58.7,
-        "opportunity_score": 53.5,
-        "eligible": true,
-        "confidence": 0.53,
-        "role": "enabler"
       }
     ],
     "ADSK": [
@@ -19728,12 +19669,12 @@
         "role": "supplier"
       }
     ],
-    "DBX": [
+    "FTNT": [
       {
         "theme_id": "cybersecurity",
         "display_name": "Cybersecurity",
-        "theme_exposure_score": 57.6,
-        "opportunity_score": 67.4,
+        "theme_exposure_score": 62.4,
+        "opportunity_score": 55.1,
         "eligible": true,
         "confidence": 0.55,
         "role": "root"
@@ -19741,11 +19682,40 @@
       {
         "theme_id": "digital_payments",
         "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 54.1,
-        "opportunity_score": 65.8,
-        "eligible": false,
-        "confidence": 0.42,
+        "theme_exposure_score": 58.7,
+        "opportunity_score": 53.5,
+        "eligible": true,
+        "confidence": 0.53,
         "role": "enabler"
+      }
+    ],
+    "DT": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 55.2,
+        "opportunity_score": 52.2,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 77.5,
+        "opportunity_score": 62.3,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 69.4,
+        "opportunity_score": 58.6,
+        "eligible": true,
+        "confidence": 0.42,
+        "role": "supplier"
       }
     ],
     "FIVN": [
@@ -19764,6 +19734,26 @@
         "theme_exposure_score": 59.3,
         "opportunity_score": 66.3,
         "eligible": true,
+        "confidence": 0.42,
+        "role": "enabler"
+      }
+    ],
+    "DBX": [
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 57.6,
+        "opportunity_score": 67.4,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "root"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 54.1,
+        "opportunity_score": 65.8,
+        "eligible": false,
         "confidence": 0.42,
         "role": "enabler"
       }
@@ -19792,35 +19782,6 @@
         "display_name": "Digital Payments & Financial Infrastructure",
         "theme_exposure_score": 65.2,
         "opportunity_score": 57.4,
-        "eligible": true,
-        "confidence": 0.42,
-        "role": "supplier"
-      }
-    ],
-    "ESTC": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 61.2,
-        "opportunity_score": 59.5,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 75.5,
-        "opportunity_score": 66.0,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 74.7,
-        "opportunity_score": 65.6,
         "eligible": true,
         "confidence": 0.42,
         "role": "supplier"
@@ -19904,6 +19865,35 @@
         "role": "enabler"
       }
     ],
+    "ESTC": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 61.2,
+        "opportunity_score": 59.5,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 75.5,
+        "opportunity_score": 66.0,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 74.7,
+        "opportunity_score": 65.6,
+        "eligible": true,
+        "confidence": 0.42,
+        "role": "supplier"
+      }
+    ],
     "FICO": [
       {
         "theme_id": "automation_and_robotics",
@@ -19962,35 +19952,6 @@
         "role": "supplier"
       }
     ],
-    "SPSC": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 29.8,
-        "opportunity_score": 48.4,
-        "eligible": false,
-        "confidence": 0.55,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 48.1,
-        "opportunity_score": 56.6,
-        "eligible": false,
-        "confidence": 0.55,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 44.5,
-        "opportunity_score": 55.0,
-        "eligible": false,
-        "confidence": 0.42,
-        "role": "supplier"
-      }
-    ],
     "BSY": [
       {
         "theme_id": "automation_and_robotics",
@@ -20016,6 +19977,64 @@
         "theme_exposure_score": 64.0,
         "opportunity_score": 62.5,
         "eligible": true,
+        "confidence": 0.42,
+        "role": "supplier"
+      }
+    ],
+    "QTWO": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 55.6,
+        "opportunity_score": 58.3,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 77.9,
+        "opportunity_score": 68.4,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 71.4,
+        "opportunity_score": 65.4,
+        "eligible": true,
+        "confidence": 0.53,
+        "role": "supplier"
+      }
+    ],
+    "SPSC": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 29.8,
+        "opportunity_score": 48.4,
+        "eligible": false,
+        "confidence": 0.55,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 48.1,
+        "opportunity_score": 56.6,
+        "eligible": false,
+        "confidence": 0.55,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 44.5,
+        "opportunity_score": 55.0,
+        "eligible": false,
         "confidence": 0.42,
         "role": "supplier"
       }
@@ -20098,35 +20117,6 @@
         "role": "enabler"
       }
     ],
-    "QTWO": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 55.6,
-        "opportunity_score": 51.7,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 77.9,
-        "opportunity_score": 61.7,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 71.4,
-        "opportunity_score": 58.8,
-        "eligible": true,
-        "confidence": 0.53,
-        "role": "supplier"
-      }
-    ],
     "NOW": [
       {
         "theme_id": "automation_and_robotics",
@@ -20161,7 +20151,7 @@
         "theme_id": "automation_and_robotics",
         "display_name": "Automation & Robotics",
         "theme_exposure_score": 62.7,
-        "opportunity_score": 51.4,
+        "opportunity_score": 51.6,
         "eligible": true,
         "confidence": 0.45,
         "role": "enabler"
@@ -20170,7 +20160,7 @@
         "theme_id": "cybersecurity",
         "display_name": "Cybersecurity",
         "theme_exposure_score": 76.3,
-        "opportunity_score": 57.5,
+        "opportunity_score": 57.8,
         "eligible": true,
         "confidence": 0.55,
         "role": "enabler"
@@ -20179,9 +20169,29 @@
         "theme_id": "digital_payments",
         "display_name": "Digital Payments & Financial Infrastructure",
         "theme_exposure_score": 76.1,
-        "opportunity_score": 57.4,
+        "opportunity_score": 57.7,
         "eligible": true,
         "confidence": 0.42,
+        "role": "supplier"
+      }
+    ],
+    "DUOL": [
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 71.2,
+        "opportunity_score": 66.5,
+        "eligible": true,
+        "confidence": 0.3,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 44.8,
+        "opportunity_score": 54.7,
+        "eligible": false,
+        "confidence": 0.32,
         "role": "supplier"
       }
     ],
@@ -20209,55 +20219,6 @@
         "display_name": "Digital Payments & Financial Infrastructure",
         "theme_exposure_score": 68.8,
         "opportunity_score": 67.2,
-        "eligible": true,
-        "confidence": 0.42,
-        "role": "supplier"
-      }
-    ],
-    "DUOL": [
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 71.2,
-        "opportunity_score": 66.5,
-        "eligible": true,
-        "confidence": 0.3,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 44.8,
-        "opportunity_score": 54.7,
-        "eligible": false,
-        "confidence": 0.32,
-        "role": "supplier"
-      }
-    ],
-    "CVLT": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 62.7,
-        "opportunity_score": 54.1,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 85.0,
-        "opportunity_score": 64.2,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 76.1,
-        "opportunity_score": 60.2,
         "eligible": true,
         "confidence": 0.42,
         "role": "supplier"
@@ -20292,24 +20253,33 @@
         "role": "supplier"
       }
     ],
-    "MDB": [
+    "CVLT": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 62.7,
+        "opportunity_score": 54.1,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "enabler"
+      },
       {
         "theme_id": "cybersecurity",
         "display_name": "Cybersecurity",
         "theme_exposure_score": 85.0,
-        "opportunity_score": 59.9,
+        "opportunity_score": 64.2,
         "eligible": true,
-        "confidence": 0.45,
-        "role": "root"
+        "confidence": 0.55,
+        "role": "enabler"
       },
       {
         "theme_id": "digital_payments",
         "display_name": "Digital Payments & Financial Infrastructure",
         "theme_exposure_score": 76.1,
-        "opportunity_score": 55.9,
+        "opportunity_score": 60.2,
         "eligible": true,
         "confidence": 0.42,
-        "role": "enabler"
+        "role": "supplier"
       }
     ],
     "ORCL": [
@@ -20349,6 +20319,26 @@
         "opportunity_score": 59.9,
         "eligible": false,
         "confidence": 0.32,
+        "role": "enabler"
+      }
+    ],
+    "MDB": [
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 85.0,
+        "opportunity_score": 59.9,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "root"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 76.1,
+        "opportunity_score": 55.9,
+        "eligible": true,
+        "confidence": 0.42,
         "role": "enabler"
       }
     ],
@@ -20417,7 +20407,7 @@
         "theme_id": "automation_and_robotics",
         "display_name": "Automation & Robotics",
         "theme_exposure_score": 20.5,
-        "opportunity_score": 38.1,
+        "opportunity_score": 38.5,
         "eligible": false,
         "confidence": 0.45,
         "role": "enabler"
@@ -20426,7 +20416,7 @@
         "theme_id": "cybersecurity",
         "display_name": "Cybersecurity",
         "theme_exposure_score": 42.8,
-        "opportunity_score": 48.1,
+        "opportunity_score": 48.5,
         "eligible": false,
         "confidence": 0.45,
         "role": "enabler"
@@ -20435,7 +20425,7 @@
         "theme_id": "digital_payments",
         "display_name": "Digital Payments & Financial Infrastructure",
         "theme_exposure_score": 39.5,
-        "opportunity_score": 46.6,
+        "opportunity_score": 47.1,
         "eligible": true,
         "confidence": 0.53,
         "role": "supplier"
@@ -20566,7 +20556,7 @@
         "theme_id": "cybersecurity",
         "display_name": "Cybersecurity",
         "theme_exposure_score": 69.5,
-        "opportunity_score": 77.9,
+        "opportunity_score": 77.5,
         "eligible": true,
         "confidence": 0.55,
         "role": "service"
@@ -20575,7 +20565,7 @@
         "theme_id": "defense_rearmament",
         "display_name": "Allied Rearmament & Munitions Capacity",
         "theme_exposure_score": 68.3,
-        "opportunity_score": 77.3,
+        "opportunity_score": 77.0,
         "eligible": true,
         "confidence": 0.45,
         "role": "service"
@@ -20584,7 +20574,7 @@
         "theme_id": "digital_payments",
         "display_name": "Digital Payments & Financial Infrastructure",
         "theme_exposure_score": 76.1,
-        "opportunity_score": 80.8,
+        "opportunity_score": 80.5,
         "eligible": true,
         "confidence": 0.42,
         "role": "enabler"
@@ -20799,35 +20789,6 @@
         "role": "root"
       }
     ],
-    "FIS": [
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 61.4,
-        "opportunity_score": 68.2,
-        "eligible": false,
-        "confidence": 0.45,
-        "role": "service"
-      },
-      {
-        "theme_id": "defense_rearmament",
-        "display_name": "Allied Rearmament & Munitions Capacity",
-        "theme_exposure_score": 39.9,
-        "opportunity_score": 58.5,
-        "eligible": false,
-        "confidence": 0.45,
-        "role": "service"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 49.5,
-        "opportunity_score": 62.8,
-        "eligible": false,
-        "confidence": 0.53,
-        "role": "enabler"
-      }
-    ],
     "IBM": [
       {
         "theme_id": "cybersecurity",
@@ -20868,21 +20829,21 @@
         "role": "enabler"
       }
     ],
-    "GPN": [
+    "FIS": [
       {
         "theme_id": "cybersecurity",
         "display_name": "Cybersecurity",
-        "theme_exposure_score": 38.5,
-        "opportunity_score": 54.2,
+        "theme_exposure_score": 61.4,
+        "opportunity_score": 61.5,
         "eligible": false,
-        "confidence": 0.55,
+        "confidence": 0.45,
         "role": "service"
       },
       {
         "theme_id": "defense_rearmament",
         "display_name": "Allied Rearmament & Munitions Capacity",
-        "theme_exposure_score": 11.6,
-        "opportunity_score": 42.1,
+        "theme_exposure_score": 39.9,
+        "opportunity_score": 51.9,
         "eligible": false,
         "confidence": 0.45,
         "role": "service"
@@ -20890,11 +20851,40 @@
       {
         "theme_id": "digital_payments",
         "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 34.5,
-        "opportunity_score": 52.4,
+        "theme_exposure_score": 49.5,
+        "opportunity_score": 56.2,
         "eligible": false,
         "confidence": 0.53,
+        "role": "enabler"
+      }
+    ],
+    "DXC": [
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 48.4,
+        "opportunity_score": 61.3,
+        "eligible": false,
+        "confidence": 0.55,
         "role": "service"
+      },
+      {
+        "theme_id": "defense_rearmament",
+        "display_name": "Allied Rearmament & Munitions Capacity",
+        "theme_exposure_score": 37.2,
+        "opportunity_score": 56.3,
+        "eligible": false,
+        "confidence": 0.45,
+        "role": "service"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 50.7,
+        "opportunity_score": 62.3,
+        "eligible": false,
+        "confidence": 0.53,
+        "role": "enabler"
       }
     ],
     "KD": [
@@ -20926,12 +20916,12 @@
         "role": "enabler"
       }
     ],
-    "DXC": [
+    "GPN": [
       {
         "theme_id": "cybersecurity",
         "display_name": "Cybersecurity",
-        "theme_exposure_score": 48.4,
-        "opportunity_score": 61.3,
+        "theme_exposure_score": 38.5,
+        "opportunity_score": 47.5,
         "eligible": false,
         "confidence": 0.55,
         "role": "service"
@@ -20939,8 +20929,8 @@
       {
         "theme_id": "defense_rearmament",
         "display_name": "Allied Rearmament & Munitions Capacity",
-        "theme_exposure_score": 37.2,
-        "opportunity_score": 56.3,
+        "theme_exposure_score": 11.6,
+        "opportunity_score": 35.4,
         "eligible": false,
         "confidence": 0.45,
         "role": "service"
@@ -20948,11 +20938,11 @@
       {
         "theme_id": "digital_payments",
         "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 50.7,
-        "opportunity_score": 62.3,
+        "theme_exposure_score": 34.5,
+        "opportunity_score": 45.7,
         "eligible": false,
         "confidence": 0.53,
-        "role": "enabler"
+        "role": "service"
       }
     ],
     "VYX": [
@@ -20989,7 +20979,7 @@
         "theme_id": "energy_security",
         "display_name": "Energy Security & Firm Power",
         "theme_exposure_score": 63.9,
-        "opportunity_score": 72.4,
+        "opportunity_score": 72.5,
         "eligible": false,
         "confidence": 0.3,
         "role": "root"
@@ -21006,48 +20996,26 @@
         "role": "supplier"
       }
     ],
-    "WHD": [
-      {
-        "theme_id": "energy_security",
-        "display_name": "Energy Security & Firm Power",
-        "theme_exposure_score": 56.7,
-        "opportunity_score": 56.1,
-        "eligible": false,
-        "confidence": 0.3,
-        "role": "supplier"
-      }
-    ],
-    "PR": [
-      {
-        "theme_id": "energy_security",
-        "display_name": "Energy Security & Firm Power",
-        "theme_exposure_score": 56.7,
-        "opportunity_score": 59.9,
-        "eligible": false,
-        "confidence": 0.3,
-        "role": "root"
-      }
-    ],
-    "TDW": [
-      {
-        "theme_id": "energy_security",
-        "display_name": "Energy Security & Firm Power",
-        "theme_exposure_score": 56.7,
-        "opportunity_score": 68.6,
-        "eligible": false,
-        "confidence": 0.3,
-        "role": "supplier"
-      }
-    ],
     "CHRD": [
       {
         "theme_id": "energy_security",
         "display_name": "Energy Security & Firm Power",
         "theme_exposure_score": 75.9,
-        "opportunity_score": 77.8,
+        "opportunity_score": 78.0,
         "eligible": true,
         "confidence": 0.3,
         "role": "root"
+      }
+    ],
+    "WHD": [
+      {
+        "theme_id": "energy_security",
+        "display_name": "Energy Security & Firm Power",
+        "theme_exposure_score": 56.7,
+        "opportunity_score": 55.1,
+        "eligible": false,
+        "confidence": 0.3,
+        "role": "supplier"
       }
     ],
     "LNG": [
@@ -21061,12 +21029,45 @@
         "role": "infrastructure"
       }
     ],
+    "PR": [
+      {
+        "theme_id": "energy_security",
+        "display_name": "Energy Security & Firm Power",
+        "theme_exposure_score": 56.7,
+        "opportunity_score": 59.7,
+        "eligible": false,
+        "confidence": 0.3,
+        "role": "root"
+      }
+    ],
+    "FANG": [
+      {
+        "theme_id": "energy_security",
+        "display_name": "Energy Security & Firm Power",
+        "theme_exposure_score": 71.6,
+        "opportunity_score": 65.0,
+        "eligible": true,
+        "confidence": 0.3,
+        "role": "root"
+      }
+    ],
+    "TDW": [
+      {
+        "theme_id": "energy_security",
+        "display_name": "Energy Security & Firm Power",
+        "theme_exposure_score": 56.7,
+        "opportunity_score": 61.6,
+        "eligible": false,
+        "confidence": 0.3,
+        "role": "supplier"
+      }
+    ],
     "PSX": [
       {
         "theme_id": "energy_security",
         "display_name": "Energy Security & Firm Power",
         "theme_exposure_score": 85.0,
-        "opportunity_score": 73.1,
+        "opportunity_score": 65.8,
         "eligible": true,
         "confidence": 0.45,
         "role": "service"
@@ -21083,28 +21084,6 @@
         "role": "supplier"
       }
     ],
-    "FANG": [
-      {
-        "theme_id": "energy_security",
-        "display_name": "Energy Security & Firm Power",
-        "theme_exposure_score": 71.6,
-        "opportunity_score": 58.1,
-        "eligible": true,
-        "confidence": 0.3,
-        "role": "root"
-      }
-    ],
-    "MTDR": [
-      {
-        "theme_id": "energy_security",
-        "display_name": "Energy Security & Firm Power",
-        "theme_exposure_score": 67.5,
-        "opportunity_score": 64.4,
-        "eligible": false,
-        "confidence": 0.3,
-        "role": "root"
-      }
-    ],
     "SLB": [
       {
         "theme_id": "energy_security",
@@ -21114,6 +21093,17 @@
         "eligible": false,
         "confidence": 0.3,
         "role": "supplier"
+      }
+    ],
+    "MTDR": [
+      {
+        "theme_id": "energy_security",
+        "display_name": "Energy Security & Firm Power",
+        "theme_exposure_score": 67.5,
+        "opportunity_score": 64.1,
+        "eligible": false,
+        "confidence": 0.3,
+        "role": "root"
       }
     ],
     "OKE": [
@@ -21453,6 +21443,71 @@
         "role": "infrastructure"
       }
     ],
+    "FIX": [
+      {
+        "theme_id": "ai_infrastructure",
+        "display_name": "AI Infrastructure Buildout",
+        "theme_exposure_score": 73.1,
+        "opportunity_score": 60.5,
+        "eligible": true,
+        "confidence": 0.37,
+        "role": "infrastructure"
+      },
+      {
+        "theme_id": "data_center_cooling",
+        "display_name": "Data Center Cooling & Thermal Management",
+        "theme_exposure_score": 85.0,
+        "opportunity_score": 65.9,
+        "eligible": true,
+        "confidence": 0.35,
+        "role": "infrastructure"
+      },
+      {
+        "theme_id": "energy_security",
+        "display_name": "Energy Security & Firm Power",
+        "theme_exposure_score": 85.0,
+        "opportunity_score": 65.9,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "infrastructure"
+      },
+      {
+        "theme_id": "grid_electrification",
+        "display_name": "Grid & Electrification Buildout",
+        "theme_exposure_score": 71.2,
+        "opportunity_score": 59.7,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "infrastructure"
+      },
+      {
+        "theme_id": "grid_power_equipment",
+        "display_name": "Grid Power Equipment Backlog",
+        "theme_exposure_score": 72.7,
+        "opportunity_score": 60.3,
+        "eligible": true,
+        "confidence": 0.5,
+        "role": "infrastructure"
+      },
+      {
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 56.2,
+        "opportunity_score": 52.9,
+        "eligible": true,
+        "confidence": 0.35,
+        "role": "infrastructure"
+      },
+      {
+        "theme_id": "water_infrastructure",
+        "display_name": "Water Infrastructure & Treatment",
+        "theme_exposure_score": 71.3,
+        "opportunity_score": 59.7,
+        "eligible": true,
+        "confidence": 0.35,
+        "role": "infrastructure"
+      }
+    ],
     "TTEK": [
       {
         "theme_id": "ai_infrastructure",
@@ -21630,109 +21685,6 @@
         "role": "infrastructure"
       }
     ],
-    "FIX": [
-      {
-        "theme_id": "ai_infrastructure",
-        "display_name": "AI Infrastructure Buildout",
-        "theme_exposure_score": 73.1,
-        "opportunity_score": 59.7,
-        "eligible": true,
-        "confidence": 0.37,
-        "role": "infrastructure"
-      },
-      {
-        "theme_id": "data_center_cooling",
-        "display_name": "Data Center Cooling & Thermal Management",
-        "theme_exposure_score": 85.0,
-        "opportunity_score": 65.0,
-        "eligible": true,
-        "confidence": 0.35,
-        "role": "infrastructure"
-      },
-      {
-        "theme_id": "energy_security",
-        "display_name": "Energy Security & Firm Power",
-        "theme_exposure_score": 85.0,
-        "opportunity_score": 65.0,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "infrastructure"
-      },
-      {
-        "theme_id": "grid_electrification",
-        "display_name": "Grid & Electrification Buildout",
-        "theme_exposure_score": 71.2,
-        "opportunity_score": 58.8,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "infrastructure"
-      },
-      {
-        "theme_id": "grid_power_equipment",
-        "display_name": "Grid Power Equipment Backlog",
-        "theme_exposure_score": 72.7,
-        "opportunity_score": 59.5,
-        "eligible": true,
-        "confidence": 0.5,
-        "role": "infrastructure"
-      },
-      {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 56.2,
-        "opportunity_score": 52.1,
-        "eligible": true,
-        "confidence": 0.35,
-        "role": "infrastructure"
-      },
-      {
-        "theme_id": "water_infrastructure",
-        "display_name": "Water Infrastructure & Treatment",
-        "theme_exposure_score": 71.3,
-        "opportunity_score": 58.9,
-        "eligible": true,
-        "confidence": 0.35,
-        "role": "infrastructure"
-      }
-    ],
-    "CMC": [
-      {
-        "theme_id": "defense_rearmament",
-        "display_name": "Allied Rearmament & Munitions Capacity",
-        "theme_exposure_score": 28.9,
-        "opportunity_score": 43.9,
-        "eligible": false,
-        "confidence": 0.45,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "grid_electrification",
-        "display_name": "Grid & Electrification Buildout",
-        "theme_exposure_score": 44.7,
-        "opportunity_score": 51.0,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 30.9,
-        "opportunity_score": 44.8,
-        "eligible": false,
-        "confidence": 0.35,
-        "role": "service"
-      },
-      {
-        "theme_id": "water_infrastructure",
-        "display_name": "Water Infrastructure & Treatment",
-        "theme_exposure_score": 37.6,
-        "opportunity_score": 47.8,
-        "eligible": false,
-        "confidence": 0.35,
-        "role": "supplier"
-      }
-    ],
     "MTZ": [
       {
         "theme_id": "ai_infrastructure",
@@ -21863,6 +21815,44 @@
         "role": "infrastructure"
       }
     ],
+    "CMC": [
+      {
+        "theme_id": "defense_rearmament",
+        "display_name": "Allied Rearmament & Munitions Capacity",
+        "theme_exposure_score": 28.9,
+        "opportunity_score": 36.9,
+        "eligible": false,
+        "confidence": 0.45,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "grid_electrification",
+        "display_name": "Grid & Electrification Buildout",
+        "theme_exposure_score": 44.7,
+        "opportunity_score": 44.0,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 30.9,
+        "opportunity_score": 37.8,
+        "eligible": false,
+        "confidence": 0.35,
+        "role": "service"
+      },
+      {
+        "theme_id": "water_infrastructure",
+        "display_name": "Water Infrastructure & Treatment",
+        "theme_exposure_score": 37.6,
+        "opportunity_score": 40.8,
+        "eligible": false,
+        "confidence": 0.35,
+        "role": "supplier"
+      }
+    ],
     "ESAB": [
       {
         "theme_id": "water_infrastructure",
@@ -21874,23 +21864,23 @@
         "role": "supplier"
       }
     ],
-    "DGX": [
-      {
-        "theme_id": "aging_demographics",
-        "display_name": "Aging Demographics & Care Capacity",
-        "theme_exposure_score": 49.5,
-        "opportunity_score": 57.4,
-        "eligible": false,
-        "confidence": 0.35,
-        "role": "enabler"
-      }
-    ],
     "LH": [
       {
         "theme_id": "aging_demographics",
         "display_name": "Aging Demographics & Care Capacity",
         "theme_exposure_score": 40.0,
         "opportunity_score": 51.9,
+        "eligible": false,
+        "confidence": 0.35,
+        "role": "enabler"
+      }
+    ],
+    "DGX": [
+      {
+        "theme_id": "aging_demographics",
+        "display_name": "Aging Demographics & Care Capacity",
+        "theme_exposure_score": 49.5,
+        "opportunity_score": 56.3,
         "eligible": false,
         "confidence": 0.35,
         "role": "enabler"
@@ -22097,7 +22087,7 @@
         "theme_id": "aging_demographics",
         "display_name": "Aging Demographics & Care Capacity",
         "theme_exposure_score": 49.6,
-        "opportunity_score": 44.7,
+        "opportunity_score": 43.8,
         "eligible": false,
         "confidence": 0.35,
         "role": "enabler"
@@ -22106,7 +22096,7 @@
         "theme_id": "obesity_care_supply_chain",
         "display_name": "Metabolic Care Supply Chain",
         "theme_exposure_score": 49.3,
-        "opportunity_score": 44.6,
+        "opportunity_score": 43.7,
         "eligible": false,
         "confidence": 0.3,
         "role": "enabler"
@@ -22212,7 +22202,7 @@
         "theme_id": "water_infrastructure",
         "display_name": "Water Infrastructure & Treatment",
         "theme_exposure_score": 48.4,
-        "opportunity_score": 54.2,
+        "opportunity_score": 54.0,
         "eligible": false,
         "confidence": 0.25,
         "role": "supplier"
@@ -22315,7 +22305,7 @@
   "principle": "A separate screen, never a modifier on the fundamentals score. Price momentum contributes zero by construction, and names already in the top valuation decile are flagged rather than promoted - specialized ETFs have historically lost about 30% risk-adjusted over five years by doing the opposite (Ben-David, Franzoni, Kim & Moussawi, RFS 2023).",
   "schema_version": 1,
   "source": {
-    "advisor_generated_at": "2026-09-15T16:47:53.127163+00:00",
+    "advisor_generated_at": "2026-09-16T16:50:46.843096+00:00",
     "advisor_universe_mode": "full",
     "advisor_universe_count": 944
   },
@@ -22354,8 +22344,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "af8ab27b1579d2a265fb5dce1a07220f814272ed",
-    "config_hash": "93b5358baa5b0d3269738d19deb6465cf3c2c839b12f2bdc0b3a9fec96a48da4",
-    "generated_at": "2026-09-15T17:44:22.441637+00:00"
+    "git_commit_sha": "fdfc8faf08aebd864cdb5fba18b481e11b8285e7",
+    "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
+    "generated_at": "2026-09-16T17:41:46.471217+00:00"
   }
 }
