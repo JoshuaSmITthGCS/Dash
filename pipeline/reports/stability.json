@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 132,
+  "refreshes_observed": 133,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -20087,6 +20087,44 @@
       "mean_abs_score_delta": 0.27,
       "mean_abs_confidence_delta": 0.0,
       "largest_availability_driven_movers": []
+    },
+    {
+      "previous_refresh": "advisor-2026-09-16T22:52:26.110583+00:00",
+      "current_refresh": "advisor-2026-09-17T17:00:25.549131+00:00",
+      "shared_tickers": 894,
+      "rank_turnover": {
+        "top_40": 0.225,
+        "top_100": 0.225
+      },
+      "tickers_with_availability_driven_change": 2,
+      "tickers_with_availability_driven_change_pct": 0.002,
+      "mean_abs_score_delta": 0.91,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "TDW",
+          "metrics_with_value_change": [
+            "forward_pe",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 4.6,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -3.8,
+          "confidence_delta": 0.02
+        }
+      ]
     }
   ],
   "peer_group_recomposition": {
