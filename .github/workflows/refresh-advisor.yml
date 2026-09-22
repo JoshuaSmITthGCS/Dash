@@ -122,7 +122,13 @@ jobs:
     # slower EDGAR fallback). That put the projected full sweep near 70 minutes against a
     # 90-minute ceiling. A timeout publishes nothing at all - the commit step never runs -
     # so the margin matters more than the minutes do.
-    timeout-minutes: 120
+    #
+    # Raised again from 120 after the 2026-09-22 full sweep was cancelled 36 seconds after
+    # fetch_advisor.py wrote its point-in-time rows: that step alone ran 111 minutes, on top
+    # of a ~9-minute full-history checkout (shadow_portfolios.py's git bootstrap needs the
+    # history, so fetch-depth stays 0). 180 leaves room for the ~15 minutes of screens,
+    # validation and commit that follow, well under GitHub's 360-minute job ceiling.
+    timeout-minutes: 180
     env:
       ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
       MARKETAUX_API_TOKEN: ${{ secrets.MARKETAUX_API_TOKEN }}

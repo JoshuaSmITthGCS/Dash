@@ -19,7 +19,7 @@
 Three separate append-only stores — see `pipeline/pit_store.py` module docstring for the raw
 one; do not conflate the three, they have different schemas and purposes:
 
-1. **Raw fundamentals PIT** (`pipeline/data/pit/observations.jsonl`, `revisions.jsonl`,
+1. **Raw fundamentals PIT** (`pipeline/data/pit/observations/YYYY-MM.jsonl`, `revisions/YYYY-MM.jsonl`,
    `universe.jsonl`) — every observed value, its source, and its observation timestamp; a
    restatement log; a universe-membership log (added/removed per observation, survivorship
    defense). `as_of()` never returns a value observed after a given cutoff.

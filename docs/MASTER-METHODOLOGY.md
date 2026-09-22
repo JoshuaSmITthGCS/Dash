@@ -96,7 +96,7 @@ Three separate append-only stores, all committed to the repository (not gitignor
 scheduled runner is ephemeral and providers only ever serve today's restated numbers, so history
 only exists if every run appends to it):
 
-1. **Raw fundamentals PIT** — `pipeline/data/pit/observations.jsonl`, `revisions.jsonl`,
+1. **Raw fundamentals PIT** — `pipeline/data/pit/observations/YYYY-MM.jsonl`, `revisions/YYYY-MM.jsonl`,
    `universe.jsonl`. Every observed value, its source, and observation timestamp; a restatement
    log; a universe-membership log (survivorship defense). `as_of()` never returns a value
    observed after a given cutoff.

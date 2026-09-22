@@ -18,10 +18,10 @@ import json
 import math
 import os
 
+import pit_store
 from common import STORE_DIR, load_json
 
 BACKTEST_CACHE = os.path.join(STORE_DIR, "backtest_cache")
-OBSERVATIONS = os.path.join(STORE_DIR, "pit", "observations.jsonl")
 
 
 def universe_rows(advisor=None):
@@ -63,27 +63,29 @@ def latest_observations(path=None):
     """{ticker: values} from the newest point-in-time observation recorded for each ticker.
 
     The store is append-only and one ticker appears on many days, so the last line wins.
+    ``path`` reads one file; by default every file of pit_store's (sharded) store is read.
     """
-    path = path or OBSERVATIONS
-    if not os.path.exists(path):
-        return {}
+    paths = [path] if path else pit_store.store_paths(pit_store.OBSERVATIONS)
     latest = {}
-    with open(path) as handle:
-        for line in handle:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                row = json.loads(line)
-            except ValueError:
-                continue
-            if not isinstance(row, dict):
-                continue
-            ticker, observed = row.get("ticker"), str(row.get("observed_at") or row.get("observation_date") or "")
-            if not ticker:
-                continue
-            if ticker not in latest or observed >= latest[ticker]["observed_at"]:
-                latest[ticker] = {"observed_at": observed, "values": row.get("values") or {}}
+    for store_path in paths:
+        if not os.path.exists(store_path):
+            continue
+        with open(store_path) as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except ValueError:
+                    continue
+                if not isinstance(row, dict):
+                    continue
+                ticker, observed = row.get("ticker"), str(row.get("observed_at") or row.get("observation_date") or "")
+                if not ticker:
+                    continue
+                if ticker not in latest or observed >= latest[ticker]["observed_at"]:
+                    latest[ticker] = {"observed_at": observed, "values": row.get("values") or {}}
     return {ticker: item["values"] for ticker, item in latest.items()}
 
 
