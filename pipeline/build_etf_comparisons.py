@@ -9,7 +9,8 @@ import os
 from datetime import timezone
 
 from cache import CACHE, limiter_for, parallel_map, retry_with_backoff
-from common import CONFIG_DIR, DATA_DIR, LOG, load_json, save_json, update_pipeline_status
+from common import (CONFIG_DIR, DATA_DIR, LOG, load_json, published_json_text, save_json,
+                    update_pipeline_status)
 from etf_comparison import build_contract
 
 REPORT_BENCHMARKS = ("SPY", "QQQ", "DIA", "IWM", "VTI", "VEA", "VWO", "VXUS")
@@ -127,8 +128,7 @@ def build_all(period="max"):
             path = os.path.join(output_dir, f"{ticker}.json")
             temporary = f"{path}.tmp"
             with open(temporary, "w") as handle:
-                json.dump(payload, handle, indent=2, allow_nan=False)
-                handle.write("\n")
+                handle.write(published_json_text(payload))
             os.replace(temporary, path)
             complete.append(ticker)
         except Exception as error:  # noqa: BLE001

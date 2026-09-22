@@ -249,7 +249,8 @@ class JobArtifactTests(unittest.TestCase):
                                ("LEGACY_FUNDAMENTALS", "fundamentals.jsonl"),
                                ("MANIFEST", "fundamentals_manifest.json"),
                                ("ENTITY_AUDIT", "entity_audit.json"),
-                               ("RESTATEMENTS", "fundamental_restatements.jsonl")):
+                               ("RESTATEMENTS", "fundamental_restatements"),
+                               ("LEGACY_RESTATEMENTS", "fundamental_restatements.jsonl")):
             original = getattr(job, name)
             setattr(job, name, os.path.join(root, filename))
             self.addCleanup(setattr, job, name, original)
@@ -296,9 +297,20 @@ class JobArtifactTests(unittest.TestCase):
 
     def test_the_restatement_in_the_fixture_is_recorded(self):
         self.job.run(["THG"], client=self.client(), resolver=self.resolver())
-        with open(self.job.RESTATEMENTS, encoding="utf-8") as handle:
+        with open(os.path.join(self.job.RESTATEMENTS, "T.jsonl"), encoding="utf-8") as handle:
             rows = [line for line in handle if line.strip()]
         self.assertEqual(len(rows), 1)
+
+    def test_a_legacy_restatements_file_is_split_into_shards_before_appending(self):
+        import json
+        with open(self.job.LEGACY_RESTATEMENTS, "w", encoding="utf-8") as handle:
+            for ticker in ("AAPL", "ABT", "MSFT"):
+                handle.write(json.dumps({"ticker": ticker, "concept": "revenue"}) + "\n")
+        self.job.run(["THG"], client=self.client(), resolver=self.resolver())
+        self.assertFalse(os.path.exists(self.job.LEGACY_RESTATEMENTS))
+        self.assertEqual(sorted(os.listdir(self.job.RESTATEMENTS)), ["A.jsonl", "M.jsonl", "T.jsonl"])
+        with open(os.path.join(self.job.RESTATEMENTS, "A.jsonl"), encoding="utf-8") as handle:
+            self.assertEqual([json.loads(line)["ticker"] for line in handle], ["AAPL", "ABT"])
 
     def test_rerunning_adds_nothing_and_is_therefore_resumable(self):
         self.job.run(["THG"], client=self.client(), resolver=self.resolver())
