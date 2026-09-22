@@ -460,6 +460,15 @@ jobs:
       - name: Evaluate user alert rules
         if: steps.refresh_window.outputs.should_run == 'true'
         run: python pipeline/evaluate_alerts.py
+      - name: Publish to Firebase Storage
+        if: steps.refresh_window.outputs.should_run == 'true'
+        # Runs alongside the git commit below, not instead of it, until the site has been
+        # switched to read from the bucket (VITE_DATA_BUCKET) and proven there - see
+        # pipeline/publish_storage.py. Skips itself until the FIREBASE_STORAGE_BUCKET repo
+        # variable is set, and a bucket failure must never block the git publish.
+        env:
+          FIREBASE_STORAGE_BUCKET: ${{ vars.FIREBASE_STORAGE_BUCKET }}
+        run: python pipeline/publish_storage.py || echo "::warning::Firebase Storage publish failed; the git commit below still publishes"
       - name: Commit refreshed data with retry
         if: steps.refresh_window.outputs.should_run == 'true'
         shell: bash
