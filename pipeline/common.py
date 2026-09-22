@@ -160,6 +160,22 @@ def _json_safe(value):
     return value
 
 
+# Published files past this size are written minified. Pretty-printing costs ~40% on the large
+# payloads (advisor.json: 60 MB indented vs 36 MB compact; ~125 ETF files at ~5 MB each), and
+# the pipeline commits them to main several times a day - that is what pushed advisor.json
+# past GitHub's 50 MB warning and grew the clone to where checkout alone takes ~9 minutes.
+# Small files stay indented so their diffs remain reviewable.
+COMPACT_JSON_OVER_BYTES = 1_000_000
+
+
+def published_json_text(obj):
+    """``obj`` serialized for publication: indented when small, compact when large."""
+    text = json.dumps(obj, indent=2, default=str, allow_nan=False)
+    if len(text) > COMPACT_JSON_OVER_BYTES:
+        text = json.dumps(obj, separators=(",", ":"), default=str, allow_nan=False)
+    return text + "\n"
+
+
 def save_json(name, obj, to_config=False, to_store=False):
     """Atomically write JSON so readers never observe a partially-written payload."""
     base = STORE_DIR if to_store else (CONFIG_DIR if to_config else DATA_DIR)
@@ -171,8 +187,7 @@ def save_json(name, obj, to_config=False, to_store=False):
     fd, tmp = tempfile.mkstemp(prefix=f".{os.path.basename(name)}.", dir=directory, text=True)
     try:
         with os.fdopen(fd, "w") as f:
-            json.dump(_json_safe(obj), f, indent=2, default=str, allow_nan=False)
-            f.write("\n")
+            f.write(published_json_text(_json_safe(obj)))
         os.replace(tmp, path)
     finally:
         if os.path.exists(tmp):

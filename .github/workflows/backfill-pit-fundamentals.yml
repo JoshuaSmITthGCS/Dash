@@ -18,7 +18,7 @@ name: Backfill point-in-time fundamentals
 #   pipeline/data/pit/entity_map.json              the SEC ticker map this run resolved against
 #   pipeline/data/pit/fundamentals_manifest.json   per-company coverage, sample and full runs
 #   pipeline/data/pit/fundamentals/*.jsonl         the observations, sharded by CIK
-#   pipeline/data/pit/fundamental_restatements.jsonl  periods reported more than once
+#   pipeline/data/pit/fundamental_restatements/*.jsonl  periods reported more than once
 
 on:
   workflow_dispatch:
@@ -110,8 +110,8 @@ jobs:
               echo "Observations on disk: $(cat pipeline/data/pit/fundamentals/*.jsonl | wc -l)"
               echo "Shards: $(ls pipeline/data/pit/fundamentals | wc -l), largest $(du -h pipeline/data/pit/fundamentals/*.jsonl | sort -h | tail -1 | cut -f1)"
             fi
-            if [ -f pipeline/data/pit/fundamental_restatements.jsonl ]; then
-              echo "Restatements recorded: $(wc -l < pipeline/data/pit/fundamental_restatements.jsonl)"
+            if [ -d pipeline/data/pit/fundamental_restatements ]; then
+              echo "Restatements recorded: $(cat pipeline/data/pit/fundamental_restatements/*.jsonl | wc -l)"
             fi
             echo ""
             echo "Committed to main for review: pipeline/data/pit/entity_audit.json" \

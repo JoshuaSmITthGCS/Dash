@@ -26,6 +26,7 @@ from edgar_sue import announcement_age_trading_days, sue_for
 from fundamentals_extended import derive_margins, derive_roa_delta
 from peer_groups import peer_group
 from pit_store import history as pit_history
+import pit_store
 import pre_breakout_pit_store
 from pre_breakout_signals import (DEFAULT_CONFIG, PRE_BREAKOUT_EVIDENCE, PRE_BREAKOUT_SUBFACTORS,
                                   PRE_BREAKOUT_WEIGHTS, STAGE_THRESHOLDS, SUBWEIGHTS_BY_LEG,
@@ -34,7 +35,7 @@ from pre_breakout_signals import (DEFAULT_CONFIG, PRE_BREAKOUT_EVIDENCE, PRE_BRE
                                   volatility_contraction_score)
 from price_archive import load_series as archive_series_for
 from research_screens_v2 import industry_relative_returns, momentum_factors, momentum_path_smoothness
-from screen_inputs import (OBSERVATIONS, backtest_entry, latest_observations,
+from screen_inputs import (backtest_entry, latest_observations,
                            median_dollar_volume, universe_rows, with_current_price)
 from swing_signals import (high_52w_drawdown_sigmas, realized_volatility, trailing_return,
                            volume_surge)
@@ -61,7 +62,8 @@ def _read_observation_rows(path=None):
     every call unless handed pre-read rows; reading it once here and passing the result into
     every ticker's history() call is the difference between one file read and ~900 of them.
     """
-    path = path or OBSERVATIONS
+    if path is None:
+        return pit_store._read(pit_store.OBSERVATIONS)  # noqa: SLF001 - same package
     if not os.path.exists(path):
         return []
     rows = []

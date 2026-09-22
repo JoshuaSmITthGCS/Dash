@@ -52,7 +52,12 @@ MANIFEST = os.path.join(PIT_DIR, "fundamentals_manifest.json")
 # report. The entity audit is the thing to read before trusting any fetched history, so it
 # has to survive the run that comes after it.
 ENTITY_AUDIT = os.path.join(PIT_DIR, "entity_audit.json")
-RESTATEMENTS = os.path.join(PIT_DIR, "fundamental_restatements.jsonl")
+# A directory of shards keyed by the ticker's first character, not one file: as a single
+# file this reached 93 MB, and GitHub rejects any pushed file over 100 MB - the same wall
+# pit_store.py's revisions.jsonl hit. Rows are only ever appended by a backfill, so the
+# shard a row lands in never changes.
+RESTATEMENTS = os.path.join(PIT_DIR, "fundamental_restatements")
+LEGACY_RESTATEMENTS = os.path.join(PIT_DIR, "fundamental_restatements.jsonl")
 
 
 def observation_key(row):
@@ -78,6 +83,34 @@ def append_rows(path, rows):
         for row in rows:
             handle.write(json.dumps(row, sort_keys=True, default=str) + "\n")
     return len(rows)
+
+
+def restatement_shard(ticker):
+    """Shard name for a ticker: its first character, ``_`` for anything non-alphanumeric."""
+    first = str(ticker or "")[:1].upper()
+    return first if first.isalnum() else "_"
+
+
+def append_restatements(rows, directory=None):
+    """Append restatement rows to their per-ticker-initial shards under ``directory``."""
+    directory = directory or RESTATEMENTS
+    groups = {}
+    for row in rows:
+        groups.setdefault(restatement_shard(row.get("ticker")), []).append(row)
+    return sum(append_rows(os.path.join(directory, f"{key}.jsonl"), group)
+               for key, group in sorted(groups.items()))
+
+
+def migrate_legacy_restatements(legacy=None, directory=None):
+    """Split the old single restatements file into shards. Idempotent; returns rows moved."""
+    legacy = legacy or LEGACY_RESTATEMENTS
+    if not os.path.exists(legacy):
+        return 0
+    with open(legacy, encoding="utf-8") as handle:
+        rows = [json.loads(line) for line in handle if line.strip()]
+    moved = append_restatements(rows, directory)
+    os.remove(legacy)
+    return moved
 
 
 def classify_unresolved(unresolved, published_rows):
@@ -298,7 +331,8 @@ def run(tickers=None, *, limit=None, since=None, concepts=None, audit_only=False
             {**entry, "cik": cik, "ticker": ticker} for entry in restatements(rows))
         if index % 25 == 0 or index == len(resolved):
             LOG.info(f"  {index}/{len(resolved)} companies, {written} new observations")
-    append_rows(RESTATEMENTS, restatement_rows)
+    migrate_legacy_restatements()
+    append_restatements(restatement_rows)
 
     ok = [row for row in summaries if row["status"] == "ok"]
     periods = sorted(row["earliest_period"] for row in ok if row["earliest_period"])

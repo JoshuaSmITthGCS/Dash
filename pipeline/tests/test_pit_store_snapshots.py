@@ -4,7 +4,6 @@ and the config_hash provenance field (B9: which formula version produced a past 
 Separate from test_pit_store.py, which covers the unrelated sharded EDGAR-facts store in
 pit_fundamentals_store.py.
 """
-import json
 import os
 import shutil
 import sys
@@ -27,9 +26,7 @@ class AppendSnapshotConfigHashTests(unittest.TestCase):
         shutil.rmtree(self.directory, ignore_errors=True)
 
     def _read_observations(self):
-        path = os.path.join(self.directory, pit_store.OBSERVATIONS)
-        with open(path) as handle:
-            return [json.loads(line) for line in handle]
+        return pit_store._read(pit_store.OBSERVATIONS)
 
     def test_config_hash_is_omitted_when_not_supplied(self):
         pit_store.append_snapshot([{"ticker": "AAPL", "price": 200.0}], source="test")
@@ -53,9 +50,33 @@ class AppendSnapshotConfigHashTests(unittest.TestCase):
                                   source="test", config_hash="config-b")
         rows = self._read_observations()
         self.assertEqual([row["config_hash"] for row in rows], ["config-a", "config-b"])
-        revisions_path = os.path.join(self.directory, pit_store.REVISIONS)
-        with open(revisions_path) as handle:
-            revisions = [json.loads(line) for line in handle]
+        revisions = pit_store._read(pit_store.REVISIONS)
         self.assertEqual(len(revisions), 1)
         self.assertEqual(revisions[0]["previous"], 200.0)
         self.assertEqual(revisions[0]["current"], 205.0)
+
+    def test_observations_and_revisions_are_sharded_by_observation_month(self):
+        pit_store.append_snapshot([{"ticker": "AAPL", "price": 200.0}],
+                                  observed_at="2026-08-31T20:00:00+00:00")
+        pit_store.append_snapshot([{"ticker": "AAPL", "price": 205.0}],
+                                  observed_at="2026-09-01T20:00:00+00:00")
+        observation_shards = sorted(os.listdir(os.path.join(self.directory, "observations")))
+        self.assertEqual(observation_shards, ["2026-08.jsonl", "2026-09.jsonl"])
+        self.assertEqual(os.listdir(os.path.join(self.directory, "revisions")), ["2026-09.jsonl"])
+        self.assertFalse(os.path.exists(os.path.join(self.directory, pit_store.OBSERVATIONS)))
+        # Reads span shards, oldest month first, so as_of and diffing are unchanged.
+        self.assertEqual([row["values"]["price"] for row in self._read_observations()], [200.0, 205.0])
+        self.assertEqual(pit_store.as_of("AAPL", "2026-08-31")["values"]["price"], 200.0)
+
+    def test_a_legacy_single_file_is_still_read_and_migrates_into_shards(self):
+        legacy = os.path.join(self.directory, pit_store.OBSERVATIONS)
+        with open(legacy, "w") as handle:
+            handle.write('{"ticker": "AAPL", "observed_at": "2026-08-02T00:00:00+00:00", '
+                         '"values": {"price": 190.0}}\n')
+        pit_store.append_snapshot([{"ticker": "AAPL", "price": 200.0}],
+                                  observed_at="2026-09-02T00:00:00+00:00")
+        self.assertEqual(len(pit_store._read(pit_store.REVISIONS)), 1)
+        self.assertEqual(pit_store.migrate_legacy(), {pit_store.OBSERVATIONS: 2})
+        self.assertFalse(os.path.exists(legacy))
+        self.assertEqual([row["values"]["price"] for row in self._read_observations()], [190.0, 200.0])
+        self.assertEqual(pit_store.migrate_legacy(), {})

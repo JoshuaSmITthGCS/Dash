@@ -9,9 +9,15 @@ appending a timestamped observation on every run starting now.
 
 Three stores, all append-only JSON Lines under ``pipeline/data/pit/``:
 
-  observations.jsonl  one row per (ticker, observation_date, field-set) actually observed
-  revisions.jsonl     a row every time a previously-observed value changes (restatements)
-  universe.jsonl      one row per run recording exactly who was in the universe that day
+  observations/YYYY-MM.jsonl  one row per (ticker, observation_date, field-set) actually observed
+  revisions/YYYY-MM.jsonl     a row every time a previously-observed value changes (restatements)
+  universe.jsonl              one row per run recording exactly who was in the universe that day
+
+Observations and revisions are sharded by the month of ``observed_at``. As single files they
+grew ~50 MB a month each, and revisions.jsonl crossing GitHub's 100 MB per-file limit made
+every scheduled refresh's push fail with GH001 - the site kept serving days-old data while
+each run otherwise completed. Readers see one continuous log either way: a legacy unsharded
+file, if one is still present, is read first, then every shard in month order.
 
 ``as_of`` reads never see a value observed after the requested date, which is the entire
 point: a backtest asking "what did we know on 2026-03-01" gets what was on the wire then.
@@ -27,6 +33,7 @@ PIT_DIR = os.path.join(STORE_DIR, "pit")
 OBSERVATIONS = "observations.jsonl"
 REVISIONS = "revisions.jsonl"
 UNIVERSE = "universe.jsonl"
+SHARDED = (OBSERVATIONS, REVISIONS)
 
 # Fields worth preserving point-in-time. Quote-derived fields that only ever reflect
 # "now" (analyst targets, short interest) are recorded too, because a snapshot of them
@@ -79,14 +86,49 @@ def _path(name):
     return os.path.join(PIT_DIR, name)
 
 
+def _shard_dir(name):
+    return os.path.join(PIT_DIR, os.path.splitext(name)[0])
+
+
+def _shard_key(row):
+    """``YYYY-MM`` of a row's observation, or ``undated`` when it carries none."""
+    stamp = str(row.get("observed_at") or "")
+    return stamp[:7] if len(stamp) >= 7 and stamp[4] == "-" else "undated"
+
+
+def store_paths(name):
+    """Every file holding ``name``'s rows, oldest first: the legacy single file, then shards."""
+    paths = []
+    legacy = os.path.join(PIT_DIR, name)
+    if os.path.exists(legacy):
+        paths.append(legacy)
+    if name in SHARDED:
+        directory = _shard_dir(name)
+        if os.path.isdir(directory):
+            paths.extend(os.path.join(directory, entry) for entry in sorted(os.listdir(directory))
+                         if entry.endswith(".jsonl"))
+    return paths
+
+
+def _write_rows(path, rows, mode):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, mode) as handle:
+        for row in rows:
+            handle.write(json.dumps(row, default=str, sort_keys=True) + "\n")
+
+
 def _append(name, rows):
     if not rows:
         return 0
-    path = _path(name)
     try:
-        with open(path, "a") as handle:
+        if name in SHARDED:
+            groups = {}
             for row in rows:
-                handle.write(json.dumps(row, default=str, sort_keys=True) + "\n")
+                groups.setdefault(_shard_key(row), []).append(row)
+            for key, group in groups.items():
+                _write_rows(os.path.join(_shard_dir(name), f"{key}.jsonl"), group, "a")
+        else:
+            _write_rows(_path(name), rows, "a")
     except OSError as exc:
         LOG.warn(f"point-in-time append to {name} failed ({type(exc).__name__})")
         return 0
@@ -94,23 +136,57 @@ def _append(name, rows):
 
 
 def _read(name, limit=None):
-    path = _path(name)
-    if not os.path.exists(path):
-        return []
     rows = []
-    try:
-        with open(path) as handle:
-            for line in handle:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    rows.append(json.loads(line))
-                except ValueError:
-                    continue
-    except OSError:
-        return []
+    for path in store_paths(name):
+        try:
+            with open(path) as handle:
+                for line in handle:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        rows.append(json.loads(line))
+                    except ValueError:
+                        continue
+        except OSError:
+            continue
     return rows[-limit:] if limit else rows
+
+
+def _rewrite(name, rows):
+    """Replace ``name``'s whole store with ``rows``, sharding it and retiring any legacy file."""
+    if name not in SHARDED:
+        _write_rows(_path(name), rows, "w")
+        return
+    groups = {}
+    for row in rows:
+        groups.setdefault(_shard_key(row), []).append(row)
+    directory = _shard_dir(name)
+    stale = set(os.listdir(directory)) if os.path.isdir(directory) else set()
+    for key, group in groups.items():
+        _write_rows(os.path.join(directory, f"{key}.jsonl"), group, "w")
+        stale.discard(f"{key}.jsonl")
+    for entry in stale:
+        if entry.endswith(".jsonl"):
+            os.remove(os.path.join(directory, entry))
+    legacy = os.path.join(PIT_DIR, name)
+    if os.path.exists(legacy):
+        os.remove(legacy)
+
+
+def migrate_legacy():
+    """Split any legacy single-file observations/revisions store into monthly shards.
+
+    Idempotent, and row order within each month is preserved. Returns ``{name: rows}`` for
+    every store that was migrated.
+    """
+    migrated = {}
+    for name in SHARDED:
+        if os.path.exists(os.path.join(PIT_DIR, name)):
+            rows = _read(name)
+            _rewrite(name, rows)
+            migrated[name] = len(rows)
+    return migrated
 
 
 def _now():
@@ -442,11 +518,13 @@ def prune(before_days=1825):
     cutoff = (_now() - timedelta(days=before_days)).isoformat()
     for name in (OBSERVATIONS, REVISIONS, UNIVERSE):
         rows = [row for row in _read(name) if row.get("observed_at", "") >= cutoff]
-        path = _path(name)
         try:
-            with open(path, "w") as handle:
-                for row in rows:
-                    handle.write(json.dumps(row, default=str, sort_keys=True) + "\n")
+            _rewrite(name, rows)
         except OSError:
             continue
     return depth()
+
+
+if __name__ == "__main__":
+    for store_name, count in migrate_legacy().items():
+        LOG.info(f"Point-in-time store: split {count} {store_name} row(s) into monthly shards")
