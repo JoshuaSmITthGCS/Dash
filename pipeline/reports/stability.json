@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 137,
+  "refreshes_observed": 138,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -20307,6 +20307,80 @@
           ],
           "score_delta": 0.6,
           "confidence_delta": -0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-09-22T22:41:28.557971+00:00",
+      "current_refresh": "advisor-2026-09-23T16:57:55.300663+00:00",
+      "shared_tickers": 894,
+      "rank_turnover": {
+        "top_40": 0.2,
+        "top_100": 0.2
+      },
+      "tickers_with_availability_driven_change": 6,
+      "tickers_with_availability_driven_change_pct": 0.007,
+      "mean_abs_score_delta": 1.28,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -3.8,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "NEM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 3.2,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "CRM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "forward_pe"
+          ],
+          "score_delta": 2.7,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "AZO",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -1.8,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "DCI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 1.7,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "SHAK",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": -1.4,
+          "confidence_delta": 0.02
         }
       ]
     }
