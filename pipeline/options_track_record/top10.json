@@ -30,17 +30,17 @@
       ],
       "stock_leg": false
     },
-    "ASTS": {
-      "capital_required": 6000.0,
-      "date_predicted": "2026-09-23",
-      "entry_underlying_price": 62.04999923706055,
-      "expiration": "2026-10-02",
+    "AMZN": {
+      "capital_required": 24250.0,
+      "date_predicted": "2026-09-24",
+      "entry_underlying_price": 249.3800048828125,
+      "expiration": "2026-09-30",
       "legs": [
         {
           "action": "sell",
           "option_type": "put",
-          "premium": 2.44,
-          "strike": 60.0
+          "premium": 0.975,
+          "strike": 242.5
         }
       ],
       "stock_leg": false
@@ -56,21 +56,6 @@
           "option_type": "put",
           "premium": 0.315,
           "strike": 57.0
-        }
-      ],
-      "stock_leg": false
-    },
-    "C": {
-      "capital_required": 12300.0,
-      "date_predicted": "2026-09-24",
-      "entry_underlying_price": 130.9600067138672,
-      "expiration": "2026-10-02",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "put",
-          "premium": 0.165,
-          "strike": 123.0
         }
       ],
       "stock_leg": false
@@ -101,6 +86,21 @@
           "option_type": "put",
           "premium": 5.625,
           "strike": 230.0
+        }
+      ],
+      "stock_leg": false
+    },
+    "PYPL": {
+      "capital_required": 5200.0,
+      "date_predicted": "2026-09-24",
+      "entry_underlying_price": 52.599998474121094,
+      "expiration": "2026-10-02",
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "premium": 0.76,
+          "strike": 52.0
         }
       ],
       "stock_leg": false
@@ -148,21 +148,6 @@
           "option_type": "call",
           "premium": 15.825,
           "strike": 630.0
-        }
-      ],
-      "stock_leg": true
-    },
-    "AMZN": {
-      "capital_required": 24651.499938964844,
-      "date_predicted": "2026-09-24",
-      "entry_underlying_price": 246.51499938964844,
-      "expiration": "2026-09-30",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "call",
-          "premium": 3.2,
-          "strike": 250.0
         }
       ],
       "stock_leg": true
@@ -253,6 +238,21 @@
           "option_type": "call",
           "premium": 1.265,
           "strike": 210.0
+        }
+      ],
+      "stock_leg": true
+    },
+    "RKLB": {
+      "capital_required": 7361.000061035156,
+      "date_predicted": "2026-09-24",
+      "entry_underlying_price": 73.61000061035156,
+      "expiration": "2026-10-02",
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "call",
+          "premium": 0.775,
+          "strike": 82.0
         }
       ],
       "stock_leg": true
