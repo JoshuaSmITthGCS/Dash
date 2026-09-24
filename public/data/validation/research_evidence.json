@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-24T17:19:23.990360+00:00",
+  "generated_at": "2026-09-24T20:32:15.968502+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "0da2a2e49fdadce690ed61c548592b0719d954df",
+  "code_commit_hash": "1dc8f4f3dc1b46cae89c084f72adfa5dc19530b7",
   "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -879,7 +879,7 @@
             "total": 40
           },
           "financial_health": {
-            "scored": 29,
+            "scored": 32,
             "total": 40
           },
           "growth": {
@@ -909,7 +909,7 @@
             "total": 854
           },
           "financial_health": {
-            "scored": 818,
+            "scored": 815,
             "total": 854
           },
           "growth": {
@@ -921,7 +921,7 @@
             "total": 854
           },
           "valuation": {
-            "scored": 850,
+            "scored": 851,
             "total": 854
           }
         }
@@ -933,9 +933,9 @@
       "score": {
         "enriched": {
           "n": 890,
-          "mean": 63.82,
-          "median": 65.4,
-          "stdev": 11.99
+          "mean": 63.6,
+          "median": 65.05,
+          "stdev": 11.73
         },
         "non_enriched": {
           "n": 4,
@@ -946,21 +946,18 @@
       },
       "sector_distribution": {
         "enriched": {
-          "Technology": 153,
+          "Technology": 154,
           "Industrials": 145,
-          "Financial Services": 120,
+          "Financial Services": 123,
           "Consumer Cyclical": 113,
-          "Healthcare": 100,
+          "Healthcare": 101,
           "Consumer Defensive": 56,
           "Real Estate": 52,
           "Energy": 41,
           "Basic Materials": 39,
           "Utilities": 37,
           "Communication Services": 26,
-          "FINANCIAL SERVICES": 3,
-          "Unknown": 3,
-          "TECHNOLOGY": 1,
-          "HEALTHCARE": 1
+          "Unknown": 3
         },
         "non_enriched": {
           "ETF": 2,
@@ -980,8 +977,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "0da2a2e49fdadce690ed61c548592b0719d954df",
+    "git_commit_sha": "1dc8f4f3dc1b46cae89c084f72adfa5dc19530b7",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-09-24T17:19:23.990360+00:00"
+    "generated_at": "2026-09-24T20:32:15.968502+00:00"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-24T17:27:41.915274+00:00",
+  "generated_at": "2026-09-24T20:39:34.113066+00:00",
   "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
   "coverage_by_collection": {
     "research": {
@@ -15,7 +15,7 @@
           "total": 40
         },
         "financial_health": {
-          "scored": 29,
+          "scored": 32,
           "total": 40
         },
         "growth": {
@@ -45,7 +45,7 @@
           "total": 854
         },
         "financial_health": {
-          "scored": 818,
+          "scored": 815,
           "total": 854
         },
         "growth": {
@@ -57,7 +57,7 @@
           "total": 854
         },
         "valuation": {
-          "scored": 850,
+          "scored": 851,
           "total": 854
         }
       }
@@ -69,9 +69,9 @@
     "score": {
       "enriched": {
         "n": 890,
-        "mean": 63.82,
-        "median": 65.4,
-        "stdev": 11.99
+        "mean": 63.6,
+        "median": 65.05,
+        "stdev": 11.73
       },
       "non_enriched": {
         "n": 4,
@@ -82,21 +82,18 @@
     },
     "sector_distribution": {
       "enriched": {
-        "Technology": 153,
+        "Technology": 154,
         "Industrials": 145,
-        "Financial Services": 120,
+        "Financial Services": 123,
         "Consumer Cyclical": 113,
-        "Healthcare": 100,
+        "Healthcare": 101,
         "Consumer Defensive": 56,
         "Real Estate": 52,
         "Energy": 41,
         "Basic Materials": 39,
         "Utilities": 37,
         "Communication Services": 26,
-        "FINANCIAL SERVICES": 3,
-        "Unknown": 3,
-        "TECHNOLOGY": 1,
-        "HEALTHCARE": 1
+        "Unknown": 3
       },
       "non_enriched": {
         "ETF": 2,
