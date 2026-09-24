@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-09-23T23:11:46.733051+00:00",
+  "generated_at": "2026-09-24T17:28:06.714327+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before shadow_store/swing or swing_pit_store began recording - this module never reconstructs a swing signal or leg score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 24,
-  "attribution_snapshot_dates_recorded": 16,
+  "snapshot_dates_recorded": 25,
+  "attribution_snapshot_dates_recorded": 17,
   "horizon_days": 14,
   "metrics": {
     "composite_z": {
       "requires_live_sample": true,
-      "eligible_periods": 16,
+      "eligible_periods": 17,
       "minimum_icir_periods": 24,
       "status": "accumulating",
       "mean_rank_ic": null,
@@ -23,7 +23,7 @@
     }
   },
   "attribution": {
-    "eligible_periods": 7,
+    "eligible_periods": 8,
     "minimum_icir_periods": 24,
     "status": "accumulating",
     "composite": {
@@ -36,7 +36,7 @@
     "metrics": {
       "pead_drift": {
         "weight": 0.3,
-        "own_eligible_periods": 7,
+        "own_eligible_periods": 8,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -44,7 +44,7 @@
       },
       "analyst_revision": {
         "weight": 0.25,
-        "own_eligible_periods": 7,
+        "own_eligible_periods": 8,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -52,7 +52,7 @@
       },
       "high_volume_premium": {
         "weight": 0.2,
-        "own_eligible_periods": 7,
+        "own_eligible_periods": 8,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -60,7 +60,7 @@
       },
       "high_52w_proximity": {
         "weight": 0.15,
-        "own_eligible_periods": 7,
+        "own_eligible_periods": 8,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -68,7 +68,7 @@
       },
       "short_term_reversal": {
         "weight": 0.1,
-        "own_eligible_periods": 7,
+        "own_eligible_periods": 8,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -79,8 +79,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "9802620839c2d0f32468b02a5daf2c9c17ceef6e",
+    "git_commit_sha": "0da2a2e49fdadce690ed61c548592b0719d954df",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-09-23T23:11:46.733051+00:00"
+    "generated_at": "2026-09-24T17:28:06.714327+00:00"
   }
 }
