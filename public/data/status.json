@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-25T17:51:32.654392+00:00",
+  "generated_at": "2026-09-25T20:41:56.296513+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,15 +29,14 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-09-25T17:45:17.024273+00:00",
+      "checked_at": "2026-09-25T20:38:02.610973+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 944,
-        "scored": 893,
+        "scored": 237,
         "ranked": 40,
         "failed": [
           "ABB",
-          "ALL",
           "ANSS",
           "AVB",
           "BK",
@@ -68,7 +67,6 @@
           "LBRDK",
           "LEG",
           "MASI",
-          "MCY",
           "MMC",
           "MODG",
           "PCH",
@@ -94,23 +92,23 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-09-25T17:50:16.198236+00:00",
+      "checked_at": "2026-09-25T20:41:11.234357+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
         "received": 125,
         "rule_6c11_disclosures": 0,
         "cache": {
-          "hits": 125,
-          "misses": 253,
+          "hits": 250,
+          "misses": 128,
           "stale_hits": 1,
-          "hit_rate": 0.33
+          "hit_rate": 0.66
         }
       }
     },
     "etf_comparisons": {
       "status": "degraded",
-      "checked_at": "2026-09-25T17:51:32.654368+00:00",
+      "checked_at": "2026-09-25T20:41:56.296493+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -258,8 +256,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "71592ce5a47579c7df6af2f9ebc7c2c45a4f7297",
+    "git_commit_sha": "ccf6a7efd9868504b777fdcd6023ae1a0657d5af",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-09-25T17:51:32.654392+00:00"
+    "generated_at": "2026-09-25T20:41:56.296513+00:00"
   }
 }

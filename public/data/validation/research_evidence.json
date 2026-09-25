@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-25T17:44:34.101518+00:00",
+  "generated_at": "2026-09-25T20:37:18.902566+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "71592ce5a47579c7df6af2f9ebc7c2c45a4f7297",
+  "code_commit_hash": "ccf6a7efd9868504b777fdcd6023ae1a0657d5af",
   "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -879,7 +879,7 @@
             "total": 40
           },
           "financial_health": {
-            "scored": 31,
+            "scored": 32,
             "total": 40
           },
           "growth": {
@@ -909,7 +909,7 @@
             "total": 853
           },
           "financial_health": {
-            "scored": 815,
+            "scored": 814,
             "total": 853
           },
           "growth": {
@@ -921,7 +921,7 @@
             "total": 853
           },
           "valuation": {
-            "scored": 850,
+            "scored": 849,
             "total": 853
           }
         }
@@ -933,9 +933,9 @@
       "score": {
         "enriched": {
           "n": 890,
-          "mean": 63.7,
-          "median": 65.3,
-          "stdev": 11.93
+          "mean": 63.52,
+          "median": 65.2,
+          "stdev": 11.72
         },
         "non_enriched": {
           "n": 3,
@@ -946,20 +946,17 @@
       },
       "sector_distribution": {
         "enriched": {
-          "Technology": 154,
+          "Technology": 155,
           "Industrials": 146,
-          "Financial Services": 121,
+          "Financial Services": 124,
           "Consumer Cyclical": 113,
-          "Healthcare": 100,
+          "Healthcare": 101,
           "Consumer Defensive": 56,
           "Real Estate": 51,
           "Energy": 41,
           "Basic Materials": 39,
           "Utilities": 37,
           "Communication Services": 26,
-          "FINANCIAL SERVICES": 3,
-          "TECHNOLOGY": 1,
-          "HEALTHCARE": 1,
           "Unknown": 1
         },
         "non_enriched": {
@@ -969,7 +966,7 @@
       },
       "market_cap_comparison": {
         "status": "not_measurable",
-        "rows_with_market_cap": 40,
+        "rows_with_market_cap": 39,
         "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
       },
       "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
@@ -979,8 +976,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "71592ce5a47579c7df6af2f9ebc7c2c45a4f7297",
+    "git_commit_sha": "ccf6a7efd9868504b777fdcd6023ae1a0657d5af",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-09-25T17:44:34.101518+00:00"
+    "generated_at": "2026-09-25T20:37:18.902566+00:00"
   }
 }
