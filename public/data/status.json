@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-24T22:55:07.313138+00:00",
+  "generated_at": "2026-09-25T17:51:32.654392+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,15 +29,17 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-09-24T22:51:12.758859+00:00",
+      "checked_at": "2026-09-25T17:45:17.024273+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 944,
-        "scored": 238,
+        "scored": 893,
         "ranked": 40,
         "failed": [
           "ABB",
+          "ALL",
           "ANSS",
+          "AVB",
           "BK",
           "BLD",
           "CFLT",
@@ -66,6 +68,7 @@
           "LBRDK",
           "LEG",
           "MASI",
+          "MCY",
           "MMC",
           "MODG",
           "PCH",
@@ -91,23 +94,23 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-09-24T22:54:22.131252+00:00",
+      "checked_at": "2026-09-25T17:50:16.198236+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
         "received": 125,
         "rule_6c11_disclosures": 0,
         "cache": {
-          "hits": 250,
-          "misses": 128,
+          "hits": 125,
+          "misses": 253,
           "stale_hits": 1,
-          "hit_rate": 0.66
+          "hit_rate": 0.33
         }
       }
     },
     "etf_comparisons": {
       "status": "degraded",
-      "checked_at": "2026-09-24T22:55:07.313115+00:00",
+      "checked_at": "2026-09-25T17:51:32.654368+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -255,8 +258,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "414dfca9eafe3ea87581b8125785c0971481574f",
+    "git_commit_sha": "71592ce5a47579c7df6af2f9ebc7c2c45a4f7297",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-09-24T22:55:07.313138+00:00"
+    "generated_at": "2026-09-25T17:51:32.654392+00:00"
   }
 }
