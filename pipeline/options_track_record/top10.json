@@ -274,21 +274,6 @@
     }
   },
   "options": {
-    "AAPL": {
-      "capital_required": 38.0,
-      "date_predicted": "2026-09-29",
-      "entry_underlying_price": 331.1000061035156,
-      "expiration": "2026-10-05",
-      "legs": [
-        {
-          "action": "buy",
-          "option_type": "call",
-          "premium": 0.38,
-          "strike": 342.5
-        }
-      ],
-      "stock_leg": false
-    },
     "ASTS": {
       "capital_required": 137.5,
       "date_predicted": "2026-09-30",
@@ -405,6 +390,21 @@
           "option_type": "call",
           "premium": 1.125,
           "strike": 80.0
+        }
+      ],
+      "stock_leg": false
+    },
+    "UEC": {
+      "capital_required": 15.0,
+      "date_predicted": "2026-09-30",
+      "entry_underlying_price": 9.449999809265137,
+      "expiration": "2026-10-09",
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "premium": 0.15,
+          "strike": 9.0
         }
       ],
       "stock_leg": false
