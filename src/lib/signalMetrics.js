@@ -60,10 +60,13 @@ export function metricValueText(metric) {
   return typeof metric.value === 'number' ? metric.value.toFixed(3) : String(metric.value)
 }
 
-/** "12 of 120 observations" – the honest denominator on anything still accumulating. */
+/** "12 of 120 observations" – the honest denominator on anything still accumulating.
+ * Once the floor is met the denominator stops being progress ("57 of 24" reads as a bug). */
 export function sampleProgress(metric) {
   if (metric?.observations == null) return null
-  if (!metric.required_observations) return `${metric.observations} observations`
+  if (!metric.required_observations || metric.observations >= metric.required_observations) {
+    return `${metric.observations} observations`
+  }
   return `${metric.observations} of ${metric.required_observations} observations`
 }
 
