@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 156,
+  "refreshes_observed": 157,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -21394,6 +21394,51 @@
           ],
           "score_delta": -1.2,
           "confidence_delta": -0.03
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-10-01T21:49:55.680577+00:00",
+      "current_refresh": "advisor-2026-10-01T23:44:28.300598+00:00",
+      "shared_tickers": 893,
+      "rank_turnover": {
+        "top_40": 0.15,
+        "top_100": 0.15
+      },
+      "tickers_with_availability_driven_change": 3,
+      "tickers_with_availability_driven_change_pct": 0.003,
+      "mean_abs_score_delta": 0.26,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "CMC",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 2.2,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 0.9,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "WDC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 0.6,
+          "confidence_delta": -0.01
         }
       ]
     }

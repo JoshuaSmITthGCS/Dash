@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-01T21:49:55.680577+00:00",
+  "generated_at": "2026-10-01T23:44:28.300598+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "53ada610da2b31b17e1b6ac6286a3a118f7b897b",
+  "code_commit_hash": "31e1b395f985bde81ace92429b6aa7f7fdbced7f",
   "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -879,7 +879,7 @@
             "total": 40
           },
           "financial_health": {
-            "scored": 31,
+            "scored": 28,
             "total": 40
           },
           "growth": {
@@ -909,7 +909,7 @@
             "total": 853
           },
           "financial_health": {
-            "scored": 815,
+            "scored": 818,
             "total": 853
           },
           "growth": {
@@ -933,9 +933,9 @@
       "score": {
         "enriched": {
           "n": 890,
-          "mean": 63.51,
-          "median": 64.8,
-          "stdev": 11.78
+          "mean": 63.48,
+          "median": 64.9,
+          "stdev": 11.63
         },
         "non_enriched": {
           "n": 3,
@@ -966,7 +966,7 @@
       },
       "market_cap_comparison": {
         "status": "not_measurable",
-        "rows_with_market_cap": 40,
+        "rows_with_market_cap": 39,
         "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
       },
       "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
@@ -976,8 +976,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "53ada610da2b31b17e1b6ac6286a3a118f7b897b",
+    "git_commit_sha": "31e1b395f985bde81ace92429b6aa7f7fdbced7f",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-01T21:49:55.680577+00:00"
+    "generated_at": "2026-10-01T23:44:28.300598+00:00"
   }
 }
