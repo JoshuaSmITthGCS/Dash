@@ -1,0 +1,206 @@
+{
+  "schema_version": "1.0.0",
+  "ticker": "XOM",
+  "observed_at": "2026-10-01T21:05:43+00:00",
+  "source": "yahoo",
+  "point_in_time": true,
+  "content_sha256": "3104a0336956d218a051200f10824f9b0b3ed1c2c72297c449c7c321c376ccf8",
+  "estimates": {
+    "provider": "yahoo",
+    "fetched_at": "2026-10-01T21:05:43+00:00",
+    "freshness": "current",
+    "collection_status": "FORWARD_COLLECTION_ONLY",
+    "horizons": {
+      "current_quarter": {
+        "eps_consensus": 3.70954,
+        "revenue_consensus": 99166818180,
+        "analyst_count": 17,
+        "upward_revisions": 1,
+        "downward_revisions": 0,
+        "estimate_high": 4.33,
+        "estimate_low": 3.0,
+        "dispersion": 0.358535020514673,
+        "fiscal_period": "current_quarter",
+        "available_at": "2026-10-01T21:05:43+00:00"
+      },
+      "next_quarter": {
+        "eps_consensus": 3.26087,
+        "revenue_consensus": 105384796490,
+        "analyst_count": 16,
+        "upward_revisions": 1,
+        "downward_revisions": 1,
+        "estimate_high": 4.66,
+        "estimate_low": 1.98963,
+        "dispersion": 0.818913357478219,
+        "fiscal_period": "next_quarter",
+        "available_at": "2026-10-01T21:05:43+00:00"
+      },
+      "current_year": {
+        "eps_consensus": 12.2426,
+        "revenue_consensus": 415592560060,
+        "analyst_count": 16,
+        "upward_revisions": 1,
+        "downward_revisions": 0,
+        "estimate_high": 13.55275,
+        "estimate_low": 10.42,
+        "dispersion": 0.2558892718866907,
+        "fiscal_period": "current_year",
+        "available_at": "2026-10-01T21:05:43+00:00"
+      },
+      "next_year": {
+        "eps_consensus": 11.27659,
+        "revenue_consensus": 412357849080,
+        "analyst_count": 22,
+        "upward_revisions": 1,
+        "downward_revisions": 3,
+        "estimate_high": 16.65,
+        "estimate_low": 7.56198,
+        "dispersion": 0.8059191652795746,
+        "fiscal_period": "next_year",
+        "available_at": "2026-10-01T21:05:43+00:00"
+      }
+    },
+    "raw_provider_tables": {
+      "earnings_estimate": {
+        "0q": {
+          "avg": 3.70954,
+          "low": 3.0,
+          "high": 4.33,
+          "yearAgoEps": 1.88,
+          "numberOfAnalysts": 17,
+          "growth": 0.9732,
+          "currency": "USD"
+        },
+        "+1q": {
+          "avg": 3.26087,
+          "low": 1.98963,
+          "high": 4.66,
+          "yearAgoEps": 1.71,
+          "numberOfAnalysts": 16,
+          "growth": 0.90690005,
+          "currency": "USD"
+        },
+        "0y": {
+          "avg": 12.2426,
+          "low": 10.42,
+          "high": 13.55275,
+          "yearAgoEps": 6.99,
+          "numberOfAnalysts": 16,
+          "growth": 0.7514,
+          "currency": "USD"
+        },
+        "+1y": {
+          "avg": 11.27659,
+          "low": 7.56198,
+          "high": 16.65,
+          "yearAgoEps": 12.2426,
+          "numberOfAnalysts": 22,
+          "growth": -0.0789,
+          "currency": "USD"
+        }
+      },
+      "revenue_estimate": {
+        "0q": {
+          "avg": 99166818180,
+          "low": 85752000000,
+          "high": 113241000000,
+          "numberOfAnalysts": 8,
+          "yearAgoRevenue": 85294000000,
+          "growth": 0.1626,
+          "currency": "USD"
+        },
+        "+1q": {
+          "avg": 105384796490,
+          "low": 79539000000,
+          "high": 128546814890,
+          "numberOfAnalysts": 10,
+          "yearAgoRevenue": 82308000000,
+          "growth": 0.2804,
+          "currency": "USD"
+        },
+        "0y": {
+          "avg": 415592560060,
+          "low": 366446000000,
+          "high": 448489338700,
+          "numberOfAnalysts": 12,
+          "yearAgoRevenue": 332238000000,
+          "growth": 0.2509,
+          "currency": "USD"
+        },
+        "+1y": {
+          "avg": 412357849080,
+          "low": 328956000000,
+          "high": 528617569000,
+          "numberOfAnalysts": 14,
+          "yearAgoRevenue": 415592560060,
+          "growth": -0.0078,
+          "currency": "USD"
+        }
+      },
+      "eps_trend": {
+        "0q": {
+          "current": 3.70954,
+          "7daysAgo": 3.61747,
+          "30daysAgo": 3.58701,
+          "60daysAgo": 3.69389,
+          "90daysAgo": 3.35962,
+          "currency": "USD"
+        },
+        "+1q": {
+          "current": 3.26087,
+          "7daysAgo": 3.06273,
+          "30daysAgo": 2.99819,
+          "60daysAgo": 3.13622,
+          "90daysAgo": 2.91612,
+          "currency": "USD"
+        },
+        "0y": {
+          "current": 12.2426,
+          "7daysAgo": 11.86164,
+          "30daysAgo": 11.69665,
+          "60daysAgo": 12.39633,
+          "90daysAgo": 11.32165,
+          "currency": "USD"
+        },
+        "+1y": {
+          "current": 11.27659,
+          "7daysAgo": 10.83664,
+          "30daysAgo": 10.64294,
+          "60daysAgo": 10.57958,
+          "90daysAgo": 10.79305,
+          "currency": "USD"
+        }
+      },
+      "eps_revisions": {
+        "0q": {
+          "upLast7days": 1,
+          "upLast30days": 3,
+          "downLast30days": 0,
+          "downLast7Days": 0,
+          "currency": "USD"
+        },
+        "+1q": {
+          "upLast7days": 1,
+          "upLast30days": 2,
+          "downLast30days": 1,
+          "downLast7Days": 0,
+          "currency": "USD"
+        },
+        "0y": {
+          "upLast7days": 1,
+          "upLast30days": 4,
+          "downLast30days": 0,
+          "downLast7Days": 0,
+          "currency": "USD"
+        },
+        "+1y": {
+          "upLast7days": 1,
+          "upLast30days": 6,
+          "downLast30days": 3,
+          "downLast7Days": 0,
+          "currency": "USD"
+        }
+      }
+    }
+  }
+}

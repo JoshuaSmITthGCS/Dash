@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-01T18:59:40.242347+00:00",
+  "generated_at": "2026-10-01T21:50:38.652011+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "reconstructed, look-ahead contaminated"
   },
-  "snapshot_refreshes": 157,
+  "snapshot_refreshes": 158,
   "monthly_score_snapshots": 3,
   "primary_horizon": "3M",
   "primary_target": "sector_residual_return_over_trading_sessions",
@@ -835,7 +835,7 @@
         "minimum_periods": 24,
         "status": "accumulating",
         "status_message": "accumulating, 1 of 24 periods",
-        "mean_rank_ic": 0.08135802927793477,
+        "mean_rank_ic": 0.08910173958320149,
         "ic_standard_deviation": null,
         "standard_error": null,
         "confidence_interval_95": [
@@ -845,7 +845,7 @@
         "icir": null,
         "annualized_icir": null,
         "monthly_rank_ic": [
-          0.08135802927793477
+          0.08910173958320149
         ],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -853,23 +853,23 @@
             "buckets": [
               {
                 "bucket": 1,
-                "mean_forward_return": -0.07108786725242344
+                "mean_forward_return": -0.07171650788316539
               },
               {
                 "bucket": 2,
-                "mean_forward_return": -0.04634659856155985
+                "mean_forward_return": -0.046558550923697206
               },
               {
                 "bucket": 3,
-                "mean_forward_return": -0.04822487682807465
+                "mean_forward_return": -0.04864871625011089
               },
               {
                 "bucket": 4,
-                "mean_forward_return": -0.048180841577141684
+                "mean_forward_return": -0.048435288574452125
               },
               {
                 "bucket": 5,
-                "mean_forward_return": -0.05068908467531434
+                "mean_forward_return": -0.049881755627924476
               }
             ],
             "monotonicity_spearman": 0.1,
@@ -879,43 +879,43 @@
             "buckets": [
               {
                 "bucket": 1,
-                "mean_forward_return": -0.07882963015171954
+                "mean_forward_return": -0.08000362999355627
               },
               {
                 "bucket": 2,
-                "mean_forward_return": -0.06334610435312735
+                "mean_forward_return": -0.0634293857727745
               },
               {
                 "bucket": 3,
-                "mean_forward_return": -0.05254335810721111
+                "mean_forward_return": -0.05249289800164297
               },
               {
                 "bucket": 4,
-                "mean_forward_return": -0.04008021250415969
+                "mean_forward_return": -0.040557525788695876
               },
               {
                 "bucket": 5,
-                "mean_forward_return": -0.060834771913535625
+                "mean_forward_return": -0.06076987687190905
               },
               {
                 "bucket": 6,
-                "mean_forward_return": -0.035614981742613676
+                "mean_forward_return": -0.03652755562831273
               },
               {
                 "bucket": 7,
-                "mean_forward_return": -0.04101679906596024
+                "mean_forward_return": -0.04090176572278716
               },
               {
                 "bucket": 8,
-                "mean_forward_return": -0.055265283615976664
+                "mean_forward_return": -0.05588510561665414
               },
               {
                 "bucket": 9,
-                "mean_forward_return": -0.05627540491106023
+                "mean_forward_return": -0.056858232401025104
               },
               {
                 "bucket": 10,
-                "mean_forward_return": -0.045102764439568455
+                "mean_forward_return": -0.04290527885482384
               }
             ],
             "monotonicity_spearman": 0.40606060606060607,
@@ -923,7 +923,7 @@
           }
         },
         "long_short_top_minus_bottom_quintile": {
-          "mean_net_return": 0.0193987825771091,
+          "mean_net_return": 0.02083475225524091,
           "cost_model": "flat",
           "cost_bps": 10.0
         },
@@ -1239,7 +1239,7 @@
         "minimum_periods": 24,
         "status": "accumulating",
         "status_message": "accumulating, 1 of 24 periods",
-        "mean_rank_ic": 0.12376852914292867,
+        "mean_rank_ic": 0.12823526551616432,
         "ic_standard_deviation": null,
         "standard_error": null,
         "confidence_interval_95": [
@@ -1249,12 +1249,12 @@
         "icir": null,
         "annualized_icir": null,
         "monthly_rank_ic": [
-          0.12376852914292867
+          0.12823526551616432
         ],
         "probable_lookahead_flags": [
           {
             "date": "2026-08-31",
-            "rank_ic": 0.12376852914292867,
+            "rank_ic": 0.12823526551616432,
             "message": "Probable look-ahead or data leak. Investigate before interpreting."
           }
         ],
@@ -1263,23 +1263,23 @@
             "buckets": [
               {
                 "bucket": 1,
-                "mean_forward_return": -0.07034397896550934
+                "mean_forward_return": -0.07115026091268611
               },
               {
                 "bucket": 2,
-                "mean_forward_return": -0.05734441791787909
+                "mean_forward_return": -0.0572901112952788
               },
               {
                 "bucket": 3,
-                "mean_forward_return": -0.036006796824202936
+                "mean_forward_return": -0.036529207149901786
               },
               {
                 "bucket": 4,
-                "mean_forward_return": -0.05541496074244991
+                "mean_forward_return": -0.055244320787499704
               },
               {
                 "bucket": 5,
-                "mean_forward_return": -0.04531668782356467
+                "mean_forward_return": -0.04492837645901385
               }
             ],
             "monotonicity_spearman": 0.7,
@@ -1289,43 +1289,43 @@
             "buckets": [
               {
                 "bucket": 1,
-                "mean_forward_return": -0.07559260774468002
+                "mean_forward_return": -0.07651638710192069
               },
               {
                 "bucket": 2,
-                "mean_forward_return": -0.06509535018633865
+                "mean_forward_return": -0.06578413472345154
               },
               {
                 "bucket": 3,
-                "mean_forward_return": -0.06041749005326824
+                "mean_forward_return": -0.06029054867129277
               },
               {
                 "bucket": 4,
-                "mean_forward_return": -0.05423681688209231
+                "mean_forward_return": -0.05425596113975905
               },
               {
                 "bucket": 5,
-                "mean_forward_return": -0.039507509181953664
+                "mean_forward_return": -0.03999814556662051
               },
               {
                 "bucket": 6,
-                "mean_forward_return": -0.03250608446645221
+                "mean_forward_return": -0.03306026873318306
               },
               {
                 "bucket": 7,
-                "mean_forward_return": -0.05354597294778224
+                "mean_forward_return": -0.05290425883816827
               },
               {
                 "bucket": 8,
-                "mean_forward_return": -0.05726318200606573
+                "mean_forward_return": -0.05755838204850524
               },
               {
                 "bucket": 9,
-                "mean_forward_return": -0.04883035460317815
+                "mean_forward_return": -0.04860853899569154
               },
               {
                 "bucket": 10,
-                "mean_forward_return": -0.04180302104395119
+                "mean_forward_return": -0.04124821392233615
               }
             ],
             "monotonicity_spearman": 0.6484848484848484,
@@ -1333,7 +1333,7 @@
           }
         },
         "long_short_top_minus_bottom_quintile": {
-          "mean_net_return": 0.02402729114194467,
+          "mean_net_return": 0.025221884453672266,
           "cost_model": "flat",
           "cost_bps": 10.0
         },
@@ -1647,8 +1647,8 @@
   "variants_label": "calendar_day_horizon_raw_return_secondary_diagnostic",
   "comparison": {
     "1M": {
-      "champion_mean_rank_ic": 0.08135802927793477,
-      "challenger_mean_rank_ic": 0.12376852914292867,
+      "champion_mean_rank_ic": 0.08910173958320149,
+      "challenger_mean_rank_ic": 0.12823526551616432,
       "eligible": false
     },
     "3M": {
@@ -1670,8 +1670,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "c8d40d8f010c1404bd9241ed0c28360470be4874",
+    "git_commit_sha": "53ada610da2b31b17e1b6ac6286a3a118f7b897b",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-01T18:59:40.242347+00:00"
+    "generated_at": "2026-10-01T21:50:38.652011+00:00"
   }
 }
