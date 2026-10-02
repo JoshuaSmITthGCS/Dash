@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 158,
+  "refreshes_observed": 159,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -21534,6 +21534,48 @@
           ],
           "score_delta": 0.0,
           "confidence_delta": -0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-10-02T18:14:19.889325+00:00",
+      "current_refresh": "advisor-2026-10-02T21:16:37.809106+00:00",
+      "shared_tickers": 893,
+      "rank_turnover": {
+        "top_40": 0.15,
+        "top_100": 0.15
+      },
+      "tickers_with_availability_driven_change": 3,
+      "tickers_with_availability_driven_change_pct": 0.003,
+      "mean_abs_score_delta": 0.31,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "NEM",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -4.1,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -0.9,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "WDC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -0.6,
+          "confidence_delta": 0.01
         }
       ]
     }
