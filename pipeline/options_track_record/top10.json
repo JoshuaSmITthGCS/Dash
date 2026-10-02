@@ -167,21 +167,6 @@
       ],
       "stock_leg": true
     },
-    "AMZN": {
-      "capital_required": 25061.99951171875,
-      "date_predicted": "2026-10-02",
-      "entry_underlying_price": 250.6199951171875,
-      "expiration": "2026-10-09",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "call",
-          "premium": 3.125,
-          "strike": 252.5
-        }
-      ],
-      "stock_leg": true
-    },
     "ASTS": {
       "capital_required": 5915.000152587891,
       "date_predicted": "2026-09-29",
@@ -193,21 +178,6 @@
           "option_type": "call",
           "premium": 1.595,
           "strike": 63.0
-        }
-      ],
-      "stock_leg": true
-    },
-    "BMY": {
-      "capital_required": 6057.749938964844,
-      "date_predicted": "2026-10-02",
-      "entry_underlying_price": 60.57749938964844,
-      "expiration": "2026-10-09",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "call",
-          "premium": 1.065,
-          "strike": 61.0
         }
       ],
       "stock_leg": true
@@ -257,6 +227,21 @@
       ],
       "stock_leg": true
     },
+    "MU": {
+      "capital_required": 107489.00146484375,
+      "date_predicted": "2026-10-02",
+      "entry_underlying_price": 1074.8900146484375,
+      "expiration": "2026-10-09",
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "call",
+          "premium": 13.325,
+          "strike": 1110.0
+        }
+      ],
+      "stock_leg": true
+    },
     "NBIS": {
       "capital_required": 24282.06024169922,
       "date_predicted": "2026-10-02",
@@ -298,6 +283,21 @@
           "option_type": "call",
           "premium": 1.19,
           "strike": 78.0
+        }
+      ],
+      "stock_leg": true
+    },
+    "UEC": {
+      "capital_required": 930.0000190734863,
+      "date_predicted": "2026-10-02",
+      "entry_underlying_price": 9.300000190734863,
+      "expiration": "2026-10-09",
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "call",
+          "premium": 0.19,
+          "strike": 9.5
         }
       ],
       "stock_leg": true
@@ -364,21 +364,6 @@
       ],
       "stock_leg": false
     },
-    "LULU": {
-      "capital_required": 22.0,
-      "date_predicted": "2026-10-02",
-      "entry_underlying_price": 94.45999908447266,
-      "expiration": "2026-10-09",
-      "legs": [
-        {
-          "action": "buy",
-          "option_type": "put",
-          "premium": 0.22,
-          "strike": 88.0
-        }
-      ],
-      "stock_leg": false
-    },
     "META": {
       "capital_required": 1465.0,
       "date_predicted": "2026-10-01",
@@ -390,6 +375,21 @@
           "option_type": "call",
           "premium": 14.65,
           "strike": 725.0
+        }
+      ],
+      "stock_leg": false
+    },
+    "MSFT": {
+      "capital_required": 81.5,
+      "date_predicted": "2026-10-02",
+      "entry_underlying_price": 517.530029296875,
+      "expiration": "2026-10-09",
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "call",
+          "premium": 0.815,
+          "strike": 540.0
         }
       ],
       "stock_leg": false
