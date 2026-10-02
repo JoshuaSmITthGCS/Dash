@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-01T23:44:28.300598+00:00",
+  "generated_at": "2026-10-02T18:14:19.889325+00:00",
   "normalization_mode_exists": true,
   "normalization_mode": "bands",
   "challenger_enabled": true,
@@ -20,7 +20,7 @@
       "challenger_resolution": "cross_sectional_percentile",
       "challenger_status": "available",
       "direction": "lower_is_better",
-      "percentile_universe_size": 876,
+      "percentile_universe_size": 875,
       "sector_observation_counts": {
         "BASIC MATERIALS": 1,
         "Basic Materials": 38,
@@ -29,7 +29,7 @@
         "Consumer Defensive": 56,
         "Energy": 41,
         "FINANCIAL SERVICES": 2,
-        "Financial Services": 122,
+        "Financial Services": 121,
         "HEALTHCARE": 1,
         "Healthcare": 100,
         "Industrials": 137,
@@ -78,7 +78,7 @@
       "challenger_resolution": "cross_sectional_percentile",
       "challenger_status": "available",
       "direction": "distance_from_ideal",
-      "percentile_universe_size": 890,
+      "percentile_universe_size": 889,
       "sector_observation_counts": {
         "BASIC MATERIALS": 1,
         "Basic Materials": 38,
@@ -87,7 +87,7 @@
         "Consumer Defensive": 56,
         "Energy": 41,
         "FINANCIAL SERVICES": 2,
-        "Financial Services": 122,
+        "Financial Services": 121,
         "HEALTHCARE": 1,
         "Healthcare": 100,
         "Industrials": 146,
@@ -438,7 +438,7 @@
       "challenger_resolution": "cross_sectional_percentile",
       "challenger_status": "available",
       "direction": "higher_is_better",
-      "percentile_universe_size": 661,
+      "percentile_universe_size": 658,
       "sector_observation_counts": {
         "BASIC MATERIALS": 1,
         "Basic Materials": 35,
@@ -449,7 +449,7 @@
         "Financial Services": 20,
         "HEALTHCARE": 1,
         "Healthcare": 89,
-        "Industrials": 130,
+        "Industrials": 127,
         "Real Estate": 3,
         "TECHNOLOGY": 1,
         "Technology": 153,
@@ -692,23 +692,23 @@
       "challenger_resolution": "cross_sectional_percentile",
       "challenger_status": "available",
       "direction": "lower_is_better",
-      "percentile_universe_size": 792,
+      "percentile_universe_size": 787,
       "sector_observation_counts": {
         "BASIC MATERIALS": 1,
         "Basic Materials": 36,
         "Communication Services": 24,
-        "Consumer Cyclical": 95,
+        "Consumer Cyclical": 94,
         "Consumer Defensive": 49,
         "Energy": 41,
         "FINANCIAL SERVICES": 2,
         "Financial Services": 99,
         "HEALTHCARE": 1,
-        "Healthcare": 76,
+        "Healthcare": 75,
         "Industrials": 134,
-        "Real Estate": 49,
+        "Real Estate": 48,
         "TECHNOLOGY": 1,
-        "Technology": 147,
-        "Utilities": 35,
+        "Technology": 146,
+        "Utilities": 34,
         "default": 2
       },
       "normalization_pooling": "sector_with_universe_fallback",
@@ -722,13 +722,13 @@
       "challenger_resolution": "cross_sectional_percentile",
       "challenger_status": "available",
       "direction": "lower_is_better",
-      "percentile_universe_size": 352,
+      "percentile_universe_size": 348,
       "sector_observation_counts": {
         "Basic Materials": 30,
         "Energy": 41,
         "FINANCIAL SERVICES": 2,
-        "Financial Services": 107,
-        "Industrials": 90,
+        "Financial Services": 106,
+        "Industrials": 87,
         "Real Estate": 46,
         "Utilities": 36
       },
@@ -912,10 +912,10 @@
     }
   ],
   "point_in_time_store": {
-    "file_count": 46,
-    "total_row_count": 135352,
-    "refresh_count": 159,
-    "latest_refresh_id": "advisor-2026-10-01T23:44:28.300598+00:00",
+    "file_count": 47,
+    "total_row_count": 136245,
+    "refresh_count": 160,
+    "latest_refresh_id": "advisor-2026-10-02T18:14:19.889325+00:00",
     "latest_refresh_row_count": 893,
     "latest_refresh_champion_score_count": 893,
     "latest_refresh_challenger_score_count": 893,
@@ -927,12 +927,12 @@
     "required_combined_symbol_count": 893,
     "watchlist_contract": "Server-supplied watchlist symbols join the refresh universe and are recorded prospectively. Browser-only local storage cannot be read by the scheduled pipeline.",
     "raw_observation_store": {
-      "observations": 65949,
+      "observations": 66842,
       "tickers": 898,
       "first_observed": "2026-08-02T20:19:46.298747+00:00",
-      "last_observed": "2026-10-01T23:44:17.837131+00:00",
+      "last_observed": "2026-10-02T18:13:25.142854+00:00",
       "days": 60,
-      "revisions": 681455
+      "revisions": 696596
     }
   }
 }

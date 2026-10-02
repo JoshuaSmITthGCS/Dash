@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-01T23:44:28.300598+00:00",
+  "generated_at": "2026-10-02T18:14:19.889325+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "31e1b395f985bde81ace92429b6aa7f7fdbced7f",
+  "code_commit_hash": "34ee39ada4f8b1aee4d983daecf179e78545b7bf",
   "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -879,7 +879,7 @@
             "total": 40
           },
           "financial_health": {
-            "scored": 28,
+            "scored": 32,
             "total": 40
           },
           "growth": {
@@ -901,7 +901,7 @@
         "total_rows": 853,
         "categories": {
           "accounting_quality": {
-            "scored": 850,
+            "scored": 849,
             "total": 853
           },
           "capital_allocation": {
@@ -909,7 +909,7 @@
             "total": 853
           },
           "financial_health": {
-            "scored": 818,
+            "scored": 814,
             "total": 853
           },
           "growth": {
@@ -928,39 +928,44 @@
       }
     },
     "enriched_vs_non_enriched": {
-      "enriched_count": 890,
-      "non_enriched_count": 3,
+      "enriched_count": 889,
+      "non_enriched_count": 4,
       "score": {
         "enriched": {
-          "n": 890,
-          "mean": 63.48,
-          "median": 64.9,
-          "stdev": 11.63
+          "n": 889,
+          "mean": 63.67,
+          "median": 65.0,
+          "stdev": 12.01
         },
         "non_enriched": {
-          "n": 3,
-          "mean": 62.73,
-          "median": 67.1,
-          "stdev": 8.01
+          "n": 4,
+          "mean": 65.53,
+          "median": 68.7,
+          "stdev": 8.33
         }
       },
       "sector_distribution": {
         "enriched": {
-          "Technology": 155,
+          "Technology": 154,
           "Industrials": 146,
-          "Financial Services": 124,
+          "Financial Services": 121,
           "Consumer Cyclical": 113,
-          "Healthcare": 101,
+          "Healthcare": 100,
           "Consumer Defensive": 56,
           "Real Estate": 51,
           "Energy": 41,
-          "Basic Materials": 39,
+          "Basic Materials": 38,
           "Utilities": 37,
           "Communication Services": 26,
+          "FINANCIAL SERVICES": 2,
+          "BASIC MATERIALS": 1,
+          "TECHNOLOGY": 1,
+          "HEALTHCARE": 1,
           "Unknown": 1
         },
         "non_enriched": {
           "ETF": 2,
+          "Financial Services": 1,
           "Unknown": 1
         }
       },
@@ -976,8 +981,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "31e1b395f985bde81ace92429b6aa7f7fdbced7f",
+    "git_commit_sha": "34ee39ada4f8b1aee4d983daecf179e78545b7bf",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-01T23:44:28.300598+00:00"
+    "generated_at": "2026-10-02T18:14:19.889325+00:00"
   }
 }
