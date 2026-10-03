@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "strategy": "SPY",
+  "as_of": "2026-10-01",
+  "recorded_at": "2026-10-01T19:07:31.410705+00:00",
+  "content_sha256": "10ff29921091598de84abd9983db56caa5e2d91bc24b3117524d0a42e1a575e5",
+  "methodology": {
+    "comparison_mode": "signal_only",
+    "weighting_method": "equal_weight",
+    "execution_lag_sessions": 1,
+    "spread_bps": 10,
+    "slippage_bps": 10,
+    "price_session": "2026-10-01",
+    "source": "scheduled_public_refresh"
+  },
+  "rows": [
+    {
+      "ticker": "SPY",
+      "rank": 1,
+      "signal": null,
+      "price": 764.34002686,
+      "weight": 1.0
+    }
+  ]
+}
