@@ -1,0 +1,17 @@
+rules_version = '2';
+
+// Firebase Storage holds the pipeline's published research data (pipeline/publish_storage.py).
+// It is the same public, precomputed data Netlify already serves from /data, so anyone may
+// read it. Nobody writes through the client SDK: the pipeline uploads with a service account,
+// which bypasses these rules by design.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /data/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

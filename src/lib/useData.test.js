@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { clearCachedData, formatElapsed, useData } from './useData'
+import { clearCachedData, dataUrl, formatElapsed, useData } from './useData'
 
 describe('useData local caching', () => {
   const file = 'test-fixture.json'
@@ -135,5 +135,17 @@ describe('formatElapsed', () => {
 
   it('rounds down mid-second', () => {
     expect(formatElapsed(59_900)).toBe('59s')
+  })
+})
+
+describe('dataUrl', () => {
+  it('reads the deployed /data copy when no bucket is configured', () => {
+    expect(dataUrl('etf/SPY.json', '')).toBe(`${import.meta.env.BASE_URL}data/etf/SPY.json`)
+  })
+
+  it('reads the Firebase Storage copy, path-encoded under data/, when a bucket is configured', () => {
+    expect(dataUrl('etf/SPY.json', 'dash.firebasestorage.app')).toBe(
+      'https://firebasestorage.googleapis.com/v0/b/dash.firebasestorage.app/o/data%2Fetf%2FSPY.json?alt=media',
+    )
   })
 })

@@ -174,6 +174,31 @@ connection names the step it stalled on instead of appearing to hang.
 5. Confirm the scheduled workflows are enabled (GitHub disables scheduled workflows on forks
    and on repos idle for 60+ days).
 
+## Firebase Storage data publishing
+
+`pipeline/publish_storage.py` uploads everything under `public/data/` to a Firebase Storage
+bucket after each refresh (gzipped, changed files only, `Cache-Control: no-cache`), plus one
+dated `archive/advisor/YYYY-MM-DD.json` per day. It runs **alongside** the git commit, not
+instead of it: the site keeps reading `/data` until `VITE_DATA_BUCKET` is set, and the git
+commit of `public/data/` is removed only after the bucket path has been proven in production.
+
+One-time setup:
+
+1. Firebase console → Storage → Get started. New projects' default bucket requires the
+   Blaze (pay-as-you-go) plan; the bucket name looks like `<project>.firebasestorage.app`.
+2. Deploy the read rule: `firebase deploy --only storage` (`storage.rules` allows public
+   reads under `data/` only; the pipeline writes with the service account, which bypasses rules).
+3. GitHub → Settings → Secrets and variables → Actions → **Variables** → add
+   `FIREBASE_STORAGE_BUCKET` with the bucket name. `FIREBASE_SERVICE_ACCOUNT_JSON` is
+   already a secret for alert delivery; its service account needs write access to the bucket
+   (the default `firebase-adminsdk` account has it).
+4. Run a refresh and check the "Publish to Firebase Storage" step's log. It sets the bucket's
+   read-only CORS policy itself; if it warns that it could not, set it once by hand with
+   `gcloud storage buckets update gs://<bucket> --cors-file=cors.json`, where `cors.json` is
+   `[{"origin":["*"],"method":["GET","HEAD"],"responseHeader":["Content-Type","Content-Encoding","ETag","Cache-Control"],"maxAgeSeconds":3600}]`.
+5. Switch the site over: set `VITE_DATA_BUCKET` to the bucket name in Netlify's environment
+   variables and redeploy. Unset it to switch back instantly.
+
 ## App Check
 
 Not currently configured. Consider enabling Firebase App Check (reCAPTCHA v3 or App

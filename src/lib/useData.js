@@ -102,7 +102,20 @@ export function clearCachedData(file) {
   }
 }
 
-// Loads a JSON file the pipeline committed into /public/data.
+// Where a data file is fetched from. By default, the copy the pipeline committed into
+// /public/data and Netlify deployed with the site. When VITE_DATA_BUCKET names a Firebase
+// Storage bucket, the copy pipeline/publish_storage.py uploaded there instead - same file
+// names under a data/ prefix, so switching sources is this one setting. Deliberately not
+// VITE_FIREBASE_STORAGE_BUCKET: that is already set for auth, and pointing reads at a bucket
+// before the pipeline has filled it would blank every page.
+export function dataUrl(file, bucket = import.meta.env.VITE_DATA_BUCKET) {
+  if (bucket) {
+    return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(`data/${file}`)}?alt=media`
+  }
+  return `${import.meta.env.BASE_URL}data/${file}`
+}
+
+// Loads a JSON file the pipeline published (see dataUrl above).
 // Static fetch -> no backend. Returns { data, loading, error, fromCache, cachedAt, reload }.
 //
 // Payloads are migrated to the version this build expects on the way in, so a freshly
@@ -135,7 +148,7 @@ export function useData(file) {
           // 'no-cache' revalidates against the server's ETag on every request, so a fresh
           // pipeline commit always comes through - but an unchanged file answers 304 and is
           // served from the browser's disk cache instead of re-downloading tens of MB.
-          const response = await fetch(`${import.meta.env.BASE_URL}data/${file}`, { cache: 'no-cache' })
+          const response = await fetch(dataUrl(file), { cache: 'no-cache' })
           if (!response.ok) throw new Error(`${file}: ${response.status}`)
           const raw = await response.json()
           const dataset = datasetFor(file)
