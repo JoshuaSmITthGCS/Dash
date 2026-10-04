@@ -239,6 +239,17 @@ describe('ExperimentPanel', () => {
     expect(screen.getByText('news-weight')).toBeInTheDocument()
     expect(screen.getByText(/0 promoted/)).toBeInTheDocument()
   })
+
+  it('renders a prose result verbatim instead of title-casing it into a chip', () => {
+    const prose = 'See pipeline/reports/news_fix_score_delta.json for the measured delta.'
+    render(<ExperimentPanel panel={{
+      status: 'measured',
+      summary: { experiments: 1, total_variants_tested: 1, promoted_to_champion: [] },
+      experiments: [{ id: 'a1', hypothesis: 'h', result: prose, decision: 'promote', reason: 'r' }],
+    }} />)
+    expect(screen.getByText(prose)).toBeInTheDocument()
+    expect(screen.queryByText(/News Fix Score Delta\.Json/)).not.toBeInTheDocument()
+  })
 })
 
 describe('ResearchEvidence', () => {
