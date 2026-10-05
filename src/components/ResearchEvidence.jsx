@@ -22,6 +22,10 @@ const num = (value, digits = 2) =>
 const title = (value = '') =>
   String(value).replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 
+// Registry `result` is sometimes a short status token ("supported") and sometimes a
+// full prose finding; title-casing prose mangles file paths and identifiers.
+const isResultToken = (value) => typeof value === 'string' && /^[a-z0-9_ -]{1,32}$/i.test(value)
+
 function NotGenerated({ panel, name }) {
   return <div className="evidence-empty" role="note">
     <strong>{name} not generated</strong>
@@ -257,9 +261,10 @@ export function ExperimentPanel({ panel }) {
     <ul className="evidence-experiments">
       {panel.experiments.map((item) => <li key={item.id}>
         <div><b>{item.id}</b>
-          <span className={`chip validation-${item.result === 'supported' ? 'pass' : 'accumulating'}`}>
-            {title(item.result)}</span></div>
+          {isResultToken(item.result) && <span className={`chip validation-${item.result === 'supported' ? 'pass' : 'accumulating'}`}>
+            {title(item.result)}</span>}</div>
         <p>{item.hypothesis}</p>
+        {!isResultToken(item.result) && item.result && <p className="evidence-experiment-result">{item.result}</p>}
         <small>{title(item.decision)} · {item.reason}</small>
       </li>)}
     </ul>

@@ -280,3 +280,56 @@
 .import-action-remove { background: color-mix(in srgb, var(--down) 14%, transparent); color: var(--down); }
 
 .import-warning { padding: var(--sp-2-5) var(--sp-3); border: 1px solid color-mix(in srgb, var(--down) 35%, var(--border)); border-radius: var(--control-radius); background: color-mix(in srgb, var(--down) 8%, var(--bg-elev)); color: var(--down); font-size: var(--fs-xs); }
+
+/* Model vs. your own picks */
+.model-alignment { margin-bottom: var(--sp-5); }
+.model-alignment-lead { margin: var(--sp-2) 0 var(--sp-3); color: var(--text-primary); font-size: var(--fs-sm); }
+.model-alignment-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+.model-alignment-group { min-width: 0; padding: var(--sp-3); border: 1px solid var(--border-subtle); border-radius: var(--control-radius); }
+.model-alignment-group header { display: grid; gap: var(--sp-1); margin-bottom: var(--sp-2-5); }
+.model-alignment-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-3); margin: 0; }
+.model-alignment-stats div { min-width: 0; }
+.model-alignment-stats dt { color: var(--text-tertiary); font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: 0.04em; }
+.model-alignment-stats dd { margin: 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.model-alignment-stats dd.positive { color: var(--pos); }
+.model-alignment-stats dd.negative { color: var(--neg); }
+.model-alignment-tickers { margin: var(--sp-2-5) 0 0; color: var(--text-tertiary); font-size: var(--fs-2xs); line-height: 1.6; overflow-wrap: anywhere; }
+
+/* Suggested trades */
+.model-trades { margin-bottom: var(--sp-5); }
+.model-trades > summary { display: flex; align-items: center; justify-content: space-between; cursor: pointer; list-style: none; }
+.model-trades > summary span { display: grid; gap: var(--sp-1); }
+.model-trades-body { display: grid; gap: var(--sp-3); margin-top: var(--sp-3); }
+.model-trades-mode { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); margin: 0; padding: 0; border: 0; }
+.model-trades-mode label { display: flex; gap: var(--sp-2); align-items: flex-start; padding: var(--sp-2-5); border: 1px solid var(--border-subtle); border-radius: var(--control-radius); cursor: pointer; }
+.model-trades-mode label.active { border-color: var(--accent); }
+.model-trades-mode label span { display: grid; gap: 2px; }
+.model-trades-mode small { color: var(--text-tertiary); font-size: var(--fs-2xs); }
+.model-trades-totals { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-2); }
+.model-trades-totals span { display: grid; gap: 2px; min-width: 0; }
+.model-trades-totals small { color: var(--text-tertiary); font-size: var(--fs-2xs); }
+.model-trades-totals strong { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.model-trades-totals strong.negative { color: var(--neg); }
+.model-trades-why { text-align: left !important; white-space: normal !important; color: var(--text-secondary); min-width: 180px; }
+.model-trade-action { font-weight: var(--fw-semibold); }
+.model-trade-sell, .model-trade-trim { color: var(--neg); }
+.model-trade-buy, .model-trade-add { color: var(--pos); }
+
+/* When the evidence arrives */
+.evidence-countdown { margin-bottom: var(--sp-5); }
+.evidence-countdown-list { list-style: none; margin: var(--sp-3) 0; padding: 0; display: grid; gap: var(--sp-2-5); }
+.evidence-countdown-list li { display: grid; grid-template-columns: 120px minmax(0, 1fr) 180px; gap: var(--sp-3); align-items: center; padding-bottom: var(--sp-2-5); border-bottom: 1px solid var(--border-subtle); }
+.evidence-countdown-list li:last-child { border-bottom: 0; padding-bottom: 0; }
+.evidence-countdown-list time { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: var(--fw-semibold); }
+.evidence-countdown-list time small { color: var(--warn); font-weight: normal; }
+.evidence-countdown-list li > div:not(.evidence-countdown-progress) { display: grid; gap: 2px; min-width: 0; }
+.evidence-countdown-list li > div span { color: var(--text-secondary); font-size: var(--fs-xs); }
+.evidence-countdown-progress { display: grid; gap: 2px; }
+.evidence-countdown-progress meter { width: 100%; height: 6px; }
+.evidence-countdown-progress small { color: var(--text-tertiary); font-size: var(--fs-2xs); }
+
+@media (max-width: 720px) {
+  .model-alignment-grid, .model-trades-mode { grid-template-columns: minmax(0, 1fr); }
+  .model-trades-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .evidence-countdown-list li { grid-template-columns: minmax(0, 1fr); gap: var(--sp-1); }
+}

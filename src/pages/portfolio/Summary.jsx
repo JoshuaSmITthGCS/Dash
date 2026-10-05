@@ -12,6 +12,9 @@ import { latestMarketDayReturn, realizedResultSummary, selectPeriod } from '../.
 import { liveTodayPortfolioReturn } from '../../lib/afterHoursQuotes.js'
 import { money, PERIOD_NAMES, signedPct, SUMMARY_PERIODS } from './format.js'
 import Holdings from './Holdings.jsx'
+import ModelAlignment from './ModelAlignment.jsx'
+import ModelTrades from './ModelTrades.jsx'
+import { splitHoldingsByModel } from '../../lib/modelAlignment.js'
 
 /** The account value line for the selected range, preferring recorded five-minute snapshots. */
 function summaryChartFor({ trackingSnapshots, positions, priceData, period, holdingsSeriesFull }) {
@@ -115,6 +118,9 @@ export default function Summary({
   suggestedActionsOpen,
   onSuggestedActionsToggle,
   onSelectStock,
+  research = [],
+  costBps,
+  bookSize,
   ...holdingsProps
 }) {
   const { portfolioStats, assetAllocation, sectorAllocation, actionable, exposure } = holdings
@@ -171,6 +177,15 @@ export default function Summary({
         onToggle={onSuggestedActionsToggle}
         onSelectStock={onSelectStock}
       />
+
+      <ModelAlignment split={splitHoldingsByModel({
+        positions: holdings.portfolioPositions,
+        research,
+        priceData,
+        benchmarkHistory: holdings.benchmarkHistory,
+      })} />
+
+      <ModelTrades positions={holdings.portfolioPositions} research={research} costBps={costBps} bookSize={bookSize} />
 
       <ConcentrationCard exposure={exposure} />
 
