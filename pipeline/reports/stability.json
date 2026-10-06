@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 162,
+  "refreshes_observed": 163,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -21740,6 +21740,33 @@
           ],
           "score_delta": 0.9,
           "confidence_delta": -0.02
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-10-05T23:08:32.127848+00:00",
+      "current_refresh": "advisor-2026-10-06T01:21:37.987189+00:00",
+      "shared_tickers": 893,
+      "rank_turnover": {
+        "top_40": 0.125,
+        "top_100": 0.125
+      },
+      "tickers_with_availability_driven_change": 1,
+      "tickers_with_availability_driven_change_pct": 0.001,
+      "mean_abs_score_delta": 0.24,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "CMC",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 2.2,
+          "confidence_delta": -0.04
         }
       ]
     }
