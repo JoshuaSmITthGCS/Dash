@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-06T23:43:20.200686+00:00",
+  "generated_at": "2026-10-07T19:45:52.442622+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,14 +29,15 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-10-06T23:38:18.291506+00:00",
+      "checked_at": "2026-10-07T19:38:22.445150+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 944,
-        "scored": 241,
+        "scored": 891,
         "ranked": 40,
         "failed": [
           "ABB",
+          "ALL",
           "ANSS",
           "AVB",
           "BK",
@@ -67,23 +68,29 @@
           "LBRDK",
           "LEG",
           "MASI",
+          "MCY",
           "MMC",
           "MODG",
           "PCH",
           "PNM",
           "PSTG",
+          "QRVO",
           "SEE",
           "SKX",
           "SMAR",
           "SNV",
           "SPR",
           "SUM",
+          "SYF",
           "TGNA",
           "TMHC",
           "TPH",
           "TPX",
+          "TRV",
+          "TSM",
           "VSCO",
           "WBA",
+          "WBD",
           "WBS",
           "X",
           "ZI"
@@ -92,23 +99,23 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-10-06T23:42:35.424503+00:00",
+      "checked_at": "2026-10-07T19:44:33.853109+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
         "received": 125,
         "rule_6c11_disclosures": 0,
         "cache": {
-          "hits": 250,
-          "misses": 128,
+          "hits": 125,
+          "misses": 253,
           "stale_hits": 1,
-          "hit_rate": 0.66
+          "hit_rate": 0.33
         }
       }
     },
     "etf_comparisons": {
       "status": "degraded",
-      "checked_at": "2026-10-06T23:43:20.200662+00:00",
+      "checked_at": "2026-10-07T19:45:52.442593+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -256,8 +263,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "967ad98a188cc16ce5e49cd7a0a00ac0d33e6d35",
+    "git_commit_sha": "93b6b328d793061abd95c8e0ee336f84ea0df5da",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-06T23:43:20.200686+00:00"
+    "generated_at": "2026-10-07T19:45:52.442622+00:00"
   }
 }

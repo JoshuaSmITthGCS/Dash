@@ -1,29 +1,174 @@
 {
-  "generated_at": "2026-10-06T23:46:56.465902+00:00",
+  "generated_at": "2026-10-07T19:49:41.781456+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before shadow_store/swing or swing_pit_store began recording - this module never reconstructs a swing signal or leg score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 33,
-  "attribution_snapshot_dates_recorded": 25,
+  "snapshot_dates_recorded": 34,
+  "attribution_snapshot_dates_recorded": 26,
   "horizon_days": 14,
   "metrics": {
     "composite_z": {
       "requires_live_sample": true,
-      "eligible_periods": 23,
+      "eligible_periods": 24,
       "minimum_icir_periods": 24,
-      "status": "accumulating",
-      "mean_rank_ic": null,
-      "icir": null,
-      "t_stat": null,
-      "hit_rate": null,
+      "status": "eligible",
+      "mean_rank_ic": 0.0936,
+      "icir": 1.646,
+      "t_stat": 2.328,
+      "hit_rate": 0.625,
       "clears_multiple_testing_bar": false,
-      "periods": []
+      "periods": [
+        {
+          "start_date": "2026-08-13",
+          "end_date": "2026-08-27",
+          "sample_size": 13,
+          "rank_ic": 0.2857142857142857
+        },
+        {
+          "start_date": "2026-08-14",
+          "end_date": "2026-08-28",
+          "sample_size": 16,
+          "rank_ic": 0.061764705882352944
+        },
+        {
+          "start_date": "2026-08-19",
+          "end_date": "2026-09-02",
+          "sample_size": 16,
+          "rank_ic": -0.0058823529411764705
+        },
+        {
+          "start_date": "2026-08-20",
+          "end_date": "2026-09-03",
+          "sample_size": 16,
+          "rank_ic": 0.34411764705882353
+        },
+        {
+          "start_date": "2026-08-21",
+          "end_date": "2026-09-04",
+          "sample_size": 15,
+          "rank_ic": 0.43214285714285716
+        },
+        {
+          "start_date": "2026-08-25",
+          "end_date": "2026-09-08",
+          "sample_size": 15,
+          "rank_ic": 0.1357142857142857
+        },
+        {
+          "start_date": "2026-08-26",
+          "end_date": "2026-09-09",
+          "sample_size": 15,
+          "rank_ic": 0.02857142857142857
+        },
+        {
+          "start_date": "2026-08-27",
+          "end_date": "2026-09-10",
+          "sample_size": 15,
+          "rank_ic": -0.075
+        },
+        {
+          "start_date": "2026-08-28",
+          "end_date": "2026-09-11",
+          "sample_size": 14,
+          "rank_ic": 0.02857142857142857
+        },
+        {
+          "start_date": "2026-08-31",
+          "end_date": "2026-09-14",
+          "sample_size": 12,
+          "rank_ic": -0.04195804195804196
+        },
+        {
+          "start_date": "2026-09-01",
+          "end_date": "2026-09-15",
+          "sample_size": 10,
+          "rank_ic": 0.28484848484848485
+        },
+        {
+          "start_date": "2026-09-02",
+          "end_date": "2026-09-16",
+          "sample_size": 12,
+          "rank_ic": 0.1258741258741259
+        },
+        {
+          "start_date": "2026-09-03",
+          "end_date": "2026-09-17",
+          "sample_size": 14,
+          "rank_ic": 0.31868131868131866
+        },
+        {
+          "start_date": "2026-09-04",
+          "end_date": "2026-09-22",
+          "sample_size": 15,
+          "rank_ic": 0.13214285714285715
+        },
+        {
+          "start_date": "2026-09-08",
+          "end_date": "2026-09-22",
+          "sample_size": 15,
+          "rank_ic": 0.20714285714285716
+        },
+        {
+          "start_date": "2026-09-09",
+          "end_date": "2026-09-23",
+          "sample_size": 16,
+          "rank_ic": 0.20294117647058824
+        },
+        {
+          "start_date": "2026-09-10",
+          "end_date": "2026-09-24",
+          "sample_size": 14,
+          "rank_ic": -0.015384615384615385
+        },
+        {
+          "start_date": "2026-09-11",
+          "end_date": "2026-09-25",
+          "sample_size": 17,
+          "rank_ic": -0.14705882352941177
+        },
+        {
+          "start_date": "2026-09-14",
+          "end_date": "2026-09-28",
+          "sample_size": 17,
+          "rank_ic": -0.0196078431372549
+        },
+        {
+          "start_date": "2026-09-15",
+          "end_date": "2026-09-29",
+          "sample_size": 15,
+          "rank_ic": 0.15357142857142858
+        },
+        {
+          "start_date": "2026-09-16",
+          "end_date": "2026-09-30",
+          "sample_size": 15,
+          "rank_ic": -0.0035714285714285713
+        },
+        {
+          "start_date": "2026-09-17",
+          "end_date": "2026-10-01",
+          "sample_size": 16,
+          "rank_ic": 0.40294117647058825
+        },
+        {
+          "start_date": "2026-09-22",
+          "end_date": "2026-10-06",
+          "sample_size": 15,
+          "rank_ic": -0.33214285714285713
+        },
+        {
+          "start_date": "2026-09-23",
+          "end_date": "2026-10-07",
+          "sample_size": 15,
+          "rank_ic": -0.2571428571428571
+        }
+      ]
     }
   },
   "attribution": {
-    "eligible_periods": 15,
+    "eligible_periods": 16,
     "minimum_icir_periods": 24,
     "status": "accumulating",
     "composite": {
@@ -36,7 +181,7 @@
     "metrics": {
       "pead_drift": {
         "weight": 0.3,
-        "own_eligible_periods": 15,
+        "own_eligible_periods": 16,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -44,7 +189,7 @@
       },
       "analyst_revision": {
         "weight": 0.25,
-        "own_eligible_periods": 15,
+        "own_eligible_periods": 16,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -52,7 +197,7 @@
       },
       "high_volume_premium": {
         "weight": 0.2,
-        "own_eligible_periods": 15,
+        "own_eligible_periods": 16,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -60,7 +205,7 @@
       },
       "high_52w_proximity": {
         "weight": 0.15,
-        "own_eligible_periods": 15,
+        "own_eligible_periods": 16,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -68,7 +213,7 @@
       },
       "short_term_reversal": {
         "weight": 0.1,
-        "own_eligible_periods": 15,
+        "own_eligible_periods": 16,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -79,8 +224,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "967ad98a188cc16ce5e49cd7a0a00ac0d33e6d35",
+    "git_commit_sha": "93b6b328d793061abd95c8e0ee336f84ea0df5da",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-06T23:46:56.465902+00:00"
+    "generated_at": "2026-10-07T19:49:41.781456+00:00"
   }
 }
