@@ -29,9 +29,9 @@ describe('DataStatus', () => {
 })
 
 describe('freshness', () => {
-  it('marks data stale at 36 hours', () => {
+  it('marks data stale at 8 days, one weekly sweep plus slack', () => {
     const now = Date.parse('2026-07-22T12:00:00Z')
-    expect(freshness('2026-07-21T01:00:00Z', now).stale).toBe(false)
-    expect(freshness('2026-07-21T00:00:00Z', now).stale).toBe(true)
+    expect(freshness('2026-07-14T13:00:00Z', now).stale).toBe(false)
+    expect(freshness('2026-07-14T12:00:00Z', now).stale).toBe(true)
   })
 })

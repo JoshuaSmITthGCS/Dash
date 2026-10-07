@@ -4,11 +4,15 @@ const SOURCE_LABELS = {
   advisor: 'Advisor engine',
 }
 
+// The scheduled advisor sweep runs weekly (refresh-advisor.yml), so a week-old snapshot is
+// expected, not a fault. Eight days leaves room for a late Sunday run before flagging it.
+const STALE_AFTER_HOURS = 8 * 24
+
 export function freshness(generatedAt, now = Date.now()) {
   const timestamp = Date.parse(generatedAt)
   if (!Number.isFinite(timestamp)) return { stale: true, label: 'unknown age' }
   const hours = Math.max(0, Math.floor((now - timestamp) / 3_600_000))
-  return { stale: hours >= 36, label: hours < 1 ? 'under 1h old' : `${hours}h old` }
+  return { stale: hours >= STALE_AFTER_HOURS, label: hours < 1 ? 'under 1h old' : `${hours}h old` }
 }
 
 export function DataStatus() {

@@ -50,51 +50,28 @@ on:
         default: ''
         type: string
   schedule:
-    # GitHub cron is UTC. Trigger both EDT/EST candidates, then gate on New York time.
-    # Weekdays: 07:00 ET is the one full sweep of the day (all ~900 stocks, statement
-    # enrichment included); 12:00 and 15:00 ET are fast refreshes limited to the prior
-    # top 100 plus portfolio holdings - see the "Select the Eastern-time refresh window"
-    # step below for how that's enforced. A fast refresh scores against
-    # CrossSectionalNormalizer.from_published's previously-published normalization fit
-    # rather than refitting one fresh (fit_source: "prior_full_refresh" vs a full
-    # sweep's "current_full_refresh" - see scorer.py/fetch_advisor.py); that basis only
-    # ever drifts within one intraday cadence before the next morning's full sweep
-    # refits it, which is why this stays a once-daily full sweep rather than running
-    # full on every slot. Manual dispatches (the site's refresh button, or a hand
-    # dispatch from the Actions tab) default to fast for the same reason a manual reset
-    # is "get me current prices now", not "re-run the whole enrichment pass" - pick
-    # `full` explicitly (or use the site's dedicated full-refresh control) to get one
-    # by hand.
-    # Avoid minute zero, when GitHub documents that scheduled events are most likely to
-    # be delayed or dropped under Actions load.
+    # Weekly, not daily. The research score is fundamentals-first and most names barely move
+    # day to day, so one full sweep a week (all ~910 names, statement enrichment included)
+    # replaced the old weekday cadence of a 07:00 ET full sweep plus 12:00/15:00 ET fast
+    # refreshes. Anyone who needs current prices sooner still has the site's refresh button
+    # (a manual dispatch, below), which also deploys straight away rather than waiting for
+    # the 6-hourly scheduled Netlify deploy.
     #
-    # These are six separate entries rather than one '7 11,12,16,17,19,20 * * *' line so
-    # that `github.event.schedule` identifies WHICH slot fired. Actions only reports the
-    # matching cron expression, never the instant it was meant to fire, so a combined entry
-    # left the gate below with nothing to read but the wall clock - and scheduled runs in
-    # this repo have started 25-60 minutes late (measured across every slot), which is
-    # enough to carry a firing into the next Eastern hour and silently reclassify it.
+    # Sunday 07:00 ET: Friday's closes plus the weekend's news and filings, published before
+    # Monday's open. It takes the weekend branch of the gate below, so Alpha Vantage runs at
+    # the real free-tier daily ceiling of 25 enrichment calls (13s apart for the 5/min
+    # sub-limit) since nothing else that day competes for the quota.
     #
-    # Every day, not just weekdays (`* * *`, not `* * 1-5`): the gate step below only lets
-    # the weekend 07:00 ET slot through (equity quotes don't move over the weekend, so
-    # there's no case for the 12:00/15:00 fast-refresh slots), but Alpha Vantage, statement
-    # enrichment (10-Ks/10-Qs/8-Ks file on any day), SEC filings, and news don't stop
-    # either, so that single weekend run raises ALPHA_ENRICH_LIMIT to 25 - Alpha Vantage's
-    # real free-tier daily ceiling, not the 5-per-refresh weekday figure that's sized to be
-    # safe across three same-day weekday runs - and paces calls with a 13s
-    # ALPHA_VANTAGE_CALL_DELAY (5 req/min limit) so that run is mainly a universe
-    # enrichment pass, not a mirror of the weekday cadence. Themes need no separate
-    # schedule entry -- build_theme_layer already runs unconditionally inside
-    # fetch_advisor.py's run() on every non-rescore refresh, so it fires on the weekend
-    # run too.
+    # GitHub cron is UTC, so both EDT/EST candidates are scheduled and the gate keeps the one
+    # that lands on 07:00 ET. They are separate entries rather than one '7 11,12 * * 0' line
+    # so that `github.event.schedule` identifies WHICH slot fired: scheduled runs in this repo
+    # have started 25-60 minutes late, enough to carry a firing into the next Eastern hour if
+    # the gate read the wall clock. Minute 7, not 0: GitHub documents scheduled events as most
+    # likely to be delayed or dropped on the hour.
     #
-    #                    EDT (UTC-4)        EST (UTC-5)
-    - cron: '7 11 * * *'  # 07:00 full sweep | 06:00 no-op
-    - cron: '7 12 * * *'  # 08:00 no-op      | 07:00 full sweep
-    - cron: '7 16 * * *'  # 12:00 fast       | 11:00 no-op
-    - cron: '7 17 * * *'  # 13:00 no-op      | 12:00 fast
-    - cron: '7 19 * * *'  # 15:00 fast       | 14:00 no-op
-    - cron: '7 20 * * *'  # 16:00 no-op      | 15:00 fast
+    #                    EDT (UTC-4)          EST (UTC-5)
+    - cron: '7 11 * * 0'  # Sun 07:00 full sweep | Sun 06:00 no-op
+    - cron: '7 12 * * 0'  # Sun 08:00 no-op      | Sun 07:00 full sweep
 
 permissions:
   contents: write
@@ -508,3 +485,19 @@ jobs:
             sleep $((attempt * 10))
           done
           exit 1
+      - name: Deploy now for a manual refresh
+        # Data-only commits no longer trigger a Netlify build on their own
+        # (scripts/netlify-ignore.sh); netlify-scheduled-deploy.yml publishes them every 6
+        # hours. Someone who pressed the site's refresh button is waiting on the result, so
+        # a manual dispatch pings the build hook immediately instead. The weekly scheduled
+        # sweep just rides the next 6-hourly deploy.
+        if: steps.refresh_window.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch'
+        env:
+          NETLIFY_BUILD_HOOK_URL: ${{ secrets.NETLIFY_BUILD_HOOK_URL }}
+        run: |
+          if [[ -z "$NETLIFY_BUILD_HOOK_URL" ]]; then
+            echo "::warning::NETLIFY_BUILD_HOOK_URL is not set; this refresh deploys with the next scheduled or code build"
+            exit 0
+          fi
+          curl -fsS -X POST -d '{}' "${NETLIFY_BUILD_HOOK_URL}?trigger_title=manual+advisor+refresh" \
+            || echo "::warning::Build hook call failed; this refresh deploys with the next scheduled build"

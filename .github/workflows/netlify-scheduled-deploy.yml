@@ -1,0 +1,35 @@
+name: Scheduled Netlify deploy
+
+# Data-only commits to main no longer trigger a Netlify build (see scripts/netlify-ignore.sh).
+# This publishes them in batches instead: every 6 hours it calls a Netlify build hook, and
+# Netlify builds whatever has landed since the last deploy. When nothing has changed the
+# ignore script skips the build, so a quiet window costs no build minutes.
+#
+# Setup: Netlify -> Site configuration -> Build & deploy -> Build hooks -> Add build hook
+# (branch: main), then save the URL as the repository secret NETLIFY_BUILD_HOOK_URL.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Minute 23, not 0: GitHub documents scheduled events as most likely to be dropped on
+    # the hour.
+    - cron: '23 */6 * * *'
+
+permissions: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger the Netlify build hook
+        env:
+          NETLIFY_BUILD_HOOK_URL: ${{ secrets.NETLIFY_BUILD_HOOK_URL }}
+        run: |
+          if [[ -z "$NETLIFY_BUILD_HOOK_URL" ]]; then
+            echo "::warning::NETLIFY_BUILD_HOOK_URL is not set; data commits will not be deployed until a code commit builds the site"
+            exit 0
+          fi
+          curl -fsS -X POST -d '{}' \
+            "${NETLIFY_BUILD_HOOK_URL}?trigger_title=scheduled+data+deploy"
+          echo "Build hook triggered"

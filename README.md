@@ -232,15 +232,21 @@ Form 4 insider layer and the theme-exposure screen both report themselves unavai
 spoofing a client. `refresh-advisor.yml` fetches news and research, scores, validates, and commits
 data in one job. It has explicit `contents: write`, shared push concurrency, and three push retries.
 
-The workflow refreshes shortly after 07:00, 12:00, and 15:00 Eastern on weekdays. It gates paired UTC cron
-times against `America/New_York`, so daylight-saving changes do not shift the local schedule.
-Only the morning run spends Alpha Vantage quota; the later runs refresh the other providers.
+The workflow runs one full sweep a week, shortly after 07:00 Eastern on Sunday. It gates paired UTC
+cron times against `America/New_York`, so daylight-saving changes do not shift the local schedule.
+
+Data-only commits do not trigger a Netlify build on their own: `netlify.toml`'s `ignore` command
+(`scripts/netlify-ignore.sh`) skips any build whose changes since the last deploy are all pipeline
+output, and `netlify-scheduled-deploy.yml` calls a Netlify build hook every 6 hours to publish what
+has accumulated. Create the hook under Netlify **Build & deploy → Build hooks** (branch `main`) and
+save its URL as the repository secret `NETLIFY_BUILD_HOOK_URL`. A manual refresh from the site
+calls the same hook as soon as its data is committed, so it is not held for the next window.
 
 ### Manual data refresh
 
 Authenticated users can start a fast data-only refresh from the Overview page. It refreshes the
 prior top 100 plus submitted portfolio/watchlist symbols and carries the rest forward from the
-morning full sweep. Configure these
+last weekly full sweep. Configure these
 server-only environment variables in Netlify:
 
 - `GITHUB_REFRESH_TOKEN`: fine-grained token with Actions read/write access to this repository

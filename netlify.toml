@@ -1,6 +1,9 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  # Skip builds for pipeline-data-only commits; a scheduled build hook publishes them every
+  # 6 hours instead (.github/workflows/netlify-scheduled-deploy.yml).
+  ignore = "bash scripts/netlify-ignore.sh"
 
 [build.environment]
   NODE_VERSION = "22"
