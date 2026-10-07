@@ -1,6 +1,9 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  # Skip the build when a commit only touches files the site never serves
+  # (pipeline/data, docs, research, plans). git diff --quiet exits 0 = skip.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- src public index.html package.json package-lock.json vite.config.js netlify netlify.toml scripts"
 
 [build.environment]
   NODE_VERSION = "22"
