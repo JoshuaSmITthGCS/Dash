@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-10-07T22:18:43.260630+00:00",
+  "generated_at": "2026-10-08T00:18:39.992957+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before shadow_store/swing or swing_pit_store began recording - this module never reconstructs a swing signal or leg score for a date it did not observe"
   },
   "snapshot_dates_recorded": 34,
-  "attribution_snapshot_dates_recorded": 26,
+  "attribution_snapshot_dates_recorded": 27,
   "horizon_days": 14,
   "metrics": {
     "composite_z": {
@@ -168,7 +168,7 @@
     }
   },
   "attribution": {
-    "eligible_periods": 16,
+    "eligible_periods": 17,
     "minimum_icir_periods": 24,
     "status": "accumulating",
     "composite": {
@@ -181,7 +181,7 @@
     "metrics": {
       "pead_drift": {
         "weight": 0.3,
-        "own_eligible_periods": 16,
+        "own_eligible_periods": 17,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -189,7 +189,7 @@
       },
       "analyst_revision": {
         "weight": 0.25,
-        "own_eligible_periods": 16,
+        "own_eligible_periods": 17,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -197,7 +197,7 @@
       },
       "high_volume_premium": {
         "weight": 0.2,
-        "own_eligible_periods": 16,
+        "own_eligible_periods": 17,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -205,7 +205,7 @@
       },
       "high_52w_proximity": {
         "weight": 0.15,
-        "own_eligible_periods": 16,
+        "own_eligible_periods": 17,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -213,7 +213,7 @@
       },
       "short_term_reversal": {
         "weight": 0.1,
-        "own_eligible_periods": 16,
+        "own_eligible_periods": 17,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -224,8 +224,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "7a9715fe3b6e49d6eeef263b3bcbb148f4bf46c1",
+    "git_commit_sha": "fb601b875a5f5214023cd4457fd63be5c9242fd5",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-07T22:18:43.260630+00:00"
+    "generated_at": "2026-10-08T00:18:39.992957+00:00"
   }
 }
