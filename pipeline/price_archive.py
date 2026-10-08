@@ -73,9 +73,7 @@ def _seen_conflict_keys():
     return keys
 
 ARCHIVE_START_DATE = "2026-08-11"
-MAX_STALENESS_DAYS = 9  # a weekly full sweep, plus slack for one late or failed run
-# A weekly run loses no closes: append_series() writes the whole cached history window, so
-# the six days between sweeps are filled in on the next one.
+MAX_STALENESS_DAYS = 4  # a daily schedule with weekend slack
 DELISTING_LOG = os.path.join("research", "audit", "survivorship", "data", "delisting_log.json")
 # The free provider's measured retention window (docs/SURVIVORSHIP-RECONSTRUCTION-2.md):
 # 49% hit rate for 2026 delistings, 0% for 2020-2025. A name stops resolving roughly a
