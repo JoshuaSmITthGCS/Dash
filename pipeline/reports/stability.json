@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 173,
+  "refreshes_observed": 174,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -22643,6 +22643,50 @@
           ],
           "score_delta": 0.0,
           "confidence_delta": 0.04
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-10-09T19:13:21.862722+00:00",
+      "current_refresh": "advisor-2026-10-09T21:29:14.615403+00:00",
+      "shared_tickers": 891,
+      "rank_turnover": {
+        "top_40": 0.175,
+        "top_100": 0.175
+      },
+      "tickers_with_availability_driven_change": 3,
+      "tickers_with_availability_driven_change_pct": 0.003,
+      "mean_abs_score_delta": 0.33,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "HELE",
+          "metrics_with_value_change": [
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -6.6,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 0.9,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "WDC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 0.8,
+          "confidence_delta": -0.01
         }
       ]
     }
