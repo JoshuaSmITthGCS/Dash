@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-12T22:31:34.561892+00:00",
+  "generated_at": "2026-10-12T23:34:48.932432+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "509baa354d7247fcd9fe96dfdce66440e205eb47",
+  "code_commit_hash": "986b5678070232bff07936b9df1249ab796ba40c",
   "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -933,9 +933,9 @@
       "score": {
         "enriched": {
           "n": 887,
-          "mean": 63.59,
-          "median": 64.7,
-          "stdev": 12.14
+          "mean": 63.38,
+          "median": 64.6,
+          "stdev": 11.89
         },
         "non_enriched": {
           "n": 4,
@@ -967,7 +967,7 @@
       },
       "market_cap_comparison": {
         "status": "not_measurable",
-        "rows_with_market_cap": 39,
+        "rows_with_market_cap": 40,
         "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
       },
       "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
@@ -977,8 +977,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "509baa354d7247fcd9fe96dfdce66440e205eb47",
+    "git_commit_sha": "986b5678070232bff07936b9df1249ab796ba40c",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-12T22:31:34.561892+00:00"
+    "generated_at": "2026-10-12T23:34:48.932432+00:00"
   }
 }
