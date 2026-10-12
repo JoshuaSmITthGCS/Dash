@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-10T00:10:35.960127+00:00",
+  "generated_at": "2026-10-12T22:41:12.175410+00:00",
   "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
   "coverage_by_collection": {
     "research": {
@@ -37,7 +37,7 @@
       "total_rows": 851,
       "categories": {
         "accounting_quality": {
-          "scored": 848,
+          "scored": 847,
           "total": 851
         },
         "capital_allocation": {
@@ -64,27 +64,27 @@
     }
   },
   "enriched_vs_non_enriched": {
-    "enriched_count": 888,
-    "non_enriched_count": 3,
+    "enriched_count": 887,
+    "non_enriched_count": 4,
     "score": {
       "enriched": {
-        "n": 888,
-        "mean": 63.24,
-        "median": 64.5,
-        "stdev": 11.81
+        "n": 887,
+        "mean": 63.59,
+        "median": 64.7,
+        "stdev": 12.14
       },
       "non_enriched": {
-        "n": 3,
-        "mean": 62.63,
-        "median": 67.4,
-        "stdev": 7.97
+        "n": 4,
+        "mean": 65.33,
+        "median": 68.7,
+        "stdev": 8.27
       }
     },
     "sector_distribution": {
       "enriched": {
         "Technology": 154,
         "Industrials": 146,
-        "Financial Services": 124,
+        "Financial Services": 123,
         "Consumer Cyclical": 113,
         "Healthcare": 101,
         "Consumer Defensive": 56,
@@ -97,6 +97,7 @@
       },
       "non_enriched": {
         "ETF": 2,
+        "Financial Services": 1,
         "Unknown": 1
       }
     },

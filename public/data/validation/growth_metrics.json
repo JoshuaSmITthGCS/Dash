@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-10-10T00:11:05.287892+00:00",
+  "generated_at": "2026-10-12T22:41:38.655995+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before growth_pit_store began recording - this module never reconstructs a growth score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 29,
+  "snapshot_dates_recorded": 30,
   "metrics": {
     "breakout_in_progress": {
       "requires_live_sample": true,
       "horizon_days": 30,
-      "eligible_periods": 8,
+      "eligible_periods": 10,
       "minimum_icir_periods": 24,
       "status": "accumulating",
       "mean_rank_ic": null,
@@ -20,7 +20,7 @@
       "clears_multiple_testing_bar": false,
       "periods": [],
       "attribution": {
-        "eligible_periods": 8,
+        "eligible_periods": 10,
         "minimum_icir_periods": 24,
         "status": "accumulating",
         "composite": {
@@ -33,7 +33,7 @@
         "metrics": {
           "burst": {
             "weight": 0.4,
-            "own_eligible_periods": 8,
+            "own_eligible_periods": 10,
             "own_rank_ic": null,
             "own_icir": null,
             "delta_ic": null,
@@ -41,7 +41,7 @@
           },
           "accel_score": {
             "weight": 0.3,
-            "own_eligible_periods": 8,
+            "own_eligible_periods": 10,
             "own_rank_ic": null,
             "own_icir": null,
             "delta_ic": null,
@@ -49,7 +49,7 @@
           },
           "trend": {
             "weight": 0.2,
-            "own_eligible_periods": 8,
+            "own_eligible_periods": 10,
             "own_rank_ic": null,
             "own_icir": null,
             "delta_ic": null,
@@ -57,7 +57,7 @@
           },
           "volume": {
             "weight": 0.1,
-            "own_eligible_periods": 8,
+            "own_eligible_periods": 10,
             "own_rank_ic": null,
             "own_icir": null,
             "delta_ic": null,
@@ -129,8 +129,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "edca3fb0ed7719a6a43a532f9b43984ad7b21d5a",
+    "git_commit_sha": "509baa354d7247fcd9fe96dfdce66440e205eb47",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-10T00:11:05.287892+00:00"
+    "generated_at": "2026-10-12T22:41:38.655995+00:00"
   }
 }

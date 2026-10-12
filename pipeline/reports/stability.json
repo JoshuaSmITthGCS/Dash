@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 175,
+  "refreshes_observed": 176,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -22714,6 +22714,111 @@
           ],
           "score_delta": 2.3,
           "confidence_delta": -0.04
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-10-10T00:02:47.420008+00:00",
+      "current_refresh": "advisor-2026-10-12T22:31:34.561892+00:00",
+      "shared_tickers": 891,
+      "rank_turnover": {
+        "top_40": 0.225,
+        "top_100": 0.225
+      },
+      "tickers_with_availability_driven_change": 9,
+      "tickers_with_availability_driven_change_pct": 0.01,
+      "mean_abs_score_delta": 1.21,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "HELE",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 9.0,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "MSM",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 3.3,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "VNO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -2.3,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "ITT",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 1.7,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "OZK",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth"
+          ],
+          "score_delta": -1.5,
+          "confidence_delta": -0.07
+        },
+        {
+          "ticker": "JEF",
+          "metrics_with_value_change": [
+            "earnings_growth"
+          ],
+          "metrics_with_availability_change": [
+            "return_on_equity"
+          ],
+          "score_delta": 1.0,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "DDOG",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "ev_to_ebitda"
+          ],
+          "score_delta": 0.7,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "WEC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": 0.3,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "WEN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_book"
+          ],
+          "score_delta": -0.1,
+          "confidence_delta": -0.01
         }
       ]
     }
