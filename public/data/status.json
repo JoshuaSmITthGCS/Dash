@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-13T01:55:15.829688+00:00",
+  "generated_at": "2026-10-13T20:00:41.071859+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,14 +29,15 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-10-13T01:50:36.264170+00:00",
+      "checked_at": "2026-10-13T19:53:35.247106+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 944,
-        "scored": 236,
+        "scored": 891,
         "ranked": 40,
         "failed": [
           "ABB",
+          "ALL",
           "ANSS",
           "AVB",
           "BK",
@@ -67,8 +68,10 @@
           "LBRDK",
           "LEG",
           "MASI",
+          "MCY",
           "MMC",
           "MODG",
+          "NEM",
           "PCH",
           "PNM",
           "PSTG",
@@ -83,6 +86,8 @@
           "TMHC",
           "TPH",
           "TPX",
+          "TRV",
+          "TSM",
           "VSCO",
           "WBA",
           "WBD",
@@ -94,23 +99,23 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-10-13T01:54:48.698227+00:00",
+      "checked_at": "2026-10-13T19:59:19.206204+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
         "received": 125,
         "rule_6c11_disclosures": 0,
         "cache": {
-          "hits": 250,
-          "misses": 128,
+          "hits": 125,
+          "misses": 253,
           "stale_hits": 1,
-          "hit_rate": 0.66
+          "hit_rate": 0.33
         }
       }
     },
     "etf_comparisons": {
       "status": "degraded",
-      "checked_at": "2026-10-13T01:55:15.829668+00:00",
+      "checked_at": "2026-10-13T20:00:41.071839+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -258,8 +263,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "90759b2e6f0972fb87bc169be20ab16611d4b044",
+    "git_commit_sha": "064b788051c526623be95a5fb0aeb858a182f9c0",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-13T01:55:15.829688+00:00"
+    "generated_at": "2026-10-13T20:00:41.071859+00:00"
   }
 }
