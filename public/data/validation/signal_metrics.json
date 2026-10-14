@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-14T00:04:53.841452+00:00",
+  "generated_at": "2026-10-14T17:46:33.872354+00:00",
   "groups": [
     {
       "id": "signal",
@@ -82,10 +82,10 @@
     }
   ],
   "live_sample": {
-    "days": 55,
-    "refreshes": 183,
+    "days": 56,
+    "refreshes": 184,
     "first_date": "2026-08-05",
-    "last_date": "2026-10-13"
+    "last_date": "2026-10-14"
   },
   "metrics": [
     {
@@ -1401,11 +1401,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 138,
+      "observations": 139,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-10-13T23:55:26.104804+00:00",
+        "as_of": "2026-10-14T17:35:17.671961+00:00",
         "strategy": "production_shadow_equal_weight_top20",
         "benchmark": "SPY",
         "active_sector_weights": {
@@ -1445,25 +1445,6 @@
         "strategy_classified_weight": 1.0,
         "benchmark_classified_weight": 1.0,
         "history": [
-          {
-            "as_of": "2026-09-11T22:11:00.773622+00:00",
-            "active_sector_weights": {
-              "basic_materials": 0.0332,
-              "communication_services": -0.095,
-              "consumer_cyclical": 0.0069,
-              "consumer_defensive": -0.0446,
-              "energy": 0.0152,
-              "financial_services": 0.4294,
-              "healthcare": 0.0072,
-              "industrials": -0.0775,
-              "real_estate": -0.018,
-              "technology": -0.2369,
-              "unclassified": -0.0001,
-              "utilities": -0.0198
-            },
-            "strategy_classified_weight": 1.0,
-            "benchmark_classified_weight": 0.9999
-          },
           {
             "as_of": "2026-09-12T22:12:38.823700+00:00",
             "active_sector_weights": {
@@ -2566,6 +2547,24 @@
             },
             "strategy_classified_weight": 1.0,
             "benchmark_classified_weight": 1.0
+          },
+          {
+            "as_of": "2026-10-14T17:35:17.671961+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0344,
+              "communication_services": -0.0995,
+              "consumer_cyclical": -0.0374,
+              "consumer_defensive": -0.0433,
+              "energy": 0.116,
+              "financial_services": 0.438,
+              "healthcare": 0.0074,
+              "industrials": -0.0754,
+              "real_estate": -0.017,
+              "technology": -0.3045,
+              "utilities": -0.0188
+            },
+            "strategy_classified_weight": 1.0,
+            "benchmark_classified_weight": 1.0
           }
         ]
       },
@@ -2586,11 +2585,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 138,
+      "observations": 139,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-10-13T23:55:26.104804+00:00",
+        "as_of": "2026-10-14T17:35:17.671961+00:00",
         "strategy_classified_weight": 1.0,
         "benchmark_classified_weight": 1.0
       },
@@ -2600,8 +2599,8 @@
       "id": "sector_allocation_effect",
       "group": "construction",
       "label": "Sector allocation effect",
-      "value": -1.317,
-      "display": "-1.32pp vs SPY (2026-08-14 to 2026-10-13)",
+      "value": -0.567,
+      "display": "-0.57pp vs SPY (2026-08-14 to 2026-10-14)",
       "reads": "Sum across sectors of (active weight) times (that sector's real index return minus SPY's), using real sector SPDR ETFs. Positive means the sector tilt itself added return; says nothing about which stocks were picked within each sector.",
       "kill_threshold": null,
       "kill_threshold_value": null,
@@ -2611,104 +2610,104 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 138,
+      "observations": 139,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
         "start": "2026-08-14",
-        "end": "2026-10-13",
-        "snapshots": 138,
-        "as_of": "2026-10-13T23:55:26.104804+00:00",
-        "benchmark_return_pct": 0.46,
-        "total_allocation_effect_pct": -1.317,
+        "end": "2026-10-14",
+        "snapshots": 139,
+        "as_of": "2026-10-14T17:35:17.671961+00:00",
+        "benchmark_return_pct": -0.83,
+        "total_allocation_effect_pct": -0.567,
         "sectors": {
           "basic_materials": {
             "ticker": "XLB",
             "strategy_weight": 0.05,
             "benchmark_weight": 0.0156,
             "active_weight": 0.0344,
-            "sector_return_pct": -4.98,
-            "allocation_effect_pct": -0.187
+            "sector_return_pct": -5.47,
+            "allocation_effect_pct": -0.16
           },
           "communication_services": {
             "ticker": "XLC",
             "strategy_weight": 0.0,
             "benchmark_weight": 0.0995,
             "active_weight": -0.0995,
-            "sector_return_pct": -0.27,
-            "allocation_effect_pct": 0.073
+            "sector_return_pct": -1.78,
+            "allocation_effect_pct": 0.095
           },
           "consumer_cyclical": {
             "ticker": "XLY",
             "strategy_weight": 0.05,
             "benchmark_weight": 0.0874,
             "active_weight": -0.0374,
-            "sector_return_pct": -4.7,
-            "allocation_effect_pct": 0.193
+            "sector_return_pct": -5.89,
+            "allocation_effect_pct": 0.189
           },
           "consumer_defensive": {
             "ticker": "XLP",
             "strategy_weight": 0.0,
             "benchmark_weight": 0.0433,
             "active_weight": -0.0433,
-            "sector_return_pct": -1.57,
-            "allocation_effect_pct": 0.088
+            "sector_return_pct": 0.03,
+            "allocation_effect_pct": -0.037
           },
           "energy": {
             "ticker": "XLE",
             "strategy_weight": 0.15,
             "benchmark_weight": 0.034,
             "active_weight": 0.116,
-            "sector_return_pct": 9.2,
-            "allocation_effect_pct": 1.014
+            "sector_return_pct": 9.69,
+            "allocation_effect_pct": 1.22
           },
           "financial_services": {
             "ticker": "XLF",
             "strategy_weight": 0.55,
             "benchmark_weight": 0.112,
             "active_weight": 0.438,
-            "sector_return_pct": -5.4,
-            "allocation_effect_pct": -2.567
+            "sector_return_pct": -6.48,
+            "allocation_effect_pct": -2.475
           },
           "healthcare": {
             "ticker": "XLV",
             "strategy_weight": 0.1,
             "benchmark_weight": 0.0926,
             "active_weight": 0.0074,
-            "sector_return_pct": 1.82,
-            "allocation_effect_pct": 0.01
+            "sector_return_pct": 4.06,
+            "allocation_effect_pct": 0.036
           },
           "industrials": {
             "ticker": "XLI",
             "strategy_weight": 0.0,
             "benchmark_weight": 0.0754,
             "active_weight": -0.0754,
-            "sector_return_pct": -9.32,
-            "allocation_effect_pct": 0.737
+            "sector_return_pct": -10.62,
+            "allocation_effect_pct": 0.738
           },
           "real_estate": {
             "ticker": "XLRE",
             "strategy_weight": 0.0,
             "benchmark_weight": 0.017,
             "active_weight": -0.017,
-            "sector_return_pct": -6.81,
-            "allocation_effect_pct": 0.124
+            "sector_return_pct": -7.34,
+            "allocation_effect_pct": 0.111
           },
           "technology": {
             "ticker": "XLK",
             "strategy_weight": 0.1,
             "benchmark_weight": 0.4045,
             "active_weight": -0.3045,
-            "sector_return_pct": 3.42,
-            "allocation_effect_pct": -0.901
+            "sector_return_pct": 0.38,
+            "allocation_effect_pct": -0.368
           },
           "utilities": {
             "ticker": "XLU",
             "strategy_weight": 0.0,
             "benchmark_weight": 0.0188,
             "active_weight": -0.0188,
-            "sector_return_pct": -4.82,
-            "allocation_effect_pct": 0.099
+            "sector_return_pct": -5.3,
+            "allocation_effect_pct": 0.084
           }
         }
       },
@@ -3662,8 +3661,8 @@
       "cadence": "Quarterly",
       "requires_live_sample": true,
       "status": "accumulating",
-      "status_message": "44 matched live return periods of 120. Any reading before roughly six months is decorative.",
-      "observations": 44,
+      "status_message": "45 matched live return periods of 120. Any reading before roughly six months is decorative.",
+      "observations": 45,
       "required_observations": 120,
       "backtest_reference": 1.126,
       "detail": {
@@ -4195,6 +4194,18 @@
             "gross_return": 0.003117517056892444,
             "net_return": 0.0030175170568924443,
             "daily_equivalent_return": 0.0030175170568924603
+          },
+          {
+            "start": "2026-10-13",
+            "end": "2026-10-14",
+            "session_start": "2026-10-13",
+            "session_end": "2026-10-14",
+            "sessions_elapsed": 1,
+            "composition_change": 0,
+            "carried_weight": 0,
+            "gross_return": -0.007778702662890381,
+            "net_return": -0.007878702662890381,
+            "daily_equivalent_return": -0.007878702662890369
           }
         ]
       },
@@ -4214,8 +4225,8 @@
       "cadence": "Quarterly",
       "requires_live_sample": true,
       "status": "accumulating",
-      "status_message": "44 matched live return periods of 120. Any reading before roughly six months is decorative.",
-      "observations": 44,
+      "status_message": "45 matched live return periods of 120. Any reading before roughly six months is decorative.",
+      "observations": 45,
       "required_observations": 120,
       "backtest_reference": 7.18,
       "detail": {
@@ -4747,6 +4758,18 @@
             "gross_return": 0.003117517056892444,
             "net_return": 0.0030175170568924443,
             "daily_equivalent_return": 0.0030175170568924603
+          },
+          {
+            "start": "2026-10-13",
+            "end": "2026-10-14",
+            "session_start": "2026-10-13",
+            "session_end": "2026-10-14",
+            "sessions_elapsed": 1,
+            "composition_change": 0,
+            "carried_weight": 0,
+            "gross_return": -0.007778702662890381,
+            "net_return": -0.007878702662890381,
+            "daily_equivalent_return": -0.007878702662890369
           }
         ]
       },
@@ -4766,8 +4789,8 @@
       "cadence": "Quarterly",
       "requires_live_sample": true,
       "status": "accumulating",
-      "status_message": "44 matched live return periods of 120. Any reading before roughly six months is decorative.",
-      "observations": 44,
+      "status_message": "45 matched live return periods of 120. Any reading before roughly six months is decorative.",
+      "observations": 45,
       "required_observations": 120,
       "backtest_reference": 1.73,
       "detail": {
@@ -5299,6 +5322,18 @@
             "gross_return": 0.003117517056892444,
             "net_return": 0.0030175170568924443,
             "daily_equivalent_return": 0.0030175170568924603
+          },
+          {
+            "start": "2026-10-13",
+            "end": "2026-10-14",
+            "session_start": "2026-10-13",
+            "session_end": "2026-10-14",
+            "sessions_elapsed": 1,
+            "composition_change": 0,
+            "carried_weight": 0,
+            "gross_return": -0.007778702662890381,
+            "net_return": -0.007878702662890381,
+            "daily_equivalent_return": -0.007878702662890369
           }
         ]
       },
@@ -5318,8 +5353,8 @@
       "cadence": "Quarterly",
       "requires_live_sample": true,
       "status": "accumulating",
-      "status_message": "44 matched live return periods of 120. Any reading before roughly six months is decorative.",
-      "observations": 44,
+      "status_message": "45 matched live return periods of 120. Any reading before roughly six months is decorative.",
+      "observations": 45,
       "required_observations": 120,
       "backtest_reference": -2.568,
       "detail": {
@@ -5851,6 +5886,18 @@
             "gross_return": 0.003117517056892444,
             "net_return": 0.0030175170568924443,
             "daily_equivalent_return": 0.0030175170568924603
+          },
+          {
+            "start": "2026-10-13",
+            "end": "2026-10-14",
+            "session_start": "2026-10-13",
+            "session_end": "2026-10-14",
+            "sessions_elapsed": 1,
+            "composition_change": 0,
+            "carried_weight": 0,
+            "gross_return": -0.007778702662890381,
+            "net_return": -0.007878702662890381,
+            "daily_equivalent_return": -0.007878702662890369
           }
         ]
       },
@@ -5870,8 +5917,8 @@
       "cadence": "Quarterly",
       "requires_live_sample": true,
       "status": "accumulating",
-      "status_message": "44 matched live return periods of 120. Any reading before roughly six months is decorative.",
-      "observations": 44,
+      "status_message": "45 matched live return periods of 120. Any reading before roughly six months is decorative.",
+      "observations": 45,
       "required_observations": 120,
       "backtest_reference": -0.486,
       "detail": {
@@ -6403,6 +6450,18 @@
             "gross_return": 0.003117517056892444,
             "net_return": 0.0030175170568924443,
             "daily_equivalent_return": 0.0030175170568924603
+          },
+          {
+            "start": "2026-10-13",
+            "end": "2026-10-14",
+            "session_start": "2026-10-13",
+            "session_end": "2026-10-14",
+            "sessions_elapsed": 1,
+            "composition_change": 0,
+            "carried_weight": 0,
+            "gross_return": -0.007778702662890381,
+            "net_return": -0.007878702662890381,
+            "daily_equivalent_return": -0.007878702662890369
           }
         ]
       },
@@ -6422,8 +6481,8 @@
       "cadence": "Quarterly",
       "requires_live_sample": true,
       "status": "accumulating",
-      "status_message": "44 matched live return periods of 120. Any reading before roughly six months is decorative.",
-      "observations": 44,
+      "status_message": "45 matched live return periods of 120. Any reading before roughly six months is decorative.",
+      "observations": 45,
       "required_observations": 120,
       "backtest_reference": 2.559,
       "detail": {
@@ -6955,6 +7014,18 @@
             "gross_return": 0.003117517056892444,
             "net_return": 0.0030175170568924443,
             "daily_equivalent_return": 0.0030175170568924603
+          },
+          {
+            "start": "2026-10-13",
+            "end": "2026-10-14",
+            "session_start": "2026-10-13",
+            "session_end": "2026-10-14",
+            "sessions_elapsed": 1,
+            "composition_change": 0,
+            "carried_weight": 0,
+            "gross_return": -0.007778702662890381,
+            "net_return": -0.007878702662890381,
+            "daily_equivalent_return": -0.007878702662890369
           }
         ]
       },
@@ -6974,8 +7045,8 @@
       "cadence": "Quarterly",
       "requires_live_sample": true,
       "status": "accumulating",
-      "status_message": "44 matched live return periods of 120. Any reading before roughly six months is decorative.",
-      "observations": 44,
+      "status_message": "45 matched live return periods of 120. Any reading before roughly six months is decorative.",
+      "observations": 45,
       "required_observations": 120,
       "backtest_reference": 1.003,
       "detail": {
@@ -7507,6 +7578,18 @@
             "gross_return": 0.003117517056892444,
             "net_return": 0.0030175170568924443,
             "daily_equivalent_return": 0.0030175170568924603
+          },
+          {
+            "start": "2026-10-13",
+            "end": "2026-10-14",
+            "session_start": "2026-10-13",
+            "session_end": "2026-10-14",
+            "sessions_elapsed": 1,
+            "composition_change": 0,
+            "carried_weight": 0,
+            "gross_return": -0.007778702662890381,
+            "net_return": -0.007878702662890381,
+            "daily_equivalent_return": -0.007878702662890369
           }
         ]
       },
@@ -7526,8 +7609,8 @@
       "cadence": "Quarterly",
       "requires_live_sample": true,
       "status": "accumulating",
-      "status_message": "44 matched live return periods of 120. Any reading before roughly six months is decorative.",
-      "observations": 44,
+      "status_message": "45 matched live return periods of 120. Any reading before roughly six months is decorative.",
+      "observations": 45,
       "required_observations": 120,
       "backtest_reference": 0.166,
       "detail": {
@@ -8059,6 +8142,18 @@
             "gross_return": 0.003117517056892444,
             "net_return": 0.0030175170568924443,
             "daily_equivalent_return": 0.0030175170568924603
+          },
+          {
+            "start": "2026-10-13",
+            "end": "2026-10-14",
+            "session_start": "2026-10-13",
+            "session_end": "2026-10-14",
+            "sessions_elapsed": 1,
+            "composition_change": 0,
+            "carried_weight": 0,
+            "gross_return": -0.007778702662890381,
+            "net_return": -0.007878702662890381,
+            "daily_equivalent_return": -0.007878702662890369
           }
         ]
       },
@@ -8068,8 +8163,8 @@
       "id": "live_vs_backtest_ic",
       "group": "monitoring",
       "label": "Rolling 60-day live IC versus backtest",
-      "value": 0.07774861423928559,
-      "display": "0.078",
+      "value": 0.09446324176201228,
+      "display": "0.094",
       "reads": "The decay alarm. Live IC below the backtest confidence interval means the edge is gone or was never there.",
       "kill_threshold": "Live IC below the backtest 95% interval",
       "kill_threshold_value": -0.0091,
@@ -8110,16 +8205,16 @@
       "cadence": "Monthly",
       "requires_live_sample": true,
       "status": "accumulating",
-      "status_message": "Needs 60 point-in-time days for separated baseline and current windows; 55 recorded.",
-      "observations": 55,
+      "status_message": "Needs 60 point-in-time days for separated baseline and current windows; 56 recorded.",
+      "observations": 56,
       "required_observations": 60,
       "backtest_reference": null,
       "detail": {
         "status": "accumulating",
         "value": null,
-        "days": 55,
+        "days": 56,
         "required_days": 60,
-        "reason": "Needs 60 point-in-time days for separated baseline and current windows; 55 recorded."
+        "reason": "Needs 60 point-in-time days for separated baseline and current windows; 56 recorded."
       },
       "source": "point-in-time normalized feature store"
     },
@@ -8127,30 +8222,30 @@
       "id": "live_vs_backtest_divergence",
       "group": "monitoring",
       "label": "Live versus backtest daily return divergence",
-      "value": -6.029,
-      "display": "-6.03 bps/day",
+      "value": -7.788,
+      "display": "-7.79 bps/day",
       "reads": "Mean prospective production return versus the historical backtest mean.",
       "kill_threshold": "Absolute mean divergence above the 95% backtest sampling interval",
-      "kill_threshold_value": -32.658,
+      "kill_threshold_value": -32.293,
       "comparison": "lt",
       "breached": false,
       "cadence": "Daily",
       "requires_live_sample": true,
       "status": "ready",
       "status_message": null,
-      "observations": 44,
+      "observations": 45,
       "required_observations": 20,
       "backtest_reference": null,
       "detail": {
         "status": "ready",
-        "value": -6.029,
-        "observations": 44,
+        "value": -7.788,
+        "observations": 45,
         "required_observations": 20,
-        "live_mean_daily_return": 3.777959982245222e-05,
+        "live_mean_daily_return": -0.0001381422282378327,
         "backtest_mean_daily_return": 0.0006406302787775525,
-        "divergence_bps_per_day": -6.028506789551003,
-        "z_score": -0.36180219281342996,
-        "threshold_bps": 32.658,
+        "divergence_bps_per_day": -7.787725070153852,
+        "z_score": -0.4726633951783415,
+        "threshold_bps": 32.293,
         "breached": false,
         "reason": null,
         "periods": [
@@ -8681,6 +8776,18 @@
             "gross_return": 0.003117517056892444,
             "net_return": 0.0030175170568924443,
             "daily_equivalent_return": 0.0030175170568924603
+          },
+          {
+            "start": "2026-10-13",
+            "end": "2026-10-14",
+            "session_start": "2026-10-13",
+            "session_end": "2026-10-14",
+            "sessions_elapsed": 1,
+            "composition_change": 0,
+            "carried_weight": 0,
+            "gross_return": -0.007778702662890381,
+            "net_return": -0.007878702662890381,
+            "daily_equivalent_return": -0.007878702662890369
           }
         ]
       },
@@ -8707,8 +8814,8 @@
       "detail": {
         "status": "ready",
         "value": 0,
-        "date": "2026-10-13",
-        "refresh_id": "advisor-2026-10-13T23:55:26.104804+00:00",
+        "date": "2026-10-14",
+        "refresh_id": "advisor-2026-10-14T17:35:17.671961+00:00",
         "rows": 891,
         "missing_prices": 0,
         "missing_price_tickers": [],
@@ -8721,7 +8828,7 @@
         "universe_churn": {
           "added": [],
           "removed": [],
-          "observed_at": "2026-10-13T23:55:20.300287+00:00"
+          "observed_at": "2026-10-14T17:34:35.048506+00:00"
         },
         "corporate_action_monitoring": {
           "status": "not_available",
@@ -8777,8 +8884,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "ee777d9904234533414d20b55e685a4e9972725c",
+    "git_commit_sha": "4ee0685ec96d8be2f7e2025eff4a57ba4ae83a73",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-14T00:04:53.841452+00:00"
+    "generated_at": "2026-10-14T17:46:33.872354+00:00"
   }
 }

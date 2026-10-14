@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-10-14T00:06:44.894637+00:00",
+  "generated_at": "2026-10-14T17:48:10.187581+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before options_pit_store began recording - this module never reconstructs a recommendation or a settle price for a date it did not observe"
   },
-  "snapshot_dates_recorded": 31,
-  "positions_recorded": 920,
-  "positions_resolved": 680,
+  "snapshot_dates_recorded": 32,
+  "positions_recorded": 941,
+  "positions_resolved": 690,
   "metrics": {
     "short_term_trades_score": {
       "requires_live_sample": true,
@@ -24,7 +24,7 @@
   },
   "attribution_by_mechanism": {
     "buy": {
-      "eligible_periods": 6,
+      "eligible_periods": 5,
       "minimum_icir_periods": 24,
       "status": "accumulating",
       "composite": {
@@ -37,7 +37,7 @@
       "metrics": {
         "iv_value": {
           "weight": 0.25,
-          "own_eligible_periods": 6,
+          "own_eligible_periods": 5,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -45,7 +45,7 @@
         },
         "liquidity": {
           "weight": 0.35,
-          "own_eligible_periods": 6,
+          "own_eligible_periods": 5,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -53,7 +53,7 @@
         },
         "trend_strength": {
           "weight": 0.25,
-          "own_eligible_periods": 6,
+          "own_eligible_periods": 5,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -69,7 +69,7 @@
         },
         "research_confidence": {
           "weight": 0.07,
-          "own_eligible_periods": 6,
+          "own_eligible_periods": 5,
           "own_rank_ic": null,
           "own_icir": null,
           "delta_ic": null,
@@ -189,8 +189,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "ee777d9904234533414d20b55e685a4e9972725c",
+    "git_commit_sha": "4ee0685ec96d8be2f7e2025eff4a57ba4ae83a73",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-14T00:06:44.894637+00:00"
+    "generated_at": "2026-10-14T17:48:10.187581+00:00"
   }
 }
