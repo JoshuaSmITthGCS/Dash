@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-14T20:56:21.217969+00:00",
+  "generated_at": "2026-10-14T23:17:10.417654+00:00",
   "groups": [
     {
       "id": "signal",
@@ -83,7 +83,7 @@
   ],
   "live_sample": {
     "days": 56,
-    "refreshes": 185,
+    "refreshes": 186,
     "first_date": "2026-08-05",
     "last_date": "2026-10-14"
   },
@@ -1401,11 +1401,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 140,
+      "observations": 141,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-10-14T20:48:03.603537+00:00",
+        "as_of": "2026-10-14T23:08:12.418341+00:00",
         "strategy": "production_shadow_equal_weight_top20",
         "benchmark": "SPY",
         "active_sector_weights": {
@@ -1445,25 +1445,6 @@
         "strategy_classified_weight": 1.0,
         "benchmark_classified_weight": 1.0,
         "history": [
-          {
-            "as_of": "2026-09-14T18:32:22.052629+00:00",
-            "active_sector_weights": {
-              "basic_materials": 0.0332,
-              "communication_services": -0.095,
-              "consumer_cyclical": -0.0431,
-              "consumer_defensive": -0.0446,
-              "energy": 0.0652,
-              "financial_services": 0.3794,
-              "healthcare": 0.0572,
-              "industrials": -0.0275,
-              "real_estate": -0.018,
-              "technology": -0.2869,
-              "unclassified": -0.0001,
-              "utilities": -0.0198
-            },
-            "strategy_classified_weight": 1.0,
-            "benchmark_classified_weight": 0.9999
-          },
           {
             "as_of": "2026-09-14T21:18:42.621218+00:00",
             "active_sector_weights": {
@@ -2564,6 +2545,24 @@
             },
             "strategy_classified_weight": 1.0,
             "benchmark_classified_weight": 1.0
+          },
+          {
+            "as_of": "2026-10-14T23:08:12.418341+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0344,
+              "communication_services": -0.0995,
+              "consumer_cyclical": -0.0374,
+              "consumer_defensive": -0.0433,
+              "energy": 0.116,
+              "financial_services": 0.388,
+              "healthcare": 0.0074,
+              "industrials": -0.0754,
+              "real_estate": -0.017,
+              "technology": -0.2545,
+              "utilities": -0.0188
+            },
+            "strategy_classified_weight": 1.0,
+            "benchmark_classified_weight": 1.0
           }
         ]
       },
@@ -2584,11 +2583,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 140,
+      "observations": 141,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-10-14T20:48:03.603537+00:00",
+        "as_of": "2026-10-14T23:08:12.418341+00:00",
         "strategy_classified_weight": 1.0,
         "benchmark_classified_weight": 1.0
       },
@@ -2609,14 +2608,14 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 140,
+      "observations": 141,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
         "start": "2026-08-14",
         "end": "2026-10-14",
-        "snapshots": 140,
-        "as_of": "2026-10-14T20:48:03.603537+00:00",
+        "snapshots": 141,
+        "as_of": "2026-10-14T23:08:12.418341+00:00",
         "benchmark_return_pct": -0.83,
         "total_allocation_effect_pct": -0.224,
         "sectors": {
@@ -8162,8 +8161,8 @@
       "id": "live_vs_backtest_ic",
       "group": "monitoring",
       "label": "Rolling 60-day live IC versus backtest",
-      "value": 0.10542231129028327,
-      "display": "0.105",
+      "value": 0.1065518098217058,
+      "display": "0.107",
       "reads": "The decay alarm. Live IC below the backtest confidence interval means the edge is gone or was never there.",
       "kill_threshold": "Live IC below the backtest 95% interval",
       "kill_threshold_value": -0.0091,
@@ -8814,7 +8813,7 @@
         "status": "ready",
         "value": 0,
         "date": "2026-10-14",
-        "refresh_id": "advisor-2026-10-14T20:48:03.603537+00:00",
+        "refresh_id": "advisor-2026-10-14T23:08:12.418341+00:00",
         "rows": 891,
         "missing_prices": 0,
         "missing_price_tickers": [],
@@ -8827,7 +8826,7 @@
         "universe_churn": {
           "added": [],
           "removed": [],
-          "observed_at": "2026-10-14T20:47:59.370076+00:00"
+          "observed_at": "2026-10-14T23:08:07.021073+00:00"
         },
         "corporate_action_monitoring": {
           "status": "not_available",
@@ -8883,8 +8882,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "1948f6c414befd9320838621ee20823c4e3f9e52",
+    "git_commit_sha": "a1bb6b31c05eb86d2005baff92ae5290b6f4b16f",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-14T20:56:21.217969+00:00"
+    "generated_at": "2026-10-14T23:17:10.417654+00:00"
   }
 }

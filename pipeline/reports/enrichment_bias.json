@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-14T20:55:55.384956+00:00",
+  "generated_at": "2026-10-14T23:16:32.145201+00:00",
   "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
   "coverage_by_collection": {
     "research": {
@@ -15,7 +15,7 @@
           "total": 40
         },
         "financial_health": {
-          "scored": 29,
+          "scored": 28,
           "total": 40
         },
         "growth": {
@@ -45,7 +45,7 @@
           "total": 851
         },
         "financial_health": {
-          "scored": 815,
+          "scored": 816,
           "total": 851
         },
         "growth": {
@@ -69,15 +69,15 @@
     "score": {
       "enriched": {
         "n": 887,
-        "mean": 63.41,
-        "median": 64.7,
-        "stdev": 11.99
+        "mean": 63.38,
+        "median": 64.8,
+        "stdev": 11.87
       },
       "non_enriched": {
         "n": 4,
-        "mean": 65.2,
-        "median": 68.4,
-        "stdev": 8.22
+        "mean": 64.85,
+        "median": 67.7,
+        "stdev": 8.1
       }
     },
     "sector_distribution": {
@@ -103,7 +103,7 @@
     },
     "market_cap_comparison": {
       "status": "not_measurable",
-      "rows_with_market_cap": 39,
+      "rows_with_market_cap": 40,
       "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
     },
     "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."

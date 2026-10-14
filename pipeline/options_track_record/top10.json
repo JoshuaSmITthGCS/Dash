@@ -1,16 +1,16 @@
 {
   "cash_secured_puts": {
-    "AAPL": {
-      "capital_required": 33500.0,
+    "AMZN": {
+      "capital_required": 24000.0,
       "date_predicted": "2026-10-14",
-      "entry_underlying_price": 345.3699951171875,
+      "entry_underlying_price": 254.0800018310547,
       "expiration": "2026-10-21",
       "legs": [
         {
           "action": "sell",
           "option_type": "put",
-          "premium": 1.615,
-          "strike": 335.0
+          "premium": 0.6,
+          "strike": 240.0
         }
       ],
       "stock_leg": false
@@ -223,6 +223,21 @@
           "option_type": "call",
           "premium": 4.55,
           "strike": 230.0
+        }
+      ],
+      "stock_leg": true
+    },
+    "OXY": {
+      "capital_required": 6140.999984741211,
+      "date_predicted": "2026-10-14",
+      "entry_underlying_price": 61.40999984741211,
+      "expiration": "2026-10-23",
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "call",
+          "premium": 0.445,
+          "strike": 64.0
         }
       ],
       "stock_leg": true
