@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-14T23:16:32.145201+00:00",
+  "generated_at": "2026-10-15T17:46:25.689524+00:00",
   "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
   "coverage_by_collection": {
     "research": {
@@ -15,7 +15,7 @@
           "total": 40
         },
         "financial_health": {
-          "scored": 28,
+          "scored": 32,
           "total": 40
         },
         "growth": {
@@ -37,7 +37,7 @@
       "total_rows": 851,
       "categories": {
         "accounting_quality": {
-          "scored": 847,
+          "scored": 848,
           "total": 851
         },
         "capital_allocation": {
@@ -45,7 +45,7 @@
           "total": 851
         },
         "financial_health": {
-          "scored": 816,
+          "scored": 812,
           "total": 851
         },
         "growth": {
@@ -64,27 +64,27 @@
     }
   },
   "enriched_vs_non_enriched": {
-    "enriched_count": 887,
-    "non_enriched_count": 4,
+    "enriched_count": 888,
+    "non_enriched_count": 3,
     "score": {
       "enriched": {
-        "n": 887,
-        "mean": 63.38,
-        "median": 64.8,
-        "stdev": 11.87
+        "n": 888,
+        "mean": 63.43,
+        "median": 64.9,
+        "stdev": 12.1
       },
       "non_enriched": {
-        "n": 4,
-        "mean": 64.85,
-        "median": 67.7,
-        "stdev": 8.1
+        "n": 3,
+        "mean": 62.07,
+        "median": 66.9,
+        "stdev": 7.7
       }
     },
     "sector_distribution": {
       "enriched": {
         "Technology": 154,
         "Industrials": 146,
-        "Financial Services": 123,
+        "Financial Services": 124,
         "Consumer Cyclical": 112,
         "Healthcare": 101,
         "Consumer Defensive": 56,
@@ -97,7 +97,6 @@
       },
       "non_enriched": {
         "ETF": 2,
-        "Financial Services": 1,
         "Unknown": 1
       }
     },

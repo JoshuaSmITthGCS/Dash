@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-10-14T23:19:04.803161+00:00",
+  "generated_at": "2026-10-15T17:49:14.967631+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before momentum_pit_store began recording - this module never reconstructs a composite or factor score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 32,
+  "snapshot_dates_recorded": 33,
   "horizon_days": 30,
   "composite": {
-    "eligible_periods": 11,
+    "eligible_periods": 12,
     "minimum_icir_periods": 24,
     "status": "accumulating",
     "mean_rank_ic": null,
@@ -18,7 +18,7 @@
     "clears_multiple_testing_bar": false
   },
   "attribution": {
-    "eligible_periods": 11,
+    "eligible_periods": 12,
     "minimum_icir_periods": 24,
     "status": "accumulating",
     "composite": {
@@ -31,7 +31,7 @@
     "metrics": {
       "momentum_12_1": {
         "weight": 0.4,
-        "own_eligible_periods": 11,
+        "own_eligible_periods": 12,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -39,7 +39,7 @@
       },
       "momentum_12_7": {
         "weight": 0.2,
-        "own_eligible_periods": 11,
+        "own_eligible_periods": 12,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -47,7 +47,7 @@
       },
       "momentum_6_1": {
         "weight": 0.15,
-        "own_eligible_periods": 11,
+        "own_eligible_periods": 12,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -55,7 +55,7 @@
       },
       "high_52w_proximity": {
         "weight": 0.15,
-        "own_eligible_periods": 11,
+        "own_eligible_periods": 12,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -63,7 +63,7 @@
       },
       "industry_relative_momentum": {
         "weight": 0.1,
-        "own_eligible_periods": 11,
+        "own_eligible_periods": 12,
         "own_rank_ic": null,
         "own_icir": null,
         "delta_ic": null,
@@ -74,8 +74,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "a1bb6b31c05eb86d2005baff92ae5290b6f4b16f",
+    "git_commit_sha": "81170727fe3892de0096a21fe83c1864aa5f88d1",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-14T23:19:04.803161+00:00"
+    "generated_at": "2026-10-15T17:49:14.967631+00:00"
   }
 }
