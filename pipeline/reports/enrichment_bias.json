@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-15T20:44:59.927633+00:00",
+  "generated_at": "2026-10-15T22:52:03.698234+00:00",
   "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
   "coverage_by_collection": {
     "research": {
@@ -15,7 +15,7 @@
           "total": 40
         },
         "financial_health": {
-          "scored": 32,
+          "scored": 30,
           "total": 40
         },
         "growth": {
@@ -45,7 +45,7 @@
           "total": 851
         },
         "financial_health": {
-          "scored": 812,
+          "scored": 814,
           "total": 851
         },
         "growth": {
@@ -70,14 +70,14 @@
       "enriched": {
         "n": 888,
         "mean": 63.21,
-        "median": 64.65,
-        "stdev": 11.84
+        "median": 64.7,
+        "stdev": 11.76
       },
       "non_enriched": {
         "n": 3,
         "mean": 62.07,
-        "median": 66.9,
-        "stdev": 7.7
+        "median": 66.5,
+        "stdev": 7.73
       }
     },
     "sector_distribution": {
@@ -102,7 +102,7 @@
     },
     "market_cap_comparison": {
       "status": "not_measurable",
-      "rows_with_market_cap": 40,
+      "rows_with_market_cap": 39,
       "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
     },
     "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
