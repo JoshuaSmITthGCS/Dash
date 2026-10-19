@@ -1,23 +1,23 @@
 {
-  "generated_at": "2026-10-16T22:50:53.843988+00:00",
+  "generated_at": "2026-10-19T20:00:12.102937+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before shadow_store/swing or swing_pit_store began recording - this module never reconstructs a swing signal or leg score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 41,
-  "attribution_snapshot_dates_recorded": 34,
+  "snapshot_dates_recorded": 42,
+  "attribution_snapshot_dates_recorded": 35,
   "horizon_days": 14,
   "metrics": {
     "composite_z": {
       "requires_live_sample": true,
-      "eligible_periods": 31,
+      "eligible_periods": 32,
       "minimum_icir_periods": 24,
       "status": "eligible",
-      "mean_rank_ic": 0.0517,
-      "icir": 0.899,
-      "t_stat": 1.444,
-      "hit_rate": 0.548,
+      "mean_rank_ic": 0.0551,
+      "icir": 0.968,
+      "t_stat": 1.581,
+      "hit_rate": 0.562,
       "clears_multiple_testing_bar": false,
       "periods": [
         {
@@ -205,60 +205,66 @@
           "end_date": "2026-10-16",
           "sample_size": 16,
           "rank_ic": -0.008823529411764706
+        },
+        {
+          "start_date": "2026-10-05",
+          "end_date": "2026-10-19",
+          "sample_size": 16,
+          "rank_ic": 0.1588235294117647
         }
       ]
     }
   },
   "attribution": {
-    "eligible_periods": 23,
+    "eligible_periods": 24,
     "minimum_icir_periods": 24,
-    "status": "accumulating",
+    "status": "eligible",
     "composite": {
-      "mean_rank_ic": null,
-      "icir": null,
-      "t_stat": null,
-      "hit_rate": null,
-      "clears_multiple_testing_bar": false
+      "mean_rank_ic": 0.0678,
+      "icir": 3.364,
+      "t_stat": 4.758,
+      "hit_rate": 0.875,
+      "clears_multiple_testing_bar": true
     },
     "metrics": {
       "pead_drift": {
         "weight": 0.3,
-        "own_eligible_periods": 23,
-        "own_rank_ic": null,
-        "own_icir": null,
-        "delta_ic": null,
+        "own_eligible_periods": 24,
+        "own_rank_ic": 0.0223,
+        "own_icir": 0.849,
+        "delta_ic": 0.0124,
         "hurts_composite": false
       },
       "analyst_revision": {
         "weight": 0.25,
-        "own_eligible_periods": 23,
-        "own_rank_ic": null,
-        "own_icir": null,
-        "delta_ic": null,
+        "own_eligible_periods": 24,
+        "own_rank_ic": 0.0297,
+        "own_icir": 2.234,
+        "delta_ic": 0.0139,
         "hurts_composite": false
       },
       "high_volume_premium": {
         "weight": 0.2,
-        "own_eligible_periods": 23,
-        "own_rank_ic": null,
-        "own_icir": null,
-        "delta_ic": null,
+        "own_eligible_periods": 24,
+        "own_rank_ic": 0.0233,
+        "own_icir": 0.989,
+        "delta_ic": 0.0298,
         "hurts_composite": false
       },
       "high_52w_proximity": {
         "weight": 0.15,
-        "own_eligible_periods": 23,
-        "own_rank_ic": null,
-        "own_icir": null,
-        "delta_ic": null,
+        "own_eligible_periods": 24,
+        "own_rank_ic": 0.0374,
+        "own_icir": 1.943,
+        "delta_ic": 0.0325,
         "hurts_composite": false
       },
       "short_term_reversal": {
         "weight": 0.1,
-        "own_eligible_periods": 23,
-        "own_rank_ic": null,
-        "own_icir": null,
-        "delta_ic": null,
+        "own_eligible_periods": 24,
+        "own_rank_ic": 0.0017,
+        "own_icir": 0.064,
+        "delta_ic": 0.0033,
         "hurts_composite": false
       }
     }
@@ -266,8 +272,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "7f87db11b201b1a3cc6852fdc59aa94afcd65260",
+    "git_commit_sha": "196f79aacc8f93fc4d08ae3e51908fb3fcf68135",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-16T22:50:53.843988+00:00"
+    "generated_at": "2026-10-19T20:00:12.102937+00:00"
   }
 }
