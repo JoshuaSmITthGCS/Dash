@@ -75,21 +75,6 @@
       ],
       "stock_leg": false
     },
-    "LULU": {
-      "capital_required": 9000.0,
-      "date_predicted": "2026-10-19",
-      "entry_underlying_price": 96.80500030517578,
-      "expiration": "2026-10-23",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "put",
-          "premium": 0.145,
-          "strike": 90.0
-        }
-      ],
-      "stock_leg": false
-    },
     "META": {
       "capital_required": 65000.0,
       "date_predicted": "2026-10-19",
@@ -101,6 +86,21 @@
           "option_type": "put",
           "premium": 6.45,
           "strike": 650.0
+        }
+      ],
+      "stock_leg": false
+    },
+    "MU": {
+      "capital_required": 90000.0,
+      "date_predicted": "2026-10-19",
+      "entry_underlying_price": 904.9000244140625,
+      "expiration": "2026-10-26",
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "premium": 21.8,
+          "strike": 900.0
         }
       ],
       "stock_leg": false
@@ -152,6 +152,21 @@
     }
   },
   "covered_calls": {
+    "ASTS": {
+      "capital_required": 4186.999893188477,
+      "date_predicted": "2026-10-19",
+      "entry_underlying_price": 41.869998931884766,
+      "expiration": "2026-10-23",
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "call",
+          "premium": 0.815,
+          "strike": 44.0
+        }
+      ],
+      "stock_leg": true
+    },
     "DELL": {
       "capital_required": 45955.499267578125,
       "date_predicted": "2026-10-19",
@@ -283,21 +298,6 @@
           "option_type": "call",
           "premium": 0.185,
           "strike": 8.0
-        }
-      ],
-      "stock_leg": true
-    },
-    "WDC": {
-      "capital_required": 34760.99853515625,
-      "date_predicted": "2026-10-19",
-      "entry_underlying_price": 347.6099853515625,
-      "expiration": "2026-10-23",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "call",
-          "premium": 17.55,
-          "strike": 350.0
         }
       ],
       "stock_leg": true
@@ -486,6 +486,21 @@
       ],
       "stock_leg": false
     },
+    "C": {
+      "capital_required": 57.0,
+      "date_predicted": "2026-10-19",
+      "entry_underlying_price": 121.69000244140625,
+      "expiration": "2026-10-23",
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "premium": 0.57,
+          "strike": 119.0
+        }
+      ],
+      "stock_leg": false
+    },
     "META": {
       "capital_required": 65000.0,
       "date_predicted": "2026-10-19",
@@ -587,21 +602,6 @@
           "option_type": "call",
           "premium": 0.18,
           "strike": 8.0
-        }
-      ],
-      "stock_leg": true
-    },
-    "WDC": {
-      "capital_required": 34760.99853515625,
-      "date_predicted": "2026-10-19",
-      "entry_underlying_price": 347.6099853515625,
-      "expiration": "2026-10-23",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "call",
-          "premium": 17.55,
-          "strike": 350.0
         }
       ],
       "stock_leg": true
