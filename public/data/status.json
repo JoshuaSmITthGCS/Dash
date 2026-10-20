@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-20T21:07:23.753841+00:00",
+  "generated_at": "2026-10-20T23:03:50.650148+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,7 +29,7 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-10-20T21:03:19.660325+00:00",
+      "checked_at": "2026-10-20T22:59:52.791491+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 944,
@@ -54,7 +54,6 @@
           "HCP",
           "HES",
           "HOLX",
-          "IBOC",
           "IGT",
           "INFA",
           "IPG",
@@ -95,7 +94,7 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-10-20T21:06:39.495197+00:00",
+      "checked_at": "2026-10-20T23:03:06.135486+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
@@ -111,7 +110,7 @@
     },
     "etf_comparisons": {
       "status": "degraded",
-      "checked_at": "2026-10-20T21:07:23.753820+00:00",
+      "checked_at": "2026-10-20T23:03:50.650125+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -259,8 +258,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "065e12a940aa9826f4960f37ca18aefa82bd2bdf",
+    "git_commit_sha": "6bb9fa4a3e12c12bef9062727edffedba6f6706e",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-20T21:07:23.753841+00:00"
+    "generated_at": "2026-10-20T23:03:50.650148+00:00"
   }
 }

@@ -45,21 +45,6 @@
       ],
       "stock_leg": false
     },
-    "BMY": {
-      "capital_required": 5700.0,
-      "date_predicted": "2026-10-20",
-      "entry_underlying_price": 61.34000015258789,
-      "expiration": "2026-10-30",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "put",
-          "premium": 0.355,
-          "strike": 57.0
-        }
-      ],
-      "stock_leg": false
-    },
     "C": {
       "capital_required": 12000.0,
       "date_predicted": "2026-10-19",
@@ -304,6 +289,21 @@
     }
   },
   "options": {
+    "AAPL": {
+      "capital_required": 66.0,
+      "date_predicted": "2026-10-20",
+      "entry_underlying_price": 339.5,
+      "expiration": "2026-10-26",
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "premium": 0.66,
+          "strike": 327.5
+        }
+      ],
+      "stock_leg": false
+    },
     "AMZN": {
       "capital_required": 327.5,
       "date_predicted": "2026-10-20",
@@ -330,21 +330,6 @@
           "option_type": "put",
           "premium": 0.94,
           "strike": 51.0
-        }
-      ],
-      "stock_leg": false
-    },
-    "BMY": {
-      "capital_required": 35.5,
-      "date_predicted": "2026-10-20",
-      "entry_underlying_price": 61.34000015258789,
-      "expiration": "2026-10-30",
-      "legs": [
-        {
-          "action": "buy",
-          "option_type": "put",
-          "premium": 0.355,
-          "strike": 57.0
         }
       ],
       "stock_leg": false
@@ -501,21 +486,6 @@
       ],
       "stock_leg": false
     },
-    "BMY": {
-      "capital_required": 5700.0,
-      "date_predicted": "2026-10-20",
-      "entry_underlying_price": 61.34000015258789,
-      "expiration": "2026-10-30",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "put",
-          "premium": 0.355,
-          "strike": 57.0
-        }
-      ],
-      "stock_leg": false
-    },
     "BSX": {
       "capital_required": 4577.000045776367,
       "date_predicted": "2026-10-20",
@@ -530,6 +500,21 @@
         }
       ],
       "stock_leg": true
+    },
+    "C": {
+      "capital_required": 11500.0,
+      "date_predicted": "2026-10-20",
+      "entry_underlying_price": 122.51000213623047,
+      "expiration": "2026-10-30",
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "premium": 0.32,
+          "strike": 115.0
+        }
+      ],
+      "stock_leg": false
     },
     "CMG": {
       "capital_required": 2900.0,
