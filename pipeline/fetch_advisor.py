@@ -1419,6 +1419,15 @@ def collect(symbol, client, yf, alpha_symbols, delay, marketaux_client=None,
     if not snapshot.get("name") or len(history["closes"]) < 21:
         raise ValueError("insufficient company snapshot or price history")
     closes = history["closes"]
+    # Yahoo's quote endpoint and its history endpoint fail independently: a name can come
+    # back with an empty `info` (so no price, and `name` falling back to the ticker) while
+    # two years of closes loaded fine. MOG.A published price:null on 2026-10-19 and tripped
+    # data_quality_counters that way while still being scored. The last close is the same
+    # series the score's market-behaviour leg already reads, so use it rather than ship a
+    # scored row with no price.
+    if snapshot.get("price") is None:
+        snapshot["price"] = round(closes[-1], 2)
+        LOG.warn(f"{symbol}: quote unavailable, price taken from last history close")
     snapshot["pct_30d"] = round((closes[-1] / closes[-21] - 1) * 100, 2)
     return {
         "symbol": symbol, "snapshot": snapshot, "extended": {}, "ticker_obj": ticker_obj,

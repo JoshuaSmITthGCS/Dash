@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+from unittest import mock
 
 import pandas as pd
 
@@ -1270,6 +1271,28 @@ class CollectTickerNormalizationTests(unittest.TestCase):
 
         self.assertEqual(result["symbol"], "MOG.A")
         self.assertEqual(result["snapshot"]["ticker"], "MOG.A")
+
+    def test_a_missing_quote_price_falls_back_to_the_last_history_close(self):
+        class _NoQuoteTickerObj(_FakeDottedTickerObj):
+            @property
+            def info(self):
+                return {}
+
+        class _NoQuoteYahoo(_FakeYahooModule):
+            def Ticker(self, symbol):
+                self.requested_symbols.append(symbol)
+                return _NoQuoteTickerObj()
+
+        with mock.patch("fetch_advisor.yahoo_snapshot", return_value={
+                "ticker": "MOG.A", "name": "MOG.A", "price": None}):
+            result = collect("MOG.A", client=None, yf=_NoQuoteYahoo(), alpha_symbols=set(), delay=0)
+
+        self.assertEqual(result["snapshot"]["price"], 129.0)
+
+    def test_a_quote_price_is_not_overwritten_by_the_history_close(self):
+        result = collect("MOG.A", client=None, yf=_FakeYahooModule(), alpha_symbols=set(), delay=0)
+
+        self.assertEqual(result["snapshot"]["price"], 129.0)
 
     def test_a_plain_symbol_without_a_dot_is_requested_unchanged(self):
         yf = _FakeYahooModule()
