@@ -1,23 +1,23 @@
 {
-  "generated_at": "2026-10-19T23:43:31.196551+00:00",
+  "generated_at": "2026-10-20T17:54:27.697959+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before shadow_store/swing or swing_pit_store began recording - this module never reconstructs a swing signal or leg score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 42,
-  "attribution_snapshot_dates_recorded": 35,
+  "snapshot_dates_recorded": 43,
+  "attribution_snapshot_dates_recorded": 36,
   "horizon_days": 14,
   "metrics": {
     "composite_z": {
       "requires_live_sample": true,
-      "eligible_periods": 32,
+      "eligible_periods": 33,
       "minimum_icir_periods": 24,
       "status": "eligible",
-      "mean_rank_ic": 0.0551,
-      "icir": 0.968,
-      "t_stat": 1.581,
-      "hit_rate": 0.562,
+      "mean_rank_ic": 0.0556,
+      "icir": 0.992,
+      "t_stat": 1.645,
+      "hit_rate": 0.576,
       "clears_multiple_testing_bar": false,
       "periods": [
         {
@@ -211,60 +211,66 @@
           "end_date": "2026-10-19",
           "sample_size": 16,
           "rank_ic": 0.1588235294117647
+        },
+        {
+          "start_date": "2026-10-06",
+          "end_date": "2026-10-20",
+          "sample_size": 15,
+          "rank_ic": 0.07142857142857142
         }
       ]
     }
   },
   "attribution": {
-    "eligible_periods": 24,
+    "eligible_periods": 25,
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": 0.0679,
-      "icir": 3.376,
-      "t_stat": 4.774,
-      "hit_rate": 0.875,
+      "mean_rank_ic": 0.062,
+      "icir": 2.896,
+      "t_stat": 4.18,
+      "hit_rate": 0.84,
       "clears_multiple_testing_bar": true
     },
     "metrics": {
       "pead_drift": {
         "weight": 0.3,
-        "own_eligible_periods": 24,
-        "own_rank_ic": 0.0225,
-        "own_icir": 0.862,
-        "delta_ic": 0.0124,
+        "own_eligible_periods": 25,
+        "own_rank_ic": 0.0146,
+        "own_icir": 0.521,
+        "delta_ic": 0.0026,
         "hurts_composite": false
       },
       "analyst_revision": {
         "weight": 0.25,
-        "own_eligible_periods": 24,
-        "own_rank_ic": 0.0294,
-        "own_icir": 2.219,
-        "delta_ic": 0.0137,
+        "own_eligible_periods": 25,
+        "own_rank_ic": 0.0287,
+        "own_icir": 2.211,
+        "delta_ic": 0.0122,
         "hurts_composite": false
       },
       "high_volume_premium": {
         "weight": 0.2,
-        "own_eligible_periods": 24,
-        "own_rank_ic": 0.0237,
-        "own_icir": 0.997,
-        "delta_ic": 0.0301,
+        "own_eligible_periods": 25,
+        "own_rank_ic": 0.0281,
+        "own_icir": 1.165,
+        "delta_ic": 0.0318,
         "hurts_composite": false
       },
       "high_52w_proximity": {
         "weight": 0.15,
-        "own_eligible_periods": 24,
-        "own_rank_ic": 0.0366,
-        "own_icir": 1.869,
-        "delta_ic": 0.0321,
+        "own_eligible_periods": 25,
+        "own_rank_ic": 0.0325,
+        "own_icir": 1.619,
+        "delta_ic": 0.0289,
         "hurts_composite": false
       },
       "short_term_reversal": {
         "weight": 0.1,
-        "own_eligible_periods": 24,
-        "own_rank_ic": 0.0023,
-        "own_icir": 0.088,
-        "delta_ic": 0.0036,
+        "own_eligible_periods": 25,
+        "own_rank_ic": 0.0069,
+        "own_icir": 0.258,
+        "delta_ic": 0.0047,
         "hurts_composite": false
       }
     }
@@ -272,8 +278,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "66db9b56c1f39e3785da52f635ebacaf2705b6b5",
+    "git_commit_sha": "ba968d1ef89ec908a06c50325b14811330de1465",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-19T23:43:31.196551+00:00"
+    "generated_at": "2026-10-20T17:54:27.697959+00:00"
   }
 }
