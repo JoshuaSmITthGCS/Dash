@@ -38,7 +38,8 @@ if PIPELINE_DIR not in sys.path:
     sys.path.insert(0, PIPELINE_DIR)
 
 from common import LOG, load_json, save_json  # noqa: E402
-from composite_attribution import build_attribution_report, periods_from_snapshots  # noqa: E402
+from composite_attribution import (build_attribution_report, independent_periods,  # noqa: E402
+                                   periods_from_snapshots)
 from evaluation import ic_summary, rank_ic  # noqa: E402
 import swing_pit_store  # noqa: E402
 from swing_signals import SWING_WEIGHTS  # noqa: E402
@@ -116,8 +117,14 @@ def _periods(snapshots, horizon_days=HORIZON_DAYS):
 
 def build_report(store_dir=None, attribution_store_dir=None):
     snapshots = _dated_snapshots(store_dir)
-    periods = _periods(snapshots)
+    # Every snapshot starts a period, so a 14-day horizon over daily snapshots overlaps ~10x.
+    # Statistics and the eligibility gate use only non-overlapping periods; the overlapping
+    # count and mean are published beside them so the difference stays visible.
+    overlapping = _periods(snapshots)
+    periods = independent_periods(overlapping)
     summary = ic_summary([period["rank_ic"] for period in periods], PERIODS_PER_YEAR)
+    overlapping_mean = (round(sum(p["rank_ic"] for p in overlapping) / len(overlapping), 4)
+                        if overlapping else None)
     eligible = summary["periods"] >= MINIMUM_PERIODS
     metric = {
         "requires_live_sample": True,
@@ -129,11 +136,14 @@ def build_report(store_dir=None, attribution_store_dir=None):
         "t_stat": summary["t_stat"] if eligible else None,
         "hit_rate": summary["hit_rate"] if eligible else None,
         "clears_multiple_testing_bar": summary["clears_multiple_testing_bar"] if eligible else False,
+        "overlapping_periods": len(overlapping),
+        "overlapping_mean_rank_ic": overlapping_mean,
         "periods": periods if eligible else [],
     }
 
     attribution_snapshots = _attribution_snapshots(attribution_store_dir)
-    attribution_periods = periods_from_snapshots(attribution_snapshots, list(SWING_WEIGHTS), HORIZON_DAYS)
+    attribution_periods = independent_periods(
+        periods_from_snapshots(attribution_snapshots, list(SWING_WEIGHTS), HORIZON_DAYS))
     attribution = build_attribution_report(attribution_periods, dict(SWING_WEIGHTS),
                                            minimum_periods=MINIMUM_PERIODS, periods_per_year=PERIODS_PER_YEAR)
 

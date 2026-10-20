@@ -73,3 +73,28 @@ def test_a_perfectly_predictive_metric_and_a_useless_one_are_told_apart():
     # across tickers within every period, so it never affects the cross-sectional rank).
     assert report["metrics"]["m2"]["delta_ic"] == 0.0
     assert report["metrics"]["m2"]["hurts_composite"] is False
+
+
+# ---------------- independent_periods ----------------
+
+def _period(start, end):
+    return {"start_date": start, "end_date": end}
+
+
+def test_overlapping_periods_are_thinned_to_non_overlapping_ones():
+    periods = [_period("2026-01-01", "2026-01-15"), _period("2026-01-02", "2026-01-16"),
+               _period("2026-01-10", "2026-01-24"), _period("2026-01-15", "2026-01-29")]
+
+    kept = ca.independent_periods(periods)
+
+    assert [p["start_date"] for p in kept] == ["2026-01-01", "2026-01-15"]
+
+
+def test_a_period_starting_exactly_when_the_last_one_ended_is_kept():
+    periods = [_period("2026-01-01", "2026-01-15"), _period("2026-01-15", "2026-01-29")]
+
+    assert len(ca.independent_periods(periods)) == 2
+
+
+def test_no_periods_thin_to_nothing():
+    assert ca.independent_periods([]) == []

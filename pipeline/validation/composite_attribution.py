@@ -59,6 +59,25 @@ def periods_from_snapshots(snapshots, metric_fields, horizon_days):
     return periods
 
 
+def independent_periods(periods):
+    """Keep only periods whose forward window starts after the previous kept one ended.
+
+    ``periods_from_snapshots`` starts a period at every snapshot, so with daily snapshots and
+    a multi-week horizon consecutive periods share most of their forward window. Their ICs
+    are then strongly autocorrelated, and ``evaluation.ic_summary``'s t-statistic (which
+    assumes independent draws) overstates significance by roughly the overlap factor. Walking
+    forward and keeping a period only once the last kept one has closed gives the series that
+    statistic is actually valid for. Periods must be date-ordered, which both builders return.
+    """
+    kept, last_end = [], None
+    for period in periods:
+        start = datetime.fromisoformat(period["start_date"])
+        if last_end is None or start >= last_end:
+            kept.append(period)
+            last_end = datetime.fromisoformat(period["end_date"])
+    return kept
+
+
 def build_attribution_report(periods, weights, *, minimum_periods=24, periods_per_year=12):
     """Composite-level rank IC plus, per weighted metric, its own standalone IC and its
     marginal (drop-one) impact on the composite - hidden behind the same eligibility gate

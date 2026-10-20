@@ -67,6 +67,34 @@ class SwingIcTests(unittest.TestCase):
             self.assertEqual(report["metrics"][sic.GRADED_METRIC]["eligible_periods"], 0)
 
 
+class OverlappingPeriodTests(unittest.TestCase):
+    def test_daily_snapshots_inside_one_horizon_count_as_one_independent_period(self):
+        """Ten daily snapshots with a 14-day horizon produce overlapping periods; the
+        statistics must be taken over the non-overlapping ones only."""
+        with tempfile.TemporaryDirectory() as tmp:
+            for day in range(1, 29):
+                rows = [{"ticker": t, "signal": signal, "price": 100.0 + day * step, "rank": 1, "weight": 0.2}
+                        for t, signal, step in zip("ABCDE", (5, 4, 3, 2, 1), (5, 4, 3, 2, 1))]
+                _snapshot(tmp, f"2026-01-{day:02d}", rows)
+
+            report = sic.build_report(store_dir=os.path.join(tmp, "swing"),
+                                      attribution_store_dir=os.path.join(tmp, "attribution"))
+            metric = report["metrics"][sic.GRADED_METRIC]
+            self.assertGreater(metric["overlapping_periods"], metric["eligible_periods"])
+            self.assertLessEqual(metric["eligible_periods"], 2)
+
+    def test_overlapping_series_can_no_longer_reach_eligibility_on_its_own(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for day in range(1, 29):
+                rows = [{"ticker": t, "signal": signal, "price": 100.0 + day * step, "rank": 1, "weight": 0.2}
+                        for t, signal, step in zip("ABCDE", (5, 4, 3, 2, 1), (5, 4, 3, 2, 1))]
+                _snapshot(tmp, f"2026-02-{day:02d}", rows)
+            report = sic.build_report(store_dir=os.path.join(tmp, "swing"),
+                                      attribution_store_dir=os.path.join(tmp, "attribution"))
+            self.assertEqual(report["metrics"][sic.GRADED_METRIC]["status"], "accumulating")
+            self.assertFalse(report["metrics"][sic.GRADED_METRIC]["clears_multiple_testing_bar"])
+
+
 class SwingAttributionTests(unittest.TestCase):
     def test_zero_attribution_snapshots_reports_accumulating(self):
         with tempfile.TemporaryDirectory() as tmp:
