@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 196,
+  "refreshes_observed": 197,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -23593,6 +23593,131 @@
       "mean_abs_score_delta": 0.26,
       "mean_abs_confidence_delta": 0.0,
       "largest_availability_driven_movers": []
+    },
+    {
+      "previous_refresh": "advisor-2026-10-20T22:58:50.170786+00:00",
+      "current_refresh": "advisor-2026-10-22T18:07:30.190934+00:00",
+      "shared_tickers": 891,
+      "rank_turnover": {
+        "top_40": 0.225,
+        "top_100": 0.225
+      },
+      "tickers_with_availability_driven_change": 14,
+      "tickers_with_availability_driven_change_pct": 0.016,
+      "mean_abs_score_delta": 1.09,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "UCB",
+          "metrics_with_value_change": [
+            "profit_margin",
+            "return_on_equity"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": -9.1,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "WFRD",
+          "metrics_with_value_change": [
+            "earnings_growth"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 5.9,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "ABT",
+          "metrics_with_value_change": [
+            "ev_to_fcf"
+          ],
+          "metrics_with_availability_change": [
+            "current_ratio",
+            "free_cash_flow_yield",
+            "return_on_equity"
+          ],
+          "score_delta": 5.3,
+          "confidence_delta": -0.06
+        },
+        {
+          "ticker": "CB",
+          "metrics_with_value_change": [
+            "earnings_growth"
+          ],
+          "metrics_with_availability_change": [
+            "debt_to_equity"
+          ],
+          "score_delta": -2.3,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "PM",
+          "metrics_with_value_change": [
+            "current_ratio",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.3,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "COF",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 1.0,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -1.0,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "ITT",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -0.9,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "OZK",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth"
+          ],
+          "score_delta": 0.9,
+          "confidence_delta": 0.07
+        },
+        {
+          "ticker": "VMI",
+          "metrics_with_value_change": [
+            "profit_margin"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 0.9,
+          "confidence_delta": 0.02
+        }
+      ]
     }
   ],
   "peer_group_recomposition": {
