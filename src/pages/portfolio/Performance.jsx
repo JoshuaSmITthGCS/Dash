@@ -18,11 +18,13 @@
 
 import { useEffect, useState } from 'react'
 import GrowthChart from '../../components/GrowthChart'
+import IndexReturnsTable from './IndexReturnsTable.jsx'
+import PerformanceOverview from './PerformanceOverview.jsx'
 import Icon from '../../components/Icons'
 import { compareBenchmarkSeries, netInvestedCapital, portfolioReconciliationBridge, portfolioReturnSummary, selectPeriod } from '../../lib/portfolioAnalytics.js'
 import { marketDate } from '../../lib/usePortfolioTracking.js'
 import { snapshotPriceRows } from '../../lib/portfolioPosition.js'
-import { money, moveColor, PERFORMANCE_PERIODS, PERIOD_NAMES, signedPct } from './format.js'
+import { money, moveColor, signedPct } from './format.js'
 
 const CASH_FLOW_TYPES = [
   { value: 'deposit', label: 'Deposit' },
@@ -212,8 +214,13 @@ export default function Performance({
     <section className="portfolio-dashboard-section portfolio-performance-section" aria-labelledby="portfolio-performance-title">
       <header className="portfolio-section-heading">
         <div><span className="portfolio-section-number">02</span><div><span className="eyebrow">Benchmark</span><h2 id="portfolio-performance-title">Performance</h2></div></div>
-        <label><span>Compare over</span><select value={performancePeriod} onChange={(event) => onPerformancePeriodChange(event.target.value)}>{PERFORMANCE_PERIODS.map((period) => <option key={period} value={period}>{PERIOD_NAMES[period]}</option>)}</select></label>
       </header>
+      <PerformanceOverview holdings={holdings} holdingsSeriesFull={holdingsSeriesFull} tracking={tracking} period={performancePeriod} onPeriodChange={onPerformancePeriodChange} />
+      <IndexReturnsTable
+        portfolioSeries={holdingsSeriesFull}
+        moneyWeighted={returnSummary?.moneyWeighted?.available ? returnSummary.moneyWeighted : null}
+      />
+
       {performanceIndex ? <div className="portfolio-benchmark-chart">
         <div className="portfolio-benchmark-kpis">
           <span><small>Time-weighted return</small><strong className={comparison.portfolio.returnPct >= 0 ? 'positive' : 'negative'}>{signedPct(comparison.portfolio.returnPct, 2)}</strong></span>

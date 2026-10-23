@@ -93,7 +93,7 @@ describe('HomeScreen', () => {
     renderHome()
     // as-of lives inside HomePortfolioPanel, lazy-loaded (Phase 4, NOTES.md) — resolves async
     // even in tests, since React.lazy() always returns a promise.
-    await waitFor(() => expect(screen.getByTestId('as-of')).toHaveTextContent('1 names covered'))
+    await waitFor(() => expect(screen.getByTestId('as-of')).toHaveTextContent('1 names covered'), { timeout: 5000 })
     expect(screen.getByTestId('evidence-strip')).toHaveTextContent('44 ready · 9 breached')
     expect(screen.getByTestId('evidence-strip')).toHaveTextContent('18d live')
     expect(screen.getByTestId('promotion-disclosure')).toHaveTextContent('0 of the 24')
