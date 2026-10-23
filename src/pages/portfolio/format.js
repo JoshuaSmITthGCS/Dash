@@ -2,8 +2,8 @@
 // Nothing here reads React state or the DOM, so the view files can stay declarative.
 
 export const SUMMARY_PERIODS = ['1H', '1D', '1W', '1M', '3M', '1Y']
-export const PERFORMANCE_PERIODS = ['1W', '1M', '3M', '1Y', 'All']
-export const PERIOD_NAMES = { '1H': 'Last hour', '1D': 'Today', '1W': 'Week', '1M': 'Month', '3M': '3 months', '1Y': 'Year', All: 'All time' }
+export const PERFORMANCE_PERIODS = ['1M', '3M', 'YTD', '1Y', '3Y', '5Y', '10Y', 'All']
+export const PERIOD_NAMES = { '1H': 'Last hour', '1D': 'Today', '1W': 'Week', '1M': 'Month', '3M': '3 months', '1Y': 'Year', YTD: 'Year to date', '3Y': '3 years', '5Y': '5 years', '10Y': '10 years', All: 'All time' }
 
 // The backtested-basket series that risk/performance stats are computed from applies today's
 // holdings to every historical date it has prices for -- including dates before live tracking
