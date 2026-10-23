@@ -12,6 +12,7 @@ import { latestMarketDayReturn, realizedResultSummary, selectPeriod } from '../.
 import { liveTodayPortfolioReturn } from '../../lib/afterHoursQuotes.js'
 import { money, PERIOD_NAMES, signedPct, SUMMARY_PERIODS } from './format.js'
 import Holdings from './Holdings.jsx'
+import IndexReturnsTable from './IndexReturnsTable.jsx'
 
 /** The account value line for the selected range, preferring recorded five-minute snapshots. */
 function summaryChartFor({ trackingSnapshots, positions, priceData, period, holdingsSeriesFull }) {
@@ -171,6 +172,8 @@ export default function Summary({
         onToggle={onSuggestedActionsToggle}
         onSelectStock={onSelectStock}
       />
+
+      <IndexReturnsTable portfolioSeries={holdingsSeriesFull} compact />
 
       <ConcentrationCard exposure={exposure} />
 

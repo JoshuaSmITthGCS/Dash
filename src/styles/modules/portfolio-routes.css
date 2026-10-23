@@ -280,3 +280,24 @@
 .import-action-remove { background: color-mix(in srgb, var(--down) 14%, transparent); color: var(--down); }
 
 .import-warning { padding: var(--sp-2-5) var(--sp-3); border: 1px solid color-mix(in srgb, var(--down) 35%, var(--border)); border-radius: var(--control-radius); background: color-mix(in srgb, var(--down) 8%, var(--bg-elev)); color: var(--down); font-size: var(--fs-xs); }
+
+/* Total returns: portfolio vs market indexes */
+.returns-card { display: grid; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.returns-note { margin: 0; color: var(--text-tertiary); font-size: var(--fs-xs); line-height: 1.5; }
+.returns-subhead { margin: var(--sp-2) 0 0; font-size: var(--fs-sm); }
+.returns-controls { display: flex; flex-wrap: wrap; gap: var(--sp-6); }
+.returns-controls fieldset { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4); margin: 0; padding: 0; border: 0; min-width: 0; }
+.returns-controls legend { float: left; margin-right: var(--sp-4); padding: 0; font-size: var(--fs-sm); font-weight: 600; }
+.returns-controls label { display: inline-flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); }
+.returns-custom input { min-height: 36px; }
+.returns-table-wrap { overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: var(--control-radius); }
+.returns-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+.returns-table th, .returns-table td { padding: var(--sp-3); border-bottom: 1px solid var(--border-subtle); text-align: right; white-space: nowrap; }
+.returns-table thead th { background: var(--surface-secondary); font-size: var(--fs-xs); font-weight: 600; }
+.returns-table th:first-child { position: sticky; left: 0; z-index: 1; min-width: 180px; max-width: 280px; background: var(--surface-primary); text-align: left; white-space: normal; font-weight: 500; }
+.returns-table thead th:first-child { background: var(--surface-secondary); }
+.returns-table tbody tr:last-child th, .returns-table tbody tr:last-child td { border-bottom: 0; }
+.returns-cell.positive { color: var(--pos); }
+.returns-cell.negative { color: var(--neg); }
+.returns-cell--empty { color: var(--text-tertiary); }
+.returns-cell small { color: var(--text-tertiary); font-size: var(--fs-2xs); }

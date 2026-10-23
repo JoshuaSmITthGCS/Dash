@@ -18,6 +18,7 @@
 
 import { useEffect, useState } from 'react'
 import GrowthChart from '../../components/GrowthChart'
+import IndexReturnsTable from './IndexReturnsTable.jsx'
 import Icon from '../../components/Icons'
 import { compareBenchmarkSeries, netInvestedCapital, portfolioReconciliationBridge, portfolioReturnSummary, selectPeriod } from '../../lib/portfolioAnalytics.js'
 import { marketDate } from '../../lib/usePortfolioTracking.js'
@@ -214,6 +215,11 @@ export default function Performance({
         <div><span className="portfolio-section-number">02</span><div><span className="eyebrow">Benchmark</span><h2 id="portfolio-performance-title">Performance</h2></div></div>
         <label><span>Compare over</span><select value={performancePeriod} onChange={(event) => onPerformancePeriodChange(event.target.value)}>{PERFORMANCE_PERIODS.map((period) => <option key={period} value={period}>{PERIOD_NAMES[period]}</option>)}</select></label>
       </header>
+      <IndexReturnsTable
+        portfolioSeries={holdingsSeriesFull}
+        moneyWeighted={returnSummary?.moneyWeighted?.available ? returnSummary.moneyWeighted : null}
+      />
+
       {performanceIndex ? <div className="portfolio-benchmark-chart">
         <div className="portfolio-benchmark-kpis">
           <span><small>Time-weighted return</small><strong className={comparison.portfolio.returnPct >= 0 ? 'positive' : 'negative'}>{signedPct(comparison.portfolio.returnPct, 2)}</strong></span>
