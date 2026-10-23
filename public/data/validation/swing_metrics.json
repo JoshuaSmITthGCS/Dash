@@ -1,23 +1,23 @@
 {
-  "generated_at": "2026-10-22T23:02:21.058744+00:00",
+  "generated_at": "2026-10-23T18:06:34.989199+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before shadow_store/swing or swing_pit_store began recording - this module never reconstructs a swing signal or leg score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 44,
-  "attribution_snapshot_dates_recorded": 37,
+  "snapshot_dates_recorded": 45,
+  "attribution_snapshot_dates_recorded": 38,
   "horizon_days": 14,
   "metrics": {
     "composite_z": {
       "requires_live_sample": true,
-      "eligible_periods": 35,
+      "eligible_periods": 36,
       "minimum_icir_periods": 24,
       "status": "eligible",
-      "mean_rank_ic": 0.0658,
-      "icir": 1.179,
-      "t_stat": 2.014,
-      "hit_rate": 0.6,
+      "mean_rank_ic": 0.0777,
+      "icir": 1.323,
+      "t_stat": 2.291,
+      "hit_rate": 0.611,
       "clears_multiple_testing_bar": false,
       "periods": [
         {
@@ -229,60 +229,66 @@
           "end_date": "2026-10-22",
           "sample_size": 14,
           "rank_ic": 0.2923076923076923
+        },
+        {
+          "start_date": "2026-10-09",
+          "end_date": "2026-10-23",
+          "sample_size": 13,
+          "rank_ic": 0.4945054945054945
         }
       ]
     }
   },
   "attribution": {
-    "eligible_periods": 27,
+    "eligible_periods": 28,
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": 0.0503,
-      "icir": 2.104,
-      "t_stat": 3.156,
-      "hit_rate": 0.778,
-      "clears_multiple_testing_bar": true
+      "mean_rank_ic": 0.0454,
+      "icir": 1.841,
+      "t_stat": 2.812,
+      "hit_rate": 0.75,
+      "clears_multiple_testing_bar": false
     },
     "metrics": {
       "pead_drift": {
         "weight": 0.3,
-        "own_eligible_periods": 27,
-        "own_rank_ic": 0.0005,
-        "own_icir": 0.015,
-        "delta_ic": -0.0141,
+        "own_eligible_periods": 28,
+        "own_rank_ic": -0.0047,
+        "own_icir": -0.152,
+        "delta_ic": -0.0202,
         "hurts_composite": true
       },
       "analyst_revision": {
         "weight": 0.25,
-        "own_eligible_periods": 27,
-        "own_rank_ic": 0.027,
-        "own_icir": 2.14,
-        "delta_ic": 0.0084,
+        "own_eligible_periods": 28,
+        "own_rank_ic": 0.0264,
+        "own_icir": 2.128,
+        "delta_ic": 0.007,
         "hurts_composite": false
       },
       "high_volume_premium": {
         "weight": 0.2,
-        "own_eligible_periods": 27,
-        "own_rank_ic": 0.0349,
-        "own_icir": 1.439,
-        "delta_ic": 0.0346,
+        "own_eligible_periods": 28,
+        "own_rank_ic": 0.0359,
+        "own_icir": 1.507,
+        "delta_ic": 0.034,
         "hurts_composite": false
       },
       "high_52w_proximity": {
         "weight": 0.15,
-        "own_eligible_periods": 27,
-        "own_rank_ic": 0.0265,
-        "own_icir": 1.291,
-        "delta_ic": 0.0252,
+        "own_eligible_periods": 28,
+        "own_rank_ic": 0.0251,
+        "own_icir": 1.243,
+        "delta_ic": 0.0239,
         "hurts_composite": false
       },
       "short_term_reversal": {
         "weight": 0.1,
-        "own_eligible_periods": 27,
-        "own_rank_ic": 0.0149,
-        "own_icir": 0.545,
-        "delta_ic": 0.0066,
+        "own_eligible_periods": 28,
+        "own_rank_ic": 0.017,
+        "own_icir": 0.629,
+        "delta_ic": 0.0068,
         "hurts_composite": false
       }
     }
@@ -290,8 +296,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "ca938a0004213e959689331e0d4d621930194c78",
+    "git_commit_sha": "b7e5c9312156fd6c851db30012296369b1b0e54a",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-22T23:02:21.058744+00:00"
+    "generated_at": "2026-10-23T18:06:34.989199+00:00"
   }
 }
