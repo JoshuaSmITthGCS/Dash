@@ -1,0 +1,81 @@
+/* ============================================================================
+   Light theme overrides — brokerage-style (Fidelity / Robinhood): flat white
+   surfaces, hairline borders, no neon glow, no glass blur, no scan lines.
+
+   The HUD modules above hard-code dark glass and cyan glow values, so those
+   effects are switched off here whenever the light theme is active. Loaded
+   last so it wins the cascade. Dark theme is untouched.
+   ============================================================================ */
+
+:root:not([data-theme="dark"]) .card:hover,
+:root:not([data-theme="dark"]) .candidate-card:hover,
+:root:not([data-theme="dark"]) .trend-card:hover,
+:root:not([data-theme="dark"]) .stock-screen-panel:hover {
+  box-shadow: var(--shadow-2);
+  border-color: var(--border-strong);
+}
+
+:root:not([data-theme="dark"]) .hero-research,
+:root:not([data-theme="dark"]) .analysis-layer-card,
+:root:not([data-theme="dark"]) .candidate-card,
+:root:not([data-theme="dark"]) .stock-screen-panel,
+:root:not([data-theme="dark"]) .metric-exception-list > div {
+  backdrop-filter: none;
+  background: var(--surface-card-bg);
+  border-color: var(--border-default);
+}
+
+:root:not([data-theme="dark"]) .analysis-layer-card:hover,
+:root:not([data-theme="dark"]) .candidate-card:hover,
+:root:not([data-theme="dark"]) .stock-screen-panel:hover,
+:root:not([data-theme="dark"]) .metric-exception-list > div:hover {
+  background: var(--surface-shelf-bg);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-1);
+}
+
+:root:not([data-theme="dark"]) .stock-screen-panel:hover { transform: none; }
+
+:root:not([data-theme="dark"]) .hero-research::before,
+:root:not([data-theme="dark"]) .hero-research::after { display: none; }
+
+:root:not([data-theme="dark"]) .hero-ticker,
+:root:not([data-theme="dark"]) .hero-ticker:hover,
+:root:not([data-theme="dark"]) .trend-direction,
+:root:not([data-theme="dark"]) .trend-direction:hover { text-shadow: none; }
+
+:root:not([data-theme="dark"]) .confidence-ring,
+:root:not([data-theme="dark"]) .confidence-ring:hover,
+:root:not([data-theme="dark"]) .sparkline path,
+:root:not([data-theme="dark"]) .sparkline:hover path { filter: none; }
+
+:root:not([data-theme="dark"]) .rank-badge,
+:root:not([data-theme="dark"]) .rank-badge:hover,
+:root:not([data-theme="dark"]) .refresh-progress-fill { box-shadow: none; }
+
+/* Decorative HUD furniture has no place on a white page. */
+:root:not([data-theme="dark"]) .data-stream-overlay,
+:root:not([data-theme="dark"]) .particle-field,
+:root:not([data-theme="dark"]) .gallifreyan-overlay,
+:root:not([data-theme="dark"]) .grid-overlay,
+:root:not([data-theme="dark"]) .holo-layer::before { display: none; }
+
+/* HUD readouts: cyan-on-black becomes ink-on-white. */
+:root:not([data-theme="dark"]) .terminal-label,
+:root:not([data-theme="dark"]) .terminal-value,
+:root:not([data-theme="dark"]) .terminal-readout,
+:root:not([data-theme="dark"]) .coord-label,
+:root:not([data-theme="dark"]) .arc-stat-value,
+:root:not([data-theme="dark"]) .radial-gauge .gauge-value,
+:root:not([data-theme="dark"]) .data-cell-value,
+:root:not([data-theme="dark"]) .mini-gauge-value { text-shadow: none; }
+
+:root:not([data-theme="dark"]) .hex-container,
+:root:not([data-theme="dark"]) .tech-panel,
+:root:not([data-theme="dark"]) .data-strip,
+:root:not([data-theme="dark"]) .metric-item,
+:root:not([data-theme="dark"]) .status-cell {
+  background: var(--surface-card-bg);
+  border-color: var(--border-default);
+  box-shadow: none;
+}

@@ -47,7 +47,7 @@ describe('interface preferences', () => {
     // additive, not lossy: nothing a v5 blob held is dropped by the migration.
     expect(value.version).toBe(6)
     expect(value.medium).toBe('classic')
-    expect(value.theme).toBe('system')
+    expect(value.theme).toBe('light')
     expect(value.widgets).toHaveLength(DEFAULT_WIDGETS.length)
     expect(value.widgets.find((widget) => widget.id === 'portfolio-summary').visible).toBe(true)
     expect(value.widgets.some((widget) => widget.id === 'market-pulse')).toBe(false)
@@ -74,7 +74,15 @@ describe('interface preferences', () => {
     expect(document.documentElement.style.getPropertyValue('--brand-primary')).toBe('')
   })
 
+  it('defaults to the light theme, and migrates a legacy saved "system" choice to light once', () => {
+    installMatchMedia(true)
+    localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ theme: 'system' }))
+    render(<PreferencesProvider><Harness /></PreferencesProvider>)
+    expect(screen.getByTestId('theme')).toHaveTextContent('light')
+  })
+
   it('follows live system-theme changes until the user selects an override', () => {
+    localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ theme: 'system', lightThemeDefault: true }))
     const changeSystemTheme = installMatchMedia(false)
     render(<PreferencesProvider><Harness /></PreferencesProvider>)
     expect(screen.getByTestId('theme')).toHaveTextContent('light')

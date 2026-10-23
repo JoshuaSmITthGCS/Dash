@@ -18,7 +18,7 @@ export const PREFERENCES_KEY = 'valuesignal.ui-preferences.v1'
  * value per theme, not three.
  */
 export const ACCENTS = {
-  valuesignal: { label: 'ValueSignal Green', value: '#17513c', dark: '#7fe3b0', ink: '#ffffff', inkDark: '#07130d' },
+  valuesignal: { label: 'ValueSignal Green', value: '#0b7a3e', dark: '#7fe3b0', ink: '#ffffff', inkDark: '#07130d' },
   emerald: { label: 'Emerald', value: '#087f5b', dark: '#69dbb0', ink: '#ffffff', inkDark: '#04140e' },
   blue: { label: 'Blue', value: '#2463a6', dark: '#82b7ed', ink: '#ffffff', inkDark: '#08131f' },
   indigo: { label: 'Indigo', value: '#4b57a5', dark: '#aab3ff', ink: '#ffffff', inkDark: '#0d1024' },
@@ -42,7 +42,7 @@ export const DEFAULT_PREFERENCES = {
   version: 6,
   medium: DEFAULT_MEDIUM_DURING_BUILD,
   entrySkip: {},
-  theme: 'system',
+  theme: 'light',
   accentColor: 'valuesignal',
   surfaceStyle: 'outlined',
   cornerStyle: 'rounded',
@@ -109,7 +109,11 @@ export function validatePreferences(raw) {
     // this is additive, not lossy: nothing a v5 blob held is dropped.
     medium: isKnownMedium(raw.medium) ? raw.medium : DEFAULT_MEDIUM_DURING_BUILD,
     entrySkip,
-    theme: pick(raw.theme, ['system', 'light', 'dark'], 'system'),
+    // Light is the default. Blobs saved before the white theme existed hold 'system', which on a
+    // dark-mode OS rendered the old HUD theme; they migrate once to 'light' (flag below), after
+    // which 'system' is an explicit choice the user made and is kept.
+    theme: raw.lightThemeDefault ? pick(raw.theme, ['system', 'light', 'dark'], 'light') : (raw.theme === 'dark' ? 'dark' : 'light'),
+    lightThemeDefault: true,
     accentColor: ACCENTS[raw.accentColor] ? raw.accentColor : 'valuesignal',
     surfaceStyle: pick(raw.surfaceStyle, ['outlined', 'soft', 'elevated'], 'outlined'),
     cornerStyle: pick(raw.cornerStyle, ['compact', 'rounded', 'extra-rounded'], 'rounded'),
@@ -197,7 +201,8 @@ export function PreferencesProvider({ children }) {
       root.style.removeProperty('--accent-ink')
     }
     const themeMeta = document.getElementById('theme-color-meta')
-    themeMeta?.setAttribute('content', mediumMeta?.themeColor || (isDark ? '#0b100e' : '#eceff0'))
+    themeMeta?.setAttribute('content', mediumMeta?.acceptsAccent ? (isDark ? '#0a0e14' : mediumMeta.themeColor) : (mediumMeta?.themeColor || (isDark ? '#0b100e' : '#eceff0')))
+    if (mediumMeta?.acceptsAccent) root.style.colorScheme = isDark ? 'dark' : 'light'
     try { localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences)) } catch { /* storage can be unavailable */ }
   }, [preferences, resolvedTheme])
 

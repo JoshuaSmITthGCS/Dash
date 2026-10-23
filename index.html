@@ -24,9 +24,9 @@
 
     <!-- iPhone home-screen app behavior: full-screen standalone launch, matching status bar, real icon -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#0a0e14" id="theme-color-meta" />
+    <meta name="theme-color" content="#ffffff" id="theme-color-meta" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="ValueSignal" />
     <meta name="mobile-web-app-capable" content="yes" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
@@ -46,16 +46,18 @@
           gallery: ['light', '#f2ede2'], cockpit: ['dark', '#0a0d10'], neon: ['dark', '#0d0a2e'],
           poster: ['light', '#f6f1e6'], ticker: ['dark', '#050505'], book: ['light', '#f7f4ec'],
           blueprint: ['dark', '#0b1e33'], 'star-chart': ['dark', '#050818'], newspaper: ['light', '#faf6ee'],
-          chalkboard: ['dark', '#2b3339'], 'beige-box': ['light', '#d9d3c4'], classic: ['dark', '#0a0e14'],
+          chalkboard: ['dark', '#2b3339'], 'beige-box': ['light', '#d9d3c4'], classic: ['light', '#ffffff'],
         }
         const DEFAULT_MEDIUM = 'classic' // flips to 'gallery' at Phase 3 cutover
         try {
           const saved = JSON.parse(localStorage.getItem('valuesignal.ui-preferences.v1') || '{}')
-          const dark = saved.theme === 'dark' || (saved.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+          // Light is the default; 'system' only counts once the user has chosen it (lightThemeDefault set).
+          const dark = saved.theme === 'dark' || (saved.lightThemeDefault && saved.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
           document.documentElement.dataset.theme = dark ? 'dark' : 'light'
           const medium = MEDIUM_PAINT[saved.medium] ? saved.medium : DEFAULT_MEDIUM
           document.documentElement.dataset.medium = medium
-          const [colorScheme, themeColor] = MEDIUM_PAINT[medium]
+          let [colorScheme, themeColor] = MEDIUM_PAINT[medium]
+          if (medium === 'classic' && dark) { colorScheme = 'dark'; themeColor = '#0a0e14' }
           document.documentElement.style.colorScheme = colorScheme
           document.querySelector('#theme-color-meta').content = themeColor
         } catch {

@@ -24,7 +24,7 @@ export const MEDIUM_META = Object.freeze([
   { id: 'newspaper', label: 'Newspaper', colorScheme: 'light', themeColor: '#faf6ee', acceptsAccent: false, hasEntry: true, shipAtLaunch: true },
   { id: 'chalkboard', label: 'Chalkboard', colorScheme: 'dark', themeColor: '#2b3339', acceptsAccent: false, hasEntry: false, shipAtLaunch: true },
   { id: 'beige-box', label: 'Beige Box', colorScheme: 'light', themeColor: '#d9d3c4', acceptsAccent: false, hasEntry: true, shipAtLaunch: true },
-  { id: 'classic', label: 'Classic — what you have now', colorScheme: 'dark', themeColor: '#0a0e14', acceptsAccent: true, hasEntry: false, shipAtLaunch: true },
+  { id: 'classic', label: 'Classic — what you have now', colorScheme: 'light', themeColor: '#ffffff', acceptsAccent: true, hasEntry: false, shipAtLaunch: true },
 ])
 
 const META_BY_ID = new Map(MEDIUM_META.map((entry) => [entry.id, entry]))

@@ -9,7 +9,7 @@ import { isMediumImplemented } from '../registry.js'
 describe('classic manifest', () => {
   it('declares the required shape — the only medium with entry: null and acceptsAccent: true', () => {
     expect(manifest.id).toBe('classic')
-    expect(manifest.colorScheme).toBe('dark')
+    expect(manifest.colorScheme).toBe('light')
     expect(manifest.entry).toBeNull()
     expect(manifest.acceptsAccent).toBe(true)
   })

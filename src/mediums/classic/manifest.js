@@ -13,8 +13,8 @@ import { Container, LabelFrame, EmptyState, Skeleton, ProvenanceStrip, Control, 
  */
 const manifest = {
   id: 'classic',
-  colorScheme: 'dark',
-  themeColor: '#0a0e14',
+  colorScheme: 'light',
+  themeColor: '#ffffff',
   loadTokens: () => import('./tokens.css'),
   loadRenderer: () => import('./renderer/index.jsx').then((m) => m.default),
   components: { Container, LabelFrame, EmptyState, Skeleton, ProvenanceStrip, Control, Tabs },

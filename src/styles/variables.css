@@ -11,15 +11,17 @@
    file can never win against them. Change accents in ACCENTS there.
    ============================================================================ */
 
+/* Default theme is LIGHT: white canvas, near-black ink, brokerage-style green/red
+   (Fidelity / Robinhood). The HUD dark theme below is opt-in via Settings. */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* --- surfaces: HUD aesthetic, near-black with subtle blue undertones ----- */
-  --surface-canvas-bg: #0a0e14;   /* the void — darkest background */
-  --surface-shelf-bg: #0f1419;    /* inset: control fills, row hover, tracks */
-  --surface-card-bg: #0f1419;     /* glass panel on the void */
-  --surface-raised-bg: #161c23;   /* elevated above panels */
-  --surface-sheet-bg: #1c242e;    /* modals, drawers, overlays */
+  /* --- surfaces: white canvas, cards separated by hairlines + soft shadow --- */
+  --surface-canvas-bg: #ffffff;   /* page background */
+  --surface-shelf-bg: #f5f7f8;    /* inset: control fills, row hover, tracks */
+  --surface-card-bg: #ffffff;     /* cards */
+  --surface-raised-bg: #ffffff;   /* elevated above panels */
+  --surface-sheet-bg: #ffffff;    /* modals, drawers, overlays */
 
   --surface-canvas-border: var(--border-subtle);
   --surface-shelf-border: var(--border-default);
@@ -27,62 +29,62 @@
   --surface-sheet-border: var(--border-strong);
 
   --app-background: var(--surface-canvas-bg);
-  --app-background-tint: #0c1116;
+  --app-background-tint: #f7f9fa;
   --surface-primary: var(--surface-card-bg);
   --surface-secondary: var(--surface-shelf-bg);
   --surface-tertiary: var(--surface-raised-bg);
 
-  /* --- ink: four levels, optimized for dark HUD ---------------------------- */
-  --text-primary: #e3e8ef;    /* high contrast on dark */
-  --text-secondary: #94a3b8;  /* readable secondary */
-  --text-tertiary: #7e8da2;   /* subdued tertiary — WCAG AA 5.73:1 on #0a0e14 */
-  --text-faint: #8593a8;      /* decorative only — never body, never alone — WCAG AA ≥5.6:1 on #0a0e14 and the tinted card surfaces axe flagged */
+  /* --- ink: four levels, all AA (>= 4.5:1) on #ffffff ---------------------- */
+  --text-primary: #0e1217;    /* 18.5:1 */
+  --text-secondary: #4f5b67;  /* 7.0:1 */
+  --text-tertiary: #5f6b77;   /* 5.4:1 */
+  --text-faint: #66727e;      /* 4.9:1 — decorative only, never body, never alone */
 
-  --border-subtle: rgba(100, 116, 139, 0.1);
-  --border-default: rgba(100, 116, 139, 0.2);
-  --border-strong: rgba(100, 116, 139, 0.35);
+  --border-subtle: rgba(14, 18, 23, 0.07);
+  --border-default: rgba(14, 18, 23, 0.12);
+  --border-strong: rgba(14, 18, 23, 0.26);
 
-  /* --- brand: cyan HUD glow. --brand-primary is overwritten inline. -------- */
-  --brand-primary: #00d4ff;
-  --brand-soft: rgba(0, 212, 255, 0.08);
-  --accent-ink: #0a0e14;
-  /* Data marks on dark: slightly darker to distinguish from accent used as ink */
-  --brand-secondary: #00b8e6;
+  /* --- brand: money green. --brand-primary is overwritten inline. ----------- */
+  --brand-primary: #0b7a3e;
+  --brand-soft: rgba(11, 122, 62, 0.08);
+  --accent-ink: #ffffff;
+  /* Data marks (chart lines, meters) */
+  --brand-secondary: #0f9d58;
 
   /* --- semantic: state, never series --------------------------------------- */
-  --positive: #10b981;  --positive-soft: rgba(16, 185, 129, 0.12);
-  --negative: #ef4444;  --negative-soft: rgba(239, 68, 68, 0.12);
-  --warning: #f59e0b;   --warning-soft: rgba(245, 158, 11, 0.12);
+  --positive: #00873a;  --positive-soft: rgba(0, 200, 5, 0.12);
+  --negative: #d42d12;  --negative-soft: rgba(255, 80, 0, 0.12);
+  --warning: #a35f00;   --warning-soft: rgba(245, 158, 11, 0.16);
 
   /* --- chart series: fixed order, one hue per series ------------------------ */
   --series-stock: var(--brand-secondary);
-  --series-benchmark: #60a5fa;
-  --series-benchmark-2: #fb923c;
-  --series-benchmark-3: #a78bfa;
-  --series-cash: #fbbf24;
+  --series-benchmark: #2563eb;
+  --series-benchmark-2: #ea580c;
+  --series-benchmark-3: #7c3aed;
+  --series-cash: #ca8a04;
   --chart-grid: var(--border-subtle);
 
   /* --- diverging: signed quantities, neutral midpoint at zero --------------- */
-  --diverging-neg-3: #06b6d4;
-  --diverging-neg-2: #0891b2;
-  --diverging-neg-1: #155e75;
-  --diverging-zero: #334155;
-  --diverging-pos-1: #78350f;
-  --diverging-pos-2: #b45309;
-  --diverging-pos-3: #f59e0b;
+  --diverging-neg-3: #0e7490;
+  --diverging-neg-2: #38a3c0;
+  --diverging-neg-1: #a5d8e6;
+  --diverging-zero: #e2e8f0;
+  --diverging-pos-1: #fcd9a0;
+  --diverging-pos-2: #f59e0b;
+  --diverging-pos-3: #b45309;
 
-  /* --- sector palette: HUD-optimized vibrant tones ------------------------- */
-  --sector-tech: #ec4899;
-  --sector-health: #22c55e;
-  --sector-finance: #3b82f6;
-  --sector-consumer-disc: #f97316;
-  --sector-consumer-staples: #14b8a6;
-  --sector-energy: #a855f7;
-  --sector-industrials: #fb923c;
-  --sector-materials: #06b6d4;
-  --sector-real-estate: #d946ef;
-  --sector-utilities: #eab308;
-  --sector-comm: #0ea5e9;
+  /* --- sector palette ------------------------------------------------------- */
+  --sector-tech: #db2777;
+  --sector-health: #16a34a;
+  --sector-finance: #2563eb;
+  --sector-consumer-disc: #ea580c;
+  --sector-consumer-staples: #0d9488;
+  --sector-energy: #9333ea;
+  --sector-industrials: #f97316;
+  --sector-materials: #0891b2;
+  --sector-real-estate: #c026d3;
+  --sector-utilities: #ca8a04;
+  --sector-comm: #0284c7;
 
   /* --- TYPE SCALE -----------------------------------------------------------
      11px is the hard floor for every string the product renders, including
@@ -151,28 +153,24 @@
   --card-radius: var(--r-xl);
 
   /* --- elevation: HUD glow and depth --------------------------------------- */
-  --shadow-1: 0 0 0 1px rgba(255, 255, 255, .03),
-              0 2px 8px rgba(0, 0, 0, .3);
-  --shadow-2: 0 0 0 1px rgba(255, 255, 255, .05),
-              0 8px 24px rgba(0, 0, 0, .4),
-              0 0 1px rgba(0, 212, 255, .2);
-  --ring: 0 0 0 1px rgba(255, 255, 255, .05);
+  --shadow-1: 0 1px 2px rgba(14, 18, 23, .06);
+  --shadow-2: 0 4px 16px rgba(14, 18, 23, .10);
+  --ring: 0 0 0 1px rgba(14, 18, 23, .06);
   --surface-shadow: var(--shadow-1);
 
   /* --- HUD effects ---------------------------------------------------------- */
-  --edge-glow: 0 0 1px rgba(0, 212, 255, 0.3),
-               inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --border-glow: rgba(0, 212, 255, 0.4);
-  --glass-blur: blur(12px) saturate(150%);
-  --glass-tint: rgba(15, 20, 25, 0.7);
-  --confidence-ring-center: #0f1a16;
+  --edge-glow: 0 1px 3px rgba(14, 18, 23, .10);
+  --border-glow: rgba(11, 122, 62, 0.35);
+  --glass-blur: none;
+  --glass-tint: rgba(255, 255, 255, 0.9);
+  --confidence-ring-center: #ffffff;
 
   --outline-width: 1px;
   --outline-color: var(--border-default);
   --outline-color-hover: var(--border-strong);
   --outline-color-focus: var(--brand-primary);
   --navigation-background: color-mix(in srgb, var(--surface-canvas-bg) 90%, transparent);
-  --scrim: rgba(6, 10, 16, .88);
+  --scrim: rgba(14, 18, 23, .45);
 
   /* --- motion -------------------------------------------------------------- */
   --duration-fast: 150ms;
@@ -213,13 +211,13 @@
   --warn: var(--warning);
   --shadow: var(--surface-shadow);
   --pill-positive-bg: var(--positive);
-  --pill-positive-ink: #0a0e14;
-  --pill-positive-arrow-bg: #0a0e14;
-  --pill-positive-arrow-ink: #10b981;
+  --pill-positive-ink: #ffffff;
+  --pill-positive-arrow-bg: #ffffff;
+  --pill-positive-arrow-ink: #00873a;
   --pill-negative-bg: var(--negative);
-  --pill-negative-ink: #0a0e14;
-  --pill-negative-arrow-bg: #0a0e14;
-  --pill-negative-arrow-ink: #ef4444;
+  --pill-negative-ink: #ffffff;
+  --pill-negative-arrow-bg: #ffffff;
+  --pill-negative-arrow-ink: #d42d12;
 }
 
 /* ============================================================================
@@ -285,6 +283,8 @@
   --edge-glow: 0 0 1px rgba(0, 212, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   --border-glow: rgba(0, 212, 255, 0.4);
   --confidence-ring-center: #0f1a16;
+  --glass-blur: blur(12px) saturate(150%);
+  --glass-tint: rgba(15, 20, 25, 0.7);
 
   --scrim: rgba(6, 10, 16, .88);
   --pill-positive-ink: #0a0e14;
@@ -336,6 +336,8 @@
     --edge-glow: 0 0 1px rgba(0, 212, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     --border-glow: rgba(0, 212, 255, 0.4);
     --confidence-ring-center: #0f1a16;
+    --glass-blur: blur(12px) saturate(150%);
+    --glass-tint: rgba(15, 20, 25, 0.7);
     --scrim: rgba(6, 10, 16, .88);
     --pill-positive-ink: #0a0e14;
     --pill-negative-ink: #0a0e14;

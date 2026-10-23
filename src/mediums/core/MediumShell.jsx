@@ -118,8 +118,12 @@ export default function MediumShell({ mediumId, entrySkip = false }) {
     const meta = getMediumMeta(mediumId)
     document.documentElement.dataset.medium = mediumId
     if (meta) {
-      document.documentElement.style.colorScheme = meta.colorScheme
-      document.getElementById('theme-color-meta')?.setAttribute('content', meta.themeColor)
+      // Accent-accepting mediums (Classic) have a user-switchable light/dark theme, so PreferencesContext
+      // owns their color-scheme and theme-color; the manifest value is only the light default.
+      if (!meta.acceptsAccent) {
+        document.documentElement.style.colorScheme = meta.colorScheme
+        document.getElementById('theme-color-meta')?.setAttribute('content', meta.themeColor)
+      }
     }
   }, [mediumId])
 
