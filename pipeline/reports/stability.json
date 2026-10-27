@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 203,
+  "refreshes_observed": 204,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -23995,6 +23995,30 @@
           ],
           "score_delta": 0.4,
           "confidence_delta": 0.05
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-10-26T21:57:17.795399+00:00",
+      "current_refresh": "advisor-2026-10-26T23:51:24.958248+00:00",
+      "shared_tickers": 891,
+      "rank_turnover": {
+        "top_40": 0.025,
+        "top_100": 0.025
+      },
+      "tickers_with_availability_driven_change": 1,
+      "tickers_with_availability_driven_change_pct": 0.001,
+      "mean_abs_score_delta": 0.16,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "FR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "return_on_equity"
+          ],
+          "score_delta": -2.0,
+          "confidence_delta": 0.02
         }
       ]
     }
