@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-27T21:30:56.116090+00:00",
+  "generated_at": "2026-10-28T00:04:31.697863+00:00",
   "groups": [
     {
       "id": "signal",
@@ -83,7 +83,7 @@
   ],
   "live_sample": {
     "days": 64,
-    "refreshes": 208,
+    "refreshes": 209,
     "first_date": "2026-08-05",
     "last_date": "2026-10-27"
   },
@@ -1401,11 +1401,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 163,
+      "observations": 164,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-10-27T21:23:34.236954+00:00",
+        "as_of": "2026-10-27T23:55:33.434175+00:00",
         "strategy": "production_shadow_equal_weight_top20",
         "benchmark": "SPY",
         "active_sector_weights": {
@@ -1415,8 +1415,8 @@
           "consumer_defensive": -0.0433,
           "energy": 0.116,
           "financial_services": 0.388,
-          "healthcare": -0.0426,
-          "industrials": -0.0254,
+          "healthcare": 0.0074,
+          "industrials": -0.0754,
           "real_estate": -0.017,
           "technology": -0.2045,
           "utilities": -0.0188
@@ -1425,8 +1425,7 @@
           "basic_materials": 0.05,
           "energy": 0.15,
           "financial_services": 0.5,
-          "healthcare": 0.05,
-          "industrials": 0.05,
+          "healthcare": 0.1,
           "technology": 0.2
         },
         "benchmark_sector_weights": {
@@ -1445,25 +1444,6 @@
         "strategy_classified_weight": 1.0,
         "benchmark_classified_weight": 1.0,
         "history": [
-          {
-            "as_of": "2026-09-28T22:30:09.977688+00:00",
-            "active_sector_weights": {
-              "basic_materials": 0.0332,
-              "communication_services": -0.095,
-              "consumer_cyclical": -0.0431,
-              "consumer_defensive": -0.0446,
-              "energy": 0.0652,
-              "financial_services": 0.3794,
-              "healthcare": 0.1072,
-              "industrials": -0.0775,
-              "real_estate": -0.018,
-              "technology": -0.2869,
-              "unclassified": -0.0001,
-              "utilities": -0.0198
-            },
-            "strategy_classified_weight": 1.0,
-            "benchmark_classified_weight": 0.9999
-          },
           {
             "as_of": "2026-09-29T00:20:53.521061+00:00",
             "active_sector_weights": {
@@ -2541,6 +2521,24 @@
             },
             "strategy_classified_weight": 1.0,
             "benchmark_classified_weight": 1.0
+          },
+          {
+            "as_of": "2026-10-27T23:55:33.434175+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0344,
+              "communication_services": -0.0995,
+              "consumer_cyclical": -0.0874,
+              "consumer_defensive": -0.0433,
+              "energy": 0.116,
+              "financial_services": 0.388,
+              "healthcare": 0.0074,
+              "industrials": -0.0754,
+              "real_estate": -0.017,
+              "technology": -0.2045,
+              "utilities": -0.0188
+            },
+            "strategy_classified_weight": 1.0,
+            "benchmark_classified_weight": 1.0
           }
         ]
       },
@@ -2561,11 +2559,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 163,
+      "observations": 164,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-10-27T21:23:34.236954+00:00",
+        "as_of": "2026-10-27T23:55:33.434175+00:00",
         "strategy_classified_weight": 1.0,
         "benchmark_classified_weight": 1.0
       },
@@ -2575,8 +2573,8 @@
       "id": "sector_allocation_effect",
       "group": "construction",
       "label": "Sector allocation effect",
-      "value": 0.852,
-      "display": "+0.85pp vs SPY (2026-08-14 to 2026-10-27)",
+      "value": 1.715,
+      "display": "+1.72pp vs SPY (2026-08-14 to 2026-10-27)",
       "reads": "Sum across sectors of (active weight) times (that sector's real index return minus SPY's), using real sector SPDR ETFs. Positive means the sector tilt itself added return; says nothing about which stocks were picked within each sector.",
       "kill_threshold": null,
       "kill_threshold_value": null,
@@ -2586,16 +2584,16 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 163,
+      "observations": 164,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
         "start": "2026-08-14",
         "end": "2026-10-27",
-        "snapshots": 163,
-        "as_of": "2026-10-27T21:23:34.236954+00:00",
+        "snapshots": 164,
+        "as_of": "2026-10-27T23:55:33.434175+00:00",
         "benchmark_return_pct": -0.67,
-        "total_allocation_effect_pct": 0.852,
+        "total_allocation_effect_pct": 1.715,
         "sectors": {
           "basic_materials": {
             "ticker": "XLB",
@@ -2647,19 +2645,19 @@
           },
           "healthcare": {
             "ticker": "XLV",
-            "strategy_weight": 0.05,
+            "strategy_weight": 0.1,
             "benchmark_weight": 0.0926,
-            "active_weight": -0.0426,
+            "active_weight": 0.0074,
             "sector_return_pct": 7.38,
-            "allocation_effect_pct": -0.343
+            "allocation_effect_pct": 0.06
           },
           "industrials": {
             "ticker": "XLI",
-            "strategy_weight": 0.05,
+            "strategy_weight": 0.0,
             "benchmark_weight": 0.0754,
-            "active_weight": -0.0254,
+            "active_weight": -0.0754,
             "sector_return_pct": -9.89,
-            "allocation_effect_pct": 0.234
+            "allocation_effect_pct": 0.695
           },
           "real_estate": {
             "ticker": "XLRE",
@@ -8907,8 +8905,8 @@
       "id": "live_vs_backtest_ic",
       "group": "monitoring",
       "label": "Rolling 60-day live IC versus backtest",
-      "value": 0.09550820853239121,
-      "display": "0.096",
+      "value": 0.0944472072662762,
+      "display": "0.094",
       "reads": "The decay alarm. Live IC below the backtest confidence interval means the edge is gone or was never there.",
       "kill_threshold": "Live IC below the backtest 95% interval",
       "kill_threshold_value": -0.0091,
@@ -9037,7 +9035,7 @@
           },
           {
             "feature": "ev_to_ebitda",
-            "psi": 0.0087,
+            "psi": 0.0086,
             "baseline_observations": 5073,
             "current_observations": 14726
           },
@@ -9061,7 +9059,7 @@
           },
           {
             "feature": "sales_multiple",
-            "psi": 0.0053,
+            "psi": 0.0054,
             "baseline_observations": 14334,
             "current_observations": 15650
           },
@@ -9852,7 +9850,7 @@
         "status": "ready",
         "value": 0,
         "date": "2026-10-27",
-        "refresh_id": "advisor-2026-10-27T21:23:34.236954+00:00",
+        "refresh_id": "advisor-2026-10-27T23:55:33.434175+00:00",
         "rows": 891,
         "missing_prices": 0,
         "missing_price_tickers": [],
@@ -9865,7 +9863,7 @@
         "universe_churn": {
           "added": [],
           "removed": [],
-          "observed_at": "2026-10-27T21:23:29.100387+00:00"
+          "observed_at": "2026-10-27T23:55:26.929113+00:00"
         },
         "corporate_action_monitoring": {
           "status": "not_available",
@@ -9921,8 +9919,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "ad0340181b0426e981857712b2ffafa72fa620fb",
+    "git_commit_sha": "33244291bda2c559fe64648ba474ff45c9b5d553",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-27T21:30:56.116090+00:00"
+    "generated_at": "2026-10-28T00:04:31.697863+00:00"
   }
 }
