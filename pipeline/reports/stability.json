@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 207,
+  "refreshes_observed": 208,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -24204,6 +24204,141 @@
       "mean_abs_score_delta": 0.25,
       "mean_abs_confidence_delta": 0.0,
       "largest_availability_driven_movers": []
+    },
+    {
+      "previous_refresh": "advisor-2026-10-27T23:55:33.434175+00:00",
+      "current_refresh": "advisor-2026-10-28T19:14:37.107674+00:00",
+      "shared_tickers": 891,
+      "rank_turnover": {
+        "top_40": 0.2,
+        "top_100": 0.2
+      },
+      "tickers_with_availability_driven_change": 13,
+      "tickers_with_availability_driven_change_pct": 0.015,
+      "mean_abs_score_delta": 1.11,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "HLT",
+          "metrics_with_value_change": [
+            "earnings_growth",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "current_ratio",
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 5.4,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "BA",
+          "metrics_with_value_change": [
+            "ev_to_ebitda",
+            "profit_margin"
+          ],
+          "metrics_with_availability_change": [
+            "return_on_equity"
+          ],
+          "score_delta": 1.9,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "RGEN",
+          "metrics_with_value_change": [
+            "profit_margin"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 1.5,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "WHR",
+          "metrics_with_value_change": [
+            "profit_margin",
+            "return_on_equity"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth",
+            "forward_pe",
+            "peg",
+            "price_to_book"
+          ],
+          "score_delta": 1.4,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "AZO",
+          "metrics_with_value_change": [
+            "ev_to_ebitda"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.1,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "ITT",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 0.7,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "ITW",
+          "metrics_with_value_change": [
+            "debt_to_equity",
+            "earnings_growth"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 0.7,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "OZK",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth"
+          ],
+          "score_delta": -0.6,
+          "confidence_delta": -0.07
+        },
+        {
+          "ticker": "MSM",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 0.3,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "EEFT",
+          "metrics_with_value_change": [
+            "debt_to_equity",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -0.2,
+          "confidence_delta": -0.03
+        }
+      ]
     }
   ],
   "peer_group_recomposition": {
