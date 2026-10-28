@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 208,
+  "refreshes_observed": 209,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -24337,6 +24337,30 @@
           ],
           "score_delta": -0.2,
           "confidence_delta": -0.03
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-10-28T19:14:37.107674+00:00",
+      "current_refresh": "advisor-2026-10-28T21:48:39.341193+00:00",
+      "shared_tickers": 891,
+      "rank_turnover": {
+        "top_40": 0.15,
+        "top_100": 0.15
+      },
+      "tickers_with_availability_driven_change": 1,
+      "tickers_with_availability_driven_change_pct": 0.001,
+      "mean_abs_score_delta": 0.32,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -0.8,
+          "confidence_delta": 0.02
         }
       ]
     }
