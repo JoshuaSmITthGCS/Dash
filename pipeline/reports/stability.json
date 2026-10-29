@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 210,
+  "refreshes_observed": 211,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -24377,6 +24377,149 @@
       "mean_abs_score_delta": 0.25,
       "mean_abs_confidence_delta": 0.0,
       "largest_availability_driven_movers": []
+    },
+    {
+      "previous_refresh": "advisor-2026-10-29T00:07:31.402865+00:00",
+      "current_refresh": "advisor-2026-10-29T19:38:47.870944+00:00",
+      "shared_tickers": 891,
+      "rank_turnover": {
+        "top_40": 0.175,
+        "top_100": 0.175
+      },
+      "tickers_with_availability_driven_change": 41,
+      "tickers_with_availability_driven_change_pct": 0.046,
+      "mean_abs_score_delta": 1.07,
+      "mean_abs_confidence_delta": 0.002,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "LSTR",
+          "metrics_with_value_change": [
+            "ev_to_ebitda",
+            "price_to_book",
+            "return_on_equity",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 8.1,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "KEX",
+          "metrics_with_value_change": [
+            "earnings_growth",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "current_ratio",
+            "free_cash_flow_yield",
+            "return_on_equity"
+          ],
+          "score_delta": 7.8,
+          "confidence_delta": -0.06
+        },
+        {
+          "ticker": "ETSY",
+          "metrics_with_value_change": [
+            "free_cash_flow_yield",
+            "profit_margin",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 7.1,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "VFC",
+          "metrics_with_value_change": [
+            "free_cash_flow_yield",
+            "return_on_equity"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 7.1,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "ZWS",
+          "metrics_with_value_change": [
+            "ev_to_ebitda",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 6.8,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "AVTR",
+          "metrics_with_value_change": [
+            "profit_margin",
+            "return_on_equity",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth",
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 5.7,
+          "confidence_delta": -0.05
+        },
+        {
+          "ticker": "RJF",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "days_sales_outstanding_trend",
+            "piotroski_f"
+          ],
+          "score_delta": 5.0,
+          "confidence_delta": -0.06
+        },
+        {
+          "ticker": "BXP",
+          "metrics_with_value_change": [
+            "profit_margin"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 4.8,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "BSX",
+          "metrics_with_value_change": [
+            "earnings_growth",
+            "ev_to_ebitda",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "current_ratio",
+            "free_cash_flow_yield",
+            "return_on_equity"
+          ],
+          "score_delta": 4.5,
+          "confidence_delta": -0.06
+        },
+        {
+          "ticker": "IVZ",
+          "metrics_with_value_change": [
+            "ev_to_ebitda",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth",
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -4.3,
+          "confidence_delta": -0.02
+        }
+      ]
     }
   ],
   "peer_group_recomposition": {
