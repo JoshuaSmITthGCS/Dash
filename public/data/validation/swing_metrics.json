@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-29T19:50:19.643622+00:00",
+  "generated_at": "2026-10-29T21:58:32.669670+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
@@ -269,8 +269,8 @@
     "status": "eligible",
     "composite": {
       "mean_rank_ic": 0.0167,
-      "icir": 0.548,
-      "t_stat": 0.908,
+      "icir": 0.549,
+      "t_stat": 0.91,
       "hit_rate": 0.636,
       "clears_multiple_testing_bar": false
     },
@@ -278,41 +278,41 @@
       "pead_drift": {
         "weight": 0.3,
         "own_eligible_periods": 33,
-        "own_rank_ic": -0.0244,
-        "own_icir": -0.761,
-        "delta_ic": -0.0397,
+        "own_rank_ic": -0.0248,
+        "own_icir": -0.771,
+        "delta_ic": -0.0398,
         "hurts_composite": true
       },
       "analyst_revision": {
         "weight": 0.25,
         "own_eligible_periods": 33,
-        "own_rank_ic": 0.0207,
-        "own_icir": 1.656,
-        "delta_ic": -0.0002,
-        "hurts_composite": true
+        "own_rank_ic": 0.0212,
+        "own_icir": 1.707,
+        "delta_ic": 0.0001,
+        "hurts_composite": false
       },
       "high_volume_premium": {
         "weight": 0.2,
         "own_eligible_periods": 33,
-        "own_rank_ic": 0.0355,
-        "own_icir": 1.588,
+        "own_rank_ic": 0.0354,
+        "own_icir": 1.581,
         "delta_ic": 0.0293,
         "hurts_composite": false
       },
       "high_52w_proximity": {
         "weight": 0.15,
         "own_eligible_periods": 33,
-        "own_rank_ic": 0.0114,
-        "own_icir": 0.528,
-        "delta_ic": 0.0139,
+        "own_rank_ic": 0.0111,
+        "own_icir": 0.511,
+        "delta_ic": 0.0138,
         "hurts_composite": false
       },
       "short_term_reversal": {
         "weight": 0.1,
         "own_eligible_periods": 33,
-        "own_rank_ic": 0.0216,
-        "own_icir": 0.855,
-        "delta_ic": 0.0044,
+        "own_rank_ic": 0.022,
+        "own_icir": 0.87,
+        "delta_ic": 0.0046,
         "hurts_composite": false
       }
     }
@@ -320,8 +320,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "926c56bbdf2eda6cfb6c2af338daaf1fa8675fbd",
+    "git_commit_sha": "3fe15a228eeba82049da76580619005b0d11e2e3",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-10-29T19:50:19.643622+00:00"
+    "generated_at": "2026-10-29T21:58:32.669670+00:00"
   }
 }
