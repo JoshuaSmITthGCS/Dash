@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "strategy": "combined",
+  "as_of": "2026-11-04",
+  "recorded_at": "2026-11-04T00:11:59.322280+00:00",
+  "content_sha256": "8a7aa62f994c92a8ccdddeabcaa6fb5a9a243b6b2443b8e4b298da7d2371e49d",
+  "methodology": {
+    "comparison_mode": "signal_only",
+    "weighting_method": "equal_weight",
+    "execution_lag_sessions": 1,
+    "spread_bps": 10,
+    "slippage_bps": 10,
+    "price_session": "2026-11-03",
+    "source": "scheduled_public_refresh"
+  },
+  "rows": [
+    {
+      "ticker": "WDC",
+      "rank": 1,
+      "signal": -9.0,
+      "price": 347.35,
+      "weight": 1.0
+    }
+  ]
+}

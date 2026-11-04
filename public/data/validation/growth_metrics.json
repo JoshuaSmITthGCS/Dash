@@ -1,66 +1,211 @@
 {
-  "generated_at": "2026-11-03T03:10:02.447603+00:00",
+  "generated_at": "2026-11-04T00:13:22.056588+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before growth_pit_store began recording - this module never reconstructs a growth score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 44,
+  "snapshot_dates_recorded": 45,
   "metrics": {
     "breakout_in_progress": {
       "requires_live_sample": true,
       "horizon_days": 30,
-      "eligible_periods": 23,
+      "eligible_periods": 24,
       "minimum_icir_periods": 24,
-      "status": "accumulating",
-      "mean_rank_ic": null,
-      "icir": null,
-      "t_stat": null,
-      "hit_rate": null,
+      "status": "eligible",
+      "mean_rank_ic": -0.0184,
+      "icir": -0.191,
+      "t_stat": -0.27,
+      "hit_rate": 0.5,
       "clears_multiple_testing_bar": false,
-      "periods": [],
+      "periods": [
+        {
+          "start_date": "2026-09-02",
+          "end_date": "2026-10-02",
+          "sample_size": 40,
+          "rank_ic": -0.029643527204502813
+        },
+        {
+          "start_date": "2026-09-03",
+          "end_date": "2026-10-05",
+          "sample_size": 31,
+          "rank_ic": 0.16532258064516128
+        },
+        {
+          "start_date": "2026-09-04",
+          "end_date": "2026-10-05",
+          "sample_size": 24,
+          "rank_ic": 0.14347826086956522
+        },
+        {
+          "start_date": "2026-09-06",
+          "end_date": "2026-10-06",
+          "sample_size": 37,
+          "rank_ic": 0.1590801327643433
+        },
+        {
+          "start_date": "2026-09-07",
+          "end_date": "2026-10-07",
+          "sample_size": 23,
+          "rank_ic": 0.1966403162055336
+        },
+        {
+          "start_date": "2026-09-08",
+          "end_date": "2026-10-08",
+          "sample_size": 23,
+          "rank_ic": -0.03162055335968379
+        },
+        {
+          "start_date": "2026-09-09",
+          "end_date": "2026-10-09",
+          "sample_size": 21,
+          "rank_ic": 0.23116883116883116
+        },
+        {
+          "start_date": "2026-09-10",
+          "end_date": "2026-10-10",
+          "sample_size": 14,
+          "rank_ic": 0.5472527472527473
+        },
+        {
+          "start_date": "2026-09-11",
+          "end_date": "2026-10-12",
+          "sample_size": 13,
+          "rank_ic": 0.1813186813186813
+        },
+        {
+          "start_date": "2026-09-12",
+          "end_date": "2026-10-12",
+          "sample_size": 16,
+          "rank_ic": 0.2823529411764706
+        },
+        {
+          "start_date": "2026-09-14",
+          "end_date": "2026-10-14",
+          "sample_size": 22,
+          "rank_ic": -0.044607566346696784
+        },
+        {
+          "start_date": "2026-09-15",
+          "end_date": "2026-10-15",
+          "sample_size": 32,
+          "rank_ic": -0.03262463343108504
+        },
+        {
+          "start_date": "2026-09-16",
+          "end_date": "2026-10-16",
+          "sample_size": 24,
+          "rank_ic": 0.29478260869565215
+        },
+        {
+          "start_date": "2026-09-17",
+          "end_date": "2026-10-19",
+          "sample_size": 29,
+          "rank_ic": 0.2019704433497537
+        },
+        {
+          "start_date": "2026-09-22",
+          "end_date": "2026-10-22",
+          "sample_size": 27,
+          "rank_ic": -0.6868131868131868
+        },
+        {
+          "start_date": "2026-09-23",
+          "end_date": "2026-10-23",
+          "sample_size": 29,
+          "rank_ic": -0.5926108374384237
+        },
+        {
+          "start_date": "2026-09-24",
+          "end_date": "2026-10-26",
+          "sample_size": 16,
+          "rank_ic": -0.5911764705882353
+        },
+        {
+          "start_date": "2026-09-25",
+          "end_date": "2026-10-26",
+          "sample_size": 19,
+          "rank_ic": -0.3736842105263158
+        },
+        {
+          "start_date": "2026-09-28",
+          "end_date": "2026-10-28",
+          "sample_size": 21,
+          "rank_ic": -0.2727272727272727
+        },
+        {
+          "start_date": "2026-09-29",
+          "end_date": "2026-10-29",
+          "sample_size": 6,
+          "rank_ic": -0.02857142857142857
+        },
+        {
+          "start_date": "2026-09-30",
+          "end_date": "2026-10-30",
+          "sample_size": 12,
+          "rank_ic": 0.35664335664335667
+        },
+        {
+          "start_date": "2026-10-01",
+          "end_date": "2026-11-03",
+          "sample_size": 17,
+          "rank_ic": 0.19852941176470587
+        },
+        {
+          "start_date": "2026-10-02",
+          "end_date": "2026-11-03",
+          "sample_size": 17,
+          "rank_ic": -0.5
+        },
+        {
+          "start_date": "2026-10-05",
+          "end_date": "2026-11-04",
+          "sample_size": 21,
+          "rank_ic": -0.21558441558441557
+        }
+      ],
       "attribution": {
-        "eligible_periods": 23,
+        "eligible_periods": 24,
         "minimum_icir_periods": 24,
-        "status": "accumulating",
+        "status": "eligible",
         "composite": {
-          "mean_rank_ic": null,
-          "icir": null,
-          "t_stat": null,
-          "hit_rate": null,
+          "mean_rank_ic": -0.0184,
+          "icir": -0.191,
+          "t_stat": -0.27,
+          "hit_rate": 0.5,
           "clears_multiple_testing_bar": false
         },
         "metrics": {
           "burst": {
             "weight": 0.4,
-            "own_eligible_periods": 23,
-            "own_rank_ic": null,
-            "own_icir": null,
-            "delta_ic": null,
-            "hurts_composite": false
+            "own_eligible_periods": 24,
+            "own_rank_ic": -0.0379,
+            "own_icir": -0.385,
+            "delta_ic": -0.0347,
+            "hurts_composite": true
           },
           "accel_score": {
             "weight": 0.3,
-            "own_eligible_periods": 23,
-            "own_rank_ic": null,
-            "own_icir": null,
-            "delta_ic": null,
-            "hurts_composite": false
+            "own_eligible_periods": 24,
+            "own_rank_ic": 0.0025,
+            "own_icir": 0.029,
+            "delta_ic": -0.0032,
+            "hurts_composite": true
           },
           "trend": {
             "weight": 0.2,
-            "own_eligible_periods": 23,
-            "own_rank_ic": null,
-            "own_icir": null,
-            "delta_ic": null,
-            "hurts_composite": false
+            "own_eligible_periods": 24,
+            "own_rank_ic": -0.0889,
+            "own_icir": -1.045,
+            "delta_ic": -0.0308,
+            "hurts_composite": true
           },
           "volume": {
             "weight": 0.1,
-            "own_eligible_periods": 23,
-            "own_rank_ic": null,
-            "own_icir": null,
-            "delta_ic": null,
+            "own_eligible_periods": 24,
+            "own_rank_ic": 0.1637,
+            "own_icir": 2.447,
+            "delta_ic": 0.0278,
             "hurts_composite": false
           }
         }
@@ -129,8 +274,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "517ba8c600cf759c215f5397d7ede5acadc0c1bc",
+    "git_commit_sha": "9c295d9261f95d2681a3a458298817d2c66bcf1e",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-03T03:10:02.447603+00:00"
+    "generated_at": "2026-11-04T00:13:22.056588+00:00"
   }
 }
