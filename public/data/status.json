@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-04T01:20:33.052763+00:00",
+  "generated_at": "2026-11-04T21:55:07.143787+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,14 +29,15 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-11-04T01:17:13.443472+00:00",
+      "checked_at": "2026-11-04T21:49:03.279690+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 944,
-        "scored": 236,
+        "scored": 890,
         "ranked": 40,
         "failed": [
           "ABB",
+          "ALL",
           "ANSS",
           "AVB",
           "BK",
@@ -53,6 +54,7 @@
           "GTLS",
           "HCP",
           "HES",
+          "HIG",
           "HOLX",
           "IGT",
           "INFA",
@@ -63,12 +65,15 @@
           "JNPR",
           "JWN",
           "K",
+          "KVUE",
           "LANC",
           "LBRDK",
           "LEG",
           "MASI",
+          "MCY",
           "MMC",
           "MODG",
+          "NEM",
           "PCH",
           "PNM",
           "PSTG",
@@ -83,6 +88,7 @@
           "TMHC",
           "TPH",
           "TPX",
+          "TSM",
           "VSCO",
           "WBA",
           "WBD",
@@ -94,23 +100,23 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-11-04T01:20:03.929775+00:00",
+      "checked_at": "2026-11-04T21:53:59.802677+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
         "received": 125,
         "rule_6c11_disclosures": 0,
         "cache": {
-          "hits": 250,
-          "misses": 128,
+          "hits": 125,
+          "misses": 253,
           "stale_hits": 1,
-          "hit_rate": 0.66
+          "hit_rate": 0.33
         }
       }
     },
     "etf_comparisons": {
       "status": "degraded",
-      "checked_at": "2026-11-04T01:20:33.052736+00:00",
+      "checked_at": "2026-11-04T21:55:07.143766+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -258,8 +264,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "3fc3ba882d9f3bc3ce6b1b6b9882a76e818adaa8",
+    "git_commit_sha": "f5f09478c40156eddfbabb2871fc6616d55e9bcf",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-04T01:20:33.052763+00:00"
+    "generated_at": "2026-11-04T21:55:07.143787+00:00"
   }
 }
