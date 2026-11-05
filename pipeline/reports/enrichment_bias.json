@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-05T02:04:17.180597+00:00",
+  "generated_at": "2026-11-05T22:34:56.495522+00:00",
   "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
   "coverage_by_collection": {
     "research": {
@@ -15,7 +15,7 @@
           "total": 40
         },
         "financial_health": {
-          "scored": 32,
+          "scored": 33,
           "total": 40
         },
         "growth": {
@@ -37,7 +37,7 @@
       "total_rows": 850,
       "categories": {
         "accounting_quality": {
-          "scored": 847,
+          "scored": 846,
           "total": 850
         },
         "capital_allocation": {
@@ -45,7 +45,7 @@
           "total": 850
         },
         "financial_health": {
-          "scored": 811,
+          "scored": 810,
           "total": 850
         },
         "growth": {
@@ -64,27 +64,27 @@
     }
   },
   "enriched_vs_non_enriched": {
-    "enriched_count": 887,
-    "non_enriched_count": 3,
+    "enriched_count": 886,
+    "non_enriched_count": 4,
     "score": {
       "enriched": {
-        "n": 887,
-        "mean": 63.23,
+        "n": 886,
+        "mean": 63.36,
         "median": 64.4,
-        "stdev": 11.58
+        "stdev": 11.87
       },
       "non_enriched": {
-        "n": 3,
-        "mean": 62.2,
-        "median": 66.9,
-        "stdev": 7.37
+        "n": 4,
+        "mean": 64.3,
+        "median": 65.25,
+        "stdev": 8.15
       }
     },
     "sector_distribution": {
       "enriched": {
         "Technology": 154,
-        "Industrials": 147,
-        "Financial Services": 124,
+        "Industrials": 148,
+        "Financial Services": 123,
         "Consumer Cyclical": 112,
         "Healthcare": 101,
         "Consumer Defensive": 55,
@@ -93,10 +93,11 @@
         "Basic Materials": 39,
         "Utilities": 36,
         "Communication Services": 25,
-        "Unknown": 2
+        "Unknown": 1
       },
       "non_enriched": {
         "ETF": 2,
+        "Financial Services": 1,
         "Unknown": 1
       }
     },

@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 223,
+  "refreshes_observed": 224,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -25146,6 +25146,143 @@
           ],
           "score_delta": -0.9,
           "confidence_delta": 0.02
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-11-05T01:56:08.598799+00:00",
+      "current_refresh": "advisor-2026-11-05T22:24:11.872473+00:00",
+      "shared_tickers": 890,
+      "rank_turnover": {
+        "top_40": 0.2,
+        "top_100": 0.2
+      },
+      "tickers_with_availability_driven_change": 42,
+      "tickers_with_availability_driven_change_pct": 0.047,
+      "mean_abs_score_delta": 1.29,
+      "mean_abs_confidence_delta": 0.002,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "PARA",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "forward_pe"
+          ],
+          "score_delta": -14.7,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "UWMC",
+          "metrics_with_value_change": [
+            "current_ratio",
+            "profit_margin"
+          ],
+          "metrics_with_availability_change": [
+            "forward_pe",
+            "free_cash_flow_yield",
+            "price_to_book"
+          ],
+          "score_delta": 7.8,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [
+            "profit_margin"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth",
+            "price_to_tangible_book"
+          ],
+          "score_delta": -6.8,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "YOU",
+          "metrics_with_value_change": [
+            "current_ratio",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "free_cash_flow_yield",
+            "sales_multiple"
+          ],
+          "metrics_with_availability_change": [
+            "debt_to_equity"
+          ],
+          "score_delta": -6.7,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "COR",
+          "metrics_with_value_change": [
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "forward_pe",
+            "free_cash_flow_yield",
+            "interest_coverage"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 5.2,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "ETN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -4.5,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "IVZ",
+          "metrics_with_value_change": [
+            "ev_to_ebitda"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 4.5,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "TRMB",
+          "metrics_with_value_change": [
+            "ev_to_ebit",
+            "ev_to_fcf",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 4.3,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "CRBG",
+          "metrics_with_value_change": [
+            "debt_to_equity"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 4.2,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "CRL",
+          "metrics_with_value_change": [
+            "debt_to_equity",
+            "forward_pe",
+            "profit_margin"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 3.6,
+          "confidence_delta": 0.01
         }
       ]
     }
