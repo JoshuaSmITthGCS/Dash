@@ -1,72 +1,72 @@
 {
-  "generated_at": "2026-11-04T23:31:28.414757+00:00",
+  "generated_at": "2026-11-05T02:07:48.459616+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before momentum_pit_store began recording - this module never reconstructs a composite or factor score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 45,
+  "snapshot_dates_recorded": 46,
   "horizon_days": 30,
   "composite": {
-    "eligible_periods": 24,
+    "eligible_periods": 25,
     "minimum_icir_periods": 24,
     "status": "eligible",
-    "mean_rank_ic": 0.0223,
-    "icir": 0.332,
-    "t_stat": 0.47,
-    "hit_rate": 0.5,
+    "mean_rank_ic": 0.0114,
+    "icir": 0.168,
+    "t_stat": 0.243,
+    "hit_rate": 0.48,
     "clears_multiple_testing_bar": false
   },
   "attribution": {
-    "eligible_periods": 24,
+    "eligible_periods": 25,
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": 0.0199,
-      "icir": 0.298,
-      "t_stat": 0.421,
-      "hit_rate": 0.5,
+      "mean_rank_ic": 0.0089,
+      "icir": 0.132,
+      "t_stat": 0.191,
+      "hit_rate": 0.48,
       "clears_multiple_testing_bar": false
     },
     "metrics": {
       "momentum_12_1": {
         "weight": 0.4,
-        "own_eligible_periods": 24,
-        "own_rank_ic": 0.015,
-        "own_icir": 0.21,
-        "delta_ic": -0.0142,
+        "own_eligible_periods": 25,
+        "own_rank_ic": 0.0034,
+        "own_icir": 0.048,
+        "delta_ic": -0.0149,
         "hurts_composite": true
       },
       "momentum_12_7": {
         "weight": 0.2,
-        "own_eligible_periods": 24,
-        "own_rank_ic": -0.0621,
-        "own_icir": -1.523,
-        "delta_ic": -0.0219,
+        "own_eligible_periods": 25,
+        "own_rank_ic": -0.0617,
+        "own_icir": -1.545,
+        "delta_ic": -0.0207,
         "hurts_composite": true
       },
       "momentum_6_1": {
         "weight": 0.15,
-        "own_eligible_periods": 24,
-        "own_rank_ic": 0.0322,
-        "own_icir": 0.579,
-        "delta_ic": 0.01,
+        "own_eligible_periods": 25,
+        "own_rank_ic": 0.0241,
+        "own_icir": 0.434,
+        "delta_ic": 0.0096,
         "hurts_composite": false
       },
       "high_52w_proximity": {
         "weight": 0.15,
-        "own_eligible_periods": 24,
-        "own_rank_ic": 0.0943,
-        "own_icir": 2.24,
-        "delta_ic": 0.0195,
+        "own_eligible_periods": 25,
+        "own_rank_ic": 0.085,
+        "own_icir": 1.961,
+        "delta_ic": 0.0186,
         "hurts_composite": false
       },
       "industry_relative_momentum": {
         "weight": 0.1,
-        "own_eligible_periods": 24,
-        "own_rank_ic": 0.1055,
-        "own_icir": 1.285,
-        "delta_ic": -0.0005,
+        "own_eligible_periods": 25,
+        "own_rank_ic": 0.0899,
+        "own_icir": 1.078,
+        "delta_ic": -0.0006,
         "hurts_composite": true
       }
     }
@@ -74,8 +74,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "bf774dcad82839c25c7e8bbd70feff85df4e9647",
+    "git_commit_sha": "a4b1b05dcd921047f0713d566955b531a25c667f",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-04T23:31:28.414757+00:00"
+    "generated_at": "2026-11-05T02:07:48.459616+00:00"
   }
 }
