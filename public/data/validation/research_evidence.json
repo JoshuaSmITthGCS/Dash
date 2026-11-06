@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-05T22:24:11.872473+00:00",
+  "generated_at": "2026-11-06T01:53:28.816596+00:00",
   "model_version": "3.2.0",
-  "code_commit_hash": "b12edbfafda9aeb01a5b4f57855e140653fd8568",
+  "code_commit_hash": "2a7ed18d9e797e2ef05c6f776211d35a0baddc82",
   "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
   "headline": {
     "validation_status": "no calibration history yet",
@@ -879,7 +879,7 @@
             "total": 40
           },
           "financial_health": {
-            "scored": 33,
+            "scored": 32,
             "total": 40
           },
           "growth": {
@@ -909,7 +909,7 @@
             "total": 850
           },
           "financial_health": {
-            "scored": 810,
+            "scored": 811,
             "total": 850
           },
           "growth": {
@@ -933,15 +933,15 @@
       "score": {
         "enriched": {
           "n": 886,
-          "mean": 63.36,
-          "median": 64.4,
-          "stdev": 11.87
+          "mean": 63.21,
+          "median": 64.5,
+          "stdev": 11.63
         },
         "non_enriched": {
           "n": 4,
-          "mean": 64.3,
-          "median": 65.25,
-          "stdev": 8.15
+          "mean": 64.33,
+          "median": 65.3,
+          "stdev": 8.16
         }
       },
       "sector_distribution": {
@@ -967,7 +967,7 @@
       },
       "market_cap_comparison": {
         "status": "not_measurable",
-        "rows_with_market_cap": 40,
+        "rows_with_market_cap": 39,
         "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
       },
       "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."
@@ -977,8 +977,8 @@
   },
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "b12edbfafda9aeb01a5b4f57855e140653fd8568",
+    "git_commit_sha": "2a7ed18d9e797e2ef05c6f776211d35a0baddc82",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-05T22:24:11.872473+00:00"
+    "generated_at": "2026-11-06T01:53:28.816596+00:00"
   }
 }

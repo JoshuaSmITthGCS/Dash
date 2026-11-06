@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 224,
+  "refreshes_observed": 225,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -25283,6 +25283,30 @@
           ],
           "score_delta": 3.6,
           "confidence_delta": 0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-11-05T22:24:11.872473+00:00",
+      "current_refresh": "advisor-2026-11-06T01:53:28.816596+00:00",
+      "shared_tickers": 890,
+      "rank_turnover": {
+        "top_40": 0.2,
+        "top_100": 0.2
+      },
+      "tickers_with_availability_driven_change": 1,
+      "tickers_with_availability_driven_change_pct": 0.001,
+      "mean_abs_score_delta": 0.42,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "NBIS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "ev_to_ebit"
+          ],
+          "score_delta": -0.7,
+          "confidence_delta": 0.03
         }
       ]
     }

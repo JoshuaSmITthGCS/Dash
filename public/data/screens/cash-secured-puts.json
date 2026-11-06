@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "model_version": "cash-secured-put-v1.0.0",
   "config_version": "screens-v1.0.0",
-  "generated_at": "2026-11-05T22:26:55.411209+00:00",
+  "generated_at": "2026-11-06T01:54:26.516316+00:00",
   "status": "success",
   "window": {
     "min_days_to_expiration": 1,
@@ -13,19 +13,117 @@
   "results": [
     {
       "rank": 1,
-      "ticker": "TSM",
+      "ticker": "AMD",
       "eligibility": true,
       "sector": "Technology",
       "peer_group": "Semiconductor",
       "percentile": 100.0,
-      "score": 0.7194,
+      "score": 0.4372,
+      "structural_score": 62.7,
+      "data_coverage": 0.9,
+      "price": 417.6000061035156,
+      "trend_20d": -0.3272,
+      "realized_volatility_20d": 0.895,
+      "expiration": "2026-11-13",
+      "days_to_expiration": 7,
+      "capital_required": 40000.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 400.0,
+          "bid": 21.4,
+          "ask": 22.35,
+          "mid": 21.875,
+          "spread_pct": 0.0434,
+          "implied_volatility": 1.01172369140625,
+          "open_interest": 649,
+          "delta": -0.3529
+        }
+      ],
+      "metrics": {
+        "premium": 21.875,
+        "collateral": 40000.0,
+        "effective_cost_basis": 378.125,
+        "annualized_yield": 2.8516,
+        "expected_value_pct": 0.072,
+        "probability_otm": 0.5938,
+        "probability_assigned": 0.4062,
+        "suggested_position_pct": 0.02,
+        "news_sentiment": -0.0517,
+        "research_confidence": 11.43
+      },
+      "reason_codes": [],
+      "track_record": {
+        "date_predicted": "2026-11-06",
+        "pnl_dollars": 926.9,
+        "pnl_pct_of_capital": 2.32
+      }
+    },
+    {
+      "rank": 2,
+      "ticker": "AAPL",
+      "eligibility": true,
+      "sector": "Technology",
+      "peer_group": "Technology",
+      "percentile": 90.91,
+      "score": 0.3516,
+      "structural_score": 68.0,
+      "data_coverage": 0.89,
+      "price": 345.7349853515625,
+      "trend_20d": 0.0156,
+      "realized_volatility_20d": 0.2554,
+      "expiration": "2026-11-13",
+      "days_to_expiration": 7,
+      "capital_required": 31000.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 310.0,
+          "bid": 0.6,
+          "ask": 0.6,
+          "mid": 0.6,
+          "spread_pct": 0.0,
+          "implied_volatility": 0.459966337890625,
+          "open_interest": 2180,
+          "delta": -0.0405
+        }
+      ],
+      "metrics": {
+        "premium": 0.6,
+        "collateral": 31000.0,
+        "effective_cost_basis": 309.4,
+        "annualized_yield": 0.1009,
+        "expected_value_pct": 0.0073,
+        "probability_otm": 0.9536,
+        "probability_assigned": 0.0464,
+        "suggested_position_pct": 0.02,
+        "news_sentiment": null,
+        "research_confidence": 16.02
+      },
+      "reason_codes": [],
+      "track_record": {
+        "date_predicted": "2026-11-04",
+        "pnl_dollars": 23.44,
+        "pnl_pct_of_capital": 0.07
+      }
+    },
+    {
+      "rank": 3,
+      "ticker": "TSM",
+      "eligibility": true,
+      "sector": "Technology",
+      "peer_group": "Semiconductor",
+      "percentile": 81.82,
+      "score": 0.2295,
       "structural_score": 95.4,
       "data_coverage": 0.89,
       "price": 358.80999755859375,
       "trend_20d": -0.2166,
       "realized_volatility_20d": 0.4955,
       "expiration": "2026-11-13",
-      "days_to_expiration": 8,
+      "days_to_expiration": 7,
       "capital_required": 31000.0,
       "legs": [
         {
@@ -36,19 +134,19 @@
           "ask": 2.36,
           "mid": 2.315,
           "spread_pct": 0.0389,
-          "implied_volatility": 0.7200955725097657,
+          "implied_volatility": 0.7637963073730469,
           "open_interest": 283,
-          "delta": -0.0771
+          "delta": -0.0756
         }
       ],
       "metrics": {
         "premium": 2.315,
         "collateral": 31000.0,
         "effective_cost_basis": 307.685,
-        "annualized_yield": 0.3407,
-        "expected_value_pct": 0.0221,
-        "probability_otm": 0.9063,
-        "probability_assigned": 0.0937,
+        "annualized_yield": 0.3894,
+        "expected_value_pct": 0.0218,
+        "probability_otm": 0.9082,
+        "probability_assigned": 0.0918,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
         "research_confidence": 40.406
@@ -56,123 +154,172 @@
       "reason_codes": [],
       "track_record": {
         "date_predicted": "2026-11-04",
-        "pnl_dollars": -751.79,
-        "pnl_pct_of_capital": -2.12
-      }
-    },
-    {
-      "rank": 2,
-      "ticker": "BAC",
-      "eligibility": true,
-      "sector": "Financial Services",
-      "peer_group": "Large banks",
-      "percentile": 80.0,
-      "score": 0.1663,
-      "structural_score": 71.9,
-      "data_coverage": 0.7,
-      "price": 49.970001220703125,
-      "trend_20d": -0.0679,
-      "realized_volatility_20d": 0.2877,
-      "expiration": "2026-11-13",
-      "days_to_expiration": 8,
-      "capital_required": 4850.0,
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "put",
-          "strike": 48.5,
-          "bid": 0.44,
-          "ask": 0.53,
-          "mid": 0.485,
-          "spread_pct": 0.1856,
-          "implied_volatility": 0.33838552246093745,
-          "open_interest": 369,
-          "delta": -0.2673
-        }
-      ],
-      "metrics": {
-        "premium": 0.485,
-        "collateral": 4850.0,
-        "effective_cost_basis": 48.015,
-        "annualized_yield": 0.4562,
-        "expected_value_pct": 0.018,
-        "probability_otm": 0.716,
-        "probability_assigned": 0.284,
-        "suggested_position_pct": 0.02,
-        "news_sentiment": null,
-        "research_confidence": 15.33
-      },
-      "reason_codes": [],
-      "track_record": {
-        "date_predicted": "2026-11-03",
-        "pnl_dollars": 27.6,
-        "pnl_pct_of_capital": 0.57
-      }
-    },
-    {
-      "rank": 3,
-      "ticker": "AMZN",
-      "eligibility": true,
-      "sector": "Consumer Cyclical",
-      "peer_group": "Ecommerce Retail",
-      "percentile": 60.0,
-      "score": 0.1567,
-      "structural_score": 58.7,
-      "data_coverage": 0.87,
-      "price": 259.0899963378906,
-      "trend_20d": 0.0198,
-      "realized_volatility_20d": 0.4308,
-      "expiration": "2026-11-11",
-      "days_to_expiration": 6,
-      "capital_required": 23000.0,
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "put",
-          "strike": 230.0,
-          "bid": 0.46,
-          "ask": 0.53,
-          "mid": 0.495,
-          "spread_pct": 0.1414,
-          "implied_volatility": 0.5717816259765626,
-          "open_interest": 874,
-          "delta": -0.0483
-        }
-      ],
-      "metrics": {
-        "premium": 0.495,
-        "collateral": 23000.0,
-        "effective_cost_basis": 229.505,
-        "annualized_yield": 0.1309,
-        "expected_value_pct": 0.0091,
-        "probability_otm": 0.9438,
-        "probability_assigned": 0.0562,
-        "suggested_position_pct": 0.02,
-        "news_sentiment": null,
-        "research_confidence": 7.569
-      },
-      "reason_codes": [],
-      "track_record": {
-        "date_predicted": "2026-11-04",
-        "pnl_dollars": -79.71,
-        "pnl_pct_of_capital": -0.33
+        "pnl_dollars": -685.13,
+        "pnl_pct_of_capital": -1.93
       }
     },
     {
       "rank": 4,
+      "ticker": "VTRS",
+      "eligibility": true,
+      "sector": "Healthcare",
+      "peer_group": "Other Pre Profit",
+      "percentile": 72.73,
+      "score": 0.0951,
+      "structural_score": 51.2,
+      "data_coverage": 0.82,
+      "price": 19.09000015258789,
+      "trend_20d": 0.0946,
+      "realized_volatility_20d": 0.296,
+      "expiration": "2026-11-20",
+      "days_to_expiration": 14,
+      "capital_required": 1800.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 18.0,
+          "bid": 0.2,
+          "ask": 0.3,
+          "mid": 0.25,
+          "spread_pct": 0.4,
+          "implied_volatility": 0.45313046875,
+          "open_interest": 3320,
+          "delta": -0.2398
+        }
+      ],
+      "metrics": {
+        "premium": 0.25,
+        "collateral": 1800.0,
+        "effective_cost_basis": 17.75,
+        "annualized_yield": 0.3621,
+        "expected_value_pct": 0.0284,
+        "probability_otm": 0.7318,
+        "probability_assigned": 0.2682,
+        "suggested_position_pct": 0.02,
+        "news_sentiment": null,
+        "research_confidence": 0.984
+      },
+      "reason_codes": [],
+      "track_record": {
+        "date_predicted": "2026-11-06",
+        "pnl_dollars": 16.29,
+        "pnl_pct_of_capital": 0.9
+      }
+    },
+    {
+      "rank": 5,
+      "ticker": "SYF",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Consumer lenders",
+      "percentile": 54.55,
+      "score": 0.0803,
+      "structural_score": 81.2,
+      "data_coverage": 0.69,
+      "price": 73.76000213623047,
+      "trend_20d": 0.0005,
+      "realized_volatility_20d": 0.2616,
+      "expiration": "2026-11-20",
+      "days_to_expiration": 14,
+      "capital_required": 6500.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 65.0,
+          "bid": 0.2,
+          "ask": 0.3,
+          "mid": 0.25,
+          "spread_pct": 0.4,
+          "implied_volatility": 0.48828636718750007,
+          "open_interest": 464,
+          "delta": -0.0854
+        }
+      ],
+      "metrics": {
+        "premium": 0.25,
+        "collateral": 6500.0,
+        "effective_cost_basis": 64.75,
+        "annualized_yield": 0.1003,
+        "expected_value_pct": 0.017,
+        "probability_otm": 0.8987,
+        "probability_assigned": 0.1013,
+        "suggested_position_pct": 0.02,
+        "news_sentiment": null,
+        "research_confidence": 21.528
+      },
+      "reason_codes": [],
+      "track_record": {
+        "date_predicted": "2026-11-06",
+        "pnl_dollars": 24.21,
+        "pnl_pct_of_capital": 0.37
+      }
+    },
+    {
+      "rank": 6,
+      "ticker": "SYF",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Consumer lenders",
+      "percentile": 63.64,
+      "score": 0.0803,
+      "structural_score": 81.2,
+      "data_coverage": 0.69,
+      "price": 73.76000213623047,
+      "trend_20d": 0.0005,
+      "realized_volatility_20d": 0.2616,
+      "expiration": "2026-11-20",
+      "days_to_expiration": 14,
+      "capital_required": 6500.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 65.0,
+          "bid": 0.2,
+          "ask": 0.3,
+          "mid": 0.25,
+          "spread_pct": 0.4,
+          "implied_volatility": 0.48828636718750007,
+          "open_interest": 464,
+          "delta": -0.0854
+        }
+      ],
+      "metrics": {
+        "premium": 0.25,
+        "collateral": 6500.0,
+        "effective_cost_basis": 64.75,
+        "annualized_yield": 0.1003,
+        "expected_value_pct": 0.017,
+        "probability_otm": 0.8987,
+        "probability_assigned": 0.1013,
+        "suggested_position_pct": 0.02,
+        "news_sentiment": null,
+        "research_confidence": 21.528
+      },
+      "reason_codes": [],
+      "track_record": {
+        "date_predicted": "2026-11-06",
+        "pnl_dollars": 24.21,
+        "pnl_pct_of_capital": 0.37
+      }
+    },
+    {
+      "rank": 7,
       "ticker": "NBIS",
       "eligibility": true,
       "sector": "Communication Services",
       "peer_group": "Interactive Media Platform",
-      "percentile": 40.0,
-      "score": -0.101,
-      "structural_score": 39.8,
-      "data_coverage": 0.76,
+      "percentile": 45.45,
+      "score": 0.0778,
+      "structural_score": 39.1,
+      "data_coverage": 0.79,
       "price": 120.29499816894531,
       "trend_20d": -0.4525,
       "realized_volatility_20d": 1.1258,
       "expiration": "2026-11-13",
-      "days_to_expiration": 8,
+      "days_to_expiration": 7,
       "capital_required": 11000.0,
       "legs": [
         {
@@ -183,94 +330,241 @@
           "ask": 9.15,
           "mid": 8.95,
           "spread_pct": 0.0447,
-          "implied_volatility": 1.8798834130859374,
+          "implied_volatility": 1.9938965148925782,
           "open_interest": 396,
-          "delta": -0.3225
+          "delta": -0.322
         }
       ],
       "metrics": {
         "premium": 8.95,
         "collateral": 11000.0,
         "effective_cost_basis": 101.05,
-        "annualized_yield": 3.7122,
-        "expected_value_pct": 0.1204,
-        "probability_otm": 0.5723,
-        "probability_assigned": 0.4277,
+        "annualized_yield": 4.2425,
+        "expected_value_pct": 0.1203,
+        "probability_otm": 0.5738,
+        "probability_assigned": 0.4262,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
-        "research_confidence": -7.752
+        "research_confidence": -8.611
       },
       "reason_codes": [],
       "track_record": {
         "date_predicted": "2026-10-30",
-        "pnl_dollars": -1978.16,
+        "pnl_dollars": -1978.0,
         "pnl_pct_of_capital": -13.64
       }
     },
     {
-      "rank": 5,
-      "ticker": "AAPL",
+      "rank": 8,
+      "ticker": "META",
       "eligibility": true,
-      "sector": "Technology",
-      "peer_group": "Technology",
-      "percentile": 20.0,
-      "score": -0.433,
-      "structural_score": 68.2,
-      "data_coverage": 0.89,
-      "price": 345.7349853515625,
-      "trend_20d": 0.0156,
-      "realized_volatility_20d": 0.2554,
-      "expiration": "2026-11-11",
-      "days_to_expiration": 6,
-      "capital_required": 30000.0,
+      "sector": "Communication Services",
+      "peer_group": "Interactive Media Platform",
+      "percentile": 36.36,
+      "score": 0.0312,
+      "structural_score": 73.7,
+      "data_coverage": 0.88,
+      "price": 606.2249755859375,
+      "trend_20d": -0.1591,
+      "realized_volatility_20d": 0.4036,
+      "expiration": "2026-11-13",
+      "days_to_expiration": 7,
+      "capital_required": 50000.0,
       "legs": [
         {
           "action": "sell",
           "option_type": "put",
-          "strike": 300.0,
-          "bid": 0.12,
-          "ask": 0.21,
-          "mid": 0.165,
-          "spread_pct": 0.5455,
-          "implied_volatility": 0.5048877636718749,
-          "open_interest": 153,
-          "delta": -0.0131
+          "strike": 500.0,
+          "bid": 0.68,
+          "ask": 0.75,
+          "mid": 0.715,
+          "spread_pct": 0.0979,
+          "implied_volatility": 0.6967803759765626,
+          "open_interest": 200,
+          "delta": -0.0204
         }
       ],
       "metrics": {
-        "premium": 0.165,
-        "collateral": 30000.0,
-        "effective_cost_basis": 299.835,
-        "annualized_yield": 0.0335,
-        "expected_value_pct": 0.0028,
-        "probability_otm": 0.9846,
-        "probability_assigned": 0.0154,
+        "premium": 0.715,
+        "collateral": 50000.0,
+        "effective_cost_basis": 499.285,
+        "annualized_yield": 0.0746,
+        "expected_value_pct": 0.0068,
+        "probability_otm": 0.9743,
+        "probability_assigned": 0.0257,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
-        "research_confidence": 16.198
+        "research_confidence": 20.856
+      },
+      "reason_codes": [],
+      "track_record": {
+        "date_predicted": "2026-11-06",
+        "pnl_dollars": 71.28,
+        "pnl_pct_of_capital": 0.14
+      }
+    },
+    {
+      "rank": 9,
+      "ticker": "AMZN",
+      "eligibility": true,
+      "sector": "Consumer Cyclical",
+      "peer_group": "Ecommerce Retail",
+      "percentile": 27.27,
+      "score": -0.0865,
+      "structural_score": 61.8,
+      "data_coverage": 0.87,
+      "price": 259.0899963378906,
+      "trend_20d": 0.0198,
+      "realized_volatility_20d": 0.4308,
+      "expiration": "2026-11-13",
+      "days_to_expiration": 7,
+      "capital_required": 19500.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 195.0,
+          "bid": 0.05,
+          "ask": 0.08,
+          "mid": 0.065,
+          "spread_pct": 0.4615,
+          "implied_volatility": 0.8007832421875,
+          "open_interest": 553,
+          "delta": -0.0044
+        }
+      ],
+      "metrics": {
+        "premium": 0.065,
+        "collateral": 19500.0,
+        "effective_cost_basis": 194.935,
+        "annualized_yield": 0.0174,
+        "expected_value_pct": 0.0023,
+        "probability_otm": 0.9939,
+        "probability_assigned": 0.0061,
+        "suggested_position_pct": 0.02,
+        "news_sentiment": null,
+        "research_confidence": 10.266
       },
       "reason_codes": [],
       "track_record": {
         "date_predicted": "2026-11-04",
-        "pnl_dollars": 18.01,
-        "pnl_pct_of_capital": 0.06
+        "pnl_dollars": -52.11,
+        "pnl_pct_of_capital": -0.21
       }
     },
     {
-      "rank": 6,
+      "rank": 10,
+      "ticker": "BAC",
+      "eligibility": true,
+      "sector": "Financial Services",
+      "peer_group": "Large banks",
+      "percentile": 18.18,
+      "score": -0.263,
+      "structural_score": 68.9,
+      "data_coverage": 0.7,
+      "price": 49.970001220703125,
+      "trend_20d": -0.0679,
+      "realized_volatility_20d": 0.2877,
+      "expiration": "2026-11-13",
+      "days_to_expiration": 7,
+      "capital_required": 4850.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 48.5,
+          "bid": 0.44,
+          "ask": 0.53,
+          "mid": 0.485,
+          "spread_pct": 0.1856,
+          "implied_volatility": 0.3588931298828125,
+          "open_interest": 369,
+          "delta": -0.2658
+        }
+      ],
+      "metrics": {
+        "premium": 0.485,
+        "collateral": 4850.0,
+        "effective_cost_basis": 48.015,
+        "annualized_yield": 0.5214,
+        "expected_value_pct": 0.018,
+        "probability_otm": 0.7177,
+        "probability_assigned": 0.2823,
+        "suggested_position_pct": 0.02,
+        "news_sentiment": null,
+        "research_confidence": 13.23
+      },
+      "reason_codes": [],
+      "track_record": {
+        "date_predicted": "2026-11-03",
+        "pnl_dollars": 31.75,
+        "pnl_pct_of_capital": 0.65
+      }
+    },
+    {
+      "rank": 11,
+      "ticker": "MSFT",
+      "eligibility": true,
+      "sector": "Technology",
+      "peer_group": "Saas",
+      "percentile": 9.09,
+      "score": -0.3974,
+      "structural_score": 65.7,
+      "data_coverage": 0.89,
+      "price": 536.4199829101562,
+      "trend_20d": 0.0264,
+      "realized_volatility_20d": 0.357,
+      "expiration": "2026-11-13",
+      "days_to_expiration": 7,
+      "capital_required": 40000.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 400.0,
+          "bid": 0.01,
+          "ask": 0.09,
+          "mid": 0.05,
+          "spread_pct": 1.6,
+          "implied_volatility": 0.726565234375,
+          "open_interest": 1346,
+          "delta": -0.0015
+        }
+      ],
+      "metrics": {
+        "premium": 0.05,
+        "collateral": 40000.0,
+        "effective_cost_basis": 399.95,
+        "annualized_yield": 0.0065,
+        "expected_value_pct": 0.0008,
+        "probability_otm": 0.9979,
+        "probability_assigned": 0.0021,
+        "suggested_position_pct": 0.02,
+        "news_sentiment": null,
+        "research_confidence": 13.973
+      },
+      "reason_codes": [],
+      "track_record": {
+        "date_predicted": null,
+        "pnl_dollars": null,
+        "pnl_pct_of_capital": null
+      }
+    },
+    {
+      "rank": 12,
       "ticker": "CMG",
       "eligibility": true,
       "sector": "Consumer Cyclical",
       "peer_group": "Restaurants",
       "percentile": 0.0,
-      "score": -0.5084,
-      "structural_score": 63.8,
+      "score": -0.6361,
+      "structural_score": 66.8,
       "data_coverage": 0.89,
       "price": 34.935001373291016,
       "trend_20d": 0.069,
       "realized_volatility_20d": 0.5181,
       "expiration": "2026-11-13",
-      "days_to_expiration": 8,
+      "days_to_expiration": 7,
       "capital_required": 3200.0,
       "legs": [
         {
@@ -281,35 +575,35 @@
           "ask": 0.08,
           "mid": 0.045,
           "spread_pct": 1.5556,
-          "implied_volatility": 0.44727115234375,
+          "implied_volatility": 0.47461462890625,
           "open_interest": 391,
-          "delta": -0.0872
+          "delta": -0.0857
         }
       ],
       "metrics": {
         "premium": 0.045,
         "collateral": 3200.0,
         "effective_cost_basis": 31.955,
-        "annualized_yield": 0.0642,
-        "expected_value_pct": 0.0097,
-        "probability_otm": 0.9018,
-        "probability_assigned": 0.0982,
+        "annualized_yield": 0.0733,
+        "expected_value_pct": 0.0095,
+        "probability_otm": 0.9036,
+        "probability_assigned": 0.0964,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
-        "research_confidence": 12.282
+        "research_confidence": 14.952
       },
       "reason_codes": [],
       "track_record": {
-        "date_predicted": "2026-11-05",
-        "pnl_dollars": -11.61,
-        "pnl_pct_of_capital": -0.36
+        "date_predicted": null,
+        "pnl_dollars": null,
+        "pnl_pct_of_capital": null
       }
     }
   ],
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "b12edbfafda9aeb01a5b4f57855e140653fd8568",
+    "git_commit_sha": "2a7ed18d9e797e2ef05c6f776211d35a0baddc82",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-05T22:26:55.411209+00:00"
+    "generated_at": "2026-11-06T01:54:26.516316+00:00"
   }
 }
