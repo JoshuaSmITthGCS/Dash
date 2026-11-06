@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 225,
+  "refreshes_observed": 226,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -25307,6 +25307,145 @@
           ],
           "score_delta": -0.7,
           "confidence_delta": 0.03
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-11-06T01:53:28.816596+00:00",
+      "current_refresh": "advisor-2026-11-06T21:39:37.298813+00:00",
+      "shared_tickers": 890,
+      "rank_turnover": {
+        "top_40": 0.25,
+        "top_100": 0.25
+      },
+      "tickers_with_availability_driven_change": 61,
+      "tickers_with_availability_driven_change_pct": 0.069,
+      "mean_abs_score_delta": 1.13,
+      "mean_abs_confidence_delta": 0.002,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "APA",
+          "metrics_with_value_change": [
+            "profit_margin",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 8.2,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "LYFT",
+          "metrics_with_value_change": [
+            "forward_pe",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": -5.7,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "SF",
+          "metrics_with_value_change": [
+            "debt_to_equity"
+          ],
+          "metrics_with_availability_change": [
+            "return_on_equity"
+          ],
+          "score_delta": 5.4,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "WYNN",
+          "metrics_with_value_change": [
+            "earnings_growth",
+            "profit_margin",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "current_ratio",
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -5.4,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "CE",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 4.7,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "VOYA",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 4.7,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "QCOM",
+          "metrics_with_value_change": [
+            "current_ratio",
+            "ev_to_ebit",
+            "ev_to_ebitda"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 4.5,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "AMCR",
+          "metrics_with_value_change": [
+            "current_ratio",
+            "ev_to_ebit",
+            "free_cash_flow_yield",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": -4.3,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "MIDD",
+          "metrics_with_value_change": [
+            "current_ratio",
+            "debt_to_equity",
+            "price_to_book",
+            "profit_margin",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth",
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -4.1,
+          "confidence_delta": -0.05
+        },
+        {
+          "ticker": "CELH",
+          "metrics_with_value_change": [
+            "altman_z",
+            "profit_margin",
+            "return_on_equity"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth",
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 4.0,
+          "confidence_delta": -0.04
         }
       ]
     }

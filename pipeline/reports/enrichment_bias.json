@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-06T02:01:19.068588+00:00",
+  "generated_at": "2026-11-06T21:51:14.389448+00:00",
   "method": "Computed entirely from public/data/advisor.json as committed -- no network calls.",
   "coverage_by_collection": {
     "research": {
@@ -15,7 +15,7 @@
           "total": 40
         },
         "financial_health": {
-          "scored": 32,
+          "scored": 33,
           "total": 40
         },
         "growth": {
@@ -37,7 +37,7 @@
       "total_rows": 850,
       "categories": {
         "accounting_quality": {
-          "scored": 846,
+          "scored": 847,
           "total": 850
         },
         "capital_allocation": {
@@ -45,7 +45,7 @@
           "total": 850
         },
         "financial_health": {
-          "scored": 811,
+          "scored": 810,
           "total": 850
         },
         "growth": {
@@ -64,27 +64,27 @@
     }
   },
   "enriched_vs_non_enriched": {
-    "enriched_count": 886,
-    "non_enriched_count": 4,
+    "enriched_count": 887,
+    "non_enriched_count": 3,
     "score": {
       "enriched": {
-        "n": 886,
-        "mean": 63.21,
-        "median": 64.5,
-        "stdev": 11.63
+        "n": 887,
+        "mean": 63.55,
+        "median": 64.4,
+        "stdev": 11.91
       },
       "non_enriched": {
-        "n": 4,
-        "mean": 64.33,
-        "median": 65.3,
-        "stdev": 8.16
+        "n": 3,
+        "mean": 60.37,
+        "median": 64.5,
+        "stdev": 5.99
       }
     },
     "sector_distribution": {
       "enriched": {
         "Technology": 154,
-        "Industrials": 148,
-        "Financial Services": 123,
+        "Industrials": 147,
+        "Financial Services": 124,
         "Consumer Cyclical": 112,
         "Healthcare": 101,
         "Consumer Defensive": 55,
@@ -93,17 +93,16 @@
         "Basic Materials": 39,
         "Utilities": 36,
         "Communication Services": 25,
-        "Unknown": 1
+        "Unknown": 2
       },
       "non_enriched": {
         "ETF": 2,
-        "Financial Services": 1,
         "Unknown": 1
       }
     },
     "market_cap_comparison": {
       "status": "not_measurable",
-      "rows_with_market_cap": 39,
+      "rows_with_market_cap": 40,
       "note": "market_cap is populated only on published research rows in this dataset -- the screen universe (where the non-enriched population lives) does not carry it, so an enriched-vs-non-enriched market-cap comparison cannot be computed from committed data without fabricating values for the missing side."
     },
     "interpretation": "This is a correlation, not yet a causal estimate: select_enrichment_priority chooses its enrichment targets partly from the same preliminary fundamentals score being compared here, so part of this gap is selection-on-the-outcome, not proof that enrichment itself lifts scores. Separating the two requires scoring the full universe with and without statement enrichment on equal footing -- the blocked full-universe comparison below."

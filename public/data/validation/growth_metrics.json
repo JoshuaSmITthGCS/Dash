@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-06T02:01:51.521941+00:00",
+  "generated_at": "2026-11-06T21:52:05.850660+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
@@ -13,9 +13,9 @@
       "eligible_periods": 26,
       "minimum_icir_periods": 24,
       "status": "eligible",
-      "mean_rank_ic": -0.0341,
-      "icir": -0.363,
-      "t_stat": -0.535,
+      "mean_rank_ic": -0.0345,
+      "icir": -0.367,
+      "t_stat": -0.54,
       "hit_rate": 0.462,
       "clears_multiple_testing_bar": false,
       "periods": [
@@ -172,8 +172,8 @@
         {
           "start_date": "2026-10-07",
           "end_date": "2026-11-06",
-          "sample_size": 36,
-          "rank_ic": -0.1806949806949807
+          "sample_size": 38,
+          "rank_ic": -0.19006455848561113
         }
       ],
       "attribution": {
@@ -181,9 +181,9 @@
         "minimum_icir_periods": 24,
         "status": "eligible",
         "composite": {
-          "mean_rank_ic": -0.0341,
-          "icir": -0.363,
-          "t_stat": -0.535,
+          "mean_rank_ic": -0.0345,
+          "icir": -0.367,
+          "t_stat": -0.54,
           "hit_rate": 0.462,
           "clears_multiple_testing_bar": false
         },
@@ -191,33 +191,33 @@
           "burst": {
             "weight": 0.4,
             "own_eligible_periods": 26,
-            "own_rank_ic": -0.05,
-            "own_icir": -0.524,
-            "delta_ic": -0.0324,
+            "own_rank_ic": -0.0506,
+            "own_icir": -0.531,
+            "delta_ic": -0.032,
             "hurts_composite": true
           },
           "accel_score": {
             "weight": 0.3,
             "own_eligible_periods": 26,
-            "own_rank_ic": -0.0013,
-            "own_icir": -0.016,
-            "delta_ic": -0.0013,
+            "own_rank_ic": -0.0033,
+            "own_icir": -0.04,
+            "delta_ic": -0.0012,
             "hurts_composite": true
           },
           "trend": {
             "weight": 0.2,
             "own_eligible_periods": 26,
-            "own_rank_ic": -0.1084,
-            "own_icir": -1.277,
-            "delta_ic": -0.0336,
+            "own_rank_ic": -0.1072,
+            "own_icir": -1.265,
+            "delta_ic": -0.0329,
             "hurts_composite": true
           },
           "volume": {
             "weight": 0.1,
             "own_eligible_periods": 26,
-            "own_rank_ic": 0.1426,
-            "own_icir": 2.108,
-            "delta_ic": 0.0236,
+            "own_rank_ic": 0.1428,
+            "own_icir": 2.114,
+            "delta_ic": 0.0239,
             "hurts_composite": false
           }
         }
@@ -286,8 +286,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "2a7ed18d9e797e2ef05c6f776211d35a0baddc82",
+    "git_commit_sha": "97044c47c2672605fa73080eb4e299081346992c",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-06T02:01:51.521941+00:00"
+    "generated_at": "2026-11-06T21:52:05.850660+00:00"
   }
 }
