@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 226,
+  "refreshes_observed": 227,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -25448,6 +25448,20 @@
           "confidence_delta": -0.04
         }
       ]
+    },
+    {
+      "previous_refresh": "advisor-2026-11-06T21:39:37.298813+00:00",
+      "current_refresh": "advisor-2026-11-06T22:41:56.678069+00:00",
+      "shared_tickers": 890,
+      "rank_turnover": {
+        "top_40": 0.225,
+        "top_100": 0.225
+      },
+      "tickers_with_availability_driven_change": 0,
+      "tickers_with_availability_driven_change_pct": 0.0,
+      "mean_abs_score_delta": 0.38,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": []
     }
   ],
   "peer_group_recomposition": {
