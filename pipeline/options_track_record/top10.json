@@ -30,21 +30,6 @@
       ],
       "stock_leg": false
     },
-    "AMD": {
-      "capital_required": 40000.0,
-      "date_predicted": "2026-11-06",
-      "entry_underlying_price": 417.6000061035156,
-      "expiration": "2026-11-13",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "put",
-          "premium": 21.875,
-          "strike": 400.0
-        }
-      ],
-      "stock_leg": false
-    },
     "ASTS": {
       "capital_required": 2500.0,
       "date_predicted": "2026-11-06",
@@ -131,6 +116,21 @@
           "option_type": "put",
           "premium": 2.515,
           "strike": 50.0
+        }
+      ],
+      "stock_leg": false
+    },
+    "STX": {
+      "capital_required": 43000.0,
+      "date_predicted": "2026-11-07",
+      "entry_underlying_price": 457.29998779296875,
+      "expiration": "2026-11-13",
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "premium": 14.55,
+          "strike": 430.0
         }
       ],
       "stock_leg": false
