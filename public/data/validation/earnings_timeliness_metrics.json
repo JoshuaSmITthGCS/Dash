@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-10T03:36:50.455609+00:00",
+  "generated_at": "2026-11-10T22:17:23.344082+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
@@ -11,9 +11,9 @@
     "eligible_periods": 29,
     "minimum_icir_periods": 24,
     "status": "eligible",
-    "mean_rank_ic": -0.121,
-    "icir": -2.333,
-    "t_stat": -3.627,
+    "mean_rank_ic": -0.1209,
+    "icir": -2.332,
+    "t_stat": -3.626,
     "hit_rate": 0.276,
     "clears_multiple_testing_bar": true
   },
@@ -22,9 +22,9 @@
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": -0.121,
-      "icir": -2.333,
-      "t_stat": -3.627,
+      "mean_rank_ic": -0.1209,
+      "icir": -2.332,
+      "t_stat": -3.626,
       "hit_rate": 0.276,
       "clears_multiple_testing_bar": true
     },
@@ -33,16 +33,16 @@
         "weight": 0.12,
         "own_eligible_periods": 29,
         "own_rank_ic": 0.0011,
-        "own_icir": 0.048,
-        "delta_ic": 0.0121,
+        "own_icir": 0.05,
+        "delta_ic": 0.0126,
         "hurts_composite": false
       },
       "revision_magnitude": {
         "weight": 0.15,
         "own_eligible_periods": 29,
-        "own_rank_ic": 0.0267,
-        "own_icir": 1.526,
-        "delta_ic": 0.0205,
+        "own_rank_ic": 0.0282,
+        "own_icir": 1.599,
+        "delta_ic": 0.021,
         "hurts_composite": false
       },
       "revision_acceleration": {
@@ -50,7 +50,7 @@
         "own_eligible_periods": 0,
         "own_rank_ic": null,
         "own_icir": null,
-        "delta_ic": -0.0034,
+        "delta_ic": -0.0033,
         "hurts_composite": true
       },
       "fresh_estimate_delta": {
@@ -66,7 +66,7 @@
         "own_eligible_periods": 0,
         "own_rank_ic": null,
         "own_icir": null,
-        "delta_ic": -0.0015,
+        "delta_ic": -0.0014,
         "hurts_composite": true
       },
       "eps_surprise": {
@@ -104,49 +104,49 @@
       "momentum_12_1": {
         "weight": 0.08,
         "own_eligible_periods": 29,
-        "own_rank_ic": -0.1868,
-        "own_icir": -1.767,
-        "delta_ic": -0.0604,
+        "own_rank_ic": -0.1862,
+        "own_icir": -1.764,
+        "delta_ic": -0.0603,
         "hurts_composite": true
       },
       "momentum_6_1": {
         "weight": 0.04,
         "own_eligible_periods": 29,
-        "own_rank_ic": -0.063,
-        "own_icir": -0.833,
-        "delta_ic": -0.0043,
+        "own_rank_ic": -0.0652,
+        "own_icir": -0.855,
+        "delta_ic": -0.0049,
         "hurts_composite": true
       },
       "high_52w_proximity": {
         "weight": 0.04,
         "own_eligible_periods": 29,
-        "own_rank_ic": -0.023,
-        "own_icir": -0.402,
-        "delta_ic": 0.0027,
+        "own_rank_ic": -0.0235,
+        "own_icir": -0.41,
+        "delta_ic": 0.0026,
         "hurts_composite": false
       },
       "industry_relative_momentum": {
         "weight": 0.04,
         "own_eligible_periods": 29,
-        "own_rank_ic": -0.1559,
-        "own_icir": -2.424,
+        "own_rank_ic": -0.1555,
+        "own_icir": -2.423,
         "delta_ic": -0.022,
         "hurts_composite": true
       },
       "industry_revision_breadth": {
         "weight": 0.1,
         "own_eligible_periods": 29,
-        "own_rank_ic": -0.0929,
-        "own_icir": -1.59,
-        "delta_ic": -0.055,
+        "own_rank_ic": -0.0949,
+        "own_icir": -1.615,
+        "delta_ic": -0.0562,
         "hurts_composite": true
       },
       "risk_tradability": {
         "weight": 0.05,
         "own_eligible_periods": 29,
-        "own_rank_ic": 0.0414,
-        "own_icir": 1.007,
-        "delta_ic": -0.0034,
+        "own_rank_ic": 0.043,
+        "own_icir": 1.034,
+        "delta_ic": -0.0028,
         "hurts_composite": true
       }
     }
@@ -154,8 +154,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "d242a01cff68c09cc904e066cba16294579c11c4",
+    "git_commit_sha": "0569549484ea7528e6a99a94c938ea605a5deb76",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-10T03:36:50.455609+00:00"
+    "generated_at": "2026-11-10T22:17:23.344082+00:00"
   }
 }
