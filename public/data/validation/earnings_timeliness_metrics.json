@@ -1,48 +1,48 @@
 {
-  "generated_at": "2026-11-07T01:10:42.368277+00:00",
+  "generated_at": "2026-11-10T00:51:16.799965+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before earnings_timeliness_pit_store began recording - this module never reconstructs a composite or factor score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 48,
+  "snapshot_dates_recorded": 49,
   "horizon_days": 30,
   "composite": {
-    "eligible_periods": 27,
+    "eligible_periods": 29,
     "minimum_icir_periods": 24,
     "status": "eligible",
-    "mean_rank_ic": -0.1139,
-    "icir": -2.14,
-    "t_stat": -3.211,
-    "hit_rate": 0.296,
+    "mean_rank_ic": -0.121,
+    "icir": -2.333,
+    "t_stat": -3.627,
+    "hit_rate": 0.276,
     "clears_multiple_testing_bar": true
   },
   "attribution": {
-    "eligible_periods": 27,
+    "eligible_periods": 29,
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": -0.1139,
-      "icir": -2.14,
-      "t_stat": -3.21,
-      "hit_rate": 0.296,
+      "mean_rank_ic": -0.121,
+      "icir": -2.333,
+      "t_stat": -3.627,
+      "hit_rate": 0.276,
       "clears_multiple_testing_bar": true
     },
     "metrics": {
       "revision_agreement": {
         "weight": 0.12,
-        "own_eligible_periods": 27,
-        "own_rank_ic": -0.0109,
-        "own_icir": -0.58,
-        "delta_ic": 0.005,
+        "own_eligible_periods": 29,
+        "own_rank_ic": 0.0011,
+        "own_icir": 0.048,
+        "delta_ic": 0.0121,
         "hurts_composite": false
       },
       "revision_magnitude": {
         "weight": 0.15,
-        "own_eligible_periods": 27,
-        "own_rank_ic": 0.0262,
-        "own_icir": 1.443,
-        "delta_ic": 0.0167,
+        "own_eligible_periods": 29,
+        "own_rank_ic": 0.0267,
+        "own_icir": 1.526,
+        "delta_ic": 0.0205,
         "hurts_composite": false
       },
       "revision_acceleration": {
@@ -50,7 +50,7 @@
         "own_eligible_periods": 0,
         "own_rank_ic": null,
         "own_icir": null,
-        "delta_ic": -0.0038,
+        "delta_ic": -0.0034,
         "hurts_composite": true
       },
       "fresh_estimate_delta": {
@@ -66,7 +66,7 @@
         "own_eligible_periods": 0,
         "own_rank_ic": null,
         "own_icir": null,
-        "delta_ic": -0.0018,
+        "delta_ic": -0.0015,
         "hurts_composite": true
       },
       "eps_surprise": {
@@ -103,50 +103,50 @@
       },
       "momentum_12_1": {
         "weight": 0.08,
-        "own_eligible_periods": 27,
-        "own_rank_ic": -0.1562,
-        "own_icir": -1.499,
-        "delta_ic": -0.0501,
+        "own_eligible_periods": 29,
+        "own_rank_ic": -0.1868,
+        "own_icir": -1.767,
+        "delta_ic": -0.0604,
         "hurts_composite": true
       },
       "momentum_6_1": {
         "weight": 0.04,
-        "own_eligible_periods": 27,
-        "own_rank_ic": -0.0456,
-        "own_icir": -0.6,
-        "delta_ic": -0.0014,
+        "own_eligible_periods": 29,
+        "own_rank_ic": -0.063,
+        "own_icir": -0.833,
+        "delta_ic": -0.0043,
         "hurts_composite": true
       },
       "high_52w_proximity": {
         "weight": 0.04,
-        "own_eligible_periods": 27,
-        "own_rank_ic": -0.0211,
-        "own_icir": -0.357,
-        "delta_ic": 0.0021,
+        "own_eligible_periods": 29,
+        "own_rank_ic": -0.023,
+        "own_icir": -0.402,
+        "delta_ic": 0.0027,
         "hurts_composite": false
       },
       "industry_relative_momentum": {
         "weight": 0.04,
-        "own_eligible_periods": 27,
-        "own_rank_ic": -0.135,
-        "own_icir": -2.16,
-        "delta_ic": -0.0193,
+        "own_eligible_periods": 29,
+        "own_rank_ic": -0.1559,
+        "own_icir": -2.424,
+        "delta_ic": -0.022,
         "hurts_composite": true
       },
       "industry_revision_breadth": {
         "weight": 0.1,
-        "own_eligible_periods": 27,
-        "own_rank_ic": -0.0861,
-        "own_icir": -1.431,
-        "delta_ic": -0.0512,
+        "own_eligible_periods": 29,
+        "own_rank_ic": -0.0929,
+        "own_icir": -1.59,
+        "delta_ic": -0.055,
         "hurts_composite": true
       },
       "risk_tradability": {
         "weight": 0.05,
-        "own_eligible_periods": 27,
-        "own_rank_ic": 0.0322,
-        "own_icir": 0.777,
-        "delta_ic": -0.0048,
+        "own_eligible_periods": 29,
+        "own_rank_ic": 0.0414,
+        "own_icir": 1.007,
+        "delta_ic": -0.0034,
         "hurts_composite": true
       }
     }
@@ -154,8 +154,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "d43bd3ea0d808ff905f9102fc407516998ca2c3d",
+    "git_commit_sha": "4f6260df0eccf49d426857f203c8c7b22da1b283",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-07T01:10:42.368277+00:00"
+    "generated_at": "2026-11-10T00:51:16.799965+00:00"
   }
 }

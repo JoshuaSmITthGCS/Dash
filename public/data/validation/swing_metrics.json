@@ -1,23 +1,23 @@
 {
-  "generated_at": "2026-11-07T01:07:25.158542+00:00",
+  "generated_at": "2026-11-10T00:48:40.054887+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before shadow_store/swing or swing_pit_store began recording - this module never reconstructs a swing signal or leg score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 55,
-  "attribution_snapshot_dates_recorded": 48,
+  "snapshot_dates_recorded": 56,
+  "attribution_snapshot_dates_recorded": 49,
   "horizon_days": 14,
   "metrics": {
     "composite_z": {
       "requires_live_sample": true,
-      "eligible_periods": 45,
+      "eligible_periods": 47,
       "minimum_icir_periods": 24,
       "status": "eligible",
-      "mean_rank_ic": 0.0775,
-      "icir": 1.124,
-      "t_stat": 2.176,
-      "hit_rate": 0.622,
+      "mean_rank_ic": 0.0581,
+      "icir": 0.8,
+      "t_stat": 1.582,
+      "hit_rate": 0.596,
       "clears_multiple_testing_bar": false,
       "periods": [
         {
@@ -289,60 +289,72 @@
           "end_date": "2026-11-06",
           "sample_size": 10,
           "rank_ic": -0.6848484848484848
+        },
+        {
+          "start_date": "2026-10-26",
+          "end_date": "2026-11-10",
+          "sample_size": 11,
+          "rank_ic": -0.3
+        },
+        {
+          "start_date": "2026-10-27",
+          "end_date": "2026-11-10",
+          "sample_size": 11,
+          "rank_ic": -0.45454545454545453
         }
       ]
     }
   },
   "attribution": {
-    "eligible_periods": 38,
+    "eligible_periods": 40,
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": -0.021,
-      "icir": -0.519,
-      "t_stat": -0.924,
-      "hit_rate": 0.553,
+      "mean_rank_ic": -0.0329,
+      "icir": -0.779,
+      "t_stat": -1.422,
+      "hit_rate": 0.525,
       "clears_multiple_testing_bar": false
     },
     "metrics": {
       "pead_drift": {
         "weight": 0.3,
-        "own_eligible_periods": 38,
-        "own_rank_ic": -0.0493,
-        "own_icir": -1.389,
-        "delta_ic": -0.0575,
+        "own_eligible_periods": 40,
+        "own_rank_ic": -0.0605,
+        "own_icir": -1.617,
+        "delta_ic": -0.0661,
         "hurts_composite": true
       },
       "analyst_revision": {
         "weight": 0.25,
-        "own_eligible_periods": 38,
-        "own_rank_ic": -0.003,
-        "own_icir": -0.127,
-        "delta_ic": -0.0123,
+        "own_eligible_periods": 40,
+        "own_rank_ic": -0.0189,
+        "own_icir": -0.614,
+        "delta_ic": -0.0197,
         "hurts_composite": true
       },
       "high_volume_premium": {
         "weight": 0.2,
-        "own_eligible_periods": 38,
-        "own_rank_ic": 0.0329,
-        "own_icir": 1.536,
-        "delta_ic": 0.0257,
+        "own_eligible_periods": 40,
+        "own_rank_ic": 0.0363,
+        "own_icir": 1.697,
+        "delta_ic": 0.0277,
         "hurts_composite": false
       },
       "high_52w_proximity": {
         "weight": 0.15,
-        "own_eligible_periods": 38,
-        "own_rank_ic": -0.0064,
-        "own_icir": -0.258,
-        "delta_ic": 0.0027,
-        "hurts_composite": false
+        "own_eligible_periods": 40,
+        "own_rank_ic": -0.0161,
+        "own_icir": -0.592,
+        "delta_ic": -0.0014,
+        "hurts_composite": true
       },
       "short_term_reversal": {
         "weight": 0.1,
-        "own_eligible_periods": 38,
-        "own_rank_ic": 0.0336,
-        "own_icir": 1.23,
-        "delta_ic": 0.0044,
+        "own_eligible_periods": 40,
+        "own_rank_ic": 0.0466,
+        "own_icir": 1.485,
+        "delta_ic": 0.008,
         "hurts_composite": false
       }
     }
@@ -350,8 +362,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "d43bd3ea0d808ff905f9102fc407516998ca2c3d",
+    "git_commit_sha": "4f6260df0eccf49d426857f203c8c7b22da1b283",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-07T01:07:25.158542+00:00"
+    "generated_at": "2026-11-10T00:48:40.054887+00:00"
   }
 }

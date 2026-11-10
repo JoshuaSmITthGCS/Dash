@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 228,
+  "refreshes_observed": 229,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -25484,6 +25484,273 @@
           ],
           "score_delta": 0.8,
           "confidence_delta": -0.02
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-11-07T00:56:40.811831+00:00",
+      "current_refresh": "advisor-2026-11-10T00:38:22.320805+00:00",
+      "shared_tickers": 889,
+      "rank_turnover": {
+        "top_40": 0.225,
+        "top_100": 0.225
+      },
+      "tickers_with_availability_driven_change": 65,
+      "tickers_with_availability_driven_change_pct": 0.073,
+      "mean_abs_score_delta": 1.43,
+      "mean_abs_confidence_delta": 0.013,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "STWD",
+          "metrics_with_value_change": [
+            "profit_margin"
+          ],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "earnings_growth",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "net_buyback_yield",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "revenue_growth",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -26.4,
+          "confidence_delta": -0.3
+        },
+        {
+          "ticker": "VNO",
+          "metrics_with_value_change": [
+            "sales_multiple"
+          ],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -19.3,
+          "confidence_delta": -0.43
+        },
+        {
+          "ticker": "CCJ",
+          "metrics_with_value_change": [
+            "forward_pe"
+          ],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -18.6,
+          "confidence_delta": -0.44
+        },
+        {
+          "ticker": "MOG.A",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "sales_multiple",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 15.4,
+          "confidence_delta": -0.46
+        },
+        {
+          "ticker": "ESS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -14.3,
+          "confidence_delta": -0.48
+        },
+        {
+          "ticker": "PK",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "capex_to_depreciation",
+            "days_sales_outstanding_trend",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "price_to_tangible_book",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 13.6,
+          "confidence_delta": -0.42
+        },
+        {
+          "ticker": "HLT",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -12.7,
+          "confidence_delta": -0.43
+        },
+        {
+          "ticker": "MRNA",
+          "metrics_with_value_change": [
+            "debt_to_equity",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "capex_to_depreciation",
+            "days_sales_outstanding_trend",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "operating_margin_trend",
+            "piotroski_f",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 12.1,
+          "confidence_delta": -0.28
+        },
+        {
+          "ticker": "OC",
+          "metrics_with_value_change": [
+            "price_to_book"
+          ],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -10.9,
+          "confidence_delta": -0.46
+        },
+        {
+          "ticker": "CAVA",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "ev_to_fcf",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": -9.1,
+          "confidence_delta": -0.42
         }
       ]
     }

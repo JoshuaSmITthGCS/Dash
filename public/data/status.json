@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-07T01:02:52.425788+00:00",
+  "generated_at": "2026-11-10T00:44:55.904746+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,11 +29,11 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-11-07T00:58:02.850293+00:00",
+      "checked_at": "2026-11-10T00:39:35.599454+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 944,
-        "scored": 237,
+        "scored": 889,
         "ranked": 40,
         "failed": [
           "ABB",
@@ -46,6 +46,7 @@
           "CMA",
           "CTRA",
           "DAY",
+          "DINO",
           "EQR",
           "EXAS",
           "FI",
@@ -70,10 +71,13 @@
           "MASI",
           "MMC",
           "MODG",
+          "MU",
+          "NEM",
           "PCH",
           "PNM",
           "PSTG",
           "QRVO",
+          "ROKU",
           "SEE",
           "SKX",
           "SMAR",
@@ -84,6 +88,8 @@
           "TMHC",
           "TPH",
           "TPX",
+          "TRV",
+          "TSM",
           "VSCO",
           "WBA",
           "WBD",
@@ -95,23 +101,23 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-11-07T01:02:04.768531+00:00",
+      "checked_at": "2026-11-10T00:43:48.545473+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
         "received": 125,
         "rule_6c11_disclosures": 0,
         "cache": {
-          "hits": 250,
-          "misses": 128,
+          "hits": 125,
+          "misses": 253,
           "stale_hits": 1,
-          "hit_rate": 0.66
+          "hit_rate": 0.33
         }
       }
     },
     "etf_comparisons": {
       "status": "degraded",
-      "checked_at": "2026-11-07T01:02:52.425766+00:00",
+      "checked_at": "2026-11-10T00:44:55.904724+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -259,8 +265,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "d43bd3ea0d808ff905f9102fc407516998ca2c3d",
+    "git_commit_sha": "4f6260df0eccf49d426857f203c8c7b22da1b283",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-07T01:02:52.425788+00:00"
+    "generated_at": "2026-11-10T00:44:55.904746+00:00"
   }
 }
