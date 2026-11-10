@@ -45,6 +45,21 @@
       ],
       "stock_leg": false
     },
+    "MU": {
+      "capital_required": 69750.0,
+      "date_predicted": "2026-11-10",
+      "entry_underlying_price": 733.1500244140625,
+      "expiration": "2026-11-16",
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "premium": 17.575,
+          "strike": 697.5
+        }
+      ],
+      "stock_leg": false
+    },
     "NBIS": {
       "capital_required": 14500.0,
       "date_predicted": "2026-10-30",
@@ -56,21 +71,6 @@
           "option_type": "put",
           "premium": 4.925,
           "strike": 145.0
-        }
-      ],
-      "stock_leg": false
-    },
-    "PYPL": {
-      "capital_required": 5200.0,
-      "date_predicted": "2026-11-10",
-      "entry_underlying_price": 60.04999923706055,
-      "expiration": "2026-11-20",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "put",
-          "premium": 0.05,
-          "strike": 52.0
         }
       ],
       "stock_leg": false

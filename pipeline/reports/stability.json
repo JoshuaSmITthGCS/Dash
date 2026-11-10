@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 229,
+  "refreshes_observed": 230,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -25751,6 +25751,64 @@
           ],
           "score_delta": -9.1,
           "confidence_delta": -0.42
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-11-10T00:38:22.320805+00:00",
+      "current_refresh": "advisor-2026-11-10T03:25:18.792753+00:00",
+      "shared_tickers": 889,
+      "rank_turnover": {
+        "top_40": 0.15,
+        "top_100": 0.15
+      },
+      "tickers_with_availability_driven_change": 3,
+      "tickers_with_availability_driven_change_pct": 0.003,
+      "mean_abs_score_delta": 0.34,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "BA",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "altman_z",
+            "asset_growth",
+            "capex_to_depreciation",
+            "cash_conversion",
+            "days_sales_outstanding_trend",
+            "ev_to_ebit",
+            "ev_to_ebitda",
+            "gross_profits_to_assets",
+            "interest_coverage",
+            "inventory_days_trend",
+            "net_buyback_yield",
+            "net_debt_to_ebitda",
+            "operating_margin_trend",
+            "piotroski_f",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "score_delta": 4.4,
+          "confidence_delta": 0.41
+        },
+        {
+          "ticker": "NBIS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "ev_to_ebit"
+          ],
+          "score_delta": 0.8,
+          "confidence_delta": -0.03
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 0.7,
+          "confidence_delta": -0.02
         }
       ]
     }
