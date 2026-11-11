@@ -167,36 +167,6 @@
       ],
       "stock_leg": true
     },
-    "AMD": {
-      "capital_required": 51544.000244140625,
-      "date_predicted": "2026-11-10",
-      "entry_underlying_price": 515.4400024414062,
-      "expiration": "2026-11-16",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "call",
-          "premium": 12.825,
-          "strike": 530.0
-        }
-      ],
-      "stock_leg": true
-    },
-    "AR": {
-      "capital_required": 3775.9998321533203,
-      "date_predicted": "2026-11-10",
-      "entry_underlying_price": 37.7599983215332,
-      "expiration": "2026-11-20",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "call",
-          "premium": 0.275,
-          "strike": 40.0
-        }
-      ],
-      "stock_leg": true
-    },
     "ASTS": {
       "capital_required": 3315.999984741211,
       "date_predicted": "2026-11-10",
@@ -208,6 +178,21 @@
           "option_type": "call",
           "premium": 1.08,
           "strike": 38.0
+        }
+      ],
+      "stock_leg": true
+    },
+    "BMY": {
+      "capital_required": 6245.000076293945,
+      "date_predicted": "2026-11-11",
+      "entry_underlying_price": 62.45000076293945,
+      "expiration": "2026-11-20",
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "call",
+          "premium": 0.61,
+          "strike": 65.0
         }
       ],
       "stock_leg": true
@@ -286,24 +271,24 @@
         }
       ],
       "stock_leg": true
+    },
+    "TSM": {
+      "capital_required": 39491.00036621094,
+      "date_predicted": "2026-11-11",
+      "entry_underlying_price": 394.9100036621094,
+      "expiration": "2026-11-20",
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "call",
+          "premium": 0.61,
+          "strike": 450.0
+        }
+      ],
+      "stock_leg": true
     }
   },
   "options": {
-    "AAPL": {
-      "capital_required": 50.5,
-      "date_predicted": "2026-11-10",
-      "entry_underlying_price": 348.55999755859375,
-      "expiration": "2026-11-16",
-      "legs": [
-        {
-          "action": "buy",
-          "option_type": "call",
-          "premium": 0.505,
-          "strike": 360.0
-        }
-      ],
-      "stock_leg": false
-    },
     "AMAT": {
       "capital_required": 2497.5,
       "date_predicted": "2026-11-10",
@@ -319,21 +304,6 @@
       ],
       "stock_leg": false
     },
-    "AR": {
-      "capital_required": 27.5,
-      "date_predicted": "2026-11-10",
-      "entry_underlying_price": 37.7599983215332,
-      "expiration": "2026-11-20",
-      "legs": [
-        {
-          "action": "buy",
-          "option_type": "call",
-          "premium": 0.275,
-          "strike": 40.0
-        }
-      ],
-      "stock_leg": false
-    },
     "BAC": {
       "capital_required": 69.5,
       "date_predicted": "2026-10-30",
@@ -345,6 +315,21 @@
           "option_type": "put",
           "premium": 0.695,
           "strike": 50.0
+        }
+      ],
+      "stock_leg": false
+    },
+    "BMY": {
+      "capital_required": 61.0,
+      "date_predicted": "2026-11-11",
+      "entry_underlying_price": 62.45000076293945,
+      "expiration": "2026-11-20",
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "call",
+          "premium": 0.61,
+          "strike": 65.0
         }
       ],
       "stock_leg": false
@@ -405,6 +390,21 @@
           "option_type": "put",
           "premium": 16.45,
           "strike": 200.0
+        }
+      ],
+      "stock_leg": false
+    },
+    "OXY": {
+      "capital_required": 62.0,
+      "date_predicted": "2026-11-11",
+      "entry_underlying_price": 57.10499954223633,
+      "expiration": "2026-11-20",
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "premium": 0.62,
+          "strike": 55.0
         }
       ],
       "stock_leg": false
@@ -471,6 +471,36 @@
       ],
       "stock_leg": false
     },
+    "BAC": {
+      "capital_required": 57.0,
+      "date_predicted": "2026-11-11",
+      "entry_underlying_price": 50.720001220703125,
+      "expiration": "2026-11-20",
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "put",
+          "premium": 0.57,
+          "strike": 50.0
+        }
+      ],
+      "stock_leg": false
+    },
+    "BMY": {
+      "capital_required": 61.0,
+      "date_predicted": "2026-11-11",
+      "entry_underlying_price": 62.45000076293945,
+      "expiration": "2026-11-20",
+      "legs": [
+        {
+          "action": "buy",
+          "option_type": "call",
+          "premium": 0.61,
+          "strike": 65.0
+        }
+      ],
+      "stock_leg": false
+    },
     "C": {
       "capital_required": 11500.0,
       "date_predicted": "2026-11-10",
@@ -516,21 +546,6 @@
       ],
       "stock_leg": true
     },
-    "LULU": {
-      "capital_required": 58.5,
-      "date_predicted": "2026-11-10",
-      "entry_underlying_price": 110.2300033569336,
-      "expiration": "2026-11-20",
-      "legs": [
-        {
-          "action": "buy",
-          "option_type": "call",
-          "premium": 0.585,
-          "strike": 120.0
-        }
-      ],
-      "stock_leg": false
-    },
     "NBIS": {
       "capital_required": 12977.000427246094,
       "date_predicted": "2026-11-06",
@@ -545,21 +560,6 @@
         }
       ],
       "stock_leg": true
-    },
-    "OXY": {
-      "capital_required": 5500.0,
-      "date_predicted": "2026-11-10",
-      "entry_underlying_price": 57.10499954223633,
-      "expiration": "2026-11-20",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "put",
-          "premium": 0.62,
-          "strike": 55.0
-        }
-      ],
-      "stock_leg": false
     },
     "QCOM": {
       "capital_required": 15000.0,
