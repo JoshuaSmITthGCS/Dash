@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 232,
+  "refreshes_observed": 233,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -26095,6 +26095,121 @@
           ],
           "score_delta": 2.6,
           "confidence_delta": 0.01
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-11-11T01:43:29.705058+00:00",
+      "current_refresh": "advisor-2026-11-11T21:47:09.745478+00:00",
+      "shared_tickers": 889,
+      "rank_turnover": {
+        "top_40": 0.225,
+        "top_100": 0.225
+      },
+      "tickers_with_availability_driven_change": 8,
+      "tickers_with_availability_driven_change_pct": 0.009,
+      "mean_abs_score_delta": 0.87,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "EMR",
+          "metrics_with_value_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "fcf_growth_3y",
+            "net_buyback_yield",
+            "piotroski_f",
+            "sales_multiple"
+          ],
+          "metrics_with_availability_change": [
+            "altman_z",
+            "ev_to_ebit",
+            "interest_coverage",
+            "operating_margin_trend",
+            "return_on_invested_capital"
+          ],
+          "score_delta": 3.9,
+          "confidence_delta": 0.13
+        },
+        {
+          "ticker": "WERN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 3.4,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": -2.5,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "MOG.A",
+          "metrics_with_value_change": [
+            "sales_multiple"
+          ],
+          "metrics_with_availability_change": [
+            "debt_to_equity",
+            "earnings_growth",
+            "forward_pe",
+            "free_cash_flow_yield",
+            "price_to_book",
+            "price_to_tangible_book",
+            "profit_margin",
+            "return_on_equity",
+            "revenue_growth"
+          ],
+          "score_delta": 1.2,
+          "confidence_delta": 0.18
+        },
+        {
+          "ticker": "TDG",
+          "metrics_with_value_change": [
+            "earnings_growth",
+            "profit_margin"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 1.0,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "ONTO",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": -0.2,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "OZK",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "accruals_ratio",
+            "asset_growth"
+          ],
+          "score_delta": 0.2,
+          "confidence_delta": 0.07
+        },
+        {
+          "ticker": "MSM",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 0.1,
+          "confidence_delta": 0.04
         }
       ]
     }
