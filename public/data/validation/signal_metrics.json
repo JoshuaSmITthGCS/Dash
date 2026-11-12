@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-12T03:05:49.278612+00:00",
+  "generated_at": "2026-11-12T22:34:02.933317+00:00",
   "groups": [
     {
       "id": "signal",
@@ -83,7 +83,7 @@
   ],
   "live_sample": {
     "days": 75,
-    "refreshes": 237,
+    "refreshes": 238,
     "first_date": "2026-08-05",
     "last_date": "2026-11-12"
   },
@@ -1390,8 +1390,8 @@
       "id": "sector_active_weights",
       "group": "construction",
       "label": "Sector active weights",
-      "value": 27.97,
-      "display": "Financial Services +28.0pp largest",
+      "value": 23.23,
+      "display": "Technology -23.2pp largest",
       "reads": "Current production-sector weights minus SPY, retained prospectively by date.",
       "kill_threshold": "Strategy sector classification coverage below 80%",
       "kill_threshold_value": null,
@@ -1401,33 +1401,36 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 192,
+      "observations": 193,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-11-12T02:56:30.889624+00:00",
+        "as_of": "2026-11-12T22:20:54.196837+00:00",
         "strategy": "production_shadow_equal_weight_top20",
         "benchmark": "SPY",
         "active_sector_weights": {
           "basic_materials": 0.0342,
           "communication_services": -0.0842,
-          "consumer_cyclical": -0.0919,
-          "consumer_defensive": -0.0488,
+          "consumer_cyclical": -0.0419,
+          "consumer_defensive": 0.0012,
           "energy": 0.2109,
-          "financial_services": 0.2797,
+          "financial_services": 0.2297,
           "healthcare": -0.0525,
-          "industrials": -0.0761,
+          "industrials": -0.0261,
           "real_estate": -0.018,
-          "technology": -0.1323,
+          "technology": -0.2323,
           "unclassified": -0.0001,
           "utilities": -0.0209
         },
         "strategy_sector_weights": {
           "basic_materials": 0.05,
+          "consumer_cyclical": 0.05,
+          "consumer_defensive": 0.05,
           "energy": 0.25,
-          "financial_services": 0.4,
+          "financial_services": 0.35,
           "healthcare": 0.05,
-          "technology": 0.25
+          "industrials": 0.05,
+          "technology": 0.15
         },
         "benchmark_sector_weights": {
           "basic_materials": 0.0158,
@@ -1446,24 +1449,6 @@
         "strategy_classified_weight": 1.0,
         "benchmark_classified_weight": 0.9999,
         "history": [
-          {
-            "as_of": "2026-10-12T22:31:34.561892+00:00",
-            "active_sector_weights": {
-              "basic_materials": 0.0344,
-              "communication_services": -0.0995,
-              "consumer_cyclical": -0.0374,
-              "consumer_defensive": -0.0433,
-              "energy": 0.066,
-              "financial_services": 0.438,
-              "healthcare": 0.0074,
-              "industrials": -0.0754,
-              "real_estate": -0.017,
-              "technology": -0.2545,
-              "utilities": -0.0188
-            },
-            "strategy_classified_weight": 1.0,
-            "benchmark_classified_weight": 1.0
-          },
           {
             "as_of": "2026-10-12T23:34:48.932432+00:00",
             "active_sector_weights": {
@@ -2538,6 +2523,25 @@
             },
             "strategy_classified_weight": 1.0,
             "benchmark_classified_weight": 0.9999
+          },
+          {
+            "as_of": "2026-11-12T22:20:54.196837+00:00",
+            "active_sector_weights": {
+              "basic_materials": 0.0342,
+              "communication_services": -0.0842,
+              "consumer_cyclical": -0.0419,
+              "consumer_defensive": 0.0012,
+              "energy": 0.2109,
+              "financial_services": 0.2297,
+              "healthcare": -0.0525,
+              "industrials": -0.0261,
+              "real_estate": -0.018,
+              "technology": -0.2323,
+              "unclassified": -0.0001,
+              "utilities": -0.0209
+            },
+            "strategy_classified_weight": 1.0,
+            "benchmark_classified_weight": 0.9999
           }
         ]
       },
@@ -2558,11 +2562,11 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 192,
+      "observations": 193,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
-        "as_of": "2026-11-12T02:56:30.889624+00:00",
+        "as_of": "2026-11-12T22:20:54.196837+00:00",
         "strategy_classified_weight": 1.0,
         "benchmark_classified_weight": 0.9999
       },
@@ -2572,8 +2576,8 @@
       "id": "sector_allocation_effect",
       "group": "construction",
       "label": "Sector allocation effect",
-      "value": 1.731,
-      "display": "+1.73pp vs SPY (2026-08-14 to 2026-11-12)",
+      "value": 2.912,
+      "display": "+2.91pp vs SPY (2026-08-14 to 2026-11-12)",
       "reads": "Sum across sectors of (active weight) times (that sector's real index return minus SPY's), using real sector SPDR ETFs. Positive means the sector tilt itself added return; says nothing about which stocks were picked within each sector.",
       "kill_threshold": null,
       "kill_threshold_value": null,
@@ -2583,104 +2587,104 @@
       "requires_live_sample": false,
       "status": "ready",
       "status_message": null,
-      "observations": 192,
+      "observations": 193,
       "required_observations": null,
       "backtest_reference": null,
       "detail": {
         "start": "2026-08-14",
         "end": "2026-11-12",
-        "snapshots": 192,
-        "as_of": "2026-11-12T02:56:30.889624+00:00",
-        "benchmark_return_pct": -1.89,
-        "total_allocation_effect_pct": 1.731,
+        "snapshots": 193,
+        "as_of": "2026-11-12T22:20:54.196837+00:00",
+        "benchmark_return_pct": -2.23,
+        "total_allocation_effect_pct": 2.912,
         "sectors": {
           "basic_materials": {
             "ticker": "XLB",
             "strategy_weight": 0.05,
             "benchmark_weight": 0.0158,
             "active_weight": 0.0342,
-            "sector_return_pct": 1.38,
-            "allocation_effect_pct": 0.112
+            "sector_return_pct": 0.08,
+            "allocation_effect_pct": 0.079
           },
           "communication_services": {
             "ticker": "XLC",
             "strategy_weight": 0.0,
             "benchmark_weight": 0.0842,
             "active_weight": -0.0842,
-            "sector_return_pct": -3.53,
-            "allocation_effect_pct": 0.138
+            "sector_return_pct": -4.46,
+            "allocation_effect_pct": 0.188
           },
           "consumer_cyclical": {
             "ticker": "XLY",
-            "strategy_weight": 0.0,
+            "strategy_weight": 0.05,
             "benchmark_weight": 0.0919,
-            "active_weight": -0.0919,
-            "sector_return_pct": 2.59,
-            "allocation_effect_pct": -0.412
+            "active_weight": -0.0419,
+            "sector_return_pct": 2.14,
+            "allocation_effect_pct": -0.183
           },
           "consumer_defensive": {
             "ticker": "XLP",
-            "strategy_weight": 0.0,
+            "strategy_weight": 0.05,
             "benchmark_weight": 0.0488,
-            "active_weight": -0.0488,
-            "sector_return_pct": 6.92,
-            "allocation_effect_pct": -0.43
+            "active_weight": 0.0012,
+            "sector_return_pct": 6.47,
+            "allocation_effect_pct": 0.01
           },
           "energy": {
             "ticker": "XLE",
             "strategy_weight": 0.25,
             "benchmark_weight": 0.0391,
             "active_weight": 0.2109,
-            "sector_return_pct": 2.97,
-            "allocation_effect_pct": 1.025
+            "sector_return_pct": 4.53,
+            "allocation_effect_pct": 1.426
           },
           "financial_services": {
             "ticker": "XLF",
-            "strategy_weight": 0.4,
+            "strategy_weight": 0.35,
             "benchmark_weight": 0.1203,
-            "active_weight": 0.2797,
-            "sector_return_pct": 1.16,
-            "allocation_effect_pct": 0.853
+            "active_weight": 0.2297,
+            "sector_return_pct": 0.44,
+            "allocation_effect_pct": 0.613
           },
           "healthcare": {
             "ticker": "XLV",
             "strategy_weight": 0.05,
             "benchmark_weight": 0.1025,
             "active_weight": -0.0525,
-            "sector_return_pct": 13.33,
-            "allocation_effect_pct": -0.799
+            "sector_return_pct": 12.65,
+            "allocation_effect_pct": -0.781
           },
           "industrials": {
             "ticker": "XLI",
-            "strategy_weight": 0.0,
+            "strategy_weight": 0.05,
             "benchmark_weight": 0.0761,
-            "active_weight": -0.0761,
-            "sector_return_pct": -8.09,
-            "allocation_effect_pct": 0.472
+            "active_weight": -0.0261,
+            "sector_return_pct": -8.91,
+            "allocation_effect_pct": 0.174
           },
           "real_estate": {
             "ticker": "XLRE",
             "strategy_weight": 0.0,
             "benchmark_weight": 0.018,
             "active_weight": -0.018,
-            "sector_return_pct": -0.67,
-            "allocation_effect_pct": -0.022
+            "sector_return_pct": -1.19,
+            "allocation_effect_pct": -0.019
           },
           "technology": {
             "ticker": "XLK",
-            "strategy_weight": 0.25,
+            "strategy_weight": 0.15,
             "benchmark_weight": 0.3823,
-            "active_weight": -0.1323,
-            "sector_return_pct": -8.13,
-            "allocation_effect_pct": 0.826
+            "active_weight": -0.2323,
+            "sector_return_pct": -8.44,
+            "allocation_effect_pct": 1.443
           },
           "utilities": {
             "ticker": "XLU",
             "strategy_weight": 0.0,
             "benchmark_weight": 0.0209,
             "active_weight": -0.0209,
-            "sector_return_pct": -0.38,
-            "allocation_effect_pct": -0.032
+            "sector_return_pct": -0.4,
+            "allocation_effect_pct": -0.038
           }
         }
       },
@@ -9960,8 +9964,8 @@
       "id": "live_vs_backtest_ic",
       "group": "monitoring",
       "label": "Rolling 60-day live IC versus backtest",
-      "value": 0.08271391400917236,
-      "display": "0.083",
+      "value": 0.09104187377242762,
+      "display": "0.091",
       "reads": "The decay alarm. Live IC below the backtest confidence interval means the edge is gone or was never there.",
       "kill_threshold": "Live IC below the backtest 95% interval",
       "kill_threshold_value": -0.0091,
@@ -10030,25 +10034,25 @@
           },
           {
             "feature": "ev_to_fcf",
-            "psi": 0.0332,
+            "psi": 0.0334,
             "baseline_observations": 4864,
             "current_observations": 13803
           },
           {
             "feature": "peg",
-            "psi": 0.0311,
+            "psi": 0.031,
             "baseline_observations": 11715,
             "current_observations": 8986
           },
           {
             "feature": "price_to_tangible_book",
-            "psi": 0.0281,
+            "psi": 0.0279,
             "baseline_observations": 2702,
-            "current_observations": 7011
+            "current_observations": 7009
           },
           {
             "feature": "interest_coverage",
-            "psi": 0.0253,
+            "psi": 0.0254,
             "baseline_observations": 5800,
             "current_observations": 16449
           },
@@ -10066,7 +10070,7 @@
           },
           {
             "feature": "return_on_invested_capital",
-            "psi": 0.0137,
+            "psi": 0.0138,
             "baseline_observations": 5116,
             "current_observations": 14302
           },
@@ -10078,7 +10082,7 @@
           },
           {
             "feature": "ev_to_ebitda",
-            "psi": 0.0116,
+            "psi": 0.0117,
             "baseline_observations": 5073,
             "current_observations": 14713
           },
@@ -10089,22 +10093,22 @@
             "current_observations": 15230
           },
           {
+            "feature": "forward_pe",
+            "psi": 0.008,
+            "baseline_observations": 14289,
+            "current_observations": 14540
+          },
+          {
             "feature": "free_cash_flow_yield",
             "psi": 0.008,
             "baseline_observations": 12622,
-            "current_observations": 12862
-          },
-          {
-            "feature": "forward_pe",
-            "psi": 0.0079,
-            "baseline_observations": 14289,
-            "current_observations": 14541
+            "current_observations": 12864
           },
           {
             "feature": "price_to_book",
-            "psi": 0.0072,
+            "psi": 0.0074,
             "baseline_observations": 14528,
-            "current_observations": 16600
+            "current_observations": 16599
           },
           {
             "feature": "inventory_days_trend",
@@ -10114,7 +10118,7 @@
           },
           {
             "feature": "altman_z",
-            "psi": 0.0052,
+            "psi": 0.0053,
             "baseline_observations": 4761,
             "current_observations": 13609
           },
@@ -10152,25 +10156,25 @@
             "feature": "accruals_ratio",
             "psi": 0.0022,
             "baseline_observations": 6430,
-            "current_observations": 17449
+            "current_observations": 17448
           },
           {
             "feature": "profit_margin",
             "psi": 0.0017,
             "baseline_observations": 16172,
-            "current_observations": 17616
+            "current_observations": 17615
           },
           {
             "feature": "current_ratio",
             "psi": 0.0016,
             "baseline_observations": 13727,
-            "current_observations": 13417
+            "current_observations": 13419
           },
           {
             "feature": "earnings_growth",
             "psi": 0.0015,
             "baseline_observations": 13993,
-            "current_observations": 14964
+            "current_observations": 14962
           },
           {
             "feature": "fcf_growth_3y",
@@ -10188,7 +10192,7 @@
             "feature": "revenue_growth",
             "psi": 0.0009,
             "baseline_observations": 14285,
-            "current_observations": 15617
+            "current_observations": 15616
           },
           {
             "feature": "capex_to_depreciation",
@@ -10200,13 +10204,13 @@
             "feature": "debt_to_equity",
             "psi": 0.0005,
             "baseline_observations": 14159,
-            "current_observations": 15815
+            "current_observations": 15814
           },
           {
             "feature": "asset_growth",
             "psi": 0.0,
             "baseline_observations": 6437,
-            "current_observations": 17737
+            "current_observations": 17736
           }
         ]
       },
@@ -11019,13 +11023,13 @@
       "id": "data_quality_counters",
       "group": "monitoring",
       "label": "Data quality counters",
-      "value": 0,
-      "display": "0 critical refresh issues",
+      "value": 1,
+      "display": "1 critical refresh issue",
       "reads": "Missing/stale price observations, duplicate rows, quality flags, and universe churn.",
       "kill_threshold": "Any missing, unstamped, stale, or duplicate current price row",
       "kill_threshold_value": 0,
       "comparison": "gt",
-      "breached": false,
+      "breached": true,
       "cadence": "Daily",
       "requires_live_sample": true,
       "status": "ready",
@@ -11035,12 +11039,14 @@
       "backtest_reference": null,
       "detail": {
         "status": "ready",
-        "value": 0,
+        "value": 1,
         "date": "2026-11-12",
-        "refresh_id": "advisor-2026-11-12T02:56:30.889624+00:00",
+        "refresh_id": "advisor-2026-11-12T22:20:54.196837+00:00",
         "rows": 889,
-        "missing_prices": 0,
-        "missing_price_tickers": [],
+        "missing_prices": 1,
+        "missing_price_tickers": [
+          "MOG.A"
+        ],
         "missing_price_timestamps": 0,
         "missing_price_timestamp_tickers": [],
         "stale_prices": 0,
@@ -11050,13 +11056,13 @@
         "universe_churn": {
           "added": [],
           "removed": [],
-          "observed_at": "2026-11-12T02:56:22.771824+00:00"
+          "observed_at": "2026-11-12T22:20:09.344024+00:00"
         },
         "corporate_action_monitoring": {
           "status": "not_available",
           "reason": "No prospective corporate-action event log exists; no miss count is inferred."
         },
-        "breached": false
+        "breached": true
       },
       "source": "point-in-time refresh and universe stores"
     },
@@ -11089,7 +11095,7 @@
   "summary": {
     "total": 64,
     "ready": 45,
-    "breached": 9,
+    "breached": 10,
     "sample_free_total": 46,
     "sample_free_ready": 42,
     "needs_sample_total": 18
@@ -11106,8 +11112,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "ffebe71f2958e220c76353796f82eafe8ed12ae3",
+    "git_commit_sha": "792e8a3cfbaa8077f05bcf01e66eaa5134605ab9",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-12T03:05:49.278612+00:00"
+    "generated_at": "2026-11-12T22:34:02.933317+00:00"
   }
 }
