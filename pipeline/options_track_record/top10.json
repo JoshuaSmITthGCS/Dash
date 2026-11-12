@@ -45,21 +45,6 @@
       ],
       "stock_leg": false
     },
-    "AR": {
-      "capital_required": 3300.0,
-      "date_predicted": "2026-11-12",
-      "entry_underlying_price": 39.13999938964844,
-      "expiration": "2026-11-20",
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "put",
-          "premium": 0.05,
-          "strike": 33.0
-        }
-      ],
-      "stock_leg": false
-    },
     "ASTS": {
       "capital_required": 3000.0,
       "date_predicted": "2026-11-12",
@@ -101,6 +86,21 @@
           "option_type": "put",
           "premium": 9.8,
           "strike": 350.0
+        }
+      ],
+      "stock_leg": false
+    },
+    "EIX": {
+      "capital_required": 5500.0,
+      "date_predicted": "2026-11-12",
+      "entry_underlying_price": 60.165199279785156,
+      "expiration": "2026-11-20",
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "premium": 0.225,
+          "strike": 55.0
         }
       ],
       "stock_leg": false
