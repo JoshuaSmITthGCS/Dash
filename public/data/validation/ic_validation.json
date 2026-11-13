@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-13T22:04:28.710814+00:00",
+  "generated_at": "2026-11-13T23:26:34.839487+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "reconstructed, look-ahead contaminated"
   },
-  "snapshot_refreshes": 241,
+  "snapshot_refreshes": 242,
   "monthly_score_snapshots": 4,
   "primary_horizon": "3M",
   "primary_target": "sector_residual_return_over_trading_sessions",
@@ -843,23 +843,23 @@
         "minimum_periods": 24,
         "status": "accumulating",
         "status_message": "accumulating, 2 of 24 periods",
-        "mean_rank_ic": 0.0957679197094098,
-        "ic_standard_deviation": 0.009885512682675165,
-        "standard_error": 0.006990113053425228,
+        "mean_rank_ic": 0.09734646268485819,
+        "ic_standard_deviation": 0.01211790956734305,
+        "standard_error": 0.008568656028873613,
         "confidence_interval_95": [
-          0.08206729812469636,
-          0.10946854129412324
+          0.08055189686826592,
+          0.11414102850145047
         ],
         "icir": null,
         "annualized_icir": null,
         "monthly_rank_ic": [
           0.08877780665598457,
-          0.10275803276283503
+          0.1059151187137318
         ],
         "probable_lookahead_flags": [
           {
             "date": "2026-09-30",
-            "rank_ic": 0.10275803276283503,
+            "rank_ic": 0.1059151187137318,
             "message": "Probable look-ahead or data leak. Investigate before interpreting."
           }
         ],
@@ -868,23 +868,23 @@
             "buckets": [
               {
                 "bucket": 1,
-                "mean_forward_return": -0.00413570694898238
+                "mean_forward_return": -0.004000808222689214
               },
               {
                 "bucket": 2,
-                "mean_forward_return": 0.0269691477313419
+                "mean_forward_return": 0.02705533031372888
               },
               {
                 "bucket": 3,
-                "mean_forward_return": 0.017355725586439066
+                "mean_forward_return": 0.017530026581737333
               },
               {
                 "bucket": 4,
-                "mean_forward_return": 0.019276606216736755
+                "mean_forward_return": 0.01938519933944035
               },
               {
                 "bucket": 5,
-                "mean_forward_return": 0.048165085136083335
+                "mean_forward_return": 0.04884609958432819
               }
             ],
             "monotonicity_spearman": 0.7,
@@ -894,43 +894,43 @@
             "buckets": [
               {
                 "bucket": 1,
-                "mean_forward_return": -0.029315681536937786
+                "mean_forward_return": -0.02923355113293458
               },
               {
                 "bucket": 2,
-                "mean_forward_return": 0.021044267638973026
+                "mean_forward_return": 0.021231934687556152
               },
               {
                 "bucket": 3,
-                "mean_forward_return": 0.02058752220574952
+                "mean_forward_return": 0.02064234476321221
               },
               {
                 "bucket": 4,
-                "mean_forward_return": 0.03335077325693428
+                "mean_forward_return": 0.03346831586424555
               },
               {
                 "bucket": 5,
-                "mean_forward_return": 0.02838458185515324
+                "mean_forward_return": 0.028517448715252244
               },
               {
                 "bucket": 6,
-                "mean_forward_return": 0.006411781373887213
+                "mean_forward_return": 0.0066270509523038475
               },
               {
                 "bucket": 7,
-                "mean_forward_return": 0.01022487683905749
+                "mean_forward_return": 0.010260724336730446
               },
               {
                 "bucket": 8,
-                "mean_forward_return": 0.028328335594416016
+                "mean_forward_return": 0.028509674342150255
               },
               {
                 "bucket": 9,
-                "mean_forward_return": 0.0485584920068062
+                "mean_forward_return": 0.04903862903243422
               },
               {
                 "bucket": 10,
-                "mean_forward_return": 0.04777167826536046
+                "mean_forward_return": 0.048653570136222145
               }
             ],
             "monotonicity_spearman": 0.5878787878787879,
@@ -938,7 +938,7 @@
           }
         },
         "long_short_top_minus_bottom_quintile": {
-          "mean_net_return": 0.05130079208506571,
+          "mean_net_return": 0.051846907807017395,
           "cost_model": "flat",
           "cost_bps": 10.0
         },
@@ -1254,18 +1254,18 @@
         "minimum_periods": 24,
         "status": "accumulating",
         "status_message": "accumulating, 2 of 24 periods",
-        "mean_rank_ic": 0.10556150974053988,
-        "ic_standard_deviation": 0.0014428464441176684,
-        "standard_error": 0.0010202465048465004,
+        "mean_rank_ic": 0.10650827155683373,
+        "ic_standard_deviation": 0.00010392304317790242,
+        "standard_error": 7.348468855263716e-05,
         "confidence_interval_95": [
-          0.10356182659104074,
-          0.10756119289003901
+          0.10636424156727056,
+          0.1066523015463969
         ],
         "icir": null,
         "annualized_icir": null,
         "monthly_rank_ic": [
           0.10658175624538638,
-          0.10454126323569338
+          0.1064347868682811
         ],
         "probable_lookahead_flags": [
           {
@@ -1275,7 +1275,7 @@
           },
           {
             "date": "2026-09-30",
-            "rank_ic": 0.10454126323569338,
+            "rank_ic": 0.1064347868682811,
             "message": "Probable look-ahead or data leak. Investigate before interpreting."
           }
         ],
@@ -1284,23 +1284,23 @@
             "buckets": [
               {
                 "bucket": 1,
-                "mean_forward_return": -0.008117649314927287
+                "mean_forward_return": -0.007975705118397472
               },
               {
                 "bucket": 2,
-                "mean_forward_return": 0.024353823462770284
+                "mean_forward_return": 0.024423571016473265
               },
               {
                 "bucket": 3,
-                "mean_forward_return": 0.02691302267712601
+                "mean_forward_return": 0.027152717920405148
               },
               {
                 "bucket": 4,
-                "mean_forward_return": 0.023346455932524754
+                "mean_forward_return": 0.02375297750440196
               },
               {
                 "bucket": 5,
-                "mean_forward_return": 0.04118567272269354
+                "mean_forward_return": 0.04151312141564689
               }
             ],
             "monotonicity_spearman": 0.7,
@@ -1310,51 +1310,51 @@
             "buckets": [
               {
                 "bucket": 1,
-                "mean_forward_return": -0.0355593966551267
+                "mean_forward_return": -0.03539191721546278
               },
               {
                 "bucket": 2,
-                "mean_forward_return": 0.01932409802527213
+                "mean_forward_return": 0.019440506978667844
               },
               {
                 "bucket": 3,
-                "mean_forward_return": 0.016496622774261133
+                "mean_forward_return": 0.01653032301011644
               },
               {
                 "bucket": 4,
-                "mean_forward_return": 0.03221102415127944
+                "mean_forward_return": 0.032316819022830096
               },
               {
                 "bucket": 5,
-                "mean_forward_return": 0.03473856062124897
+                "mean_forward_return": 0.034885446460072835
               },
               {
                 "bucket": 6,
-                "mean_forward_return": 0.019181148036769846
+                "mean_forward_return": 0.01951260988220701
               },
               {
                 "bucket": 7,
-                "mean_forward_return": 0.013719352674875755
+                "mean_forward_return": 0.01412985814592583
               },
               {
                 "bucket": 8,
-                "mean_forward_return": 0.03297355919017376
+                "mean_forward_return": 0.03337609686287809
               },
               {
                 "bucket": 9,
-                "mean_forward_return": 0.028572223041886335
+                "mean_forward_return": 0.028888692824363533
               },
               {
                 "bucket": 10,
-                "mean_forward_return": 0.05379912240350076
+                "mean_forward_return": 0.05413755000693025
               }
             ],
-            "monotonicity_spearman": 0.5636363636363636,
+            "monotonicity_spearman": 0.6121212121212121,
             "monotonic": true
           }
         },
         "long_short_top_minus_bottom_quintile": {
-          "mean_net_return": 0.04830332203762083,
+          "mean_net_return": 0.04848882653404436,
           "cost_model": "flat",
           "cost_bps": 10.0
         },
@@ -1668,8 +1668,8 @@
   "variants_label": "calendar_day_horizon_raw_return_secondary_diagnostic",
   "comparison": {
     "1M": {
-      "champion_mean_rank_ic": 0.0957679197094098,
-      "challenger_mean_rank_ic": 0.10556150974053988,
+      "champion_mean_rank_ic": 0.09734646268485819,
+      "challenger_mean_rank_ic": 0.10650827155683373,
       "eligible": false
     },
     "3M": {
@@ -1691,8 +1691,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "03c8c7302ead090c221871d130635a0d93b20bc1",
+    "git_commit_sha": "c82124b92820315bd24ed19557e089e3da41b4b7",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-13T22:04:28.710814+00:00"
+    "generated_at": "2026-11-13T23:26:34.839487+00:00"
   }
 }

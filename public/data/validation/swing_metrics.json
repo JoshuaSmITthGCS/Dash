@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-13T22:13:31.613502+00:00",
+  "generated_at": "2026-11-13T23:34:28.512930+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
@@ -328,9 +328,9 @@
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": -0.047,
-      "icir": -1.081,
-      "t_stat": -2.046,
+      "mean_rank_ic": -0.0469,
+      "icir": -1.078,
+      "t_stat": -2.041,
       "hit_rate": 0.488,
       "clears_multiple_testing_bar": false
     },
@@ -346,32 +346,32 @@
       "analyst_revision": {
         "weight": 0.25,
         "own_eligible_periods": 43,
-        "own_rank_ic": -0.0332,
-        "own_icir": -0.998,
-        "delta_ic": -0.0262,
+        "own_rank_ic": -0.0334,
+        "own_icir": -1.001,
+        "delta_ic": -0.0263,
         "hurts_composite": true
       },
       "high_volume_premium": {
         "weight": 0.2,
         "own_eligible_periods": 43,
-        "own_rank_ic": 0.0405,
-        "own_icir": 1.916,
+        "own_rank_ic": 0.0407,
+        "own_icir": 1.917,
         "delta_ic": 0.0287,
         "hurts_composite": false
       },
       "high_52w_proximity": {
         "weight": 0.15,
         "own_eligible_periods": 43,
-        "own_rank_ic": -0.0175,
-        "own_icir": -0.669,
-        "delta_ic": -0.0029,
+        "own_rank_ic": -0.0173,
+        "own_icir": -0.663,
+        "delta_ic": -0.0027,
         "hurts_composite": true
       },
       "short_term_reversal": {
         "weight": 0.1,
         "own_eligible_periods": 43,
-        "own_rank_ic": 0.0517,
-        "own_icir": 1.674,
+        "own_rank_ic": 0.0516,
+        "own_icir": 1.672,
         "delta_ic": 0.0084,
         "hurts_composite": false
       }
@@ -380,8 +380,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "03c8c7302ead090c221871d130635a0d93b20bc1",
+    "git_commit_sha": "c82124b92820315bd24ed19557e089e3da41b4b7",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-13T22:13:31.613502+00:00"
+    "generated_at": "2026-11-13T23:34:28.512930+00:00"
   }
 }
