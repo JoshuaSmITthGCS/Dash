@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-17T02:29:52.395072+00:00",
+  "generated_at": "2026-11-17T04:29:20.624224+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
@@ -11,9 +11,9 @@
     "eligible_periods": 34,
     "minimum_icir_periods": 24,
     "status": "eligible",
-    "mean_rank_ic": -0.1248,
-    "icir": -2.601,
-    "t_stat": -4.377,
+    "mean_rank_ic": -0.1245,
+    "icir": -2.596,
+    "t_stat": -4.37,
     "hit_rate": 0.235,
     "clears_multiple_testing_bar": true
   },
@@ -22,9 +22,9 @@
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": -0.1248,
-      "icir": -2.6,
-      "t_stat": -4.377,
+      "mean_rank_ic": -0.1245,
+      "icir": -2.596,
+      "t_stat": -4.37,
       "hit_rate": 0.235,
       "clears_multiple_testing_bar": true
     },
@@ -32,17 +32,17 @@
       "revision_agreement": {
         "weight": 0.12,
         "own_eligible_periods": 34,
-        "own_rank_ic": 0.0123,
-        "own_icir": 0.547,
-        "delta_ic": 0.0183,
+        "own_rank_ic": 0.0124,
+        "own_icir": 0.553,
+        "delta_ic": 0.0184,
         "hurts_composite": false
       },
       "revision_magnitude": {
         "weight": 0.15,
         "own_eligible_periods": 34,
-        "own_rank_ic": 0.0273,
-        "own_icir": 1.599,
-        "delta_ic": 0.0257,
+        "own_rank_ic": 0.0278,
+        "own_icir": 1.646,
+        "delta_ic": 0.0259,
         "hurts_composite": false
       },
       "revision_acceleration": {
@@ -50,7 +50,7 @@
         "own_eligible_periods": 0,
         "own_rank_ic": null,
         "own_icir": null,
-        "delta_ic": -0.0018,
+        "delta_ic": -0.0017,
         "hurts_composite": true
       },
       "fresh_estimate_delta": {
@@ -66,7 +66,7 @@
         "own_eligible_periods": 0,
         "own_rank_ic": null,
         "own_icir": null,
-        "delta_ic": -0.0007,
+        "delta_ic": -0.0006,
         "hurts_composite": true
       },
       "eps_surprise": {
@@ -104,49 +104,49 @@
       "momentum_12_1": {
         "weight": 0.08,
         "own_eligible_periods": 34,
-        "own_rank_ic": -0.2349,
-        "own_icir": -2.277,
-        "delta_ic": -0.076,
+        "own_rank_ic": -0.2356,
+        "own_icir": -2.281,
+        "delta_ic": -0.0761,
         "hurts_composite": true
       },
       "momentum_6_1": {
         "weight": 0.04,
         "own_eligible_periods": 34,
-        "own_rank_ic": -0.0887,
-        "own_icir": -1.225,
+        "own_rank_ic": -0.0889,
+        "own_icir": -1.227,
         "delta_ic": -0.0078,
         "hurts_composite": true
       },
       "high_52w_proximity": {
         "weight": 0.04,
         "own_eligible_periods": 34,
-        "own_rank_ic": -0.0102,
-        "own_icir": -0.189,
-        "delta_ic": 0.008,
+        "own_rank_ic": -0.0096,
+        "own_icir": -0.177,
+        "delta_ic": 0.0082,
         "hurts_composite": false
       },
       "industry_relative_momentum": {
         "weight": 0.04,
         "own_eligible_periods": 34,
-        "own_rank_ic": -0.1876,
-        "own_icir": -2.955,
-        "delta_ic": -0.0268,
+        "own_rank_ic": -0.188,
+        "own_icir": -2.958,
+        "delta_ic": -0.0267,
         "hurts_composite": true
       },
       "industry_revision_breadth": {
         "weight": 0.1,
         "own_eligible_periods": 34,
-        "own_rank_ic": -0.0937,
-        "own_icir": -1.727,
+        "own_rank_ic": -0.0938,
+        "own_icir": -1.728,
         "delta_ic": -0.0554,
         "hurts_composite": true
       },
       "risk_tradability": {
         "weight": 0.05,
         "own_eligible_periods": 34,
-        "own_rank_ic": 0.0587,
-        "own_icir": 1.463,
-        "delta_ic": 0.0001,
+        "own_rank_ic": 0.0588,
+        "own_icir": 1.466,
+        "delta_ic": 0.0002,
         "hurts_composite": false
       }
     }
@@ -154,8 +154,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "675a1c70d7e83772eb5b73c9a8ad850ef50a0e8e",
+    "git_commit_sha": "01b504a3ec8d01f3c1e59007d07669089d39f481",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-17T02:29:52.395072+00:00"
+    "generated_at": "2026-11-17T04:29:20.624224+00:00"
   }
 }
