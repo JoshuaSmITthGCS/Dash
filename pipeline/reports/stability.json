@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 244,
+  "refreshes_observed": 245,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -26585,6 +26585,170 @@
       "mean_abs_score_delta": 0.23,
       "mean_abs_confidence_delta": 0.0,
       "largest_availability_driven_movers": []
+    },
+    {
+      "previous_refresh": "advisor-2026-11-18T03:30:38.640356+00:00",
+      "current_refresh": "advisor-2026-11-18T22:36:29.008354+00:00",
+      "shared_tickers": 888,
+      "rank_turnover": {
+        "top_40": 0.225,
+        "top_100": 0.225
+      },
+      "tickers_with_availability_driven_change": 11,
+      "tickers_with_availability_driven_change_pct": 0.012,
+      "mean_abs_score_delta": 1.39,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "ARMK",
+          "metrics_with_value_change": [
+            "altman_z",
+            "ev_to_ebitda",
+            "interest_coverage",
+            "return_on_invested_capital"
+          ],
+          "metrics_with_availability_change": [
+            "gross_profits_to_assets",
+            "inventory_days_trend"
+          ],
+          "score_delta": 9.7,
+          "confidence_delta": -0.04
+        },
+        {
+          "ticker": "MTSI",
+          "metrics_with_value_change": [
+            "accruals_ratio",
+            "asset_growth",
+            "days_sales_outstanding_trend",
+            "fcf_growth_3y",
+            "gross_profits_to_assets",
+            "piotroski_f",
+            "price_to_book",
+            "return_on_invested_capital",
+            "stock_comp_to_revenue"
+          ],
+          "metrics_with_availability_change": [
+            "cash_conversion"
+          ],
+          "score_delta": 7.4,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "SR",
+          "metrics_with_value_change": [
+            "ev_to_ebitda",
+            "forward_pe",
+            "profit_margin",
+            "return_on_equity",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": -5.0,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "MIDD",
+          "metrics_with_value_change": [
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 4.7,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "SBUX",
+          "metrics_with_value_change": [
+            "asset_growth",
+            "capex_to_depreciation",
+            "days_sales_outstanding_trend",
+            "ev_to_fcf",
+            "interest_coverage",
+            "operating_margin_trend",
+            "piotroski_f"
+          ],
+          "metrics_with_availability_change": [
+            "gross_profits_to_assets",
+            "inventory_days_trend"
+          ],
+          "score_delta": 4.4,
+          "confidence_delta": 0.05
+        },
+        {
+          "ticker": "TEAM",
+          "metrics_with_value_change": [
+            "ev_to_fcf",
+            "sales_multiple"
+          ],
+          "metrics_with_availability_change": [
+            "ev_to_ebit"
+          ],
+          "score_delta": 3.6,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "ACM",
+          "metrics_with_value_change": [
+            "ev_to_fcf"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth",
+            "free_cash_flow_yield"
+          ],
+          "score_delta": 3.0,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "THO",
+          "metrics_with_value_change": [
+            "cash_conversion",
+            "ev_to_fcf",
+            "net_buyback_yield"
+          ],
+          "metrics_with_availability_change": [
+            "ev_to_ebit",
+            "interest_coverage",
+            "operating_margin_trend",
+            "return_on_invested_capital"
+          ],
+          "score_delta": -2.6,
+          "confidence_delta": 0.11
+        },
+        {
+          "ticker": "MOG.A",
+          "metrics_with_value_change": [
+            "sales_multiple"
+          ],
+          "metrics_with_availability_change": [
+            "debt_to_equity",
+            "earnings_growth",
+            "forward_pe",
+            "free_cash_flow_yield",
+            "price_to_book",
+            "price_to_tangible_book",
+            "profit_margin",
+            "return_on_equity",
+            "revenue_growth"
+          ],
+          "score_delta": -1.2,
+          "confidence_delta": -0.18
+        },
+        {
+          "ticker": "MSM",
+          "metrics_with_value_change": [
+            "altman_z"
+          ],
+          "metrics_with_availability_change": [
+            "free_cash_flow_yield",
+            "price_to_tangible_book"
+          ],
+          "score_delta": 1.0,
+          "confidence_delta": 0.04
+        }
+      ]
     }
   ],
   "peer_group_recomposition": {

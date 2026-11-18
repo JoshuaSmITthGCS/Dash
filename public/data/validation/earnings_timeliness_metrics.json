@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-18T03:43:24.523282+00:00",
+  "generated_at": "2026-11-18T22:50:14.797926+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
@@ -11,9 +11,9 @@
     "eligible_periods": 35,
     "minimum_icir_periods": 24,
     "status": "eligible",
-    "mean_rank_ic": -0.1265,
-    "icir": -2.67,
-    "t_stat": -4.56,
+    "mean_rank_ic": -0.1275,
+    "icir": -2.683,
+    "t_stat": -4.582,
     "hit_rate": 0.229,
     "clears_multiple_testing_bar": true
   },
@@ -22,9 +22,9 @@
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": -0.1265,
-      "icir": -2.67,
-      "t_stat": -4.559,
+      "mean_rank_ic": -0.1275,
+      "icir": -2.683,
+      "t_stat": -4.582,
       "hit_rate": 0.229,
       "clears_multiple_testing_bar": true
     },
@@ -32,17 +32,17 @@
       "revision_agreement": {
         "weight": 0.12,
         "own_eligible_periods": 35,
-        "own_rank_ic": 0.0133,
-        "own_icir": 0.599,
-        "delta_ic": 0.0183,
+        "own_rank_ic": 0.0128,
+        "own_icir": 0.58,
+        "delta_ic": 0.0179,
         "hurts_composite": false
       },
       "revision_magnitude": {
         "weight": 0.15,
         "own_eligible_periods": 35,
-        "own_rank_ic": 0.0262,
-        "own_icir": 1.56,
-        "delta_ic": 0.0253,
+        "own_rank_ic": 0.025,
+        "own_icir": 1.449,
+        "delta_ic": 0.0248,
         "hurts_composite": false
       },
       "revision_acceleration": {
@@ -50,7 +50,7 @@
         "own_eligible_periods": 0,
         "own_rank_ic": null,
         "own_icir": null,
-        "delta_ic": -0.0015,
+        "delta_ic": -0.0014,
         "hurts_composite": true
       },
       "fresh_estimate_delta": {
@@ -104,49 +104,49 @@
       "momentum_12_1": {
         "weight": 0.08,
         "own_eligible_periods": 35,
-        "own_rank_ic": -0.2439,
-        "own_icir": -2.374,
-        "delta_ic": -0.0792,
+        "own_rank_ic": -0.2436,
+        "own_icir": -2.372,
+        "delta_ic": -0.0794,
         "hurts_composite": true
       },
       "momentum_6_1": {
         "weight": 0.04,
         "own_eligible_periods": 35,
-        "own_rank_ic": -0.0908,
-        "own_icir": -1.272,
+        "own_rank_ic": -0.0914,
+        "own_icir": -1.279,
         "delta_ic": -0.0078,
         "hurts_composite": true
       },
       "high_52w_proximity": {
         "weight": 0.04,
         "own_eligible_periods": 35,
-        "own_rank_ic": -0.0052,
-        "own_icir": -0.096,
+        "own_rank_ic": -0.0058,
+        "own_icir": -0.107,
         "delta_ic": 0.0094,
         "hurts_composite": false
       },
       "industry_relative_momentum": {
         "weight": 0.04,
         "own_eligible_periods": 35,
-        "own_rank_ic": -0.1926,
-        "own_icir": -3.052,
-        "delta_ic": -0.0273,
+        "own_rank_ic": -0.191,
+        "own_icir": -3.04,
+        "delta_ic": -0.0271,
         "hurts_composite": true
       },
       "industry_revision_breadth": {
         "weight": 0.1,
         "own_eligible_periods": 35,
-        "own_rank_ic": -0.093,
-        "own_icir": -1.74,
-        "delta_ic": -0.0552,
+        "own_rank_ic": -0.0931,
+        "own_icir": -1.741,
+        "delta_ic": -0.0549,
         "hurts_composite": true
       },
       "risk_tradability": {
         "weight": 0.05,
         "own_eligible_periods": 35,
-        "own_rank_ic": 0.0608,
-        "own_icir": 1.533,
-        "delta_ic": 0.0003,
+        "own_rank_ic": 0.0604,
+        "own_icir": 1.524,
+        "delta_ic": 0.0004,
         "hurts_composite": false
       }
     }
@@ -154,8 +154,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "e5ffb37a9b5b72932746f7d05c331123c54408d1",
+    "git_commit_sha": "7ade1762ddd4d6c7aa70eccd9183e90b4def5e9c",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-18T03:43:24.523282+00:00"
+    "generated_at": "2026-11-18T22:50:14.797926+00:00"
   }
 }

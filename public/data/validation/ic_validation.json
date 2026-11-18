@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-18T03:31:47.867202+00:00",
+  "generated_at": "2026-11-18T22:37:38.793323+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "reconstructed, look-ahead contaminated"
   },
-  "snapshot_refreshes": 246,
+  "snapshot_refreshes": 247,
   "monthly_score_snapshots": 4,
   "primary_horizon": "3M",
   "primary_target": "sector_residual_return_over_trading_sessions",
@@ -843,18 +843,18 @@
         "minimum_periods": 24,
         "status": "accumulating",
         "status_message": "accumulating, 2 of 24 periods",
-        "mean_rank_ic": 0.08584890372959471,
-        "ic_standard_deviation": 0.004142094241374793,
-        "standard_error": 0.0029289029263898643,
+        "mean_rank_ic": 0.08097006588382158,
+        "ic_standard_deviation": 0.011041812891486287,
+        "standard_error": 0.007807740772162993,
         "confidence_interval_95": [
-          0.08010825399387057,
-          0.09158955346531884
+          0.06566689397038211,
+          0.09627323779726105
         ],
         "icir": null,
         "annualized_icir": null,
         "monthly_rank_ic": [
           0.08877780665598457,
-          0.08292000080320484
+          0.07316232511165859
         ],
         "probable_lookahead_flags": [],
         "bucket_returns": {
@@ -862,23 +862,23 @@
             "buckets": [
               {
                 "bucket": 1,
-                "mean_forward_return": -0.008721355884996037
+                "mean_forward_return": -0.016047835899792896
               },
               {
                 "bucket": 2,
-                "mean_forward_return": 0.021667860845768567
+                "mean_forward_return": 0.01718130532450953
               },
               {
                 "bucket": 3,
-                "mean_forward_return": 0.01068347209515478
+                "mean_forward_return": 0.005887911729429217
               },
               {
                 "bucket": 4,
-                "mean_forward_return": 0.017649902345473638
+                "mean_forward_return": 0.010062669995730298
               },
               {
                 "bucket": 5,
-                "mean_forward_return": 0.03861034889379018
+                "mean_forward_return": 0.03274400289349863
               }
             ],
             "monotonicity_spearman": 0.7,
@@ -888,43 +888,43 @@
             "buckets": [
               {
                 "bucket": 1,
-                "mean_forward_return": -0.034836539348197186
+                "mean_forward_return": -0.045180602955444724
               },
               {
                 "bucket": 2,
-                "mean_forward_return": 0.017393827578205116
+                "mean_forward_return": 0.013377736777170014
               },
               {
                 "bucket": 3,
-                "mean_forward_return": 0.01474997073759918
+                "mean_forward_return": 0.00901979271892673
               },
               {
                 "bucket": 4,
-                "mean_forward_return": 0.02858575095393796
+                "mean_forward_return": 0.025342817930092337
               },
               {
                 "bucket": 5,
-                "mean_forward_return": 0.02178782314344335
+                "mean_forward_return": 0.017718622862229232
               },
               {
                 "bucket": 6,
-                "mean_forward_return": -0.0004208789531337902
+                "mean_forward_return": -0.00603778835635412
               },
               {
                 "bucket": 7,
-                "mean_forward_return": 0.010806013771824744
+                "mean_forward_return": 0.0021389142238761056
               },
               {
                 "bucket": 8,
-                "mean_forward_return": 0.024493790919122526
+                "mean_forward_return": 0.017986425767584486
               },
               {
                 "bucket": 9,
-                "mean_forward_return": 0.04048112268762234
+                "mean_forward_return": 0.03499054105418705
               },
               {
                 "bucket": 10,
-                "mean_forward_return": 0.03673957509995801
+                "mean_forward_return": 0.030506336081451767
               }
             ],
             "monotonicity_spearman": 0.6242424242424243,
@@ -932,14 +932,14 @@
           }
         },
         "long_short_top_minus_bottom_quintile": {
-          "mean_net_return": 0.04633170477878622,
+          "mean_net_return": 0.04779183879329152,
           "cost_model": "flat",
           "cost_bps": 10.0
         },
         "trials_considered": 73,
         "deflated_sharpe_probability": null,
         "mean_top_quintile_turnover": 0.1694915254237288,
-        "mean_rank_stability": 0.9646189428815563
+        "mean_rank_stability": 0.9646477696030219
       },
       "3M": {
         "periods_accumulated": 0,
@@ -1248,18 +1248,18 @@
         "minimum_periods": 24,
         "status": "accumulating",
         "status_message": "accumulating, 2 of 24 periods",
-        "mean_rank_ic": 0.09928248171461694,
-        "ic_standard_deviation": 0.010322733036898646,
-        "standard_error": 0.007299274530769436,
+        "mean_rank_ic": 0.09531456567819596,
+        "ic_standard_deviation": 0.0159342137099629,
+        "standard_error": 0.011267190567190421,
         "confidence_interval_95": [
-          0.08497590363430885,
-          0.11358905979492503
+          0.07323087216650273,
+          0.11739825918988919
         ],
         "icir": null,
         "annualized_icir": null,
         "monthly_rank_ic": [
           0.10658175624538638,
-          0.0919832071838475
+          0.08404737511100553
         ],
         "probable_lookahead_flags": [
           {
@@ -1273,84 +1273,84 @@
             "buckets": [
               {
                 "bucket": 1,
-                "mean_forward_return": -0.013304777352447198
+                "mean_forward_return": -0.0195666323565568
               },
               {
                 "bucket": 2,
-                "mean_forward_return": 0.018220081520642688
+                "mean_forward_return": 0.011928150952305762
               },
               {
                 "bucket": 3,
-                "mean_forward_return": 0.022364159208550713
+                "mean_forward_return": 0.017904716428374785
               },
               {
                 "bucket": 4,
-                "mean_forward_return": 0.01912625218721134
+                "mean_forward_return": 0.011057126497650624
               },
               {
                 "bucket": 5,
-                "mean_forward_return": 0.033484512731233575
+                "mean_forward_return": 0.02854146705083537
               }
             ],
-            "monotonicity_spearman": 0.9,
+            "monotonicity_spearman": 0.7,
             "monotonic": true
           },
           "10": {
             "buckets": [
               {
                 "bucket": 1,
-                "mean_forward_return": -0.03978310662591483
+                "mean_forward_return": -0.048509233027709465
               },
               {
                 "bucket": 2,
-                "mean_forward_return": 0.013173551921020437
+                "mean_forward_return": 0.009555807311733737
               },
               {
                 "bucket": 3,
-                "mean_forward_return": 0.010390348673895489
+                "mean_forward_return": 0.005006132833948244
               },
               {
                 "bucket": 4,
-                "mean_forward_return": 0.02604981436738989
+                "mean_forward_return": 0.018850169070663277
               },
               {
                 "bucket": 5,
-                "mean_forward_return": 0.0322375455265512
+                "mean_forward_return": 0.026245382247411096
               },
               {
                 "bucket": 6,
-                "mean_forward_return": 0.012490772890550228
+                "mean_forward_return": 0.00946346922399576
               },
               {
                 "bucket": 7,
-                "mean_forward_return": 0.01070202822921165
+                "mean_forward_return": 0.0027229985533284637
               },
               {
                 "bucket": 8,
-                "mean_forward_return": 0.02755047614521104
+                "mean_forward_return": 0.01939125444197278
               },
               {
                 "bucket": 9,
-                "mean_forward_return": 0.02284535493208103
+                "mean_forward_return": 0.01626399500596267
               },
               {
                 "bucket": 10,
-                "mean_forward_return": 0.04412367053038612
+                "mean_forward_return": 0.040722652234918374
               }
             ],
-            "monotonicity_spearman": 0.6121212121212121,
+            "monotonicity_spearman": 0.5636363636363636,
             "monotonic": true
           }
         },
         "long_short_top_minus_bottom_quintile": {
-          "mean_net_return": 0.045789290083680774,
+          "mean_net_return": 0.04710809940739217,
           "cost_model": "flat",
           "cost_bps": 10.0
         },
         "trials_considered": 73,
         "deflated_sharpe_probability": null,
         "mean_top_quintile_turnover": 0.16384180790960456,
-        "mean_rank_stability": 0.9554667806383792
+        "mean_rank_stability": 0.9556314220169345
       },
       "3M": {
         "periods_accumulated": 0,
@@ -1657,8 +1657,8 @@
   "variants_label": "calendar_day_horizon_raw_return_secondary_diagnostic",
   "comparison": {
     "1M": {
-      "champion_mean_rank_ic": 0.08584890372959471,
-      "challenger_mean_rank_ic": 0.09928248171461694,
+      "champion_mean_rank_ic": 0.08097006588382158,
+      "challenger_mean_rank_ic": 0.09531456567819596,
       "eligible": false
     },
     "3M": {
@@ -1680,8 +1680,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "e5ffb37a9b5b72932746f7d05c331123c54408d1",
+    "git_commit_sha": "7ade1762ddd4d6c7aa70eccd9183e90b4def5e9c",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-18T03:31:47.867202+00:00"
+    "generated_at": "2026-11-18T22:37:38.793323+00:00"
   }
 }
