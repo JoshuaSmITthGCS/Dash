@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-18T00:44:09.094060+00:00",
+  "generated_at": "2026-11-18T03:40:28.025581+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
@@ -340,9 +340,9 @@
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": -0.0481,
-      "icir": -1.122,
-      "t_stat": -2.173,
+      "mean_rank_ic": -0.0483,
+      "icir": -1.128,
+      "t_stat": -2.184,
       "hit_rate": 0.489,
       "clears_multiple_testing_bar": false
     },
@@ -351,40 +351,40 @@
         "weight": 0.3,
         "own_eligible_periods": 45,
         "own_rank_ic": -0.0786,
-        "own_icir": -1.985,
-        "delta_ic": -0.0837,
+        "own_icir": -1.983,
+        "delta_ic": -0.0835,
         "hurts_composite": true
       },
       "analyst_revision": {
         "weight": 0.25,
         "own_eligible_periods": 45,
-        "own_rank_ic": -0.0316,
-        "own_icir": -0.951,
-        "delta_ic": -0.025,
+        "own_rank_ic": -0.0324,
+        "own_icir": -0.984,
+        "delta_ic": -0.0255,
         "hurts_composite": true
       },
       "high_volume_premium": {
         "weight": 0.2,
         "own_eligible_periods": 45,
-        "own_rank_ic": 0.041,
-        "own_icir": 1.949,
-        "delta_ic": 0.0275,
+        "own_rank_ic": 0.0408,
+        "own_icir": 1.938,
+        "delta_ic": 0.0274,
         "hurts_composite": false
       },
       "high_52w_proximity": {
         "weight": 0.15,
         "own_eligible_periods": 45,
-        "own_rank_ic": -0.0151,
-        "own_icir": -0.583,
-        "delta_ic": -0.0019,
+        "own_rank_ic": -0.015,
+        "own_icir": -0.579,
+        "delta_ic": -0.0018,
         "hurts_composite": true
       },
       "short_term_reversal": {
         "weight": 0.1,
         "own_eligible_periods": 45,
-        "own_rank_ic": 0.0509,
-        "own_icir": 1.674,
-        "delta_ic": 0.0079,
+        "own_rank_ic": 0.0512,
+        "own_icir": 1.681,
+        "delta_ic": 0.0081,
         "hurts_composite": false
       }
     }
@@ -392,8 +392,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "7fb74f02f4bba818220f0007c413b1629132688a",
+    "git_commit_sha": "e5ffb37a9b5b72932746f7d05c331123c54408d1",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-18T00:44:09.094060+00:00"
+    "generated_at": "2026-11-18T03:40:28.025581+00:00"
   }
 }
