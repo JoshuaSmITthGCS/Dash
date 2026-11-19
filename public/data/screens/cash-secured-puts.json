@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "model_version": "cash-secured-put-v1.0.0",
   "config_version": "screens-v1.0.0",
-  "generated_at": "2026-11-19T00:14:43.086858+00:00",
+  "generated_at": "2026-11-19T02:36:21.356215+00:00",
   "status": "success",
   "window": {
     "min_days_to_expiration": 1,
@@ -18,12 +18,12 @@
       "sector": "Technology",
       "peer_group": "Technology",
       "percentile": 100.0,
-      "score": 0.3051,
+      "score": 0.4142,
       "structural_score": 71.9,
       "data_coverage": 0.85,
-      "price": 312.57000732421875,
-      "trend_20d": -0.3567,
-      "realized_volatility_20d": 1.0754,
+      "price": 313.1099853515625,
+      "trend_20d": -0.3556,
+      "realized_volatility_20d": 1.0752,
       "expiration": "2026-11-27",
       "days_to_expiration": 8,
       "capital_required": 30000.0,
@@ -38,7 +38,7 @@
           "spread_pct": 0.0461,
           "implied_volatility": 1.2164345819091797,
           "open_interest": 377,
-          "delta": -0.3753
+          "delta": -0.3716
         }
       ],
       "metrics": {
@@ -46,9 +46,9 @@
         "collateral": 30000.0,
         "effective_cost_basis": 282.65,
         "annualized_yield": 2.6386,
-        "expected_value_pct": 0.0758,
-        "probability_otm": 0.5548,
-        "probability_assigned": 0.4452,
+        "expected_value_pct": 0.0764,
+        "probability_otm": 0.5586,
+        "probability_assigned": 0.4414,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
         "research_confidence": 18.615
@@ -56,72 +56,23 @@
       "reason_codes": [],
       "track_record": {
         "date_predicted": "2026-11-18",
-        "pnl_dollars": 356.09,
-        "pnl_pct_of_capital": 1.19
+        "pnl_dollars": 376.2,
+        "pnl_pct_of_capital": 1.25
       }
     },
     {
       "rank": 2,
-      "ticker": "ASTS",
-      "eligibility": true,
-      "sector": "Technology",
-      "peer_group": "Networking Equipment",
-      "percentile": 75.0,
-      "score": 0.1637,
-      "structural_score": 26.1,
-      "data_coverage": 0.65,
-      "price": 25.46500015258789,
-      "trend_20d": -0.3774,
-      "realized_volatility_20d": 1.219,
-      "expiration": "2026-11-27",
-      "days_to_expiration": 8,
-      "capital_required": 2500.0,
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "put",
-          "strike": 25.0,
-          "bid": 1.56,
-          "ask": 1.65,
-          "mid": 1.605,
-          "spread_pct": 0.0561,
-          "implied_volatility": 1.1650432373046877,
-          "open_interest": 1530,
-          "delta": -0.4234
-        }
-      ],
-      "metrics": {
-        "premium": 1.605,
-        "collateral": 2500.0,
-        "effective_cost_basis": 23.395,
-        "annualized_yield": 2.9291,
-        "expected_value_pct": 0.0722,
-        "probability_otm": 0.5082,
-        "probability_assigned": 0.4918,
-        "suggested_position_pct": 0.02,
-        "news_sentiment": null,
-        "research_confidence": -15.535
-      },
-      "reason_codes": [],
-      "track_record": {
-        "date_predicted": "2026-11-18",
-        "pnl_dollars": 1.39,
-        "pnl_pct_of_capital": 0.06
-      }
-    },
-    {
-      "rank": 3,
       "ticker": "BAC",
       "eligibility": true,
       "sector": "Financial Services",
       "peer_group": "Large banks",
-      "percentile": 50.0,
-      "score": -0.0237,
-      "structural_score": 68.4,
+      "percentile": 75.0,
+      "score": 0.2734,
+      "structural_score": 68.3,
       "data_coverage": 0.7,
-      "price": 48.85499954223633,
-      "trend_20d": -0.0379,
-      "realized_volatility_20d": 0.255,
+      "price": 48.90999984741211,
+      "trend_20d": -0.0368,
+      "realized_volatility_20d": 0.2544,
       "expiration": "2026-11-27",
       "days_to_expiration": 8,
       "capital_required": 4800.0,
@@ -136,7 +87,7 @@
           "spread_pct": 0.1053,
           "implied_volatility": 0.29004616210937495,
           "open_interest": 2995,
-          "delta": -0.3326
+          "delta": -0.3232
         }
       ],
       "metrics": {
@@ -144,18 +95,67 @@
         "collateral": 4800.0,
         "effective_cost_basis": 47.525,
         "annualized_yield": 0.4515,
-        "expected_value_pct": 0.0157,
-        "probability_otm": 0.6516,
-        "probability_assigned": 0.3484,
+        "expected_value_pct": 0.0159,
+        "probability_otm": 0.6613,
+        "probability_assigned": 0.3387,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
-        "research_confidence": 12.88
+        "research_confidence": 12.81
       },
       "reason_codes": [],
       "track_record": {
         "date_predicted": "2026-11-17",
-        "pnl_dollars": -54.78,
-        "pnl_pct_of_capital": -1.1
+        "pnl_dollars": -50.67,
+        "pnl_pct_of_capital": -1.01
+      }
+    },
+    {
+      "rank": 3,
+      "ticker": "ASTS",
+      "eligibility": true,
+      "sector": "Technology",
+      "peer_group": "Networking Equipment",
+      "percentile": 50.0,
+      "score": 0.2519,
+      "structural_score": 26.1,
+      "data_coverage": 0.65,
+      "price": 25.489999771118164,
+      "trend_20d": -0.3768,
+      "realized_volatility_20d": 1.2184,
+      "expiration": "2026-11-27",
+      "days_to_expiration": 8,
+      "capital_required": 2500.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 25.0,
+          "bid": 1.56,
+          "ask": 1.65,
+          "mid": 1.605,
+          "spread_pct": 0.0561,
+          "implied_volatility": 1.1650432373046877,
+          "open_interest": 1530,
+          "delta": -0.4212
+        }
+      ],
+      "metrics": {
+        "premium": 1.605,
+        "collateral": 2500.0,
+        "effective_cost_basis": 23.395,
+        "annualized_yield": 2.9291,
+        "expected_value_pct": 0.0726,
+        "probability_otm": 0.5105,
+        "probability_assigned": 0.4895,
+        "suggested_position_pct": 0.02,
+        "news_sentiment": null,
+        "research_confidence": -15.535
+      },
+      "reason_codes": [],
+      "track_record": {
+        "date_predicted": "2026-11-18",
+        "pnl_dollars": 2.53,
+        "pnl_pct_of_capital": 0.1
       }
     },
     {
@@ -165,12 +165,12 @@
       "sector": "Technology",
       "peer_group": "Semiconductor",
       "percentile": 25.0,
-      "score": -0.0304,
+      "score": -0.2738,
       "structural_score": 62.2,
       "data_coverage": 0.89,
-      "price": 353.489990234375,
-      "trend_20d": 0.0464,
-      "realized_volatility_20d": 0.7341,
+      "price": 354.04998779296875,
+      "trend_20d": 0.0481,
+      "realized_volatility_20d": 0.7351,
       "expiration": "2026-11-25",
       "days_to_expiration": 6,
       "capital_required": 30500.0,
@@ -185,7 +185,7 @@
           "spread_pct": 0.0469,
           "implied_volatility": 0.7358424853515625,
           "open_interest": 116,
-          "delta": -0.0536
+          "delta": -0.0518
         }
       ],
       "metrics": {
@@ -193,9 +193,9 @@
         "collateral": 30500.0,
         "effective_cost_basis": 303.935,
         "annualized_yield": 0.2124,
-        "expected_value_pct": 0.0137,
-        "probability_otm": 0.9353,
-        "probability_assigned": 0.0647,
+        "expected_value_pct": 0.0135,
+        "probability_otm": 0.9374,
+        "probability_assigned": 0.0626,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
         "research_confidence": 10.858
@@ -203,7 +203,7 @@
       "reason_codes": [],
       "track_record": {
         "date_predicted": "2026-11-18",
-        "pnl_dollars": 29.06,
+        "pnl_dollars": 31.51,
         "pnl_pct_of_capital": 0.1
       }
     },
@@ -214,37 +214,37 @@
       "sector": "Technology",
       "peer_group": "Semiconductor",
       "percentile": 0.0,
-      "score": -0.4147,
+      "score": -0.6657,
       "structural_score": 95.5,
       "data_coverage": 0.89,
-      "price": 360.31500244140625,
-      "trend_20d": -0.1657,
-      "realized_volatility_20d": 0.6657,
+      "price": 362.6199951171875,
+      "trend_20d": -0.1604,
+      "realized_volatility_20d": 0.6674,
       "expiration": "2026-11-27",
       "days_to_expiration": 8,
-      "capital_required": 23500.0,
+      "capital_required": 36250.0,
       "legs": [
         {
           "action": "sell",
           "option_type": "put",
-          "strike": 235.0,
-          "bid": 0.02,
-          "ask": 0.05,
-          "mid": 0.035,
-          "spread_pct": 0.8571,
-          "implied_volatility": 0.9882813671875,
-          "open_interest": 79,
-          "delta": -0.0014
+          "strike": 362.5,
+          "bid": 11.85,
+          "ask": 12.2,
+          "mid": 12.025,
+          "spread_pct": 0.0291,
+          "implied_volatility": 0.532231240234375,
+          "open_interest": 65,
+          "delta": -0.4826
         }
       ],
       "metrics": {
-        "premium": 0.035,
-        "collateral": 23500.0,
-        "effective_cost_basis": 234.965,
-        "annualized_yield": 0.0068,
-        "expected_value_pct": 0.0013,
-        "probability_otm": 0.9978,
-        "probability_assigned": 0.0022,
+        "premium": 12.025,
+        "collateral": 36250.0,
+        "effective_cost_basis": 350.475,
+        "annualized_yield": 1.5135,
+        "expected_value_pct": 0.0331,
+        "probability_otm": 0.486,
+        "probability_assigned": 0.514,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
         "research_confidence": 40.495
@@ -252,15 +252,15 @@
       "reason_codes": [],
       "track_record": {
         "date_predicted": "2026-11-18",
-        "pnl_dollars": 32.93,
+        "pnl_dollars": 32.94,
         "pnl_pct_of_capital": 0.13
       }
     }
   ],
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "d8c567d80ff7026422832a46d7b10dbbd97384da",
+    "git_commit_sha": "7f02b5770110689cbaf63c3d12cce3becdb83bb7",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-19T00:14:43.086858+00:00"
+    "generated_at": "2026-11-19T02:36:21.356215+00:00"
   }
 }
