@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-20T00:45:42.128426+00:00",
+  "generated_at": "2026-11-20T02:31:59.295196+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
@@ -352,9 +352,9 @@
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": -0.0501,
-      "icir": -1.198,
-      "t_stat": -2.371,
+      "mean_rank_ic": -0.0503,
+      "icir": -1.201,
+      "t_stat": -2.377,
       "hit_rate": 0.447,
       "clears_multiple_testing_bar": false
     },
@@ -370,33 +370,33 @@
       "analyst_revision": {
         "weight": 0.25,
         "own_eligible_periods": 47,
-        "own_rank_ic": -0.0293,
-        "own_icir": -0.896,
+        "own_rank_ic": -0.0291,
+        "own_icir": -0.889,
         "delta_ic": -0.0234,
         "hurts_composite": true
       },
       "high_volume_premium": {
         "weight": 0.2,
         "own_eligible_periods": 47,
-        "own_rank_ic": 0.0368,
-        "own_icir": 1.712,
-        "delta_ic": 0.0243,
+        "own_rank_ic": 0.0364,
+        "own_icir": 1.673,
+        "delta_ic": 0.0239,
         "hurts_composite": false
       },
       "high_52w_proximity": {
         "weight": 0.15,
         "own_eligible_periods": 47,
-        "own_rank_ic": -0.0195,
-        "own_icir": -0.74,
-        "delta_ic": -0.0041,
+        "own_rank_ic": -0.0197,
+        "own_icir": -0.748,
+        "delta_ic": -0.0043,
         "hurts_composite": true
       },
       "short_term_reversal": {
         "weight": 0.1,
         "own_eligible_periods": 47,
-        "own_rank_ic": 0.061,
-        "own_icir": 1.863,
-        "delta_ic": 0.0132,
+        "own_rank_ic": 0.0614,
+        "own_icir": 1.865,
+        "delta_ic": 0.0133,
         "hurts_composite": false
       }
     }
@@ -404,8 +404,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "a7e6cb52db6422c9c683b3a1f1f7892d5cb44cee",
+    "git_commit_sha": "32d521b6b280080d85a5709c541e402ae633846a",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-20T00:45:42.128426+00:00"
+    "generated_at": "2026-11-20T02:31:59.295196+00:00"
   }
 }

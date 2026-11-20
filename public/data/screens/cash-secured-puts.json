@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "model_version": "cash-secured-put-v1.0.0",
   "config_version": "screens-v1.0.0",
-  "generated_at": "2026-11-20T00:37:35.101155+00:00",
+  "generated_at": "2026-11-20T02:26:04.545873+00:00",
   "status": "success",
   "window": {
     "min_days_to_expiration": 1,
@@ -18,7 +18,7 @@
       "sector": "Consumer Cyclical",
       "peer_group": "Ecommerce Retail",
       "percentile": 100.0,
-      "score": 0.3608,
+      "score": 0.3558,
       "structural_score": 64.4,
       "data_coverage": 0.87,
       "price": 257.3699951171875,
@@ -67,9 +67,9 @@
       "sector": "Communication Services",
       "peer_group": "Interactive Media Platform",
       "percentile": 90.0,
-      "score": 0.3558,
-      "structural_score": 40.9,
-      "data_coverage": 0.76,
+      "score": 0.3517,
+      "structural_score": 40.0,
+      "data_coverage": 0.79,
       "price": 96.91999816894531,
       "trend_20d": -0.3911,
       "realized_volatility_20d": 1.4621,
@@ -100,7 +100,7 @@
         "probability_assigned": 0.2601,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
-        "research_confidence": -6.916
+        "research_confidence": -7.9
       },
       "reason_codes": [],
       "track_record": {
@@ -116,7 +116,7 @@
       "sector": "Technology",
       "peer_group": "Technology",
       "percentile": 80.0,
-      "score": 0.3412,
+      "score": 0.3337,
       "structural_score": 70.0,
       "data_coverage": 0.89,
       "price": 349.2099914550781,
@@ -165,7 +165,7 @@
       "sector": "Technology",
       "peer_group": "Technology",
       "percentile": 70.0,
-      "score": 0.223,
+      "score": 0.2151,
       "structural_score": 71.9,
       "data_coverage": 0.85,
       "price": 312.5400085449219,
@@ -214,7 +214,7 @@
       "sector": "Technology",
       "peer_group": "Semiconductor",
       "percentile": 60.0,
-      "score": 0.0863,
+      "score": 0.0814,
       "structural_score": 63.7,
       "data_coverage": 0.89,
       "price": 489.19000244140625,
@@ -258,61 +258,12 @@
     },
     {
       "rank": 6,
-      "ticker": "ASTS",
-      "eligibility": true,
-      "sector": "Technology",
-      "peer_group": "Networking Equipment",
-      "percentile": 50.0,
-      "score": -0.0573,
-      "structural_score": 25.9,
-      "data_coverage": 0.65,
-      "price": 25.549999237060547,
-      "trend_20d": -0.341,
-      "realized_volatility_20d": 1.2164,
-      "expiration": "2026-11-27",
-      "days_to_expiration": 7,
-      "capital_required": 2200.0,
-      "legs": [
-        {
-          "action": "sell",
-          "option_type": "put",
-          "strike": 22.0,
-          "bid": 0.45,
-          "ask": 0.54,
-          "mid": 0.495,
-          "spread_pct": 0.1818,
-          "implied_volatility": 1.2265663671875,
-          "open_interest": 128,
-          "delta": -0.1671
-        }
-      ],
-      "metrics": {
-        "premium": 0.495,
-        "collateral": 2200.0,
-        "effective_cost_basis": 21.505,
-        "annualized_yield": 1.1732,
-        "expected_value_pct": 0.0556,
-        "probability_otm": 0.7869,
-        "probability_assigned": 0.2131,
-        "suggested_position_pct": 0.02,
-        "news_sentiment": null,
-        "research_confidence": -15.665
-      },
-      "reason_codes": [],
-      "track_record": {
-        "date_predicted": "2026-11-18",
-        "pnl_dollars": 16.93,
-        "pnl_pct_of_capital": 0.68
-      }
-    },
-    {
-      "rank": 7,
       "ticker": "OXY",
       "eligibility": true,
       "sector": "Energy",
       "peer_group": "Commodity producers",
-      "percentile": 40.0,
-      "score": -0.0652,
+      "percentile": 50.0,
+      "score": -0.0476,
       "structural_score": 75.9,
       "data_coverage": 0.87,
       "price": 53.810001373291016,
@@ -355,14 +306,63 @@
       }
     },
     {
+      "rank": 7,
+      "ticker": "ASTS",
+      "eligibility": true,
+      "sector": "Technology",
+      "peer_group": "Networking Equipment",
+      "percentile": 40.0,
+      "score": -0.0486,
+      "structural_score": 25.9,
+      "data_coverage": 0.65,
+      "price": 25.549999237060547,
+      "trend_20d": -0.341,
+      "realized_volatility_20d": 1.2164,
+      "expiration": "2026-11-27",
+      "days_to_expiration": 7,
+      "capital_required": 2200.0,
+      "legs": [
+        {
+          "action": "sell",
+          "option_type": "put",
+          "strike": 22.0,
+          "bid": 0.45,
+          "ask": 0.54,
+          "mid": 0.495,
+          "spread_pct": 0.1818,
+          "implied_volatility": 1.2265663671875,
+          "open_interest": 128,
+          "delta": -0.1671
+        }
+      ],
+      "metrics": {
+        "premium": 0.495,
+        "collateral": 2200.0,
+        "effective_cost_basis": 21.505,
+        "annualized_yield": 1.1732,
+        "expected_value_pct": 0.0556,
+        "probability_otm": 0.7869,
+        "probability_assigned": 0.2131,
+        "suggested_position_pct": 0.02,
+        "news_sentiment": null,
+        "research_confidence": -15.665
+      },
+      "reason_codes": [],
+      "track_record": {
+        "date_predicted": "2026-11-18",
+        "pnl_dollars": 16.93,
+        "pnl_pct_of_capital": 0.68
+      }
+    },
+    {
       "rank": 8,
       "ticker": "META",
       "eligibility": true,
       "sector": "Communication Services",
       "peer_group": "Interactive Media Platform",
       "percentile": 30.0,
-      "score": -0.1516,
-      "structural_score": 71.2,
+      "score": -0.134,
+      "structural_score": 74.5,
       "data_coverage": 0.88,
       "price": 596.219970703125,
       "trend_20d": -0.0811,
@@ -394,7 +394,7 @@
         "probability_assigned": 0.0075,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
-        "research_confidence": 18.656
+        "research_confidence": 21.56
       },
       "reason_codes": [],
       "track_record": {
@@ -410,7 +410,7 @@
       "sector": "Financial Services",
       "peer_group": "Large banks",
       "percentile": 20.0,
-      "score": -0.1908,
+      "score": -0.1959,
       "structural_score": 68.2,
       "data_coverage": 0.7,
       "price": 48.56999969482422,
@@ -459,8 +459,8 @@
       "sector": "Consumer Cyclical",
       "peer_group": "Restaurants",
       "percentile": 10.0,
-      "score": -0.4093,
-      "structural_score": 66.5,
+      "score": -0.4138,
+      "structural_score": 66.7,
       "data_coverage": 0.89,
       "price": 36.29999923706055,
       "trend_20d": 0.29,
@@ -492,7 +492,7 @@
         "probability_assigned": 0.2518,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
-        "research_confidence": 14.685
+        "research_confidence": 14.863
       },
       "reason_codes": [],
       "track_record": {
@@ -508,8 +508,8 @@
       "sector": "Technology",
       "peer_group": "Saas",
       "percentile": 0.0,
-      "score": -0.4929,
-      "structural_score": 65.2,
+      "score": -0.4976,
+      "structural_score": 65.3,
       "data_coverage": 0.89,
       "price": 498.29998779296875,
       "trend_20d": -0.0437,
@@ -541,7 +541,7 @@
         "probability_assigned": 0.0024,
         "suggested_position_pct": 0.02,
         "news_sentiment": null,
-        "research_confidence": 13.528
+        "research_confidence": 13.617
       },
       "reason_codes": [],
       "track_record": {
@@ -553,8 +553,8 @@
   ],
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "a7e6cb52db6422c9c683b3a1f1f7892d5cb44cee",
+    "git_commit_sha": "32d521b6b280080d85a5709c541e402ae633846a",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-20T00:37:35.101155+00:00"
+    "generated_at": "2026-11-20T02:26:04.545873+00:00"
   }
 }

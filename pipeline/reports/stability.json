@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 248,
+  "refreshes_observed": 249,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -26801,6 +26801,39 @@
       "mean_abs_score_delta": 0.2,
       "mean_abs_confidence_delta": 0.0,
       "largest_availability_driven_movers": []
+    },
+    {
+      "previous_refresh": "advisor-2026-11-20T00:36:18.579594+00:00",
+      "current_refresh": "advisor-2026-11-20T02:24:58.032656+00:00",
+      "shared_tickers": 889,
+      "rank_turnover": {
+        "top_40": 0.05,
+        "top_100": 0.05
+      },
+      "tickers_with_availability_driven_change": 2,
+      "tickers_with_availability_driven_change_pct": 0.002,
+      "mean_abs_score_delta": 0.19,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "NBIS",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "ev_to_ebit"
+          ],
+          "score_delta": -0.9,
+          "confidence_delta": 0.03
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 0.8,
+          "confidence_delta": -0.02
+        }
+      ]
     }
   ],
   "peer_group_recomposition": {
