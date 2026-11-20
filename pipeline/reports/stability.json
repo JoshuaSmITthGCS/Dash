@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 249,
+  "refreshes_observed": 250,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -26832,6 +26832,97 @@
           ],
           "score_delta": 0.8,
           "confidence_delta": -0.02
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-11-20T02:24:58.032656+00:00",
+      "current_refresh": "advisor-2026-11-20T22:26:05.245699+00:00",
+      "shared_tickers": 888,
+      "rank_turnover": {
+        "top_40": 0.275,
+        "top_100": 0.275
+      },
+      "tickers_with_availability_driven_change": 6,
+      "tickers_with_availability_driven_change_pct": 0.007,
+      "mean_abs_score_delta": 1.28,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "MOG.A",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "debt_to_equity",
+            "earnings_growth",
+            "forward_pe",
+            "free_cash_flow_yield",
+            "price_to_book",
+            "price_to_tangible_book",
+            "profit_margin",
+            "return_on_equity",
+            "revenue_growth"
+          ],
+          "score_delta": 3.4,
+          "confidence_delta": 0.18
+        },
+        {
+          "ticker": "GLOB",
+          "metrics_with_value_change": [
+            "ev_to_ebit",
+            "peg",
+            "return_on_equity",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": -1.2,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "NJR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "current_ratio",
+            "earnings_growth"
+          ],
+          "score_delta": 1.2,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "WWD",
+          "metrics_with_value_change": [
+            "net_debt_to_ebitda",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "ev_to_ebit",
+            "interest_coverage",
+            "operating_margin_trend",
+            "return_on_invested_capital"
+          ],
+          "score_delta": -0.9,
+          "confidence_delta": -0.11
+        },
+        {
+          "ticker": "PANW",
+          "metrics_with_value_change": [
+            "current_ratio"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth"
+          ],
+          "score_delta": 0.5,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "UGI",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "current_ratio"
+          ],
+          "score_delta": 0.2,
+          "confidence_delta": -0.01
         }
       ]
     }
