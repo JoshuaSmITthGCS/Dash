@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-24T01:05:04.023741+00:00",
+  "generated_at": "2026-11-24T23:10:09.242091+00:00",
   "themes": [
     {
       "id": "aerospace_forging_capacity",
@@ -343,8 +343,58 @@
           ],
           "rank_reason": [
             "Ranks #5 of 20 on an opportunity score of 62.9: exposure 81 (45% of that score), business quality 66 (35% of that score), in the most expensive third of its sector (20% of that score)",
-            "It ranks above CMI (62.8) despite losing to it on valuation (the most expensive third against no resolved tier); exposure and business quality make up the difference",
+            "It ranks above CW (62.8) despite losing to it on valuation (the most expensive third against no resolved tier); exposure and business quality make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 85% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
+          ]
+        },
+        {
+          "theme_id": "aerospace_forging_capacity",
+          "theme_exposure_score": 62.7,
+          "confidence": 0.5,
+          "disclosure_backed": false,
+          "eligible": true,
+          "excluded_by": [],
+          "leading_signals_fired": [
+            "backlog_growth"
+          ],
+          "theme_level_signals_fired": [],
+          "signals": [
+            {
+              "name": "backlog_growth",
+              "score": 84.0,
+              "weight": 0.35,
+              "leading": true,
+              "theme_level": false,
+              "raw": 0.2059
+            },
+            {
+              "name": "filing_keyword_density_trend",
+              "score": 50.0,
+              "weight": 0.15,
+              "leading": true,
+              "theme_level": false,
+              "raw": 0.0
+            }
+          ],
+          "signals_answered": 2,
+          "company_signals_answered": 2,
+          "ticker": "CW",
+          "name": "Curtiss-Wright Corporation",
+          "sector": "Industrials",
+          "industry": "Aerospace & Defense",
+          "role": "root",
+          "candidate_source": "sector_peer",
+          "fundamental_score": 70.1,
+          "valuation_percentile": null,
+          "opportunity_score": 62.8,
+          "research_coverage": 0.89,
+          "statements_available": false,
+          "why": [
+            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
+            "Placed as the root of this chain, selling the product the theme is named for",
+            "Its remaining performance obligation (order backlog) is +21% year over year",
+            "2 of 4 declared signals resolved, carrying 50% of this theme's signal weight",
+            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ]
         },
         {
@@ -550,58 +600,6 @@
             "2 of 4 declared signals resolved, carrying 50% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ]
-        },
-        {
-          "theme_id": "aerospace_forging_capacity",
-          "theme_exposure_score": 53.0,
-          "confidence": 0.5,
-          "disclosure_backed": false,
-          "eligible": true,
-          "excluded_by": [],
-          "leading_signals_fired": [
-            "backlog_growth",
-            "filing_keyword_density_trend"
-          ],
-          "theme_level_signals_fired": [],
-          "signals": [
-            {
-              "name": "backlog_growth",
-              "score": 66.5,
-              "weight": 0.35,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.1
-            },
-            {
-              "name": "filing_keyword_density_trend",
-              "score": 52.9,
-              "weight": 0.15,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.0289
-            }
-          ],
-          "signals_answered": 2,
-          "company_signals_answered": 2,
-          "ticker": "LMT",
-          "name": "Lockheed Martin Corporation",
-          "sector": "Industrials",
-          "industry": "Aerospace & Defense",
-          "role": "root",
-          "candidate_source": "sector_peer",
-          "fundamental_score": 70.2,
-          "valuation_percentile": 50.0,
-          "opportunity_score": 58.4,
-          "research_coverage": 0.88,
-          "statements_available": false,
-          "why": [
-            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
-            "Placed as the root of this chain, selling the product the theme is named for",
-            "Its remaining performance obligation (order backlog) is +10% year over year",
-            "Its latest 10-K devotes 3% more of its language to this theme than the prior year's",
-            "2 of 4 declared signals resolved, carrying 50% of this theme's signal weight",
-            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
-          ]
         }
       ],
       "trend": {
@@ -609,8 +607,8 @@
         "members_measured": 20,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 63.7,
-          "relative_strength_20d_median": 4.58,
+          "relative_strength_median": 62.65,
+          "relative_strength_20d_median": 4.23,
           "acceleration_median": -0.58,
           "label": "mixed"
         },
@@ -631,13 +629,13 @@
           "volume_ratio_median": 0.81
         },
         "crowding": {
-          "expensiveness_percentile_median": 83.3,
-          "already_priced": true
+          "expensiveness_percentile_median": 66.65,
+          "already_priced": false
         },
         "maturity": {
           "members_measured": 20,
           "minimum_members": 5,
-          "return_dispersion": 35.66,
+          "return_dispersion": 35.65,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -651,18 +649,18 @@
           {
             "role": "root",
             "members": 11,
-            "relative_strength_median": 60.3,
+            "relative_strength_median": 58.2,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 60.3,
+          "root_relative_strength": 58.2,
           "supply_chain_relative_strength": 94.5,
           "confirms": true
         },
         "verdict": {
           "label": "mixed",
-          "summary": "The group is neither clearly leading nor clearly lagging; members already trade expensively relative to their sectors."
+          "summary": "The group is neither clearly leading nor clearly lagging."
         }
       },
       "biggest_players": []
@@ -1220,6 +1218,67 @@
         },
         {
           "theme_id": "aging_demographics",
+          "theme_exposure_score": 45.5,
+          "confidence": 0.5,
+          "disclosure_backed": false,
+          "eligible": true,
+          "excluded_by": [],
+          "leading_signals_fired": [
+            "backlog_growth"
+          ],
+          "theme_level_signals_fired": [
+            "spender_capex_growth"
+          ],
+          "signals": [
+            {
+              "name": "filing_keyword_density_trend",
+              "score": 0.0,
+              "weight": 0.1,
+              "leading": true,
+              "theme_level": false,
+              "raw": -1.0
+            },
+            {
+              "name": "backlog_growth",
+              "score": 84.5,
+              "weight": 0.15,
+              "leading": true,
+              "theme_level": false,
+              "raw": 0.2093
+            },
+            {
+              "name": "spender_capex_growth",
+              "score": 56.2,
+              "weight": 0.25,
+              "leading": true,
+              "theme_level": true,
+              "raw": 0.0375
+            }
+          ],
+          "signals_answered": 3,
+          "company_signals_answered": 2,
+          "ticker": "DHR",
+          "name": "Danaher Corporation",
+          "sector": "Healthcare",
+          "industry": "Diagnostics & Research",
+          "role": "enabler",
+          "candidate_source": "sector_peer",
+          "fundamental_score": 57.5,
+          "valuation_percentile": null,
+          "opportunity_score": 50.6,
+          "research_coverage": 0.89,
+          "statements_available": false,
+          "why": [
+            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
+            "Placed as an enabler, selling what makes the core product usable at scale",
+            "Its remaining performance obligation (order backlog) is +21% year over year",
+            "The theme's named spenders grew capital expenditure +4% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
+            "3 of 4 declared signals resolved, carrying 50% of this theme's signal weight",
+            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ]
+        },
+        {
+          "theme_id": "aging_demographics",
           "theme_exposure_score": 46.2,
           "confidence": 0.5,
           "disclosure_backed": false,
@@ -1278,67 +1337,6 @@
             "3 of 4 declared signals resolved, carrying 50% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ]
-        },
-        {
-          "theme_id": "aging_demographics",
-          "theme_exposure_score": 53.5,
-          "confidence": 0.5,
-          "disclosure_backed": false,
-          "eligible": true,
-          "excluded_by": [],
-          "leading_signals_fired": [
-            "backlog_growth"
-          ],
-          "theme_level_signals_fired": [
-            "spender_capex_growth"
-          ],
-          "signals": [
-            {
-              "name": "filing_keyword_density_trend",
-              "score": 42.3,
-              "weight": 0.1,
-              "leading": true,
-              "theme_level": false,
-              "raw": -0.0771
-            },
-            {
-              "name": "backlog_growth",
-              "score": 87.8,
-              "weight": 0.15,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.2291
-            },
-            {
-              "name": "spender_capex_growth",
-              "score": 56.2,
-              "weight": 0.25,
-              "leading": true,
-              "theme_level": true,
-              "raw": 0.0375
-            }
-          ],
-          "signals_answered": 3,
-          "company_signals_answered": 2,
-          "ticker": "BRKR",
-          "name": "Bruker Corporation",
-          "sector": "Healthcare",
-          "industry": "Medical Devices",
-          "role": "root",
-          "candidate_source": "sector_peer",
-          "fundamental_score": 39.9,
-          "valuation_percentile": null,
-          "opportunity_score": 48.0,
-          "research_coverage": 0.84,
-          "statements_available": false,
-          "why": [
-            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
-            "Placed as the root of this chain, selling the product the theme is named for",
-            "Its remaining performance obligation (order backlog) is +23% year over year",
-            "The theme's named spenders grew capital expenditure +4% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
-            "3 of 4 declared signals resolved, carrying 50% of this theme's signal weight",
-            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
-          ]
         }
       ],
       "trend": {
@@ -1374,7 +1372,7 @@
         "maturity": {
           "members_measured": 37,
           "minimum_members": 5,
-          "return_dispersion": 24.07,
+          "return_dispersion": 23.97,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -1394,13 +1392,13 @@
           {
             "role": "enabler",
             "members": 11,
-            "relative_strength_median": 64.9,
+            "relative_strength_median": 57.5,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
           "root_relative_strength": 80.2,
-          "supply_chain_relative_strength": 65.4,
+          "supply_chain_relative_strength": 61.7,
           "confirms": true
         },
         "verdict": {
@@ -1488,73 +1486,15 @@
           "source": "edgar_xbrl_dimensional"
         }
       ],
-      "count": 39,
-      "eligible_count": 33,
-      "mean_confidence_eligible": 0.32,
+      "count": 38,
+      "eligible_count": 32,
+      "mean_confidence_eligible": 0.3219,
       "group_counts": {
         "leaders": 0,
-        "connected": 39
+        "connected": 38
       },
       "published_rows_per_group": 10,
       "rows": [
-        {
-          "theme_id": "ai_infrastructure",
-          "theme_exposure_score": 85.0,
-          "confidence": 0.26,
-          "disclosure_backed": false,
-          "eligible": true,
-          "excluded_by": [],
-          "leading_signals_fired": [
-            "filing_keyword_density_trend"
-          ],
-          "theme_level_signals_fired": [
-            "hyperscaler_capex_growth"
-          ],
-          "signals": [
-            {
-              "name": "filing_keyword_density_trend",
-              "score": 100.0,
-              "weight": 0.1053,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.6444
-            },
-            {
-              "name": "hyperscaler_capex_growth",
-              "score": 100.0,
-              "weight": 0.1579,
-              "leading": true,
-              "theme_level": true,
-              "raw": 0.7858
-            }
-          ],
-          "signals_answered": 2,
-          "company_signals_answered": 1,
-          "ticker": "TEL",
-          "name": "TE Connectivity plc",
-          "sector": "Technology",
-          "industry": "Electronic Components",
-          "role": "supplier",
-          "candidate_source": "sector_peer",
-          "fundamental_score": 86.3,
-          "valuation_percentile": 50.0,
-          "opportunity_score": 78.5,
-          "research_coverage": 0.89,
-          "statements_available": false,
-          "why": [
-            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
-            "Placed as a supplier into this chain",
-            "Its latest 10-K devotes 64% more of its language to this theme than the prior year's",
-            "The theme's named spenders grew capital expenditure +79% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
-            "2 of 6 declared signals resolved, carrying 26% of this theme's signal weight",
-            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
-          ],
-          "rank_reason": [
-            "Ranks #1 of 39 on an opportunity score of 78.5: exposure 85 (45% of that score), business quality 86 (35% of that score), in the middle third of its sector (20% of that score)",
-            "It ranks above JBL (74.4) mainly on business quality: 86 against 77",
-            "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
-          ]
-        },
         {
           "theme_id": "ai_infrastructure",
           "theme_exposure_score": 83.2,
@@ -1608,7 +1548,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #2 of 39 on an opportunity score of 74.4: exposure 83 (45% of that score), business quality 77 (35% of that score), in the middle third of its sector (20% of that score)",
+            "Ranks #1 of 38 on an opportunity score of 74.4: exposure 83 (45% of that score), business quality 77 (35% of that score), in the middle third of its sector (20% of that score)",
             "It ranks above TTEK (73.6) despite losing to it on valuation (the middle third against the cheapest third); exposure and business quality make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -1676,7 +1616,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #3 of 39 on an opportunity score of 73.6: exposure 67 (45% of that score), business quality 77 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "Ranks #2 of 38 on an opportunity score of 73.6: exposure 67 (45% of that score), business quality 77 (35% of that score), in the cheapest third of its sector (20% of that score)",
             "It ranks above FLEX (73.2) mainly on valuation: the cheapest third against the middle third",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 87% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -1734,7 +1674,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #4 of 39 on an opportunity score of 73.2: exposure 85 (45% of that score), business quality 71 (35% of that score), in the middle third of its sector (20% of that score)",
+            "Ranks #3 of 38 on an opportunity score of 73.2: exposure 85 (45% of that score), business quality 71 (35% of that score), in the middle third of its sector (20% of that score)",
             "It ranks above FLNC (73.1) despite losing to it on valuation (the middle third against the cheapest third); exposure and business quality make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -1802,7 +1742,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #5 of 39 on an opportunity score of 73.1: exposure 85 (45% of that score), business quality 52 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "Ranks #4 of 38 on an opportunity score of 73.1: exposure 85 (45% of that score), business quality 52 (35% of that score), in the cheapest third of its sector (20% of that score)",
             "It ranks above AYI (71.0) mainly on valuation: the cheapest third against no resolved tier",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 65% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -1858,6 +1798,11 @@
             "The theme's named spenders grew capital expenditure +79% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
             "2 of 6 declared signals resolved, carrying 26% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ],
+          "rank_reason": [
+            "Ranks #5 of 38 on an opportunity score of 71.0: exposure 70 (45% of that score), business quality 85 (35% of that score), no peer valuation tier resolved, scored neutral (20% of that score)",
+            "It ranks above FN (70.3) mainly on business quality: 85 against 63",
+            "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
         {
@@ -2091,22 +2036,83 @@
             "2 of 6 declared signals resolved, carrying 26% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ]
+        },
+        {
+          "theme_id": "ai_infrastructure",
+          "theme_exposure_score": 70.9,
+          "confidence": 0.37,
+          "disclosure_backed": false,
+          "eligible": true,
+          "excluded_by": [],
+          "leading_signals_fired": [
+            "backlog_growth"
+          ],
+          "theme_level_signals_fired": [
+            "hyperscaler_capex_growth"
+          ],
+          "signals": [
+            {
+              "name": "filing_keyword_density_trend",
+              "score": 41.8,
+              "weight": 0.1053,
+              "leading": true,
+              "theme_level": false,
+              "raw": -0.0819
+            },
+            {
+              "name": "hyperscaler_capex_growth",
+              "score": 100.0,
+              "weight": 0.1579,
+              "leading": true,
+              "theme_level": true,
+              "raw": 0.7858
+            },
+            {
+              "name": "backlog_growth",
+              "score": 100.0,
+              "weight": 0.1053,
+              "leading": true,
+              "theme_level": false,
+              "raw": 0.3502
+            }
+          ],
+          "signals_answered": 3,
+          "company_signals_answered": 2,
+          "ticker": "RMBS",
+          "name": "Rambus, Inc.",
+          "sector": "Technology",
+          "industry": "Semiconductors",
+          "role": "root",
+          "candidate_source": "sector_peer",
+          "fundamental_score": 74.6,
+          "valuation_percentile": 50.0,
+          "opportunity_score": 68.0,
+          "research_coverage": 0.89,
+          "statements_available": false,
+          "why": [
+            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
+            "Placed as the root of this chain, selling the product the theme is named for",
+            "Its remaining performance obligation (order backlog) is +35% year over year",
+            "The theme's named spenders grew capital expenditure +79% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
+            "3 of 6 declared signals resolved, carrying 37% of this theme's signal weight",
+            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ]
         }
       ],
       "trend": {
         "contributes_to_exposure": false,
-        "members_measured": 39,
+        "members_measured": 38,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 27.0,
-          "relative_strength_20d_median": -7.67,
-          "acceleration_median": -0.28,
+          "relative_strength_median": 26.3,
+          "relative_strength_20d_median": -7.9,
+          "acceleration_median": -0.29,
           "label": "mixed"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.821,
+          "outperforming_share": 0.816,
           "label": "broad"
         },
         "leadership": {
@@ -2117,16 +2123,16 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.84
+          "volume_ratio_median": 0.87
         },
         "crowding": {
           "expensiveness_percentile_median": 83.3,
           "already_priced": true
         },
         "maturity": {
-          "members_measured": 39,
+          "members_measured": 38,
           "minimum_members": 5,
-          "return_dispersion": 29.03,
+          "return_dispersion": 29.53,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -2138,27 +2144,27 @@
             "above_50d_share": null
           },
           {
-            "role": "supplier",
-            "members": 10,
-            "relative_strength_median": 30.2,
-            "above_50d_share": null
-          },
-          {
             "role": "root",
             "members": 11,
             "relative_strength_median": 25.6,
             "above_50d_share": null
           },
           {
+            "role": "supplier",
+            "members": 9,
+            "relative_strength_median": 22.8,
+            "above_50d_share": null
+          },
+          {
             "role": "enabler",
             "members": 4,
-            "relative_strength_median": 20.3,
+            "relative_strength_median": 19.35,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
           "root_relative_strength": 25.6,
-          "supply_chain_relative_strength": 30.2,
+          "supply_chain_relative_strength": 22.8,
           "confirms": true
         },
         "verdict": {
@@ -2940,12 +2946,12 @@
           "source": "edgar_xbrl_capex"
         }
       ],
-      "count": 75,
+      "count": 74,
       "eligible_count": 57,
       "mean_confidence_eligible": 0.4632,
       "group_counts": {
         "leaders": 0,
-        "connected": 75
+        "connected": 74
       },
       "published_rows_per_group": 10,
       "rows": [
@@ -3000,7 +3006,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #1 of 75 on an opportunity score of 71.9: exposure 63 (45% of that score), business quality 76 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "Ranks #1 of 74 on an opportunity score of 71.9: exposure 63 (45% of that score), business quality 76 (35% of that score), in the cheapest third of its sector (20% of that score)",
             "It ranks above PEGA (71.4) despite losing to it on business quality (76 against 85); exposure and valuation make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 87% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -3056,7 +3062,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #2 of 75 on an opportunity score of 71.4: exposure 56 (45% of that score), business quality 85 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "Ranks #2 of 74 on an opportunity score of 71.4: exposure 56 (45% of that score), business quality 85 (35% of that score), in the cheapest third of its sector (20% of that score)",
             "It ranks above PCTY (67.2) mainly on valuation: the cheapest third against the middle third",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -3112,7 +3118,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #3 of 75 on an opportunity score of 67.2: exposure 64 (45% of that score), business quality 82 (35% of that score), in the middle third of its sector (20% of that score)",
+            "Ranks #3 of 74 on an opportunity score of 67.2: exposure 64 (45% of that score), business quality 82 (35% of that score), in the middle third of its sector (20% of that score)",
             "It ranks above TEX (67.2) despite losing to it on valuation (the middle third against the cheapest third); exposure and business quality make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -3175,7 +3181,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #4 of 75 on an opportunity score of 67.2: exposure 58 (45% of that score), business quality 69 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "Ranks #4 of 74 on an opportunity score of 67.2: exposure 58 (45% of that score), business quality 69 (35% of that score), in the cheapest third of its sector (20% of that score)",
             "It ranks above FICO (66.7) despite losing to it on business quality (69 against 85); exposure and valuation make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 87% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -3231,8 +3237,8 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #5 of 75 on an opportunity score of 66.7: exposure 46 (45% of that score), business quality 85 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above DOV (66.1) mainly on valuation: the cheapest third against the middle third",
+            "Ranks #5 of 74 on an opportunity score of 66.7: exposure 46 (45% of that score), business quality 85 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "It ranks above DOV (66.1) mainly on valuation: the cheapest third against no resolved tier",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 84% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -3283,7 +3289,7 @@
           "role": "root",
           "candidate_source": "sector_peer",
           "fundamental_score": 73.3,
-          "valuation_percentile": 50.0,
+          "valuation_percentile": null,
           "opportunity_score": 66.1,
           "research_coverage": 0.89,
           "statements_available": false,
@@ -3523,18 +3529,18 @@
       ],
       "trend": {
         "contributes_to_exposure": false,
-        "members_measured": 75,
+        "members_measured": 74,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 46.1,
-          "relative_strength_20d_median": -1.3,
+          "relative_strength_median": 45.7,
+          "relative_strength_20d_median": -1.44,
           "acceleration_median": -0.54,
           "label": "mixed"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.84,
+          "outperforming_share": 0.838,
           "label": "broad"
         },
         "leadership": {
@@ -3545,16 +3551,16 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.87
+          "volume_ratio_median": 0.88
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
           "already_priced": false
         },
         "maturity": {
-          "members_measured": 75,
+          "members_measured": 74,
           "minimum_members": 5,
-          "return_dispersion": 33.75,
+          "return_dispersion": 33.98,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -3566,21 +3572,21 @@
             "above_50d_share": null
           },
           {
-            "role": "supplier",
-            "members": 17,
-            "relative_strength_median": 37.6,
+            "role": "enabler",
+            "members": 32,
+            "relative_strength_median": 35.9,
             "above_50d_share": null
           },
           {
-            "role": "enabler",
-            "members": 32,
-            "relative_strength_median": 34.65,
+            "role": "supplier",
+            "members": 16,
+            "relative_strength_median": 32.5,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
           "root_relative_strength": 66.3,
-          "supply_chain_relative_strength": 36.12,
+          "supply_chain_relative_strength": 34.2,
           "confirms": true
         },
         "verdict": {
@@ -3822,7 +3828,7 @@
           "role": "root",
           "candidate_source": "sector_peer",
           "fundamental_score": 73.3,
-          "valuation_percentile": 50.0,
+          "valuation_percentile": null,
           "opportunity_score": 72.4,
           "research_coverage": 0.89,
           "statements_available": false,
@@ -3835,8 +3841,8 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #3 of 21 on an opportunity score of 72.4: exposure 82 (45% of that score), business quality 73 (35% of that score), in the middle third of its sector (20% of that score)",
-            "It ranks above XYL (70.1) despite losing to it on valuation (the middle third against the cheapest third); exposure and business quality make up the difference",
+            "Ranks #3 of 21 on an opportunity score of 72.4: exposure 82 (45% of that score), business quality 73 (35% of that score), no peer valuation tier resolved, scored neutral (20% of that score)",
+            "It ranks above XYL (70.1) despite losing to it on valuation (no resolved tier against the cheapest third); exposure and business quality make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -4172,7 +4178,7 @@
           "role": "root",
           "candidate_source": "sector_peer",
           "fundamental_score": 70.3,
-          "valuation_percentile": 50.0,
+          "valuation_percentile": null,
           "opportunity_score": 62.5,
           "research_coverage": 0.87,
           "statements_available": false,
@@ -4272,7 +4278,7 @@
         "maturity": {
           "members_measured": 21,
           "minimum_members": 5,
-          "return_dispersion": 33.54,
+          "return_dispersion": 33.5,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -4280,12 +4286,12 @@
           {
             "role": "root",
             "members": 18,
-            "relative_strength_median": 56.5,
+            "relative_strength_median": 57.7,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 56.5,
+          "root_relative_strength": 57.7,
           "supply_chain_relative_strength": null,
           "confirms": null
         },
@@ -4446,64 +4452,6 @@
       "rows": [
         {
           "theme_id": "cybersecurity",
-          "theme_exposure_score": 71.9,
-          "confidence": 0.3,
-          "disclosure_backed": false,
-          "eligible": true,
-          "excluded_by": [],
-          "leading_signals_fired": [
-            "filing_keyword_density_trend"
-          ],
-          "theme_level_signals_fired": [
-            "spender_capex_growth"
-          ],
-          "signals": [
-            {
-              "name": "filing_keyword_density_trend",
-              "score": 53.7,
-              "weight": 0.1,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.0369
-            },
-            {
-              "name": "spender_capex_growth",
-              "score": 100.0,
-              "weight": 0.2,
-              "leading": true,
-              "theme_level": true,
-              "raw": 0.7599
-            }
-          ],
-          "signals_answered": 2,
-          "company_signals_answered": 1,
-          "ticker": "EPAM",
-          "name": "EPAM Systems, Inc.",
-          "sector": "Technology",
-          "industry": "Information Technology Services",
-          "role": "service",
-          "candidate_source": "sector_peer",
-          "fundamental_score": 84.1,
-          "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 78.5,
-          "research_coverage": 0.88,
-          "statements_available": false,
-          "why": [
-            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
-            "Placed as a service provider to this chain",
-            "Its latest 10-K devotes 4% more of its language to this theme than the prior year's",
-            "The theme's named spenders grew capital expenditure +76% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
-            "2 of 4 declared signals resolved, carrying 30% of this theme's signal weight",
-            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
-          ],
-          "rank_reason": [
-            "Ranks #1 of 69 on an opportunity score of 78.5: exposure 72 (45% of that score), business quality 84 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above PEGA (78.3) mainly on exposure: 72 against 71",
-            "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
-          ]
-        },
-        {
-          "theme_id": "cybersecurity",
           "theme_exposure_score": 70.9,
           "confidence": 0.55,
           "disclosure_backed": false,
@@ -4565,7 +4513,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #2 of 69 on an opportunity score of 78.3: exposure 71 (45% of that score), business quality 85 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "Ranks #1 of 69 on an opportunity score of 78.3: exposure 71 (45% of that score), business quality 85 (35% of that score), in the cheapest third of its sector (20% of that score)",
             "It ranks above LDOS (78.2) mainly on business quality: 85 against 83",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -4623,9 +4571,67 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #3 of 69 on an opportunity score of 78.2: exposure 72 (45% of that score), business quality 83 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above G (77.2) mainly on exposure: 72 against 70",
+            "Ranks #2 of 69 on an opportunity score of 78.2: exposure 72 (45% of that score), business quality 83 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "It is separated from EPAM (77.9) by rounding rather than by any one leg",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
+          ]
+        },
+        {
+          "theme_id": "cybersecurity",
+          "theme_exposure_score": 71.9,
+          "confidence": 0.3,
+          "disclosure_backed": false,
+          "eligible": true,
+          "excluded_by": [],
+          "leading_signals_fired": [
+            "filing_keyword_density_trend"
+          ],
+          "theme_level_signals_fired": [
+            "spender_capex_growth"
+          ],
+          "signals": [
+            {
+              "name": "filing_keyword_density_trend",
+              "score": 53.7,
+              "weight": 0.1,
+              "leading": true,
+              "theme_level": false,
+              "raw": 0.0369
+            },
+            {
+              "name": "spender_capex_growth",
+              "score": 100.0,
+              "weight": 0.2,
+              "leading": true,
+              "theme_level": true,
+              "raw": 0.7599
+            }
+          ],
+          "signals_answered": 2,
+          "company_signals_answered": 1,
+          "ticker": "EPAM",
+          "name": "EPAM Systems, Inc.",
+          "sector": "Technology",
+          "industry": "Information Technology Services",
+          "role": "service",
+          "candidate_source": "sector_peer",
+          "fundamental_score": 82.5,
+          "valuation_percentile": 16.700000000000003,
+          "opportunity_score": 77.9,
+          "research_coverage": 0.88,
+          "statements_available": false,
+          "why": [
+            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
+            "Placed as a service provider to this chain",
+            "Its latest 10-K devotes 4% more of its language to this theme than the prior year's",
+            "The theme's named spenders grew capital expenditure +76% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
+            "2 of 4 declared signals resolved, carrying 30% of this theme's signal weight",
+            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ],
+          "rank_reason": [
+            "Ranks #3 of 69 on an opportunity score of 77.9: exposure 72 (45% of that score), business quality 82 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "It ranks above G (77.2) mainly on exposure: 72 against 70",
+            "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
         {
@@ -5039,9 +5045,9 @@
         "members_measured": 69,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 45.8,
-          "relative_strength_20d_median": -1.39,
-          "acceleration_median": -0.4,
+          "relative_strength_median": 45.3,
+          "relative_strength_20d_median": -1.57,
+          "acceleration_median": -0.27,
           "label": "mixed"
         },
         "breadth": {
@@ -5058,7 +5064,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.91
+          "volume_ratio_median": 0.9
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -5067,7 +5073,7 @@
         "maturity": {
           "members_measured": 69,
           "minimum_members": 5,
-          "return_dispersion": 34.96,
+          "return_dispersion": 35.28,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -5081,25 +5087,25 @@
           {
             "role": "root",
             "members": 20,
-            "relative_strength_median": 45.2,
+            "relative_strength_median": 45.5,
             "above_50d_share": null
           },
           {
             "role": "enabler",
             "members": 30,
-            "relative_strength_median": 39.4,
+            "relative_strength_median": 39.6,
             "above_50d_share": null
           },
           {
             "role": "supplier",
             "members": 4,
-            "relative_strength_median": 20.3,
+            "relative_strength_median": 19.35,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 45.2,
-          "supply_chain_relative_strength": 29.85,
+          "root_relative_strength": 45.5,
+          "supply_chain_relative_strength": 29.48,
           "confirms": true
         },
         "verdict": {
@@ -5735,7 +5741,7 @@
           "role": "root",
           "candidate_source": "sector_peer",
           "fundamental_score": 73.3,
-          "valuation_percentile": 50.0,
+          "valuation_percentile": null,
           "opportunity_score": 69.7,
           "research_coverage": 0.89,
           "statements_available": false,
@@ -5757,7 +5763,7 @@
         "direction": {
           "relative_strength_median": 57.0,
           "relative_strength_20d_median": 2.34,
-          "acceleration_median": -0.53,
+          "acceleration_median": -0.49,
           "label": "mixed"
         },
         "breadth": {
@@ -5783,7 +5789,7 @@
         "maturity": {
           "members_measured": 29,
           "minimum_members": 5,
-          "return_dispersion": 31.61,
+          "return_dispersion": 31.58,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -5791,7 +5797,7 @@
           {
             "role": "root",
             "members": 18,
-            "relative_strength_median": 56.5,
+            "relative_strength_median": 57.7,
             "above_50d_share": null
           },
           {
@@ -5808,7 +5814,7 @@
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 56.5,
+          "root_relative_strength": 57.7,
           "supply_chain_relative_strength": 39.77,
           "confirms": true
         },
@@ -6519,7 +6525,7 @@
         "maturity": {
           "members_measured": 37,
           "minimum_members": 5,
-          "return_dispersion": 33.63,
+          "return_dispersion": 33.81,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -6527,7 +6533,7 @@
           {
             "role": "service",
             "members": 12,
-            "relative_strength_median": 76.75,
+            "relative_strength_median": 74.35,
             "above_50d_share": null
           },
           {
@@ -6853,66 +6859,8 @@
           ],
           "rank_reason": [
             "Ranks #4 of 65 on an opportunity score of 73.2: exposure 60 (45% of that score), business quality 85 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It is separated from EPAM (73.1) by rounding rather than by any one leg",
+            "It ranks above GEN (72.8) mainly on business quality: 85 against 79",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 84% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
-          ]
-        },
-        {
-          "theme_id": "digital_payments",
-          "theme_exposure_score": 60.0,
-          "confidence": 0.32,
-          "disclosure_backed": false,
-          "eligible": true,
-          "excluded_by": [],
-          "leading_signals_fired": [
-            "filing_keyword_density_trend"
-          ],
-          "theme_level_signals_fired": [
-            "spender_capex_growth"
-          ],
-          "signals": [
-            {
-              "name": "filing_keyword_density_trend",
-              "score": 53.7,
-              "weight": 0.1053,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.0369
-            },
-            {
-              "name": "spender_capex_growth",
-              "score": 79.1,
-              "weight": 0.2105,
-              "leading": true,
-              "theme_level": true,
-              "raw": 0.1766
-            }
-          ],
-          "signals_answered": 2,
-          "company_signals_answered": 1,
-          "ticker": "EPAM",
-          "name": "EPAM Systems, Inc.",
-          "sector": "Technology",
-          "industry": "Information Technology Services",
-          "role": "enabler",
-          "candidate_source": "sector_peer",
-          "fundamental_score": 84.1,
-          "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 73.1,
-          "research_coverage": 0.88,
-          "statements_available": false,
-          "why": [
-            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
-            "Placed as an enabler, selling what makes the core product usable at scale",
-            "Its latest 10-K devotes 4% more of its language to this theme than the prior year's",
-            "The theme's named spenders grew capital expenditure +18% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
-            "2 of 4 declared signals resolved, carrying 32% of this theme's signal weight",
-            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
-          ],
-          "rank_reason": [
-            "Ranks #5 of 65 on an opportunity score of 73.1: exposure 60 (45% of that score), business quality 84 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above GEN (73.0) mainly on business quality: 84 against 80",
-            "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
         {
@@ -6963,9 +6911,9 @@
           "industry": "Software - Infrastructure",
           "role": "enabler",
           "candidate_source": "sector_peer",
-          "fundamental_score": 79.7,
+          "fundamental_score": 79.0,
           "valuation_percentile": 16.700000000000003,
-          "opportunity_score": 73.0,
+          "opportunity_score": 72.8,
           "research_coverage": 0.88,
           "statements_available": false,
           "why": [
@@ -6976,6 +6924,11 @@
             "The theme's named spenders grew capital expenditure +18% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
             "3 of 4 declared signals resolved, carrying 53% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ],
+          "rank_reason": [
+            "Ranks #5 of 65 on an opportunity score of 72.8: exposure 63 (45% of that score), business quality 79 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "It ranks above ORCL (72.5) mainly on business quality: 79 against 62",
+            "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 88% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
         {
@@ -7028,6 +6981,59 @@
             "Its remaining performance obligation (order backlog) is +363% year over year",
             "The theme's named spenders grew capital expenditure +18% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
             "2 of 4 declared signals resolved, carrying 42% of this theme's signal weight",
+            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ]
+        },
+        {
+          "theme_id": "digital_payments",
+          "theme_exposure_score": 60.0,
+          "confidence": 0.32,
+          "disclosure_backed": false,
+          "eligible": true,
+          "excluded_by": [],
+          "leading_signals_fired": [
+            "filing_keyword_density_trend"
+          ],
+          "theme_level_signals_fired": [
+            "spender_capex_growth"
+          ],
+          "signals": [
+            {
+              "name": "filing_keyword_density_trend",
+              "score": 53.7,
+              "weight": 0.1053,
+              "leading": true,
+              "theme_level": false,
+              "raw": 0.0369
+            },
+            {
+              "name": "spender_capex_growth",
+              "score": 79.1,
+              "weight": 0.2105,
+              "leading": true,
+              "theme_level": true,
+              "raw": 0.1766
+            }
+          ],
+          "signals_answered": 2,
+          "company_signals_answered": 1,
+          "ticker": "EPAM",
+          "name": "EPAM Systems, Inc.",
+          "sector": "Technology",
+          "industry": "Information Technology Services",
+          "role": "enabler",
+          "candidate_source": "sector_peer",
+          "fundamental_score": 82.5,
+          "valuation_percentile": 16.700000000000003,
+          "opportunity_score": 72.5,
+          "research_coverage": 0.88,
+          "statements_available": false,
+          "why": [
+            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
+            "Placed as an enabler, selling what makes the core product usable at scale",
+            "Its latest 10-K devotes 4% more of its language to this theme than the prior year's",
+            "The theme's named spenders grew capital expenditure +18% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
+            "2 of 4 declared signals resolved, carrying 32% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ]
         },
@@ -7204,9 +7210,9 @@
         "members_measured": 65,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 47.6,
-          "relative_strength_20d_median": -0.8,
-          "acceleration_median": -0.45,
+          "relative_strength_median": 48.1,
+          "relative_strength_20d_median": -0.63,
+          "acceleration_median": -0.27,
           "label": "mixed"
         },
         "breadth": {
@@ -7223,7 +7229,7 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.91
+          "volume_ratio_median": 0.9
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
@@ -7232,7 +7238,7 @@
         "maturity": {
           "members_measured": 65,
           "minimum_members": 5,
-          "return_dispersion": 34.94,
+          "return_dispersion": 35.34,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -7252,7 +7258,7 @@
           {
             "role": "enabler",
             "members": 32,
-            "relative_strength_median": 48.3,
+            "relative_strength_median": 48.55,
             "above_50d_share": null
           },
           {
@@ -7264,7 +7270,7 @@
         ],
         "chain_confirmation": {
           "root_relative_strength": 76.45,
-          "supply_chain_relative_strength": 45.5,
+          "supply_chain_relative_strength": 45.62,
           "confirms": true
         },
         "verdict": {
@@ -7340,12 +7346,12 @@
           "source": "edgar_xbrl_capex"
         }
       ],
-      "count": 44,
+      "count": 43,
       "eligible_count": 33,
       "mean_confidence_eligible": 0.4758,
       "group_counts": {
         "leaders": 0,
-        "connected": 44
+        "connected": 43
       },
       "published_rows_per_group": 10,
       "rows": [
@@ -7402,7 +7408,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #1 of 44 on an opportunity score of 81.5: exposure 85 (45% of that score), business quality 76 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "Ranks #1 of 43 on an opportunity score of 81.5: exposure 85 (45% of that score), business quality 76 (35% of that score), in the cheapest third of its sector (20% of that score)",
             "It ranks above STRL (75.3) mainly on valuation: the cheapest third against the middle third",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 87% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -7460,7 +7466,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #2 of 44 on an opportunity score of 75.3: exposure 85 (45% of that score), business quality 77 (35% of that score), in the middle third of its sector (20% of that score)",
+            "Ranks #2 of 43 on an opportunity score of 75.3: exposure 85 (45% of that score), business quality 77 (35% of that score), in the middle third of its sector (20% of that score)",
             "It is separated from ROK (75.1) by rounding rather than by any one leg",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 87% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -7518,7 +7524,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #3 of 44 on an opportunity score of 75.1: exposure 85 (45% of that score), business quality 77 (35% of that score), in the middle third of its sector (20% of that score)",
+            "Ranks #3 of 43 on an opportunity score of 75.1: exposure 85 (45% of that score), business quality 77 (35% of that score), in the middle third of its sector (20% of that score)",
             "It ranks above PSX (74.8) mainly on business quality: 77 against 76",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 87% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -7576,7 +7582,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #4 of 44 on an opportunity score of 74.8: exposure 85 (45% of that score), business quality 76 (35% of that score), no peer valuation tier resolved, scored neutral (20% of that score)",
+            "Ranks #4 of 43 on an opportunity score of 74.8: exposure 85 (45% of that score), business quality 76 (35% of that score), no peer valuation tier resolved, scored neutral (20% of that score)",
             "It ranks above TTEK (73.5) despite losing to it on valuation (no resolved tier against the cheapest third); exposure and business quality make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 87% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -7644,7 +7650,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #5 of 44 on an opportunity score of 73.5: exposure 66 (45% of that score), business quality 77 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "Ranks #5 of 43 on an opportunity score of 73.5: exposure 66 (45% of that score), business quality 77 (35% of that score), in the cheapest third of its sector (20% of that score)",
             "It ranks above XYL (72.2) mainly on business quality: 77 against 71",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 87% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -7866,7 +7872,7 @@
           "role": "supplier",
           "candidate_source": "sector_peer",
           "fundamental_score": 73.3,
-          "valuation_percentile": 50.0,
+          "valuation_percentile": null,
           "opportunity_score": 69.8,
           "research_coverage": 0.89,
           "statements_available": false,
@@ -7945,18 +7951,18 @@
       ],
       "trend": {
         "contributes_to_exposure": false,
-        "members_measured": 44,
+        "members_measured": 43,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 39.6,
-          "relative_strength_20d_median": -3.46,
-          "acceleration_median": -0.32,
+          "relative_strength_median": 37.1,
+          "relative_strength_20d_median": -4.31,
+          "acceleration_median": -0.35,
           "label": "mixed"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.932,
+          "outperforming_share": 0.93,
           "label": "broad"
         },
         "leadership": {
@@ -7967,16 +7973,16 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.86
+          "volume_ratio_median": 0.89
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
           "already_priced": false
         },
         "maturity": {
-          "members_measured": 44,
+          "members_measured": 43,
           "minimum_members": 5,
-          "return_dispersion": 28.47,
+          "return_dispersion": 29.39,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -7984,31 +7990,31 @@
           {
             "role": "infrastructure",
             "members": 13,
-            "relative_strength_median": 46.2,
+            "relative_strength_median": 42.5,
             "above_50d_share": null
           },
           {
             "role": "supplier",
-            "members": 21,
-            "relative_strength_median": 37.4,
-            "above_50d_share": null
-          },
-          {
-            "role": "service",
-            "members": 1,
-            "relative_strength_median": 31.2,
+            "members": 20,
+            "relative_strength_median": 38.75,
             "above_50d_share": null
           },
           {
             "role": "root",
             "members": 9,
-            "relative_strength_median": 26.3,
+            "relative_strength_median": 23.9,
+            "above_50d_share": null
+          },
+          {
+            "role": "service",
+            "members": 1,
+            "relative_strength_median": 13.3,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 26.3,
-          "supply_chain_relative_strength": 41.8,
+          "root_relative_strength": 23.9,
+          "supply_chain_relative_strength": 40.62,
           "confirms": true
         },
         "verdict": {
@@ -8258,7 +8264,7 @@
           "role": "supplier",
           "candidate_source": "sector_peer",
           "fundamental_score": 73.3,
-          "valuation_percentile": 50.0,
+          "valuation_percentile": null,
           "opportunity_score": 71.2,
           "research_coverage": 0.89,
           "statements_available": false,
@@ -8271,8 +8277,8 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #3 of 31 on an opportunity score of 71.2: exposure 79 (45% of that score), business quality 73 (35% of that score), in the middle third of its sector (20% of that score)",
-            "It ranks above XYL (70.9) despite losing to it on valuation (the middle third against the cheapest third); exposure and business quality make up the difference",
+            "Ranks #3 of 31 on an opportunity score of 71.2: exposure 79 (45% of that score), business quality 73 (35% of that score), no peer valuation tier resolved, scored neutral (20% of that score)",
+            "It ranks above XYL (70.9) despite losing to it on valuation (no resolved tier against the cheapest third); exposure and business quality make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -8685,7 +8691,7 @@
         "direction": {
           "relative_strength_median": 54.8,
           "relative_strength_20d_median": 1.59,
-          "acceleration_median": -0.46,
+          "acceleration_median": -0.42,
           "label": "mixed"
         },
         "breadth": {
@@ -8711,7 +8717,7 @@
         "maturity": {
           "members_measured": 31,
           "minimum_members": 5,
-          "return_dispersion": 31.58,
+          "return_dispersion": 31.56,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -8921,7 +8927,7 @@
           ],
           "rank_reason": [
             "Ranks #2 of 14 on an opportunity score of 69.9: exposure 78 (45% of that score), business quality 52 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above DOV (67.5) mainly on valuation: the cheapest third against the middle third",
+            "It ranks above DOV (67.5) mainly on valuation: the cheapest third against no resolved tier",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 65% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -8963,7 +8969,7 @@
           "role": "supplier",
           "candidate_source": "sector_peer",
           "fundamental_score": 73.3,
-          "valuation_percentile": 50.0,
+          "valuation_percentile": null,
           "opportunity_score": 67.5,
           "research_coverage": 0.89,
           "statements_available": false,
@@ -8975,7 +8981,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #3 of 14 on an opportunity score of 67.5: exposure 71 (45% of that score), business quality 73 (35% of that score), in the middle third of its sector (20% of that score)",
+            "Ranks #3 of 14 on an opportunity score of 67.5: exposure 71 (45% of that score), business quality 73 (35% of that score), no peer valuation tier resolved, scored neutral (20% of that score)",
             "It ranks above FLS (65.2) mainly on exposure: 71 against 66",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -9384,7 +9390,7 @@
         "maturity": {
           "members_measured": 14,
           "minimum_members": 5,
-          "return_dispersion": 33.53,
+          "return_dispersion": 33.45,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -9392,7 +9398,7 @@
           {
             "role": "supplier",
             "members": 7,
-            "relative_strength_median": 69.7,
+            "relative_strength_median": 66.9,
             "above_50d_share": null
           },
           {
@@ -9410,7 +9416,7 @@
         ],
         "chain_confirmation": {
           "root_relative_strength": 23.9,
-          "supply_chain_relative_strength": 56.1,
+          "supply_chain_relative_strength": 54.7,
           "confirms": true
         },
         "verdict": {
@@ -9710,7 +9716,7 @@
           "role": "supplier",
           "candidate_source": "sector_peer",
           "fundamental_score": 73.3,
-          "valuation_percentile": 50.0,
+          "valuation_percentile": null,
           "opportunity_score": 73.9,
           "research_coverage": 0.89,
           "statements_available": false,
@@ -9723,7 +9729,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #4 of 19 on an opportunity score of 73.9: exposure 85 (45% of that score), business quality 73 (35% of that score), in the middle third of its sector (20% of that score)",
+            "Ranks #4 of 19 on an opportunity score of 73.9: exposure 85 (45% of that score), business quality 73 (35% of that score), no peer valuation tier resolved, scored neutral (20% of that score)",
             "It ranks above FLS (71.6) mainly on exposure: 85 against 81",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -9879,7 +9885,7 @@
           "role": "supplier",
           "candidate_source": "sector_peer",
           "fundamental_score": 70.3,
-          "valuation_percentile": 50.0,
+          "valuation_percentile": null,
           "opportunity_score": 68.4,
           "research_coverage": 0.87,
           "statements_available": false,
@@ -10095,7 +10101,7 @@
         "maturity": {
           "members_measured": 19,
           "minimum_members": 5,
-          "return_dispersion": 35.18,
+          "return_dispersion": 35.14,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -10103,7 +10109,7 @@
           {
             "role": "supplier",
             "members": 15,
-            "relative_strength_median": 58.2,
+            "relative_strength_median": 60.6,
             "above_50d_share": null
           },
           {
@@ -10121,7 +10127,7 @@
         ],
         "chain_confirmation": {
           "root_relative_strength": 43.55,
-          "supply_chain_relative_strength": 30.3,
+          "supply_chain_relative_strength": 31.5,
           "confirms": true
         },
         "verdict": {
@@ -10678,6 +10684,67 @@
         },
         {
           "theme_id": "obesity_care_supply_chain",
+          "theme_exposure_score": 54.8,
+          "confidence": 0.45,
+          "disclosure_backed": false,
+          "eligible": true,
+          "excluded_by": [],
+          "leading_signals_fired": [
+            "backlog_growth"
+          ],
+          "theme_level_signals_fired": [
+            "spender_capex_growth"
+          ],
+          "signals": [
+            {
+              "name": "filing_keyword_density_trend",
+              "score": 39.1,
+              "weight": 0.1,
+              "leading": true,
+              "theme_level": false,
+              "raw": -0.1088
+            },
+            {
+              "name": "spender_capex_growth",
+              "score": 62.1,
+              "weight": 0.2,
+              "leading": true,
+              "theme_level": true,
+              "raw": 0.0732
+            },
+            {
+              "name": "backlog_growth",
+              "score": 84.5,
+              "weight": 0.15,
+              "leading": true,
+              "theme_level": false,
+              "raw": 0.2093
+            }
+          ],
+          "signals_answered": 3,
+          "company_signals_answered": 2,
+          "ticker": "DHR",
+          "name": "Danaher Corporation",
+          "sector": "Healthcare",
+          "industry": "Diagnostics & Research",
+          "role": "enabler",
+          "candidate_source": "sector_peer",
+          "fundamental_score": 57.5,
+          "valuation_percentile": null,
+          "opportunity_score": 54.8,
+          "research_coverage": 0.89,
+          "statements_available": false,
+          "why": [
+            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
+            "Placed as an enabler, selling what makes the core product usable at scale",
+            "Its remaining performance obligation (order backlog) is +21% year over year",
+            "The theme's named spenders grew capital expenditure +7% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
+            "3 of 5 declared signals resolved, carrying 45% of this theme's signal weight",
+            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ]
+        },
+        {
+          "theme_id": "obesity_care_supply_chain",
           "theme_exposure_score": 63.5,
           "confidence": 0.3,
           "disclosure_backed": false,
@@ -10728,59 +10795,6 @@
             "2 of 5 declared signals resolved, carrying 30% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ]
-        },
-        {
-          "theme_id": "obesity_care_supply_chain",
-          "theme_exposure_score": 49.6,
-          "confidence": 0.35,
-          "disclosure_backed": false,
-          "eligible": true,
-          "excluded_by": [],
-          "leading_signals_fired": [
-            "backlog_growth"
-          ],
-          "theme_level_signals_fired": [
-            "spender_capex_growth"
-          ],
-          "signals": [
-            {
-              "name": "spender_capex_growth",
-              "score": 62.1,
-              "weight": 0.2,
-              "leading": true,
-              "theme_level": true,
-              "raw": 0.0732
-            },
-            {
-              "name": "backlog_growth",
-              "score": 53.4,
-              "weight": 0.15,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.0209
-            }
-          ],
-          "signals_answered": 2,
-          "company_signals_answered": 1,
-          "ticker": "IQV",
-          "name": "IQVIA Holdings, Inc.",
-          "sector": "Healthcare",
-          "industry": "Diagnostics & Research",
-          "role": "enabler",
-          "candidate_source": "sector_peer",
-          "fundamental_score": 63.5,
-          "valuation_percentile": 50.0,
-          "opportunity_score": 54.5,
-          "research_coverage": 0.87,
-          "statements_available": false,
-          "why": [
-            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
-            "Placed as an enabler, selling what makes the core product usable at scale",
-            "Its remaining performance obligation (order backlog) is +2% year over year",
-            "The theme's named spenders grew capital expenditure +7% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
-            "2 of 5 declared signals resolved, carrying 35% of this theme's signal weight",
-            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
-          ]
         }
       ],
       "trend": {
@@ -10790,7 +10804,7 @@
         "direction": {
           "relative_strength_median": 70.75,
           "relative_strength_20d_median": 6.9,
-          "acceleration_median": -0.3,
+          "acceleration_median": -0.28,
           "label": "mixed"
         },
         "breadth": {
@@ -10816,7 +10830,7 @@
         "maturity": {
           "members_measured": 26,
           "minimum_members": 5,
-          "return_dispersion": 23.63,
+          "return_dispersion": 23.72,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -11508,7 +11522,7 @@
           "role": "supplier",
           "candidate_source": "sector_peer",
           "fundamental_score": 73.3,
-          "valuation_percentile": 50.0,
+          "valuation_percentile": null,
           "opportunity_score": 67.2,
           "research_coverage": 0.89,
           "statements_available": false,
@@ -11632,8 +11646,8 @@
         "members_measured": 64,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 55.3,
-          "relative_strength_20d_median": 1.76,
+          "relative_strength_median": 56.6,
+          "relative_strength_20d_median": 2.2,
           "acceleration_median": -0.26,
           "label": "mixed"
         },
@@ -11660,7 +11674,7 @@
         "maturity": {
           "members_measured": 64,
           "minimum_members": 5,
-          "return_dispersion": 32.51,
+          "return_dispersion": 32.7,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -11674,7 +11688,7 @@
           {
             "role": "supplier",
             "members": 31,
-            "relative_strength_median": 58.2,
+            "relative_strength_median": 63.6,
             "above_50d_share": null
           },
           {
@@ -11692,7 +11706,7 @@
         ],
         "chain_confirmation": {
           "root_relative_strength": 37.4,
-          "supply_chain_relative_strength": 63.3,
+          "supply_chain_relative_strength": 66.0,
           "confirms": true
         },
         "verdict": {
@@ -12392,7 +12406,7 @@
         "maturity": {
           "members_measured": 24,
           "minimum_members": 5,
-          "return_dispersion": 29.57,
+          "return_dispersion": 30.13,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -12661,7 +12675,7 @@
           ],
           "rank_reason": [
             "Ranks #3 of 5 on an opportunity score of 65.8: exposure 52 (45% of that score), business quality 74 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above CW (59.9) mainly on valuation: the cheapest third against the most expensive third",
+            "It ranks above CW (65.3) mainly on valuation: the cheapest third against no resolved tier",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -12703,9 +12717,9 @@
           "industry": "Aerospace & Defense",
           "role": "root",
           "candidate_source": "sector_peer",
-          "fundamental_score": 73.7,
-          "valuation_percentile": 83.3,
-          "opportunity_score": 59.9,
+          "fundamental_score": 70.1,
+          "valuation_percentile": null,
+          "opportunity_score": 65.3,
           "research_coverage": 0.89,
           "statements_available": false,
           "why": [
@@ -12717,8 +12731,8 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #4 of 5 on an opportunity score of 59.9: exposure 68 (45% of that score), business quality 74 (35% of that score), in the most expensive third of its sector (20% of that score)",
-            "It ranks above LMT (58.7) despite losing to it on valuation (the most expensive third against the middle third); exposure and business quality make up the difference",
+            "Ranks #4 of 5 on an opportunity score of 65.3: exposure 68 (45% of that score), business quality 70 (35% of that score), no peer valuation tier resolved, scored neutral (20% of that score)",
+            "It ranks above LMT (58.7) mainly on exposure: 68 against 54",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -12806,13 +12820,13 @@
           "volume_ratio_median": 0.81
         },
         "crowding": {
-          "expensiveness_percentile_median": 50.0,
+          "expensiveness_percentile_median": 33.35,
           "already_priced": false
         },
         "maturity": {
           "members_measured": 5,
           "minimum_members": 5,
-          "return_dispersion": 10.03,
+          "return_dispersion": 10.41,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -12826,12 +12840,12 @@
           {
             "role": "root",
             "members": 4,
-            "relative_strength_median": 64.45,
+            "relative_strength_median": 63.4,
             "above_50d_share": null
           }
         ],
         "chain_confirmation": {
-          "root_relative_strength": 64.45,
+          "root_relative_strength": 63.4,
           "supply_chain_relative_strength": 71.4,
           "confirms": true
         },
@@ -13205,12 +13219,12 @@
           "source": "edgar_xbrl_capex"
         }
       ],
-      "count": 16,
-      "eligible_count": 5,
-      "mean_confidence_eligible": 0.4,
+      "count": 15,
+      "eligible_count": 4,
+      "mean_confidence_eligible": 0.4375,
       "group_counts": {
         "leaders": 0,
-        "connected": 16
+        "connected": 15
       },
       "published_rows_per_group": 10,
       "rows": [
@@ -13267,66 +13281,8 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #1 of 16 on an opportunity score of 74.4: exposure 85 (45% of that score), business quality 75 (35% of that score), in the middle third of its sector (20% of that score)",
-            "It ranks above TEL (67.6) mainly on exposure: 85 against 61",
-            "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
-          ]
-        },
-        {
-          "theme_id": "storage_capacity_shortage",
-          "theme_exposure_score": 60.9,
-          "confidence": 0.25,
-          "disclosure_backed": false,
-          "eligible": true,
-          "excluded_by": [],
-          "leading_signals_fired": [
-            "filing_keyword_density_trend"
-          ],
-          "theme_level_signals_fired": [
-            "hyperscaler_capex_growth"
-          ],
-          "signals": [
-            {
-              "name": "filing_keyword_density_trend",
-              "score": 52.8,
-              "weight": 0.15,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.0283
-            },
-            {
-              "name": "hyperscaler_capex_growth",
-              "score": 100.0,
-              "weight": 0.1,
-              "leading": true,
-              "theme_level": true,
-              "raw": 0.7858
-            }
-          ],
-          "signals_answered": 2,
-          "company_signals_answered": 1,
-          "ticker": "TEL",
-          "name": "TE Connectivity plc",
-          "sector": "Technology",
-          "industry": "Electronic Components",
-          "role": "supplier",
-          "candidate_source": "sector_peer",
-          "fundamental_score": 86.3,
-          "valuation_percentile": 50.0,
-          "opportunity_score": 67.6,
-          "research_coverage": 0.89,
-          "statements_available": false,
-          "why": [
-            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
-            "Placed as a supplier into this chain",
-            "Its latest 10-K devotes 3% more of its language to this theme than the prior year's",
-            "The theme's named spenders grew capital expenditure +79% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
-            "2 of 5 declared signals resolved, carrying 25% of this theme's signal weight",
-            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
-          ],
-          "rank_reason": [
-            "Ranks #2 of 16 on an opportunity score of 67.6: exposure 61 (45% of that score), business quality 86 (35% of that score), in the middle third of its sector (20% of that score)",
-            "It ranks above PLXS (62.3) mainly on business quality: 86 against 73",
+            "Ranks #1 of 15 on an opportunity score of 74.4: exposure 85 (45% of that score), business quality 75 (35% of that score), in the middle third of its sector (20% of that score)",
+            "It ranks above PLXS (62.3) mainly on exposure: 85 against 60",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -13383,7 +13339,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #3 of 16 on an opportunity score of 62.3: exposure 60 (45% of that score), business quality 73 (35% of that score), in the middle third of its sector (20% of that score)",
+            "Ranks #2 of 15 on an opportunity score of 62.3: exposure 60 (45% of that score), business quality 73 (35% of that score), in the middle third of its sector (20% of that score)",
             "It ranks above NVDA (60.7) mainly on valuation: the middle third against the most expensive third",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -13451,7 +13407,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #4 of 16 on an opportunity score of 60.7: exposure 74 (45% of that score), business quality 69 (35% of that score), in the most expensive third of its sector (20% of that score)",
+            "Ranks #3 of 15 on an opportunity score of 60.7: exposure 74 (45% of that score), business quality 69 (35% of that score), in the most expensive third of its sector (20% of that score)",
             "It ranks above ON (44.5) mainly on exposure: 74 against 29",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -13517,7 +13473,7 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #5 of 16 on an opportunity score of 44.5: exposure 29 (45% of that score), business quality 62 (35% of that score), in the middle third of its sector (20% of that score)",
+            "Ranks #4 of 15 on an opportunity score of 44.5: exposure 29 (45% of that score), business quality 62 (35% of that score), in the middle third of its sector (20% of that score)",
             "The next name (OLED) is flagged rather than promoted, so it ranks below this one whatever it scores",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
@@ -13575,6 +13531,11 @@
             "Flagged, not promoted: no company-specific leading signal fired; exposure rests on lagging evidence or on a theme-wide reading every candidate shares",
             "2 of 5 declared signals resolved, carrying 25% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ],
+          "rank_reason": [
+            "Ranks #5 of 15 on an opportunity score of 69.9: exposure 58 (45% of that score), business quality 78 (35% of that score), in the cheapest third of its sector (20% of that score)",
+            "It ranks above FN (58.3) mainly on valuation: the cheapest third against the middle third",
+            "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
         {
@@ -13796,22 +13757,77 @@
             "2 of 5 declared signals resolved, carrying 25% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ]
+        },
+        {
+          "theme_id": "storage_capacity_shortage",
+          "theme_exposure_score": 34.0,
+          "confidence": 0.25,
+          "disclosure_backed": false,
+          "eligible": false,
+          "excluded_by": [
+            "no company-specific leading signal fired; exposure rests on lagging evidence or on a theme-wide reading every candidate shares"
+          ],
+          "leading_signals_fired": [],
+          "theme_level_signals_fired": [
+            "hyperscaler_capex_growth"
+          ],
+          "signals": [
+            {
+              "name": "filing_keyword_density_trend",
+              "score": 0.0,
+              "weight": 0.15,
+              "leading": true,
+              "theme_level": false,
+              "raw": -0.6298
+            },
+            {
+              "name": "hyperscaler_capex_growth",
+              "score": 100.0,
+              "weight": 0.1,
+              "leading": true,
+              "theme_level": true,
+              "raw": 0.7858
+            }
+          ],
+          "signals_answered": 2,
+          "company_signals_answered": 1,
+          "ticker": "WOLF",
+          "name": "Wolfspeed, Inc.",
+          "sector": "Technology",
+          "industry": "Semiconductors",
+          "role": "root",
+          "candidate_source": "sector_peer",
+          "fundamental_score": 57.1,
+          "valuation_percentile": 16.700000000000003,
+          "opportunity_score": 51.9,
+          "research_coverage": 0.6,
+          "statements_available": false,
+          "why": [
+            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
+            "Placed as the root of this chain, selling the product the theme is named for",
+            "Its latest 10-K devotes 63% less of its language to this theme than the prior year's",
+            "None of its own signals cleared the confirmation bar, so the exposure is measured but not confirmed",
+            "The theme's named spenders grew capital expenditure +79% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
+            "Flagged, not promoted: no company-specific leading signal fired; exposure rests on lagging evidence or on a theme-wide reading every candidate shares",
+            "2 of 5 declared signals resolved, carrying 25% of this theme's signal weight",
+            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ]
         }
       ],
       "trend": {
         "contributes_to_exposure": false,
-        "members_measured": 16,
+        "members_measured": 15,
         "minimum_members": 5,
         "direction": {
-          "relative_strength_median": 34.75,
-          "relative_strength_20d_median": -5.08,
-          "acceleration_median": 0.07,
-          "label": "strengthening"
+          "relative_strength_median": 29.5,
+          "relative_strength_20d_median": -6.83,
+          "acceleration_median": -0.09,
+          "label": "mixed"
         },
         "breadth": {
           "above_20d_share": null,
           "above_50d_share": null,
-          "outperforming_share": 0.812,
+          "outperforming_share": 0.8,
           "label": "broad"
         },
         "leadership": {
@@ -13822,24 +13838,24 @@
         "fundamental_confirmation": {
           "revision_breadth_median": null,
           "positive_revision_share": null,
-          "volume_ratio_median": 0.84
+          "volume_ratio_median": 0.87
         },
         "crowding": {
           "expensiveness_percentile_median": 50.0,
           "already_priced": false
         },
         "maturity": {
-          "members_measured": 16,
+          "members_measured": 15,
           "minimum_members": 5,
-          "return_dispersion": 28.46,
+          "return_dispersion": 28.14,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
         "roles": [
           {
             "role": "supplier",
-            "members": 7,
-            "relative_strength_median": 43.8,
+            "members": 6,
+            "relative_strength_median": 41.9,
             "above_50d_share": null
           },
           {
@@ -13851,12 +13867,12 @@
         ],
         "chain_confirmation": {
           "root_relative_strength": 27.0,
-          "supply_chain_relative_strength": 43.8,
+          "supply_chain_relative_strength": 41.9,
           "confirms": true
         },
         "verdict": {
-          "label": "broadening",
-          "summary": "The group is outperforming, most of its members are participating, and it is not yet priced as an expensive third of the market."
+          "label": "mixed",
+          "summary": "The group is neither clearly leading nor clearly lagging."
         }
       },
       "biggest_players": []
@@ -14421,6 +14437,67 @@
         },
         {
           "theme_id": "surgical_robotics",
+          "theme_exposure_score": 44.5,
+          "confidence": 0.5,
+          "disclosure_backed": false,
+          "eligible": true,
+          "excluded_by": [],
+          "leading_signals_fired": [
+            "backlog_growth"
+          ],
+          "theme_level_signals_fired": [
+            "spender_capex_growth"
+          ],
+          "signals": [
+            {
+              "name": "filing_keyword_density_trend",
+              "score": 0.0,
+              "weight": 0.1,
+              "leading": true,
+              "theme_level": false,
+              "raw": -1.0
+            },
+            {
+              "name": "backlog_growth",
+              "score": 84.5,
+              "weight": 0.15,
+              "leading": true,
+              "theme_level": false,
+              "raw": 0.2093
+            },
+            {
+              "name": "spender_capex_growth",
+              "score": 54.0,
+              "weight": 0.25,
+              "leading": true,
+              "theme_level": true,
+              "raw": 0.0241
+            }
+          ],
+          "signals_answered": 3,
+          "company_signals_answered": 2,
+          "ticker": "DHR",
+          "name": "Danaher Corporation",
+          "sector": "Healthcare",
+          "industry": "Diagnostics & Research",
+          "role": "supplier",
+          "candidate_source": "sector_peer",
+          "fundamental_score": 57.5,
+          "valuation_percentile": null,
+          "opportunity_score": 50.2,
+          "research_coverage": 0.89,
+          "statements_available": false,
+          "why": [
+            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
+            "Placed as a supplier into this chain",
+            "Its remaining performance obligation (order backlog) is +21% year over year",
+            "The theme's named spenders grew capital expenditure +2% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
+            "3 of 5 declared signals resolved, carrying 50% of this theme's signal weight",
+            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
+          ]
+        },
+        {
+          "theme_id": "surgical_robotics",
           "theme_exposure_score": 49.8,
           "confidence": 0.35,
           "disclosure_backed": false,
@@ -14471,59 +14548,6 @@
             "2 of 5 declared signals resolved, carrying 35% of this theme's signal weight",
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ]
-        },
-        {
-          "theme_id": "surgical_robotics",
-          "theme_exposure_score": 46.2,
-          "confidence": 0.4,
-          "disclosure_backed": false,
-          "eligible": true,
-          "excluded_by": [],
-          "leading_signals_fired": [
-            "backlog_growth"
-          ],
-          "theme_level_signals_fired": [
-            "spender_capex_growth"
-          ],
-          "signals": [
-            {
-              "name": "backlog_growth",
-              "score": 54.7,
-              "weight": 0.15,
-              "leading": true,
-              "theme_level": false,
-              "raw": 0.0286
-            },
-            {
-              "name": "spender_capex_growth",
-              "score": 54.0,
-              "weight": 0.25,
-              "leading": true,
-              "theme_level": true,
-              "raw": 0.0241
-            }
-          ],
-          "signals_answered": 2,
-          "company_signals_answered": 1,
-          "ticker": "MEDP",
-          "name": "Medpace Holdings, Inc.",
-          "sector": "Healthcare",
-          "industry": "Diagnostics & Research",
-          "role": "supplier",
-          "candidate_source": "sector_peer",
-          "fundamental_score": 69.5,
-          "valuation_percentile": 83.3,
-          "opportunity_score": 48.5,
-          "research_coverage": 0.82,
-          "statements_available": false,
-          "why": [
-            "In this theme because it is a peer-group neighbour of this theme's anchors, not yet a published research score",
-            "Placed as a supplier into this chain",
-            "Its remaining performance obligation (order backlog) is +3% year over year",
-            "The theme's named spenders grew capital expenditure +2% - a theme-wide reading, identical for every candidate, so it describes the demand and not this company",
-            "2 of 5 declared signals resolved, carrying 40% of this theme's signal weight",
-            "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
-          ]
         }
       ],
       "trend": {
@@ -14553,13 +14577,13 @@
           "volume_ratio_median": 0.94
         },
         "crowding": {
-          "expensiveness_percentile_median": 66.65,
+          "expensiveness_percentile_median": 50.0,
           "already_priced": false
         },
         "maturity": {
           "members_measured": 29,
           "minimum_members": 5,
-          "return_dispersion": 21.98,
+          "return_dispersion": 22.1,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -14915,7 +14939,7 @@
           ],
           "rank_reason": [
             "Ranks #4 of 51 on an opportunity score of 68.1: exposure 54 (45% of that score), business quality 77 (35% of that score), in the cheapest third of its sector (20% of that score)",
-            "It ranks above DOV (67.7) mainly on valuation: the cheapest third against the middle third",
+            "It ranks above DOV (67.7) mainly on valuation: the cheapest third against no resolved tier",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 87% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -14959,7 +14983,7 @@
           "role": "supplier",
           "candidate_source": "sector_peer",
           "fundamental_score": 73.3,
-          "valuation_percentile": 50.0,
+          "valuation_percentile": null,
           "opportunity_score": 67.7,
           "research_coverage": 0.89,
           "statements_available": false,
@@ -14972,8 +14996,8 @@
             "No disclosed segment revenue or major-customer link resolved for this company - exposure rests on filing/transcript language alone, scored at 85% of what the same signals would carry with disclosure behind them"
           ],
           "rank_reason": [
-            "Ranks #5 of 51 on an opportunity score of 67.7: exposure 71 (45% of that score), business quality 73 (35% of that score), in the middle third of its sector (20% of that score)",
-            "It ranks above XYL (67.0) despite losing to it on valuation (the middle third against the cheapest third); exposure and business quality make up the difference",
+            "Ranks #5 of 51 on an opportunity score of 67.7: exposure 71 (45% of that score), business quality 73 (35% of that score), no peer valuation tier resolved, scored neutral (20% of that score)",
+            "It ranks above XYL (67.0) despite losing to it on valuation (no resolved tier against the cheapest third); exposure and business quality make up the difference",
             "Its research rating reads \"Insufficient data\" because no financial statements were pulled for it this run - 89% of that model's evidence resolved. Statements go to a shortlist of the universe, and this screen exists to surface names that are not already published leaders, so the business-quality leg above rests on price-based multiples rather than on returns on capital, leverage or accounting quality"
           ]
         },
@@ -15268,7 +15292,7 @@
         "direction": {
           "relative_strength_median": 65.5,
           "relative_strength_20d_median": 5.16,
-          "acceleration_median": -0.44,
+          "acceleration_median": -0.42,
           "label": "mixed"
         },
         "breadth": {
@@ -15294,7 +15318,7 @@
         "maturity": {
           "members_measured": 51,
           "minimum_members": 5,
-          "return_dispersion": 28.03,
+          "return_dispersion": 28.09,
           "average_pairwise_correlation": null,
           "label": "unmeasured"
         },
@@ -15447,7 +15471,7 @@
         "theme_id": "aerospace_forging_capacity",
         "display_name": "Aerospace Forging & Casting Capacity",
         "theme_exposure_score": 62.7,
-        "opportunity_score": 57.4,
+        "opportunity_score": 62.8,
         "eligible": true,
         "confidence": 0.5,
         "role": "root"
@@ -15456,7 +15480,7 @@
         "theme_id": "defense_rearmament",
         "display_name": "Allied Rearmament & Munitions Capacity",
         "theme_exposure_score": 50.1,
-        "opportunity_score": 51.7,
+        "opportunity_score": 57.1,
         "eligible": true,
         "confidence": 0.55,
         "role": "root"
@@ -15465,7 +15489,7 @@
         "theme_id": "shipbuilding_naval",
         "display_name": "Shipbuilding & Naval Capacity",
         "theme_exposure_score": 68.4,
-        "opportunity_score": 59.9,
+        "opportunity_score": 65.3,
         "eligible": true,
         "confidence": 0.4,
         "role": "root"
@@ -16731,7 +16755,7 @@
         "theme_id": "ai_infrastructure",
         "display_name": "AI Infrastructure Buildout",
         "theme_exposure_score": 85.0,
-        "opportunity_score": 62.6,
+        "opportunity_score": 62.3,
         "eligible": true,
         "confidence": 0.26,
         "role": "supplier"
@@ -16740,7 +16764,7 @@
         "theme_id": "reshoring_industrial_capacity",
         "display_name": "Reshoring & Industrial Capacity",
         "theme_exposure_score": 67.7,
-        "opportunity_score": 54.8,
+        "opportunity_score": 54.5,
         "eligible": true,
         "confidence": 0.3,
         "role": "supplier"
@@ -16749,7 +16773,7 @@
         "theme_id": "semicap_equipment",
         "display_name": "Semiconductor Cap Equipment & Fab Buildout",
         "theme_exposure_score": 53.2,
-        "opportunity_score": 48.3,
+        "opportunity_score": 48.0,
         "eligible": false,
         "confidence": 0.25,
         "role": "root"
@@ -17068,35 +17092,6 @@
         "eligible": true,
         "confidence": 0.35,
         "role": null
-      }
-    ],
-    "TEL": [
-      {
-        "theme_id": "ai_infrastructure",
-        "display_name": "AI Infrastructure Buildout",
-        "theme_exposure_score": 85.0,
-        "opportunity_score": 78.5,
-        "eligible": true,
-        "confidence": 0.26,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 34.8,
-        "opportunity_score": 55.9,
-        "eligible": false,
-        "confidence": 0.3,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "storage_capacity_shortage",
-        "display_name": "AI-Driven Storage Capacity Shortage",
-        "theme_exposure_score": 60.9,
-        "opportunity_score": 67.6,
-        "eligible": true,
-        "confidence": 0.25,
-        "role": "supplier"
       }
     ],
     "JBL": [
@@ -17715,6 +17710,35 @@
         "role": null
       }
     ],
+    "CSCO": [
+      {
+        "theme_id": "ai_infrastructure",
+        "display_name": "AI Infrastructure Buildout",
+        "theme_exposure_score": 62.3,
+        "opportunity_score": 62.9,
+        "eligible": true,
+        "confidence": 0.37,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 45.8,
+        "opportunity_score": 55.5,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 56.6,
+        "opportunity_score": 60.3,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "supplier"
+      }
+    ],
     "IEX": [
       {
         "theme_id": "water_infrastructure",
@@ -17795,89 +17819,6 @@
         "display_name": "Water Infrastructure & Treatment",
         "theme_exposure_score": 71.3,
         "opportunity_score": 69.0,
-        "eligible": true,
-        "confidence": 0.35,
-        "role": "supplier"
-      }
-    ],
-    "DOV": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 67.6,
-        "opportunity_score": 66.1,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "root"
-      },
-      {
-        "theme_id": "battery_storage",
-        "display_name": "Grid-Scale Battery Storage",
-        "theme_exposure_score": 81.7,
-        "opportunity_score": 72.4,
-        "eligible": true,
-        "confidence": 0.4,
-        "role": "root"
-      },
-      {
-        "theme_id": "data_center_cooling",
-        "display_name": "Data Center Cooling & Thermal Management",
-        "theme_exposure_score": 75.7,
-        "opportunity_score": 69.7,
-        "eligible": true,
-        "confidence": 0.5,
-        "role": "root"
-      },
-      {
-        "theme_id": "energy_security",
-        "display_name": "Energy Security & Firm Power",
-        "theme_exposure_score": 75.9,
-        "opportunity_score": 69.8,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "grid_electrification",
-        "display_name": "Grid & Electrification Buildout",
-        "theme_exposure_score": 79.0,
-        "opportunity_score": 71.2,
-        "eligible": true,
-        "confidence": 0.35,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "grid_power_equipment",
-        "display_name": "Grid Power Equipment Backlog",
-        "theme_exposure_score": 70.7,
-        "opportunity_score": 67.5,
-        "eligible": true,
-        "confidence": 0.5,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "nuclear_smr",
-        "display_name": "Nuclear Power Restart & SMRs",
-        "theme_exposure_score": 85.0,
-        "opportunity_score": 73.9,
-        "eligible": true,
-        "confidence": 0.4,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 70.2,
-        "opportunity_score": 67.2,
-        "eligible": true,
-        "confidence": 0.35,
-        "role": "supplier"
-      },
-      {
-        "theme_id": "water_infrastructure",
-        "display_name": "Water Infrastructure & Treatment",
-        "theme_exposure_score": 71.3,
-        "opportunity_score": 67.7,
         "eligible": true,
         "confidence": 0.35,
         "role": "supplier"
@@ -18004,26 +17945,6 @@
         "role": "supplier"
       }
     ],
-    "DCI": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 37.7,
-        "opportunity_score": 59.7,
-        "eligible": false,
-        "confidence": 0.3,
-        "role": "root"
-      },
-      {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 39.4,
-        "opportunity_score": 60.5,
-        "eligible": false,
-        "confidence": 0.3,
-        "role": "supplier"
-      }
-    ],
     "GGG": [
       {
         "theme_id": "automation_and_robotics",
@@ -18064,35 +17985,6 @@
         "role": "supplier"
       }
     ],
-    "CSCO": [
-      {
-        "theme_id": "ai_infrastructure",
-        "display_name": "AI Infrastructure Buildout",
-        "theme_exposure_score": 62.3,
-        "opportunity_score": 62.9,
-        "eligible": true,
-        "confidence": 0.37,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 45.8,
-        "opportunity_score": 55.5,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 56.6,
-        "opportunity_score": 60.3,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "supplier"
-      }
-    ],
     "GTES": [
       {
         "theme_id": "automation_and_robotics",
@@ -18120,6 +18012,109 @@
         "eligible": false,
         "confidence": 0.25,
         "role": "supplier"
+      }
+    ],
+    "DOV": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 67.6,
+        "opportunity_score": 66.1,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "root"
+      },
+      {
+        "theme_id": "battery_storage",
+        "display_name": "Grid-Scale Battery Storage",
+        "theme_exposure_score": 81.7,
+        "opportunity_score": 72.4,
+        "eligible": true,
+        "confidence": 0.4,
+        "role": "root"
+      },
+      {
+        "theme_id": "data_center_cooling",
+        "display_name": "Data Center Cooling & Thermal Management",
+        "theme_exposure_score": 75.7,
+        "opportunity_score": 69.7,
+        "eligible": true,
+        "confidence": 0.5,
+        "role": "root"
+      },
+      {
+        "theme_id": "energy_security",
+        "display_name": "Energy Security & Firm Power",
+        "theme_exposure_score": 75.9,
+        "opportunity_score": 69.8,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "grid_electrification",
+        "display_name": "Grid & Electrification Buildout",
+        "theme_exposure_score": 79.0,
+        "opportunity_score": 71.2,
+        "eligible": true,
+        "confidence": 0.35,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "grid_power_equipment",
+        "display_name": "Grid Power Equipment Backlog",
+        "theme_exposure_score": 70.7,
+        "opportunity_score": 67.5,
+        "eligible": true,
+        "confidence": 0.5,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "nuclear_smr",
+        "display_name": "Nuclear Power Restart & SMRs",
+        "theme_exposure_score": 85.0,
+        "opportunity_score": 73.9,
+        "eligible": true,
+        "confidence": 0.4,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 70.2,
+        "opportunity_score": 67.2,
+        "eligible": true,
+        "confidence": 0.35,
+        "role": "supplier"
+      },
+      {
+        "theme_id": "water_infrastructure",
+        "display_name": "Water Infrastructure & Treatment",
+        "theme_exposure_score": 71.3,
+        "opportunity_score": 67.7,
+        "eligible": true,
+        "confidence": 0.35,
+        "role": "supplier"
+      }
+    ],
+    "AGCO": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 53.9,
+        "opportunity_score": 60.4,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": null
+      },
+      {
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 62.7,
+        "opportunity_score": 64.4,
+        "eligible": true,
+        "confidence": 0.35,
+        "role": "infrastructure"
       }
     ],
     "EMR": [
@@ -18194,26 +18189,6 @@
         "eligible": true,
         "confidence": 0.35,
         "role": "supplier"
-      }
-    ],
-    "AGCO": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 53.9,
-        "opportunity_score": 60.4,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": null
-      },
-      {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 62.7,
-        "opportunity_score": 64.4,
-        "eligible": true,
-        "confidence": 0.35,
-        "role": "infrastructure"
       }
     ],
     "PNR": [
@@ -18680,6 +18655,26 @@
         "role": "supplier"
       }
     ],
+    "DCI": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 37.7,
+        "opportunity_score": 51.9,
+        "eligible": false,
+        "confidence": 0.3,
+        "role": "root"
+      },
+      {
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 39.4,
+        "opportunity_score": 52.6,
+        "eligible": false,
+        "confidence": 0.3,
+        "role": "supplier"
+      }
+    ],
     "OTIS": [
       {
         "theme_id": "automation_and_robotics",
@@ -19065,6 +19060,26 @@
         "role": "supplier"
       }
     ],
+    "DE": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 38.6,
+        "opportunity_score": 45.6,
+        "eligible": false,
+        "confidence": 0.45,
+        "role": null
+      },
+      {
+        "theme_id": "reshoring_industrial_capacity",
+        "display_name": "Reshoring & Industrial Capacity",
+        "theme_exposure_score": 50.8,
+        "opportunity_score": 51.1,
+        "eligible": false,
+        "confidence": 0.35,
+        "role": "infrastructure"
+      }
+    ],
     "GNRC": [
       {
         "theme_id": "battery_storage",
@@ -19204,26 +19219,6 @@
         "eligible": true,
         "confidence": 0.35,
         "role": "supplier"
-      }
-    ],
-    "DE": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 38.6,
-        "opportunity_score": 39.1,
-        "eligible": false,
-        "confidence": 0.45,
-        "role": null
-      },
-      {
-        "theme_id": "reshoring_industrial_capacity",
-        "display_name": "Reshoring & Industrial Capacity",
-        "theme_exposure_score": 50.8,
-        "opportunity_score": 44.6,
-        "eligible": false,
-        "confidence": 0.35,
-        "role": "infrastructure"
       }
     ],
     "SYM": [
@@ -19367,26 +19362,6 @@
         "role": "supplier"
       }
     ],
-    "GEN": [
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 53.0,
-        "opportunity_score": 68.4,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "root"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 63.2,
-        "opportunity_score": 73.0,
-        "eligible": true,
-        "confidence": 0.53,
-        "role": "enabler"
-      }
-    ],
     "GDDY": [
       {
         "theme_id": "cybersecurity",
@@ -19402,6 +19377,26 @@
         "display_name": "Digital Payments & Financial Infrastructure",
         "theme_exposure_score": 52.3,
         "opportunity_score": 68.5,
+        "eligible": true,
+        "confidence": 0.53,
+        "role": "enabler"
+      }
+    ],
+    "GEN": [
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 53.0,
+        "opportunity_score": 68.2,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "root"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 63.2,
+        "opportunity_score": 72.8,
         "eligible": true,
         "confidence": 0.53,
         "role": "enabler"
@@ -19460,35 +19455,6 @@
         "display_name": "Digital Payments & Financial Infrastructure",
         "theme_exposure_score": 55.8,
         "opportunity_score": 61.6,
-        "eligible": true,
-        "confidence": 0.42,
-        "role": "supplier"
-      }
-    ],
-    "DT": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 56.3,
-        "opportunity_score": 61.2,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 77.5,
-        "opportunity_score": 70.8,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 69.4,
-        "opportunity_score": 67.1,
         "eligible": true,
         "confidence": 0.42,
         "role": "supplier"
@@ -19605,6 +19571,35 @@
         "display_name": "Digital Payments & Financial Infrastructure",
         "theme_exposure_score": 58.6,
         "opportunity_score": 68.2,
+        "eligible": true,
+        "confidence": 0.42,
+        "role": "supplier"
+      }
+    ],
+    "DT": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 56.3,
+        "opportunity_score": 54.6,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 77.5,
+        "opportunity_score": 64.1,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 69.4,
+        "opportunity_score": 60.5,
         "eligible": true,
         "confidence": 0.42,
         "role": "supplier"
@@ -19786,26 +19781,6 @@
         "role": "supplier"
       }
     ],
-    "DBX": [
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 57.6,
-        "opportunity_score": 68.0,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "root"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 54.1,
-        "opportunity_score": 66.5,
-        "eligible": false,
-        "confidence": 0.42,
-        "role": "enabler"
-      }
-    ],
     "PATH": [
       {
         "theme_id": "cybersecurity",
@@ -19824,6 +19799,35 @@
         "eligible": true,
         "confidence": 0.42,
         "role": "enabler"
+      }
+    ],
+    "CVLT": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 63.7,
+        "opportunity_score": 55.6,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 85.0,
+        "opportunity_score": 65.2,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 76.1,
+        "opportunity_score": 61.2,
+        "eligible": true,
+        "confidence": 0.42,
+        "role": "supplier"
       }
     ],
     "TEAM": [
@@ -19886,35 +19890,6 @@
         "role": "enabler"
       }
     ],
-    "CVLT": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 63.7,
-        "opportunity_score": 55.6,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 85.0,
-        "opportunity_score": 65.2,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 76.1,
-        "opportunity_score": 61.2,
-        "eligible": true,
-        "confidence": 0.42,
-        "role": "supplier"
-      }
-    ],
     "CDNS": [
       {
         "theme_id": "automation_and_robotics",
@@ -19971,6 +19946,26 @@
         "eligible": true,
         "confidence": 0.42,
         "role": "supplier"
+      }
+    ],
+    "DBX": [
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 57.6,
+        "opportunity_score": 61.4,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "root"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 54.1,
+        "opportunity_score": 59.8,
+        "eligible": false,
+        "confidence": 0.42,
+        "role": "enabler"
       }
     ],
     "WK": [
@@ -20236,6 +20231,26 @@
         "role": "supplier"
       }
     ],
+    "DUOL": [
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 71.2,
+        "opportunity_score": 66.2,
+        "eligible": true,
+        "confidence": 0.3,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 44.8,
+        "opportunity_score": 54.3,
+        "eligible": false,
+        "confidence": 0.32,
+        "role": "supplier"
+      }
+    ],
     "TYL": [
       {
         "theme_id": "automation_and_robotics",
@@ -20314,55 +20329,6 @@
         "role": "enabler"
       }
     ],
-    "DUOL": [
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 71.2,
-        "opportunity_score": 65.9,
-        "eligible": true,
-        "confidence": 0.3,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 44.8,
-        "opportunity_score": 54.1,
-        "eligible": false,
-        "confidence": 0.32,
-        "role": "supplier"
-      }
-    ],
-    "DDOG": [
-      {
-        "theme_id": "automation_and_robotics",
-        "display_name": "Automation & Robotics",
-        "theme_exposure_score": 63.7,
-        "opportunity_score": 50.8,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 69.5,
-        "opportunity_score": 53.4,
-        "eligible": true,
-        "confidence": 0.55,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 76.1,
-        "opportunity_score": 56.4,
-        "eligible": true,
-        "confidence": 0.42,
-        "role": "supplier"
-      }
-    ],
     "MDB": [
       {
         "theme_id": "cybersecurity",
@@ -20381,6 +20347,35 @@
         "eligible": true,
         "confidence": 0.42,
         "role": "enabler"
+      }
+    ],
+    "DDOG": [
+      {
+        "theme_id": "automation_and_robotics",
+        "display_name": "Automation & Robotics",
+        "theme_exposure_score": 63.7,
+        "opportunity_score": 50.3,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 69.5,
+        "opportunity_score": 52.9,
+        "eligible": true,
+        "confidence": 0.55,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 76.1,
+        "opportunity_score": 55.9,
+        "eligible": true,
+        "confidence": 0.42,
+        "role": "supplier"
       }
     ],
     "FOUR": [
@@ -20835,7 +20830,7 @@
         "theme_id": "cybersecurity",
         "display_name": "Cybersecurity",
         "theme_exposure_score": 71.9,
-        "opportunity_score": 78.5,
+        "opportunity_score": 77.9,
         "eligible": true,
         "confidence": 0.3,
         "role": "service"
@@ -20844,7 +20839,7 @@
         "theme_id": "digital_payments",
         "display_name": "Digital Payments & Financial Infrastructure",
         "theme_exposure_score": 60.0,
-        "opportunity_score": 73.1,
+        "opportunity_score": 72.5,
         "eligible": true,
         "confidence": 0.32,
         "role": "enabler"
@@ -21068,35 +21063,6 @@
         "role": "enabler"
       }
     ],
-    "DXC": [
-      {
-        "theme_id": "cybersecurity",
-        "display_name": "Cybersecurity",
-        "theme_exposure_score": 48.4,
-        "opportunity_score": 60.5,
-        "eligible": false,
-        "confidence": 0.55,
-        "role": "service"
-      },
-      {
-        "theme_id": "defense_rearmament",
-        "display_name": "Allied Rearmament & Munitions Capacity",
-        "theme_exposure_score": 39.2,
-        "opportunity_score": 56.3,
-        "eligible": false,
-        "confidence": 0.45,
-        "role": "service"
-      },
-      {
-        "theme_id": "digital_payments",
-        "display_name": "Digital Payments & Financial Infrastructure",
-        "theme_exposure_score": 50.7,
-        "opportunity_score": 61.5,
-        "eligible": false,
-        "confidence": 0.53,
-        "role": "enabler"
-      }
-    ],
     "GPN": [
       {
         "theme_id": "cybersecurity",
@@ -21124,6 +21090,35 @@
         "eligible": false,
         "confidence": 0.53,
         "role": "service"
+      }
+    ],
+    "DXC": [
+      {
+        "theme_id": "cybersecurity",
+        "display_name": "Cybersecurity",
+        "theme_exposure_score": 48.4,
+        "opportunity_score": 53.8,
+        "eligible": false,
+        "confidence": 0.55,
+        "role": "service"
+      },
+      {
+        "theme_id": "defense_rearmament",
+        "display_name": "Allied Rearmament & Munitions Capacity",
+        "theme_exposure_score": 39.2,
+        "opportunity_score": 49.7,
+        "eligible": false,
+        "confidence": 0.45,
+        "role": "service"
+      },
+      {
+        "theme_id": "digital_payments",
+        "display_name": "Digital Payments & Financial Infrastructure",
+        "theme_exposure_score": 50.7,
+        "opportunity_score": 54.8,
+        "eligible": false,
+        "confidence": 0.53,
+        "role": "enabler"
       }
     ],
     "KD": [
@@ -21182,17 +21177,6 @@
         "eligible": true,
         "confidence": 0.53,
         "role": "enabler"
-      }
-    ],
-    "WFRD": [
-      {
-        "theme_id": "energy_security",
-        "display_name": "Energy Security & Firm Power",
-        "theme_exposure_score": 56.7,
-        "opportunity_score": 64.2,
-        "eligible": false,
-        "confidence": 0.3,
-        "role": "supplier"
       }
     ],
     "WHD": [
@@ -22151,6 +22135,35 @@
         "role": "supplier"
       }
     ],
+    "DHR": [
+      {
+        "theme_id": "aging_demographics",
+        "display_name": "Aging Demographics & Care Capacity",
+        "theme_exposure_score": 45.5,
+        "opportunity_score": 50.6,
+        "eligible": true,
+        "confidence": 0.5,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "obesity_care_supply_chain",
+        "display_name": "Metabolic Care Supply Chain",
+        "theme_exposure_score": 54.8,
+        "opportunity_score": 54.8,
+        "eligible": true,
+        "confidence": 0.45,
+        "role": "enabler"
+      },
+      {
+        "theme_id": "surgical_robotics",
+        "display_name": "Surgical & Medical Robotics",
+        "theme_exposure_score": 44.5,
+        "opportunity_score": 50.2,
+        "eligible": true,
+        "confidence": 0.5,
+        "role": "supplier"
+      }
+    ],
     "TMO": [
       {
         "theme_id": "aging_demographics",
@@ -22177,35 +22190,6 @@
         "opportunity_score": 45.9,
         "eligible": true,
         "confidence": 0.4,
-        "role": "supplier"
-      }
-    ],
-    "DHR": [
-      {
-        "theme_id": "aging_demographics",
-        "display_name": "Aging Demographics & Care Capacity",
-        "theme_exposure_score": 45.5,
-        "opportunity_score": 43.9,
-        "eligible": true,
-        "confidence": 0.5,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "obesity_care_supply_chain",
-        "display_name": "Metabolic Care Supply Chain",
-        "theme_exposure_score": 54.8,
-        "opportunity_score": 48.1,
-        "eligible": true,
-        "confidence": 0.45,
-        "role": "enabler"
-      },
-      {
-        "theme_id": "surgical_robotics",
-        "display_name": "Surgical & Medical Robotics",
-        "theme_exposure_score": 44.5,
-        "opportunity_score": 43.5,
-        "eligible": true,
-        "confidence": 0.5,
         "role": "supplier"
       }
     ],
@@ -22461,18 +22445,18 @@
   "principle": "A separate screen, never a modifier on the fundamentals score. Price momentum contributes zero by construction, and names already in the top valuation decile are flagged rather than promoted - specialized ETFs have historically lost about 30% risk-adjusted over five years by doing the opposite (Ben-David, Franzoni, Kim & Moussawi, RFS 2023).",
   "schema_version": 1,
   "source": {
-    "advisor_generated_at": "2026-11-21T02:27:33.049650+00:00",
+    "advisor_generated_at": "2026-11-24T04:33:23.953310+00:00",
     "advisor_universe_mode": "fast",
     "advisor_universe_count": 944
   },
   "scope": {
-    "candidates_scored": 289,
-    "excluded_already_published": 126,
+    "candidates_scored": 288,
+    "excluded_already_published": 127,
     "eligible_peer_pool_by_theme": {
       "aerospace_forging_capacity": 20,
       "aging_demographics": 30,
-      "ai_infrastructure": 26,
-      "ai_optical_interconnect": 37,
+      "ai_infrastructure": 27,
+      "ai_optical_interconnect": 36,
       "automation_and_robotics": 63,
       "battery_storage": 4,
       "critical_minerals": 3,
@@ -22480,17 +22464,17 @@
       "data_center_cooling": 41,
       "defense_rearmament": 20,
       "digital_payments": 21,
-      "energy_security": 26,
+      "energy_security": 25,
       "grid_electrification": 40,
       "grid_power_equipment": 33,
       "nuclear_smr": 31,
       "obesity_care_supply_chain": 44,
       "ot_industrial_cybersecurity": 19,
-      "reshoring_industrial_capacity": 45,
-      "semicap_equipment": 5,
+      "reshoring_industrial_capacity": 46,
+      "semicap_equipment": 6,
       "shipbuilding_naval": 20,
       "space_satellite": 20,
-      "storage_capacity_shortage": 27,
+      "storage_capacity_shortage": 26,
       "surgical_robotics": 30,
       "water_infrastructure": 53
     },
@@ -22500,8 +22484,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "2ee3a59c63f87412ac52b5034732026372f023a8",
+    "git_commit_sha": "e8a96fcd244e1b0c2818b617a40600e29b867563",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-24T01:05:04.023741+00:00"
+    "generated_at": "2026-11-24T23:10:09.242091+00:00"
   }
 }
