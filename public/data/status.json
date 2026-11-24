@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-21T02:32:01.028134+00:00",
+  "generated_at": "2026-11-24T04:39:05.888120+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,11 +29,11 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-11-21T02:28:39.182530+00:00",
+      "checked_at": "2026-11-24T04:34:45.630858+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 944,
-        "scored": 237,
+        "scored": 236,
         "ranked": 40,
         "failed": [
           "ABB",
@@ -75,7 +75,6 @@
           "PNM",
           "PSTG",
           "QRVO",
-          "ROKU",
           "SEE",
           "SKX",
           "SMAR",
@@ -97,23 +96,23 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-11-21T02:31:31.464566+00:00",
+      "checked_at": "2026-11-24T04:38:00.799970+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
         "received": 125,
         "rule_6c11_disclosures": 0,
         "cache": {
-          "hits": 250,
-          "misses": 128,
+          "hits": 125,
+          "misses": 253,
           "stale_hits": 1,
-          "hit_rate": 0.66
+          "hit_rate": 0.33
         }
       }
     },
     "etf_comparisons": {
       "status": "degraded",
-      "checked_at": "2026-11-21T02:32:01.028093+00:00",
+      "checked_at": "2026-11-24T04:39:05.888101+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -261,8 +260,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "d2e652a6daa53be83a906e61d01f0a63eadb9003",
+    "git_commit_sha": "1ca648ba0d8d95d7a072a90ba183bf37640b3f1e",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-21T02:32:01.028134+00:00"
+    "generated_at": "2026-11-24T04:39:05.888120+00:00"
   }
 }

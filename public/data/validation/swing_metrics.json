@@ -1,23 +1,23 @@
 {
-  "generated_at": "2026-11-21T02:34:55.745591+00:00",
+  "generated_at": "2026-11-24T04:43:02.404092+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
     "label": "no history exists before shadow_store/swing or swing_pit_store began recording - this module never reconstructs a swing signal or leg score for a date it did not observe"
   },
-  "snapshot_dates_recorded": 64,
-  "attribution_snapshot_dates_recorded": 57,
+  "snapshot_dates_recorded": 65,
+  "attribution_snapshot_dates_recorded": 58,
   "horizon_days": 14,
   "metrics": {
     "composite_z": {
       "requires_live_sample": true,
-      "eligible_periods": 55,
+      "eligible_periods": 56,
       "minimum_icir_periods": 24,
       "status": "eligible",
-      "mean_rank_ic": 0.0946,
-      "icir": 1.258,
-      "t_stat": 2.693,
-      "hit_rate": 0.636,
+      "mean_rank_ic": 0.1002,
+      "icir": 1.327,
+      "t_stat": 2.868,
+      "hit_rate": 0.643,
       "clears_multiple_testing_bar": false,
       "periods": [
         {
@@ -349,60 +349,66 @@
           "end_date": "2026-11-21",
           "sample_size": 13,
           "rank_ic": 0.3241758241758242
+        },
+        {
+          "start_date": "2026-11-10",
+          "end_date": "2026-11-24",
+          "sample_size": 11,
+          "rank_ic": 0.4090909090909091
         }
       ]
     }
   },
   "attribution": {
-    "eligible_periods": 48,
+    "eligible_periods": 49,
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": -0.0514,
-      "icir": -1.24,
-      "t_stat": -2.48,
-      "hit_rate": 0.438,
+      "mean_rank_ic": -0.0523,
+      "icir": -1.273,
+      "t_stat": -2.573,
+      "hit_rate": 0.429,
       "clears_multiple_testing_bar": false
     },
     "metrics": {
       "pead_drift": {
         "weight": 0.3,
-        "own_eligible_periods": 48,
-        "own_rank_ic": -0.0813,
-        "own_icir": -2.116,
-        "delta_ic": -0.0876,
+        "own_eligible_periods": 49,
+        "own_rank_ic": -0.0812,
+        "own_icir": -2.134,
+        "delta_ic": -0.0881,
         "hurts_composite": true
       },
       "analyst_revision": {
         "weight": 0.25,
-        "own_eligible_periods": 48,
-        "own_rank_ic": -0.0297,
-        "own_icir": -0.923,
-        "delta_ic": -0.0247,
+        "own_eligible_periods": 49,
+        "own_rank_ic": -0.0301,
+        "own_icir": -0.945,
+        "delta_ic": -0.025,
         "hurts_composite": true
       },
       "high_volume_premium": {
         "weight": 0.2,
-        "own_eligible_periods": 48,
-        "own_rank_ic": 0.0358,
-        "own_icir": 1.683,
-        "delta_ic": 0.0232,
+        "own_eligible_periods": 49,
+        "own_rank_ic": 0.035,
+        "own_icir": 1.662,
+        "delta_ic": 0.0222,
         "hurts_composite": false
       },
       "high_52w_proximity": {
         "weight": 0.15,
-        "own_eligible_periods": 48,
-        "own_rank_ic": -0.0105,
-        "own_icir": -0.377,
-        "delta_ic": -0.0001,
-        "hurts_composite": true
+        "own_eligible_periods": 49,
+        "own_rank_ic": -0.0066,
+        "own_icir": -0.229,
+        "delta_ic": 0.0013,
+        "hurts_composite": false
       },
       "short_term_reversal": {
         "weight": 0.1,
-        "own_eligible_periods": 48,
-        "own_rank_ic": 0.0521,
-        "own_icir": 1.613,
-        "delta_ic": 0.0092,
+        "own_eligible_periods": 49,
+        "own_rank_ic": 0.0485,
+        "own_icir": 1.479,
+        "delta_ic": 0.0073,
         "hurts_composite": false
       }
     }
@@ -410,8 +416,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "d2e652a6daa53be83a906e61d01f0a63eadb9003",
+    "git_commit_sha": "1ca648ba0d8d95d7a072a90ba183bf37640b3f1e",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-21T02:34:55.745591+00:00"
+    "generated_at": "2026-11-24T04:43:02.404092+00:00"
   }
 }
