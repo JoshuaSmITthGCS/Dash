@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-24T04:39:05.888120+00:00",
+  "generated_at": "2026-11-25T00:41:31.111960+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,11 +29,11 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-11-24T04:34:45.630858+00:00",
+      "checked_at": "2026-11-25T00:35:47.432891+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 944,
-        "scored": 236,
+        "scored": 889,
         "ranked": 40,
         "failed": [
           "ABB",
@@ -53,6 +53,7 @@
           "GTLS",
           "HCP",
           "HES",
+          "HIG",
           "HOLX",
           "IGT",
           "INFA",
@@ -70,6 +71,8 @@
           "MASI",
           "MMC",
           "MODG",
+          "MU",
+          "NEM",
           "NWE",
           "PCH",
           "PNM",
@@ -85,6 +88,8 @@
           "TMHC",
           "TPH",
           "TPX",
+          "TRV",
+          "TSM",
           "VSCO",
           "WBA",
           "WBD",
@@ -96,7 +101,7 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-11-24T04:38:00.799970+00:00",
+      "checked_at": "2026-11-25T00:40:24.610237+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
@@ -112,7 +117,7 @@
     },
     "etf_comparisons": {
       "status": "degraded",
-      "checked_at": "2026-11-24T04:39:05.888101+00:00",
+      "checked_at": "2026-11-25T00:41:31.111948+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -260,8 +265,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "1ca648ba0d8d95d7a072a90ba183bf37640b3f1e",
+    "git_commit_sha": "e8a96fcd244e1b0c2818b617a40600e29b867563",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-24T04:39:05.888120+00:00"
+    "generated_at": "2026-11-25T00:41:31.111960+00:00"
   }
 }
