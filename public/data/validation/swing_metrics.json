@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-25T02:12:29.762781+00:00",
+  "generated_at": "2026-11-25T04:49:15.026702+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
@@ -370,9 +370,9 @@
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": -0.0548,
-      "icir": -1.338,
-      "t_stat": -2.732,
+      "mean_rank_ic": -0.0547,
+      "icir": -1.337,
+      "t_stat": -2.729,
       "hit_rate": 0.42,
       "clears_multiple_testing_bar": false
     },
@@ -381,8 +381,8 @@
         "weight": 0.3,
         "own_eligible_periods": 50,
         "own_rank_ic": -0.0838,
-        "own_icir": -2.205,
-        "delta_ic": -0.0908,
+        "own_icir": -2.204,
+        "delta_ic": -0.0907,
         "hurts_composite": true
       },
       "analyst_revision": {
@@ -397,15 +397,15 @@
         "weight": 0.2,
         "own_eligible_periods": 50,
         "own_rank_ic": 0.0356,
-        "own_icir": 1.705,
-        "delta_ic": 0.0223,
+        "own_icir": 1.704,
+        "delta_ic": 0.0224,
         "hurts_composite": false
       },
       "high_52w_proximity": {
         "weight": 0.15,
         "own_eligible_periods": 50,
-        "own_rank_ic": -0.0022,
-        "own_icir": -0.075,
+        "own_rank_ic": -0.0021,
+        "own_icir": -0.072,
         "delta_ic": 0.003,
         "hurts_composite": false
       },
@@ -414,7 +414,7 @@
         "own_eligible_periods": 50,
         "own_rank_ic": 0.0446,
         "own_icir": 1.332,
-        "delta_ic": 0.0053,
+        "delta_ic": 0.0054,
         "hurts_composite": false
       }
     }
@@ -422,8 +422,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "2e32d9fbf5bd319020b7f109bb16cbda6d97ccd8",
+    "git_commit_sha": "7c271800088337032134330750587ecb85a1c648",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-25T02:12:29.762781+00:00"
+    "generated_at": "2026-11-25T04:49:15.026702+00:00"
   }
 }

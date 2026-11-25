@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 255,
+  "refreshes_observed": 256,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -27222,6 +27222,95 @@
             "peg"
           ],
           "score_delta": -0.1,
+          "confidence_delta": -0.02
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-11-25T02:04:58.685501+00:00",
+      "current_refresh": "advisor-2026-11-25T04:39:30.741251+00:00",
+      "shared_tickers": 889,
+      "rank_turnover": {
+        "top_40": 0.05,
+        "top_100": 0.05
+      },
+      "tickers_with_availability_driven_change": 8,
+      "tickers_with_availability_driven_change_pct": 0.009,
+      "mean_abs_score_delta": 0.26,
+      "mean_abs_confidence_delta": 0.0,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "CRBG",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": -3.0,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "BRBR",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": -2.7,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "CRDO",
+          "metrics_with_value_change": [
+            "sales_multiple"
+          ],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": 2.2,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "ZETA",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": -1.4,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "MCY",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "price_to_tangible_book"
+          ],
+          "score_delta": 0.9,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "CAG",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": 0.2,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "VOYA",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": 0.2,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "CC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": 0.1,
           "confidence_delta": -0.02
         }
       ]
