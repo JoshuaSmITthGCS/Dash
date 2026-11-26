@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-25T04:52:58.385579+00:00",
+  "generated_at": "2026-11-26T00:08:53.699953+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
@@ -11,9 +11,9 @@
     "eligible_periods": 39,
     "minimum_icir_periods": 24,
     "status": "eligible",
-    "mean_rank_ic": -0.1166,
-    "icir": -1.586,
-    "t_stat": -2.859,
+    "mean_rank_ic": -0.1168,
+    "icir": -1.588,
+    "t_stat": -2.862,
     "hit_rate": 0.308,
     "clears_multiple_testing_bar": false
   },
@@ -22,9 +22,9 @@
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": -0.1193,
-      "icir": -1.625,
-      "t_stat": -2.929,
+      "mean_rank_ic": -0.1195,
+      "icir": -1.626,
+      "t_stat": -2.932,
       "hit_rate": 0.308,
       "clears_multiple_testing_bar": false
     },
@@ -32,24 +32,24 @@
       "momentum_12_1": {
         "weight": 0.4,
         "own_eligible_periods": 39,
-        "own_rank_ic": -0.1217,
-        "own_icir": -1.613,
-        "delta_ic": -0.0289,
+        "own_rank_ic": -0.1219,
+        "own_icir": -1.615,
+        "delta_ic": -0.029,
         "hurts_composite": true
       },
       "momentum_12_7": {
         "weight": 0.2,
         "own_eligible_periods": 39,
         "own_rank_ic": -0.0956,
-        "own_icir": -2.779,
-        "delta_ic": -0.0199,
+        "own_icir": -2.778,
+        "delta_ic": -0.0198,
         "hurts_composite": true
       },
       "momentum_6_1": {
         "weight": 0.15,
         "own_eligible_periods": 39,
-        "own_rank_ic": -0.064,
-        "own_icir": -1.137,
+        "own_rank_ic": -0.0642,
+        "own_icir": -1.139,
         "delta_ic": 0.0002,
         "hurts_composite": false
       },
@@ -57,15 +57,15 @@
         "weight": 0.15,
         "own_eligible_periods": 39,
         "own_rank_ic": 0.0429,
-        "own_icir": 1.052,
+        "own_icir": 1.051,
         "delta_ic": 0.0159,
         "hurts_composite": false
       },
       "industry_relative_momentum": {
         "weight": 0.1,
         "own_eligible_periods": 39,
-        "own_rank_ic": -0.0703,
-        "own_icir": -0.765,
+        "own_rank_ic": -0.0706,
+        "own_icir": -0.767,
         "delta_ic": -0.0018,
         "hurts_composite": true
       }
@@ -74,8 +74,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "7c271800088337032134330750587ecb85a1c648",
+    "git_commit_sha": "3155da64fc990da32ac0a4d6510282b97d17681d",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-25T04:52:58.385579+00:00"
+    "generated_at": "2026-11-26T00:08:53.699953+00:00"
   }
 }

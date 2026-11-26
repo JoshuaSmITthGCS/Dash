@@ -1,7 +1,7 @@
 {
   "status": "ok",
   "variant": "champion",
-  "refreshes_observed": 256,
+  "refreshes_observed": 257,
   "transitions": [
     {
       "previous_refresh": "advisor-2026-08-06T00:23:32.352074+00:00",
@@ -27312,6 +27312,127 @@
           ],
           "score_delta": 0.1,
           "confidence_delta": -0.02
+        }
+      ]
+    },
+    {
+      "previous_refresh": "advisor-2026-11-25T04:39:30.741251+00:00",
+      "current_refresh": "advisor-2026-11-25T23:55:10.929775+00:00",
+      "shared_tickers": 888,
+      "rank_turnover": {
+        "top_40": 0.175,
+        "top_100": 0.175
+      },
+      "tickers_with_availability_driven_change": 39,
+      "tickers_with_availability_driven_change_pct": 0.044,
+      "mean_abs_score_delta": 1.18,
+      "mean_abs_confidence_delta": 0.001,
+      "largest_availability_driven_movers": [
+        {
+          "ticker": "PARA",
+          "metrics_with_value_change": [
+            "free_cash_flow_yield"
+          ],
+          "metrics_with_availability_change": [
+            "forward_pe"
+          ],
+          "score_delta": -16.3,
+          "confidence_delta": 0.04
+        },
+        {
+          "ticker": "PII",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": 7.5,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "SYNA",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": -4.5,
+          "confidence_delta": -0.02
+        },
+        {
+          "ticker": "FN",
+          "metrics_with_value_change": [
+            "ev_to_ebit"
+          ],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": 3.5,
+          "confidence_delta": 0.01
+        },
+        {
+          "ticker": "ESTC",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": -3.4,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "FND",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": -3.1,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "SJM",
+          "metrics_with_value_change": [
+            "ev_to_fcf",
+            "revenue_growth"
+          ],
+          "metrics_with_availability_change": [
+            "earnings_growth",
+            "peg"
+          ],
+          "score_delta": 3.1,
+          "confidence_delta": -0.01
+        },
+        {
+          "ticker": "MOG.A",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "debt_to_equity",
+            "earnings_growth",
+            "forward_pe",
+            "free_cash_flow_yield",
+            "price_to_book",
+            "price_to_tangible_book",
+            "profit_margin",
+            "return_on_equity",
+            "revenue_growth"
+          ],
+          "score_delta": 2.6,
+          "confidence_delta": 0.17
+        },
+        {
+          "ticker": "TPG",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": 2.6,
+          "confidence_delta": 0.02
+        },
+        {
+          "ticker": "PSN",
+          "metrics_with_value_change": [],
+          "metrics_with_availability_change": [
+            "peg"
+          ],
+          "score_delta": 2.5,
+          "confidence_delta": 0.02
         }
       ]
     }
