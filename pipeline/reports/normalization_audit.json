@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-26T03:37:07.742546+00:00",
+  "generated_at": "2026-11-27T00:02:12.214823+00:00",
   "normalization_mode_exists": true,
   "normalization_mode": "bands",
   "challenger_enabled": true,
@@ -200,7 +200,7 @@
       "challenger_resolution": "cross_sectional_percentile",
       "challenger_status": "available",
       "direction": "lower_is_better",
-      "percentile_universe_size": 788,
+      "percentile_universe_size": 789,
       "sector_observation_counts": {
         "Basic Materials": 38,
         "Communication Services": 21,
@@ -211,7 +211,7 @@
         "Healthcare": 93,
         "Industrials": 142,
         "Real Estate": 49,
-        "Technology": 145,
+        "Technology": 146,
         "Utilities": 35
       },
       "normalization_pooling": "sector_with_universe_fallback",
@@ -263,7 +263,7 @@
       "challenger_resolution": "cross_sectional_percentile",
       "challenger_status": "available",
       "direction": "lower_is_better",
-      "percentile_universe_size": 700,
+      "percentile_universe_size": 699,
       "sector_observation_counts": {
         "Basic Materials": 28,
         "Communication Services": 24,
@@ -274,7 +274,7 @@
         "Healthcare": 77,
         "Industrials": 140,
         "Real Estate": 47,
-        "Technology": 136,
+        "Technology": 135,
         "Utilities": 34,
         "default": 1
       },
@@ -623,7 +623,7 @@
       "challenger_resolution": "cross_sectional_percentile",
       "challenger_status": "available",
       "direction": "lower_is_better",
-      "percentile_universe_size": 782,
+      "percentile_universe_size": 783,
       "sector_observation_counts": {
         "Basic Materials": 37,
         "Communication Services": 22,
@@ -634,7 +634,7 @@
         "Healthcare": 77,
         "Industrials": 136,
         "Real Estate": 49,
-        "Technology": 147,
+        "Technology": 148,
         "Utilities": 33,
         "default": 2
       },
@@ -818,10 +818,10 @@
     }
   ],
   "point_in_time_store": {
-    "file_count": 84,
-    "total_row_count": 226172,
-    "refresh_count": 261,
-    "latest_refresh_id": "advisor-2026-11-26T03:37:07.742546+00:00",
+    "file_count": 85,
+    "total_row_count": 227060,
+    "refresh_count": 262,
+    "latest_refresh_id": "advisor-2026-11-27T00:02:12.214823+00:00",
     "latest_refresh_row_count": 888,
     "latest_refresh_champion_score_count": 888,
     "latest_refresh_challenger_score_count": 888,
@@ -833,12 +833,12 @@
     "required_combined_symbol_count": 888,
     "watchlist_contract": "Server-supplied watchlist symbols join the refresh universe and are recorded prospectively. Browser-only local storage cannot be read by the scheduled pipeline.",
     "raw_observation_store": {
-      "observations": 110936,
+      "observations": 111824,
       "tickers": 898,
       "first_observed": "2026-08-02T20:19:46.298747+00:00",
-      "last_observed": "2026-11-26T03:36:50.778734+00:00",
-      "days": 115,
-      "revisions": 1361205
+      "last_observed": "2026-11-27T00:01:02.282950+00:00",
+      "days": 116,
+      "revisions": 1366133
     }
   }
 }
