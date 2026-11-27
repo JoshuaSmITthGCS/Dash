@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-27T04:00:23.727512+00:00",
+  "generated_at": "2026-11-27T23:57:42.171257+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
@@ -11,9 +11,9 @@
     "eligible_periods": 41,
     "minimum_icir_periods": 24,
     "status": "eligible",
-    "mean_rank_ic": -0.1465,
-    "icir": -3.195,
-    "t_stat": -5.906,
+    "mean_rank_ic": -0.1466,
+    "icir": -3.196,
+    "t_stat": -5.908,
     "hit_rate": 0.195,
     "clears_multiple_testing_bar": true
   },
@@ -22,9 +22,9 @@
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": -0.1465,
-      "icir": -3.195,
-      "t_stat": -5.906,
+      "mean_rank_ic": -0.1466,
+      "icir": -3.196,
+      "t_stat": -5.907,
       "hit_rate": 0.195,
       "clears_multiple_testing_bar": true
     },
@@ -32,17 +32,17 @@
       "revision_agreement": {
         "weight": 0.12,
         "own_eligible_periods": 41,
-        "own_rank_ic": 0.0121,
-        "own_icir": 0.59,
-        "delta_ic": 0.0138,
+        "own_rank_ic": 0.0122,
+        "own_icir": 0.595,
+        "delta_ic": 0.0139,
         "hurts_composite": false
       },
       "revision_magnitude": {
         "weight": 0.15,
         "own_eligible_periods": 41,
-        "own_rank_ic": 0.0151,
-        "own_icir": 0.841,
-        "delta_ic": 0.0223,
+        "own_rank_ic": 0.0144,
+        "own_icir": 0.801,
+        "delta_ic": 0.0217,
         "hurts_composite": false
       },
       "revision_acceleration": {
@@ -50,7 +50,7 @@
         "own_eligible_periods": 0,
         "own_rank_ic": null,
         "own_icir": null,
-        "delta_ic": -0.0003,
+        "delta_ic": -0.0002,
         "hurts_composite": true
       },
       "fresh_estimate_delta": {
@@ -104,48 +104,48 @@
       "momentum_12_1": {
         "weight": 0.08,
         "own_eligible_periods": 41,
-        "own_rank_ic": -0.2785,
-        "own_icir": -2.846,
-        "delta_ic": -0.0916,
+        "own_rank_ic": -0.2776,
+        "own_icir": -2.842,
+        "delta_ic": -0.0914,
         "hurts_composite": true
       },
       "momentum_6_1": {
         "weight": 0.04,
         "own_eligible_periods": 41,
-        "own_rank_ic": -0.1216,
-        "own_icir": -1.748,
-        "delta_ic": -0.0111,
+        "own_rank_ic": -0.1208,
+        "own_icir": -1.741,
+        "delta_ic": -0.0109,
         "hurts_composite": true
       },
       "high_52w_proximity": {
         "weight": 0.04,
         "own_eligible_periods": 41,
-        "own_rank_ic": 0.0111,
-        "own_icir": 0.217,
-        "delta_ic": 0.014,
+        "own_rank_ic": 0.0101,
+        "own_icir": 0.199,
+        "delta_ic": 0.0137,
         "hurts_composite": false
       },
       "industry_relative_momentum": {
         "weight": 0.04,
         "own_eligible_periods": 41,
-        "own_rank_ic": -0.2022,
-        "own_icir": -3.458,
+        "own_rank_ic": -0.2018,
+        "own_icir": -3.454,
         "delta_ic": -0.0278,
         "hurts_composite": true
       },
       "industry_revision_breadth": {
         "weight": 0.1,
         "own_eligible_periods": 41,
-        "own_rank_ic": -0.0949,
-        "own_icir": -1.919,
-        "delta_ic": -0.0572,
+        "own_rank_ic": -0.0948,
+        "own_icir": -1.918,
+        "delta_ic": -0.0571,
         "hurts_composite": true
       },
       "risk_tradability": {
         "weight": 0.05,
         "own_eligible_periods": 41,
-        "own_rank_ic": 0.0748,
-        "own_icir": 1.962,
+        "own_rank_ic": 0.0745,
+        "own_icir": 1.956,
         "delta_ic": 0.0027,
         "hurts_composite": false
       }
@@ -154,8 +154,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "33ef1116ade1a0aa5602efd6f3a562cbdbcb4054",
+    "git_commit_sha": "797a2451eb070d887c5df3331f0d8448d6bad1f8",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-27T04:00:23.727512+00:00"
+    "generated_at": "2026-11-27T23:57:42.171257+00:00"
   }
 }

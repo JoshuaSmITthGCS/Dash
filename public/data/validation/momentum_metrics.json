@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-27T04:00:22.381651+00:00",
+  "generated_at": "2026-11-27T23:57:40.832486+00:00",
   "data_integrity": "prospective_point_in_time",
   "reconstructed_history": {
     "included": false,
@@ -11,9 +11,9 @@
     "eligible_periods": 41,
     "minimum_icir_periods": 24,
     "status": "eligible",
-    "mean_rank_ic": -0.1265,
-    "icir": -1.738,
-    "t_stat": -3.213,
+    "mean_rank_ic": -0.1266,
+    "icir": -1.739,
+    "t_stat": -3.214,
     "hit_rate": 0.293,
     "clears_multiple_testing_bar": true
   },
@@ -22,9 +22,9 @@
     "minimum_icir_periods": 24,
     "status": "eligible",
     "composite": {
-      "mean_rank_ic": -0.1294,
+      "mean_rank_ic": -0.1295,
       "icir": -1.779,
-      "t_stat": -3.288,
+      "t_stat": -3.289,
       "hit_rate": 0.293,
       "clears_multiple_testing_bar": true
     },
@@ -32,9 +32,9 @@
       "momentum_12_1": {
         "weight": 0.4,
         "own_eligible_periods": 41,
-        "own_rank_ic": -0.1325,
-        "own_icir": -1.77,
-        "delta_ic": -0.0325,
+        "own_rank_ic": -0.1323,
+        "own_icir": -1.769,
+        "delta_ic": -0.0323,
         "hurts_composite": true
       },
       "momentum_12_7": {
@@ -42,29 +42,29 @@
         "own_eligible_periods": 41,
         "own_rank_ic": -0.0985,
         "own_icir": -2.919,
-        "delta_ic": -0.0208,
+        "delta_ic": -0.0209,
         "hurts_composite": true
       },
       "momentum_6_1": {
         "weight": 0.15,
         "own_eligible_periods": 41,
-        "own_rank_ic": -0.0686,
-        "own_icir": -1.243,
-        "delta_ic": -0.0005,
+        "own_rank_ic": -0.0687,
+        "own_icir": -1.244,
+        "delta_ic": -0.0006,
         "hurts_composite": true
       },
       "high_52w_proximity": {
         "weight": 0.15,
         "own_eligible_periods": 41,
-        "own_rank_ic": 0.0489,
-        "own_icir": 1.207,
-        "delta_ic": 0.0168,
+        "own_rank_ic": 0.0484,
+        "own_icir": 1.197,
+        "delta_ic": 0.0166,
         "hurts_composite": false
       },
       "industry_relative_momentum": {
         "weight": 0.1,
         "own_eligible_periods": 41,
-        "own_rank_ic": -0.0816,
+        "own_rank_ic": -0.0817,
         "own_icir": -0.899,
         "delta_ic": -0.002,
         "hurts_composite": true
@@ -74,8 +74,8 @@
   "model_version": "3.2.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "33ef1116ade1a0aa5602efd6f3a562cbdbcb4054",
+    "git_commit_sha": "797a2451eb070d887c5df3331f0d8448d6bad1f8",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-27T04:00:22.381651+00:00"
+    "generated_at": "2026-11-27T23:57:40.832486+00:00"
   }
 }
