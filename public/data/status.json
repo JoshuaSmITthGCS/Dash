@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-27T00:08:31.007351+00:00",
+  "generated_at": "2026-11-27T01:46:29.797557+00:00",
   "status": "degraded",
   "stages": {
     "demo_seed": {
@@ -29,11 +29,11 @@
     },
     "advisor": {
       "status": "degraded",
-      "checked_at": "2026-11-27T00:03:36.341136+00:00",
+      "checked_at": "2026-11-27T01:43:24.519707+00:00",
       "source": "Alpha Vantage + Yahoo Finance + Marketaux",
       "details": {
         "universe": 944,
-        "scored": 888,
+        "scored": 232,
         "ranked": 40,
         "failed": [
           "ABB",
@@ -49,7 +49,6 @@
           "EQR",
           "EXAS",
           "FI",
-          "FTI",
           "FYBR",
           "GTLS",
           "HCP",
@@ -71,8 +70,6 @@
           "MASI",
           "MMC",
           "MODG",
-          "MU",
-          "NEM",
           "NWE",
           "PCH",
           "PNM",
@@ -85,12 +82,10 @@
           "SNV",
           "SPR",
           "SUM",
-          "TEL",
           "TGNA",
           "TMHC",
           "TPH",
           "TPX",
-          "TSM",
           "VSCO",
           "WBA",
           "WBD",
@@ -102,23 +97,23 @@
     },
     "etfs": {
       "status": "healthy",
-      "checked_at": "2026-11-27T00:07:25.263714+00:00",
+      "checked_at": "2026-11-27T01:46:00.106743+00:00",
       "source": "Yahoo Finance",
       "details": {
         "requested": 126,
         "received": 125,
         "rule_6c11_disclosures": 0,
         "cache": {
-          "hits": 125,
-          "misses": 253,
+          "hits": 250,
+          "misses": 128,
           "stale_hits": 1,
-          "hit_rate": 0.33
+          "hit_rate": 0.66
         }
       }
     },
     "etf_comparisons": {
       "status": "degraded",
-      "checked_at": "2026-11-27T00:08:31.007331+00:00",
+      "checked_at": "2026-11-27T01:46:29.797533+00:00",
       "source": "Yahoo Finance adjusted history",
       "details": {
         "complete": [
@@ -266,8 +261,8 @@
   "model_version": "3.0.0",
   "model_metadata": {
     "semantic_version": "3.2.0",
-    "git_commit_sha": "a0714c0552e53db64d5322de9af9d6340b3f913b",
+    "git_commit_sha": "876f4043396e706564193741d4d36763468eb65a",
     "config_hash": "3d7b6a169871ad90105b84796a46797de30dccfdf151b5ca98deab3ddab603b1",
-    "generated_at": "2026-11-27T00:08:31.007351+00:00"
+    "generated_at": "2026-11-27T01:46:29.797557+00:00"
   }
 }
